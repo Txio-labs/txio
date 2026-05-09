@@ -1,0 +1,5 @@
+{
+  "name": "Flow",
+  "description": "The professional IDE for Sui developers. Build, test, and deploy Move smart contracts with Flow.",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,16 @@
+{
+  "name": "flow-monorepo",
+  "private": true,
+  "scripts": {
+    "dev:backend": "cd backend && cargo run --package api",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:desktop": "cd desktop && npm start",
+    "build": "npm run build --workspaces",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down"
+  },
+  "workspaces": [
+    "frontend",
+    "desktop"
+  ]
+}
