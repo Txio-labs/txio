@@ -1,0 +1,32 @@
+# Build Artifacts
+target/
+dist/
+build/
+node_modules/
+.next/
+out/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Rust
+**/*.rs.bk
+Cargo.lock (shared)

@@ -1,0 +1,29 @@
+[package]
+name = "txio-api"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+axum = { workspace = true }
+tokio = { workspace = true }
+mongodb = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+jsonwebtoken = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+reqwest = { workspace = true }
+thiserror = { workspace = true }
+config = { workspace = true }
+chrono = { workspace = true }
+rand = { workspace = true }
+uuid = { workspace = true }
+dotenvy = { workspace = true }
+validator = { workspace = true }
+bcrypt = { workspace = true }
+tower-http = { workspace = true }
+brevo = { workspace = true }
+clap = { workspace = true }
+regex = { workspace = true }

@@ -1,0 +1,26 @@
+[package]
+name = "txio"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+txio-api = { path = "../backend/api" }
+clap = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+reqwest = { workspace = true }
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+regex = { workspace = true }
+dotenvy = { workspace = true }
+strsim = { workspace = true }
+clap_complete = { workspace = true }
+colored = { workspace = true }
+indicatif = { workspace = true }
+dirs-next = { workspace = true }
+mongodb = { workspace = true }
+dialoguer = { workspace = true }
+futures = { workspace = true }
