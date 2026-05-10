@@ -9,7 +9,7 @@
     A production-grade, modular suite for developers across Sui, Ethereum, Solana, Aptos, and Soroban.
   </p>
   <p align="center">
-    <a href="https://github.com/Kingvic300/Flow/actions"><img src="https://img.shields.io/github/actions/workflow/status/Kingvic300/Flow/ci.yml?branch=master&style=flat-square" alt="CI Status"></a>
+
     <a href="https://crates.io/crates/txio"><img src="https://img.shields.io/crates/v/txio.svg?style=flat-square" alt="Crates.io"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License"></a>
   </p>
