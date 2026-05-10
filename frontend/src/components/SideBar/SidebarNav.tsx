@@ -9,10 +9,10 @@ interface SidebarNavProps {
   activeTabType?: string;
 }
 
-const FlowLogo = () => (
+const txioLogo = () => (
   <img 
     src={logo} 
-    alt="Flow" 
+    alt="txio" 
     className="w-full h-full object-contain drop-shadow-[0_0_8px_rgba(14,165,233,0.5)] transition-transform duration-500 group-hover:scale-110"
   />
 );
@@ -58,7 +58,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       >
         <div className="absolute inset-0 bg-cyan-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
         <div className="w-10 h-10 flex items-center justify-center transition-transform duration-300 group-hover:rotate-12 relative z-10">
-          <FlowLogo />
+          <txioLogo />
         </div>
       </div>
       

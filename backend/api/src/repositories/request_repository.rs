@@ -10,7 +10,7 @@ pub struct RequestRepository {
 
 impl RequestRepository {
     pub fn new(db: &Client) -> Self {
-        let collection = db.database("flow_db").collection("saved_requests");
+        let collection = db.database("txio_db").collection("saved_requests");
         Self { collection }
     }
 

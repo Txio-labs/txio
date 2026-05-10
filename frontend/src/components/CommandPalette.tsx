@@ -148,7 +148,7 @@ export const CommandPalette: React.FC = () => {
             onClick={() => appStore.setCommandPalette(false)}
         >
             <div 
-                className="w-full max-w-2xl bg-[#0c0c0e] border border-slate-700 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[60vh] relative animate-in zoom-in-95 duration-200"
+                className="w-full max-w-2xl bg-[#0c0c0e] border border-slate-700 rounded-xl shadow-2xl overtxio-hidden flex flex-col max-h-[60vh] relative animate-in zoom-in-95 duration-200"
                 onClick={e => e.stopPropagation()}
             >
                 <div className="flex items-center px-4 py-3 border-b border-slate-800 bg-slate-900/50">
@@ -166,7 +166,7 @@ export const CommandPalette: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
+                <div className="flex-1 overtxio-y-auto custom-scrollbar p-2">
                     {filteredCommands.length === 0 ? (
                         <div className="p-8 text-center text-slate-500 text-sm">No results found.</div>
                     ) : (

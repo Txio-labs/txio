@@ -47,7 +47,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
         </div>
       </div>
 
-      <div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0 no-scrollbar">
+      <div className="flex md:flex-col gap-2 overtxio-x-auto md:overtxio-visible pb-2 md:pb-0 no-scrollbar">
         <div className="px-4 pb-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider hidden md:block">
           Settings
         </div>

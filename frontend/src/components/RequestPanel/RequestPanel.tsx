@@ -94,7 +94,7 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
         onCopySnippet={handleCopySnippet}
       />
 
-      <div className="flex-1 overflow-auto bg-[#0a0a0a] custom-scrollbar">
+      <div className="flex-1 overtxio-auto bg-[#0a0a0a] custom-scrollbar">
         {renderContent()}
       </div>
     </div>

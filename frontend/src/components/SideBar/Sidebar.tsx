@@ -54,7 +54,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const handleAddCollection = () => {
     // This will be handled by the CollectionTree component's internal state
-    // For now, we can trigger the creation flow
+    // For now, we can trigger the creation txio
     onCreateCollection('New Collection');
   };
 
@@ -91,7 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col min-h-0 bg-black">
+        <div className="flex-1 overtxio-y-auto custom-scrollbar flex flex-col min-h-0 bg-black">
           {/* COLLECTIONS */}
           {mode === 'collections' && (
             <CollectionTree 

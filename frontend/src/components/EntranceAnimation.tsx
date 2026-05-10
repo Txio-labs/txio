@@ -6,12 +6,12 @@ interface EntranceAnimationProps {
   onComplete: () => void;
 }
 
-// Reusing the High-Fidelity Flow Logo for the intro
-// Using the provided image file. Ensure 'flow-logo.png' is placed in your public directory.
-const FlowLogo = () => (
+// Reusing the High-Fidelity txio Logo for the intro
+// Using the provided image file. Ensure 'txio-logo.png' is placed in your public directory.
+const txioLogo = () => (
   <img 
     src={logo} 
-    alt="Flow Logo"
+    alt="txio Logo"
     className="w-full h-full object-contain drop-shadow-2xl"
   />
 );
@@ -51,7 +51,7 @@ export const EntranceAnimation: React.FC<EntranceAnimationProps> = ({ onComplete
     <div 
       className={`
         fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#050505]
-        transition-opacity duration-700 ease-in-out overflow-hidden
+        transition-opacity duration-700 ease-in-out overtxio-hidden
         ${phase === 'exit' ? 'opacity-0 pointer-events-none' : 'opacity-100'}
       `}
     >
@@ -64,20 +64,20 @@ export const EntranceAnimation: React.FC<EntranceAnimationProps> = ({ onComplete
             <div className="relative group">
                 {/* Main Logo (Emerging) - Increased Size */}
                 <div className="w-72 h-72 relative z-10 animate-water-rise origin-bottom">
-                    <FlowLogo />
+                    <txioLogo />
                 </div>
 
                 {/* Reflection (Water Effect) - Increased Size & Adjusted Position */}
                 <div className="absolute top-[85%] left-0 w-72 h-72 z-0 animate-water-reflection opacity-0 pointer-events-none">
                      <div className="w-full h-full transform scale-y-[-1] origin-top filter blur-[3px] opacity-50 mix-blend-screen reflection-mask">
-                        <FlowLogo />
+                        <txioLogo />
                      </div>
                 </div>
             </div>
 
             {/* Text Reveal - Pushed down to accommodate size */}
             <h1 className="mt-12 text-slate-500 font-medium text-xs tracking-[0.5em] uppercase opacity-0 animate-fade-in-text">
-                Welcome to Flow
+                Welcome to txio
             </h1>
         </div>
 

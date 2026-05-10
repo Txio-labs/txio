@@ -79,7 +79,7 @@ export const PTBBuilder: React.FC = () => {
     // Draw SVG Connections
     const renderConnections = () => {
         return (
-            <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
+            <svg className="absolute inset-0 w-full h-full pointer-events-none overtxio-visible">
                 {/* Mock connections based on hardcoded IDs for demo visual fidelity */}
                 <path d="M 292 150 C 342 150, 342 150, 400 150" stroke="#475569" strokeWidth="2" fill="none" className="animate-pulse" />
                 <path d="M 592 150 C 650 150, 650 100, 700 100" stroke="#475569" strokeWidth="2" fill="none" />
@@ -99,7 +99,7 @@ export const PTBBuilder: React.FC = () => {
 
             {/* Canvas */}
             <div 
-                className="flex-1 relative overflow-hidden dot-grid"
+                className="flex-1 relative overtxio-hidden dot-grid"
                 ref={canvasRef}
                 onMouseMove={handleMouseMove}
                 onMouseUp={() => setDraggingId(null)}

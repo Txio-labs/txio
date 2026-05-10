@@ -119,7 +119,7 @@ export const RawEditor: React.FC<RawEditorProps> = ({
   };
 
   return (
-    <div className="h-full flex overflow-hidden">
+    <div className="h-full flex overtxio-hidden">
       <div className="flex-1 flex flex-col min-w-0 p-6">
         {/* Read-Only Envelope Preview */}
         {request.type === RequestType.RPC && (
@@ -128,7 +128,7 @@ export const RawEditor: React.FC<RawEditorProps> = ({
               <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Full Request Preview</div>
               <div className="text-[9px] text-slate-600">ReadOnly</div>
             </div>
-            <pre className="text-xs text-slate-400 font-mono overflow-x-auto text-ellipsis whitespace-nowrap p-1">
+            <pre className="text-xs text-slate-400 font-mono overtxio-x-auto text-ellipsis whitespace-nowrap p-1">
               {`{ "jsonrpc": "2.0", "id": 1, "method": "${request.rpcParams.method}", "params": [...] }`}
             </pre>
           </div>
@@ -160,7 +160,7 @@ export const RawEditor: React.FC<RawEditorProps> = ({
 
       {/* Templates Sidebar - Only show for RPC type */}
       {request.type === RequestType.RPC && (
-        <div className="w-64 border-l border-white/10 bg-black/20 overflow-y-auto custom-scrollbar p-4 flex flex-col">
+        <div className="w-64 border-l border-white/10 bg-black/20 overtxio-y-auto custom-scrollbar p-4 flex flex-col">
           <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
             <FileJson size={12}/> Templates
           </h3>

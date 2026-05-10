@@ -6,10 +6,13 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
-authors = ["Flow Contributors"]
+authors = ["txio Contributors"]
 license = "MIT"
+description = "A universal multi-chain blockchain gateway and CLI suite."
+repository = "https://github.com/Kingvic300/Flow"
+homepage = "https://github.com/Kingvic300/Flow"
 
 [workspace.dependencies]
 axum = "0.7"

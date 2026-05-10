@@ -41,7 +41,7 @@ export const CodeSnippet: React.FC<CodeSnippetProps> = ({ request, network }) =>
           {isCopied ? 'Copied!' : 'Copy'}
         </button>
       </div>
-      <pre className="bg-black p-6 rounded-xl border border-white/10 text-slate-300 font-mono text-[11px] overflow-x-auto whitespace-pre-wrap select-text leading-relaxed shadow-2xl">
+      <pre className="bg-black p-6 rounded-xl border border-white/10 text-slate-300 font-mono text-[11px] overtxio-x-auto whitespace-pre-wrap select-text leading-relaxed shadow-2xl">
         {generateSnippet()}
       </pre>
     </div>

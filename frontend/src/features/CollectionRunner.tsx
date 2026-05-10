@@ -122,7 +122,7 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                 </div>
 
                 {/* Progress Bar */}
-                <div className="h-2 bg-slate-800 rounded-full overflow-hidden mb-2">
+                <div className="h-2 bg-slate-800 rounded-full overtxio-hidden mb-2">
                     <div 
                         className="h-full bg-sui-500 transition-all duration-300 ease-out relative"
                         style={{ width: `${progress}%` }}
@@ -137,8 +137,8 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
             </div>
 
             {/* List */}
-            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-                <div className="border border-slate-800 rounded-xl bg-slate-900 overflow-hidden shadow-xl">
+            <div className="flex-1 overtxio-y-auto p-6 custom-scrollbar">
+                <div className="border border-slate-800 rounded-xl bg-slate-900 overtxio-hidden shadow-xl">
                     <table className="w-full text-left">
                         <thead className="bg-slate-950 text-[10px] font-black uppercase text-slate-500 tracking-widest border-b border-slate-800">
                             <tr>

@@ -1,6 +1,6 @@
-# Contributing to Flow
+# Contributing to txio
 
-First off, thank you for considering contributing to Flow! It's people like you that make Flow such a great tool for the Sui blockchain ecosystem.
+First off, thank you for considering contributing to txio! It's people like you that make txio such a great tool for the Sui blockchain ecosystem.
 
 ## How Can I Contribute?
 
@@ -16,7 +16,7 @@ Before creating bug reports, please check the existing issues as you might find 
 Enhancement suggestions are tracked as GitHub issues. When creating an enhancement suggestion, please include:
 * Use a clear and descriptive title for the issue to identify the suggestion.
 * Provide a step-by-step description of the suggested enhancement in as many details as possible.
-* Explain why this enhancement would be useful to most Flow users.
+* Explain why this enhancement would be useful to most txio users.
 
 ### Pull Requests
 

@@ -121,13 +121,13 @@ export const AIChat: React.FC = () => {
         <button onClick={() => setMessages([])} className="p-1 text-slate-500 hover:text-white"><RefreshCw size={14}/></button>
       </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+      <div ref={scrollRef} className="flex-1 overtxio-y-auto p-4 space-y-4 custom-scrollbar">
         {messages.map((m, i) => (
           <div key={i} className={`flex gap-3 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
              <Avatar 
                 size="xs" 
                 type={m.role === 'model' ? 'bot' : 'user'} 
-                seed={m.role === 'model' ? 'sui-ai' : 'flow-user'} 
+                seed={m.role === 'model' ? 'sui-ai' : 'txio-user'} 
              />
              <div className={`max-w-[90%] space-y-2`}>
                  <div className={`p-3 rounded text-xs font-mono whitespace-pre-wrap relative group ${m.role === 'user' ? 'bg-slate-800 text-slate-200' : 'bg-black border border-slate-800 text-slate-300'}`}>

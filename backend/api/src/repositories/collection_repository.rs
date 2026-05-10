@@ -9,7 +9,7 @@ pub struct CollectionRepository {
 
 impl CollectionRepository {
     pub fn new(db: &Client) -> Self {
-        let collection = db.database("flow_db").collection("collections");
+        let collection = db.database("txio_db").collection("collections");
         Self { collection }
     }
 

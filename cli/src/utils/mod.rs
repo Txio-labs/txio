@@ -4,7 +4,7 @@ use anyhow::Result;
 
 pub fn get_config_dir() -> PathBuf {
     let mut path = dirs_next::home_dir().unwrap_or_else(|| PathBuf::from("."));
-    path.push(".flow");
+    path.push(".txio");
     if !path.exists() {
         fs::create_dir_all(&path).ok();
     }

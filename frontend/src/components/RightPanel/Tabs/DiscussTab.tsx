@@ -24,7 +24,7 @@ export const DiscussTab: React.FC<DiscussTabProps> = ({
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+      <div className="flex-1 overtxio-y-auto p-4 space-y-4 custom-scrollbar">
         {comments.length === 0 ? (
           <div className="text-center mt-20 opacity-50">
             <MessageSquare size={24} className="mx-auto mb-2 text-slate-600"/>

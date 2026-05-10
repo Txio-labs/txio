@@ -54,7 +54,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
           </button>
           <span className="text-xs font-bold text-white">Object Details</span>
         </div>
-        <div className="flex-1 overflow-auto custom-scrollbar p-0 bg-[#0c0c0e]">
+        <div className="flex-1 overtxio-auto custom-scrollbar p-0 bg-[#0c0c0e]">
           <div className="p-4 border-b border-white/10">
             <label className="text-[10px] uppercase font-black text-slate-600 tracking-widest block mb-1">Object ID</label>
             <div className="text-xs font-mono text-sui-400 break-all select-all">{selectedObject.objectId || selectedObject.data?.objectId}</div>
@@ -65,7 +65,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
           </div>
           <div className="p-4">
             <label className="text-[10px] uppercase font-black text-slate-600 tracking-widest block mb-2">Raw Content</label>
-            <pre className="text-[10px] font-mono text-slate-400 overflow-x-auto bg-black p-3 rounded-lg border border-white/10">
+            <pre className="text-[10px] font-mono text-slate-400 overtxio-x-auto bg-black p-3 rounded-lg border border-white/10">
               {JSON.stringify(selectedObject, null, 2)}
             </pre>
           </div>
@@ -92,7 +92,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
         </button>
       </div>
       
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
+      <div className="flex-1 overtxio-y-auto custom-scrollbar p-2 space-y-1">
         {objects.map((obj, i) => {
           const type = obj.data?.type || '';
           const isCoin = type.includes('::coin::Coin');

@@ -1,4 +1,4 @@
-name: Build Flow Desktop
+name: Build txio Desktop
 
 on:
   push:
@@ -23,5 +23,5 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: flow-windows
+          name: txio-windows
           path: dist/

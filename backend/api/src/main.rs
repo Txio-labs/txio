@@ -58,7 +58,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 7. Build Router
     let app = Router::new()
-        .route("/health", get(|| async { "Flow Backend Operational" }))
+        .route("/health", get(|| async { "txio Backend Operational" }))
         .nest("/api/v1/auth", api::routers::auth_router::router(auth_service))
         .nest("/api/v1/collections", api::routers::collection_router::router(collection_service));
 

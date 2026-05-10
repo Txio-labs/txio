@@ -18,9 +18,9 @@ impl EmailService {
 
     pub async fn send_otp_email(&self, email: &str, otp: &str) -> Result<(), AppError> {
         let body = json!({
-            "sender": { "email": "no-reply@flow-backend.com", "name": "Flow Team" },
+            "sender": { "email": "no-reply@txio-backend.com", "name": "txio Team" },
             "to": [{ "email": email }],
-            "subject": "Your Flow OTP",
+            "subject": "Your txio OTP",
             "htmlContent": format!("<p>Your verification code is: <strong>{}</strong></p><p>This code will expire in 10 minutes.</p>", otp)
         });
 

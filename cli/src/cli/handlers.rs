@@ -74,7 +74,7 @@ impl CommandHandler {
             Commands::Completion { shell } => {
                 use clap::CommandFactory;
                 let mut cmd = Cli::command();
-                clap_complete::generate(shell, &mut cmd, "flow", &mut std::io::stdout());
+                clap_complete::generate(shell, &mut cmd, "txio", &mut std::io::stdout());
             }
             _ => {
                 println!("{}", "Feature coming soon!".yellow());
@@ -89,7 +89,7 @@ impl CommandHandler {
         
         match action {
             DbAction::ListUsers => {
-                let db = client.database("flow_db");
+                let db = client.database("txio_db");
                 let collection = db.collection::<Document>("users");
 
                 println!("{}", "Registered Users:".bold().cyan());
@@ -116,7 +116,7 @@ impl CommandHandler {
     }
 
     async fn handle_login() -> Result<()> {
-        println!("{}", "--- Flow Account Login ---".bold().cyan());
+        println!("{}", "--- txio Account Login ---".bold().cyan());
         
         let email: String = Input::new()
             .with_prompt("Email")

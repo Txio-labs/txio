@@ -11,9 +11,9 @@ pub enum Network {
 }
 
 #[derive(Parser)]
-#[command(name = "flow")]
+#[command(name = "txio")]
 #[command(version = "1.0")]
-#[command(about = "Flow: The Universal Multi-Chain Blockchain Terminal", long_about = None)]
+#[command(about = "txio: The Universal Multi-Chain Blockchain Terminal", long_about = None)]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,
@@ -35,7 +35,7 @@ pub struct Cli {
     pub network: Network,
 
     /// User email for account-linked requests
-    #[arg(short, long, global = true, env = "FLOW_EMAIL")]
+    #[arg(short, long, global = true, env = "txio_EMAIL")]
     pub email: Option<String>,
 }
 
@@ -49,7 +49,7 @@ pub enum Commands {
         chain: String,
     },
 
-    /// Login to your Flow account
+    /// Login to your txio account
     Login,
 
     /// Manage user profiles

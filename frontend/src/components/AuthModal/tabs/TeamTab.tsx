@@ -17,14 +17,14 @@ export const TeamTab: React.FC<TeamTabProps> = ({ teamMembers = [] }) => {
           <p className="text-slate-400 text-sm">Manage access and roles for your workspace.</p>
         </div>
         <button 
-          onClick={() => appStore.showToast('Invite flow not implemented', 'info')} 
+          onClick={() => appStore.showToast('Invite txio not implemented', 'info')} 
           className="px-3 py-1.5 bg-sui-600 hover:bg-sui-500 text-white text-xs font-bold rounded flex items-center gap-2"
         >
           <Plus size={14} /> <span className="hidden sm:inline">Invite Member</span>
         </button>
       </div>
 
-      <div className="border border-slate-800 rounded-lg overflow-x-auto bg-slate-950">
+      <div className="border border-slate-800 rounded-lg overtxio-x-auto bg-slate-950">
         <table className="w-full text-left text-sm min-w-[500px]">
           <thead className="bg-slate-900 border-b border-slate-800 text-xs text-slate-500 uppercase font-medium">
             <tr>

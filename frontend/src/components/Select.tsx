@@ -110,12 +110,12 @@ export const Select: React.FC<SelectProps> = ({
       {isOpen && (
         <div 
             className={`
-                absolute z-[100] w-full min-w-[140px] p-1 bg-[#0c0c0e] border border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top
+                absolute z-[100] w-full min-w-[140px] p-1 bg-[#0c0c0e] border border-white/10 rounded-xl shadow-2xl overtxio-hidden animate-in fade-in zoom-in-95 duration-100 origin-top
                 ${menuPosition === 'bottom' ? 'top-full mt-1' : 'bottom-full mb-1'}
                 ${fullWidth ? '' : 'right-0'}
             `}
         >
-          <div className="max-h-60 overflow-y-auto custom-scrollbar space-y-0.5">
+          <div className="max-h-60 overtxio-y-auto custom-scrollbar space-y-0.5">
             {options.map((option) => (
               <button
                 key={option.value}

@@ -80,7 +80,7 @@ export const Avatar: React.FC<AvatarProps> = ({
 
   return (
     <div className={`relative shrink-0 ${sizeMap[size]} ${className}`}>
-      <div className="w-full h-full rounded-xl overflow-hidden shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] border border-slate-800/50 bg-slate-900 group-hover:scale-110 transition-transform duration-300">
+      <div className="w-full h-full rounded-xl overtxio-hidden shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] border border-slate-800/50 bg-slate-900 group-hover:scale-110 transition-transform duration-300">
         {renderGraphic()}
       </div>
       {status && (

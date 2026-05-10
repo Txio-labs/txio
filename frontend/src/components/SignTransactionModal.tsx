@@ -38,7 +38,7 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl overtxio-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
           <div>
@@ -53,7 +53,7 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overtxio-y-auto">
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 
                 {/* Left Column: Signer Status */}
@@ -91,7 +91,7 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
                 <div className="space-y-4">
                      <div>
                         <label className="text-xs font-bold text-slate-400 uppercase mb-3 block">Transaction Summary</label>
-                        <div className="bg-slate-950 border border-slate-800 rounded-lg overflow-hidden">
+                        <div className="bg-slate-950 border border-slate-800 rounded-lg overtxio-hidden">
                             <div className="p-3 border-b border-slate-800 bg-slate-900/50 flex items-center gap-2">
                                 <FileText size={14} className="text-violet-400"/>
                                 <span className="text-xs font-bold text-white">{request.txType || 'MoveCall'}</span>

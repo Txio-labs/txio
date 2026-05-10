@@ -52,7 +52,7 @@ export const ApiKeysTab: React.FC<ApiKeysTabProps> = ({
         <div>
           <h2 className="text-xl font-bold text-white mb-1">API Keys</h2>
           <p className="text-slate-400 text-sm">
-            Manage API keys for accessing the Flow Cloud API.
+            Manage API keys for accessing the txio Cloud API.
           </p>
         </div>
         <button 
@@ -122,7 +122,7 @@ export const ApiKeysTab: React.FC<ApiKeysTabProps> = ({
         </div>
       )}
 
-      <div className="border border-slate-800 rounded-lg overflow-x-auto bg-slate-950">
+      <div className="border border-slate-800 rounded-lg overtxio-x-auto bg-slate-950">
         <table className="w-full text-left text-sm min-w-[600px]">
           <thead className="bg-slate-900 border-b border-slate-800 text-xs text-slate-500 uppercase font-medium">
             <tr>

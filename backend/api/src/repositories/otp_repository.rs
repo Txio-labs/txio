@@ -10,7 +10,7 @@ pub struct OTPRepository {
 
 impl OTPRepository {
     pub fn new(db: &Client) -> Self {
-        let collection = db.database("flow_db").collection("otps");
+        let collection = db.database("txio_db").collection("otps");
         Self { collection }
     }
 

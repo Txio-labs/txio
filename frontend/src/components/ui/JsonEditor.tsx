@@ -250,7 +250,7 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
   const lineNumbers = Array.from({ length: lineCount }, (_, i) => i + 1).join('\n');
 
   return (
-    <div className="flex flex-col h-full bg-[#0c0c0e] rounded-xl border border-slate-800/80 overflow-hidden shadow-inner group focus-within:border-slate-700/80 focus-within:ring-1 focus-within:ring-slate-800 transition-all">
+    <div className="flex flex-col h-full bg-[#0c0c0e] rounded-xl border border-slate-800/80 overtxio-hidden shadow-inner group focus-within:border-slate-700/80 focus-within:ring-1 focus-within:ring-slate-800 transition-all">
       {/* Toolbar */}
       <div className="flex items-center justify-between px-3 py-2 bg-slate-900/50 border-b border-slate-800/50">
         <div className="flex items-center gap-1">
@@ -279,12 +279,12 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
 
       <div className="relative flex-1 min-h-0 group/editor">
         {/* Line Numbers */}
-        <div className="absolute left-0 top-0 bottom-0 w-8 bg-slate-900/30 text-right pr-2 pt-4 text-[10px] font-mono text-slate-700 select-none overflow-hidden border-r border-slate-800/30 leading-relaxed">
+        <div className="absolute left-0 top-0 bottom-0 w-8 bg-slate-900/30 text-right pr-2 pt-4 text-[10px] font-mono text-slate-700 select-none overtxio-hidden border-r border-slate-800/30 leading-relaxed">
             <pre>{lineNumbers}</pre>
         </div>
 
         {/* Editor Area */}
-        <div className="absolute inset-0 left-8 overflow-auto custom-scrollbar bg-[#050505]" onScroll={handleScroll}>
+        <div className="absolute inset-0 left-8 overtxio-auto custom-scrollbar bg-[#050505]" onScroll={handleScroll}>
             {/* Syntax Highlight Layer */}
             <pre 
                 ref={preRef}

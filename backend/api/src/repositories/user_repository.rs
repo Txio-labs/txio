@@ -12,7 +12,7 @@ pub struct UserRepository {
 
 impl UserRepository {
     pub fn new(db: &Client) -> Self {
-        let collection = db.database("flow_db").collection("users");
+        let collection = db.database("txio_db").collection("users");
         Self { collection }
     }
 

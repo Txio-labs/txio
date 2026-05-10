@@ -63,13 +63,13 @@ export const Layout: React.FC<LayoutProps> = ({
                         <PanelRight size={16} />
                     </button>
                     <button onClick={() => appStore.setAuthModal(true)} className="hover:ring-2 ring-sui-500/50 rounded-xl transition-all">
-                        <Avatar size="sm" seed={user?.email || 'flow-user'} status="online" className="cursor-pointer" />
+                        <Avatar size="sm" seed={user?.email || 'txio-user'} status="online" className="cursor-pointer" />
                     </button>
                 </div>
             </header>
 
             {/* Main Content */}
-            <div className="flex-1 flex overflow-hidden">
+            <div className="flex-1 flex overtxio-hidden">
                 {/* Sidebar */}
                 {isSidebarOpen && (
                     <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 animate-slide-in">
@@ -80,7 +80,7 @@ export const Layout: React.FC<LayoutProps> = ({
                 {/* Workspace */}
                 <main className="flex-1 flex flex-col min-w-0 bg-slate-950 relative">
                     {/* Tab Bar */}
-                    <div className="h-9 bg-slate-950 border-b border-slate-800 flex items-center overflow-x-auto no-scrollbar">
+                    <div className="h-9 bg-slate-950 border-b border-slate-800 flex items-center overtxio-x-auto no-scrollbar">
                         {tabs.map(tab => (
                             <Tab 
                                 key={tab.id}
@@ -102,7 +102,7 @@ export const Layout: React.FC<LayoutProps> = ({
                     </div>
                     
                     {/* Content View */}
-                    <div className="flex-1 overflow-hidden relative">
+                    <div className="flex-1 overtxio-hidden relative">
                         {workspace}
                     </div>
                 </main>

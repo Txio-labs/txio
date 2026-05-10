@@ -1,14 +1,14 @@
-# 🌊 Flow Backend: Sui RPC & Collection Manager
+# 🌊 txio Backend: Sui RPC & Collection Manager
 
 [![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg?style=flat-square&logo=rust)](https://www.rust-lang.org/)
 [![Axum](https://img.shields.io/badge/Axum-0.7-blue.svg?style=flat-square)](https://github.com/tokio-rs/axum)
 [![MongoDB](https://img.shields.io/badge/MongoDB-2.8-green.svg?style=flat-square&logo=mongodb)](https://www.mongodb.com/)
 
-> **Flow Backend** is a purpose-built gateway for Sui blockchain developers. It combines the power of a decentralized network with the developer experience of modern API tools like Postman.
+> **txio Backend** is a purpose-built gateway for Sui blockchain developers. It combines the power of a decentralized network with the developer experience of modern API tools like Postman.
 
 ---
 
-## 🏗️ Architecture & Flow
+## 🏗️ Architecture & txio
 
 ```mermaid
 graph TD
@@ -28,7 +28,7 @@ graph TD
 
 ---
 
-## 🧠 Philosophy: The "Whys" Behind Flow
+## 🧠 Philosophy: The "Whys" Behind txio
 
 ### 1. Why Rust & Axum?
 Traditional web backends often sacrifice performance for speed of development. We chose **Rust** because:
@@ -39,14 +39,14 @@ Traditional web backends often sacrifice performance for speed of development. W
 ### 2. Why MongoDB?
 In blockchain development, RPC parameters and responses are highly dynamic.
 - **Schemaless Flexibility**: The `params` and `result` fields in a Sui RPC call vary wildly. **MongoDB** allows us to store these as BSON/JSON without complex relational mapping or expensive migrations every time the Sui RPC API changes.
-- **Audit Logs**: Flow persists every execution in an `rpc_logs` collection. MongoDB's document-based nature is perfect for storing these heterogeneous log entries.
+- **Audit Logs**: txio persists every execution in an `rpc_logs` collection. MongoDB's document-based nature is perfect for storing these heterogeneous log entries.
 
 ### 3. Why the Repository Pattern?
-Flow implements a clean **Repository Pattern** (`src/repositories/`).
+txio implements a clean **Repository Pattern** (`src/repositories/`).
 - **Why?**: This separates the "How" (MongoDB queries) from the "What" (Business logic inside Services). If we ever need to switch to PostgreSQL or a different DB, we only change the Repository layer, leaving the core logic in `collection_service.rs` untouched.
 
 ### 4. Why Regex-based SuiNS Resolution?
-Most SuiNS resolvers only handle exact string matches. Flow uses a **Recursive Regex Scanner** (`r"([a-zA-Z0-9-]+\.sui)"`).
+Most SuiNS resolvers only handle exact string matches. txio uses a **Recursive Regex Scanner** (`r"([a-zA-Z0-9-]+\.sui)"`).
 - **Why?**: Developers often embed addresses inside complex Move Type Tags (e.g., `0x2::sui::SUI` or `0x...::Coin<names.sui>`). A simple string match would miss these nested names. Our regex approach ensures that *every* occurrence of a `.sui` name is identified and resolved before the call is sent.
 
 ### 5. Why Response & Error Standardization?

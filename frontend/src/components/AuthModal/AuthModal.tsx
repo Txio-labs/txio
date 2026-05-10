@@ -54,7 +54,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200 font-sans">
       <div 
-        className={`bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full overflow-hidden relative transition-all duration-300 flex flex-col ${
+        className={`bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full overtxio-hidden relative transition-all duration-300 flex flex-col ${
           user ? 'max-w-4xl h-[85vh] md:h-[600px]' : 'max-w-md h-auto'
         }`}
         onClick={(e) => e.stopPropagation()}
@@ -75,7 +75,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               onLogout={onLogout}
             />
             
-            <div className="flex-1 bg-slate-900 p-6 md:p-8 overflow-y-auto custom-scrollbar">
+            <div className="flex-1 bg-slate-900 p-6 md:p-8 overtxio-y-auto custom-scrollbar">
               {renderTabContent()}
             </div>
           </div>

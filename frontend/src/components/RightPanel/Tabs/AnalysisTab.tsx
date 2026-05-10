@@ -3,7 +3,7 @@ import { Lightbulb, Check } from 'lucide-react';
 
 export const AnalysisTab: React.FC = () => {
   return (
-    <div className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-6 animate-in fade-in slide-in-from-right-4">
+    <div className="flex-1 overtxio-y-auto p-4 custom-scrollbar space-y-6 animate-in fade-in slide-in-from-right-4">
       <div className="bg-black border border-white/10 rounded-xl p-4">
         <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest mb-3 flex items-center gap-2">
           <Lightbulb size={14} className="text-amber-400"/> Transaction Insight

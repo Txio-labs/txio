@@ -16,7 +16,7 @@ pub struct Profile {
 
 impl Config {
     pub fn load() -> Self {
-        // In a real app, this would load from ~/.flow/config.toml
+        // In a real app, this would load from ~/.txio/config.toml
         Self::default()
     }
 }

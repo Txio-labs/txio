@@ -1,7 +1,7 @@
 
-# Flow
+# txio
 
-Flow is a professional-grade API client and visual transaction builder tailored specifically for the Sui blockchain. It combines the familiarity of Web2 API tools (like Postman) with Web3-specific features for Move smart contract development.
+txio is a professional-grade API client and visual transaction builder tailored specifically for the Sui blockchain. It combines the familiarity of Web2 API tools (like Postman) with Web3-specific features for Move smart contract development.
 
 ## 1. Core Navigation & Layout
 
@@ -82,7 +82,7 @@ A node-based editor for Programmable Transaction Blocks.
   - **Object Node**: Represents input coins or objects.
   - **SplitCoins Node**: Visualizes splitting input logic.
   - **Transfer Node**: Represents sending assets to an address.
-- **Interaction**: Drag nodes to rearrange the flow.
+- **Interaction**: Drag nodes to rearrange the txio.
 
 ## 6. Collection Runner
 Execute a sequence of requests automatically.

@@ -9,7 +9,7 @@ pub struct RpcRepository {
 
 impl RpcRepository {
     pub fn new(db: &Client) -> Self {
-        let collection = db.database("flow_db").collection("rpc_logs");
+        let collection = db.database("txio_db").collection("rpc_logs");
         Self { collection }
     }
 

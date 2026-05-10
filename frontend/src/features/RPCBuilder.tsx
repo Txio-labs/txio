@@ -120,7 +120,7 @@ export const RPCBuilder: React.FC = () => {
     if (!request) return null;
 
     return (
-        <div ref={containerRef} className="flex flex-col h-full overflow-hidden bg-slate-950">
+        <div ref={containerRef} className="flex flex-col h-full overtxio-hidden bg-slate-950">
             {/* Top half: Request Configuration */}
             <div className="flex-1 flex flex-col min-h-0">
                 <RequestPanel 

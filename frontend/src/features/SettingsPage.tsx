@@ -26,7 +26,7 @@ export const SettingsPage: React.FC = () => {
   );
 
   return (
-    <div className="h-full bg-slate-950 flex flex-col md:flex-row overflow-hidden">
+    <div className="h-full bg-slate-950 flex flex-col md:flex-row overtxio-hidden">
       {/* Settings Sidebar */}
       <div className="w-full md:w-64 bg-slate-950 border-b md:border-b-0 md:border-r border-slate-800 p-4 md:p-6 shrink-0">
         <h1 className="text-xl font-bold text-white mb-6 flex items-center gap-2 px-2">
@@ -40,7 +40,7 @@ export const SettingsPage: React.FC = () => {
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10">
+      <div className="flex-1 overtxio-y-auto custom-scrollbar p-6 md:p-10">
         <div className="max-w-3xl space-y-8">
             {activeSection === 'general' && (
                 <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
@@ -77,7 +77,7 @@ export const SettingsPage: React.FC = () => {
                         <div className="flex items-center justify-between border-t border-slate-800 pt-6">
                             <div>
                                 <h3 className="text-sm font-bold text-slate-200">Telemetry</h3>
-                                <p className="text-xs text-slate-500 mt-1">Allow Flow to send anonymous usage data.</p>
+                                <p className="text-xs text-slate-500 mt-1">Allow txio to send anonymous usage data.</p>
                             </div>
                             <button 
                                 onClick={() => appStore.updateSettings({ telemetry: !settings.telemetry })}

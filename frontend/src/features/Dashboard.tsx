@@ -66,7 +66,7 @@ export const Dashboard: React.FC = () => {
     }, [history, currentWorkspaceId]);
 
     return (
-        <div ref={containerRef} className="h-full overflow-y-auto bg-slate-950 p-6 custom-scrollbar">
+        <div ref={containerRef} className="h-full overtxio-y-auto bg-slate-950 p-6 custom-scrollbar">
             <h1 className="text-xl font-bold text-white mb-6 flex items-center gap-2 animate-section-header">
                 <Activity size={20} className="text-slate-400"/> Network Overview
             </h1>
@@ -117,7 +117,7 @@ export const Dashboard: React.FC = () => {
             {/* Recent Activity - Full Width */}
             <div className="min-w-0">
                  <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 animate-section-header">Recent Activity</h2>
-                 <div className="border border-slate-800 rounded-lg overflow-hidden bg-slate-900 animate-grid-item">
+                 <div className="border border-slate-800 rounded-lg overtxio-hidden bg-slate-900 animate-grid-item">
                     {workspaceHistory.length === 0 ? (
                         <div className="p-8 text-center text-xs text-slate-600 italic">
                             No recent requests in this workspace. Start building to see your history here.

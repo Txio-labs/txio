@@ -22,7 +22,7 @@ export const Recipes: React.FC = () => {
                 </button>
             </div>
 
-            <div className="border border-slate-800 rounded bg-slate-900 overflow-hidden">
+            <div className="border border-slate-800 rounded bg-slate-900 overtxio-hidden">
                 <div className="grid grid-cols-1 divide-y divide-slate-800">
                     {MOCK_RECIPES.map((recipe) => (
                         <div key={recipe.id} className="p-3 flex items-center justify-between hover:bg-slate-800/50 group">

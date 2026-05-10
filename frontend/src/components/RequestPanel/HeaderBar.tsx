@@ -56,7 +56,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           <Server size={12} className="text-slate-500" />
           <span className="text-[10px] font-bold text-slate-300 uppercase">{network}</span>
         </div>
-        <div className="flex-1 flex items-center gap-2 overflow-hidden">
+        <div className="flex-1 flex items-center gap-2 overtxio-hidden">
           <span className="text-xs font-mono text-slate-500 truncate" title={endpoint}>{endpoint}</span>
         </div>
         {rpcHealth && (

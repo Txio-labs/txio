@@ -21,7 +21,7 @@ interface LayoutProps {
     onNewTab?: () => void;
 }
 
-const FlowLogoSmall = () => (
+const txioLogoSmall = () => (
   <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-[0_0_5px_rgba(56,189,248,0.5)]">
     <defs>
       <linearGradient id="swirl1-small" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -93,7 +93,7 @@ export const Layout: React.FC<LayoutProps> = ({
     };
 
     return (
-        <div className="flex flex-col h-screen bg-black text-slate-200 overflow-hidden font-sans relative selection:bg-sui-500/30">
+        <div className="flex flex-col h-screen bg-black text-slate-200 overtxio-hidden font-sans relative selection:bg-sui-500/30">
             <CommandPalette />
 
             {/* Top Energy Line */}
@@ -130,9 +130,9 @@ export const Layout: React.FC<LayoutProps> = ({
                         onClick={() => appStore.setActiveTab(null)}
                     >
                         <div className="w-6 h-6 rounded flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                            <FlowLogoSmall />
+                            <txioLogoSmall />
                         </div>
-                        <span className="text-sm tracking-tight group-hover:text-sui-300 transition-colors">Flow</span>
+                        <span className="text-sm tracking-tight group-hover:text-sui-300 transition-colors">txio</span>
                     </div>
                     <div className="h-4 w-px bg-white/10 mx-2"></div>
                     <button onClick={() => appStore.toggleSidebar()} className={`p-1.5 rounded hover:bg-white/10 transition-colors ${isSidebarOpen ? 'text-sui-400' : 'text-slate-500'}`}>
@@ -163,7 +163,7 @@ export const Layout: React.FC<LayoutProps> = ({
                         </button>
 
                         {isNetworkMenuOpen && (
-                            <div className="absolute top-full right-0 mt-2 w-48 bg-[#0c0c0e] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
+                            <div className="absolute top-full right-0 mt-2 w-48 bg-[#0c0c0e] border border-white/10 rounded-xl shadow-2xl overtxio-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
                                 <div className="p-1">
                                     {(['mainnet', 'testnet', 'devnet'] as Network[]).map((net) => (
                                         <button
@@ -209,7 +209,7 @@ export const Layout: React.FC<LayoutProps> = ({
                 </div>
             </header>
 
-            <div className="flex-1 flex overflow-hidden">
+            <div className="flex-1 flex overtxio-hidden">
                 {isSidebarOpen && (
                     <aside className="w-64 flex flex-col shrink-0 z-10 bg-black">
                         {sidebar}
@@ -217,7 +217,7 @@ export const Layout: React.FC<LayoutProps> = ({
                 )}
 
                 <main className="flex-1 flex flex-col min-w-0 bg-[#050505] relative">
-                    <div className="h-9 bg-black border-b border-white/10 flex items-center overflow-x-auto no-scrollbar">
+                    <div className="h-9 bg-black border-b border-white/10 flex items-center overtxio-x-auto no-scrollbar">
                         {tabs.map(tab => (
                             <Tab 
                                 key={tab.id}
@@ -238,7 +238,7 @@ export const Layout: React.FC<LayoutProps> = ({
                         </button>
                     </div>
                     
-                    <div className="flex-1 overflow-hidden relative">
+                    <div className="flex-1 overtxio-hidden relative">
                         {workspace}
                     </div>
                 </main>

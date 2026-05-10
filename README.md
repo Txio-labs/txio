@@ -9,7 +9,7 @@
     A production-grade, modular suite for developers across Sui, Ethereum, Solana, Aptos, and Soroban.
   </p>
   <p align="center">
-    <a href="https://github.com/kingvic/txio/actions"><img src="https://img.shields.io/github/actions/workflow/status/kingvic/txio/ci.yml?branch=main&style=flat-square" alt="CI Status"></a>
+    <a href="https://github.com/Kingvic300/Flow/actions"><img src="https://img.shields.io/github/actions/workflow/status/Kingvic300/Flow/ci.yml?branch=master&style=flat-square" alt="CI Status"></a>
     <a href="https://crates.io/crates/txio"><img src="https://img.shields.io/crates/v/txio.svg?style=flat-square" alt="Crates.io"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License"></a>
   </p>
@@ -52,8 +52,8 @@ This project is organized as a modular monorepo for maximum scalability and code
 Clone the repository and install all dependencies:
 
 ```bash
-git clone https://github.com/kingvic/txio.git
-cd txio
+git clone https://github.com/Kingvic300/Flow.git
+cd Flow
 npm install
 ```
 

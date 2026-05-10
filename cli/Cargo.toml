@@ -4,9 +4,12 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
+description.workspace = true
+repository.workspace = true
+homepage.workspace = true
 
 [dependencies]
-txio-api = { path = "../backend/api" }
+txio-api = { path = "../backend/api", version = "0.1.1" }
 clap = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }

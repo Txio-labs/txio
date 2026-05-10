@@ -1,6 +1,6 @@
-# Flow Desktop App
+# txio Desktop App
 
-Flow is a professional-grade API client and visual transaction builder tailored specifically for the Sui blockchain. This repository contains the desktop application for Flow.
+txio is a professional-grade API client and visual transaction builder tailored specifically for the Sui blockchain. This repository contains the desktop application for txio.
 
 ## License
 

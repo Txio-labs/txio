@@ -11,7 +11,7 @@ warning: field `rpc_url` is never read
    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
 
 warning: `api` (lib) generated 1 warning
-   Compiling flow v0.1.0 (/home/kingvic/Documents/drips/Flow/cli)
+   Compiling txio v0.1.0 (/home/kingvic/Documents/drips/txio/cli)
 error[E0432]: unresolved import `tokio_stream`
   --> cli/src/cli/handlers.rs:20:5
    |
@@ -147,5 +147,5 @@ warning: unused variable: `address`
 
 Some errors have detailed explanations: E0277, E0282, E0432, E0599.
 For more information about an error, try `rustc --explain E0277`.
-warning: `flow` (bin "flow") generated 9 warnings
-error: could not compile `flow` (bin "flow") due to 5 previous errors; 9 warnings emitted
+warning: `txio` (bin "txio") generated 9 warnings
+error: could not compile `txio` (bin "txio") due to 5 previous errors; 9 warnings emitted

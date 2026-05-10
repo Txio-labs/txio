@@ -69,7 +69,7 @@ export const HistoryFeature: React.FC = () => {
             const paramsStr = JSON.stringify(item.rpcParams?.params || []);
             const truncatedParams = paramsStr.length > 80 ? paramsStr.substring(0, 80) + '...' : paramsStr;
             return (
-                <div className="text-xs font-mono mt-1 flex items-center gap-2 overflow-hidden text-slate-500">
+                <div className="text-xs font-mono mt-1 flex items-center gap-2 overtxio-hidden text-slate-500">
                     <span className="text-blue-400 font-bold shrink-0">{item.rpcParams?.method || 'Unknown Method'}</span>
                     <span className="truncate opacity-70" title={paramsStr}>{truncatedParams}</span>
                 </div>
@@ -79,7 +79,7 @@ export const HistoryFeature: React.FC = () => {
                 ? `${item.moveParams?.packageId?.slice(0,6)}...::${item.moveParams?.module}::${item.moveParams?.function}`
                 : item.txType;
             return (
-                <div className="text-xs font-mono mt-1 flex items-center gap-2 overflow-hidden text-slate-500">
+                <div className="text-xs font-mono mt-1 flex items-center gap-2 overtxio-hidden text-slate-500">
                      <span className="text-violet-400 font-bold shrink-0">{target}</span>
                 </div>
             );
@@ -152,7 +152,7 @@ export const HistoryFeature: React.FC = () => {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-950 relative">
+            <div className="flex-1 overtxio-y-auto custom-scrollbar bg-slate-950 relative">
                 {filteredHistory.length === 0 ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-600">
                         <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center mb-4 border border-slate-800">

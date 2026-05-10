@@ -38,7 +38,7 @@ export const ProfilePage: React.FC = () => {
     };
 
     return (
-        <div className="h-full bg-slate-950 overflow-y-auto custom-scrollbar">
+        <div className="h-full bg-slate-950 overtxio-y-auto custom-scrollbar">
             {/* Header / Banner */}
             <div 
                 className="h-48 bg-gradient-to-r from-slate-900 to-slate-800 relative border-b border-slate-800 bg-cover bg-center group"
@@ -176,7 +176,7 @@ export const ProfilePage: React.FC = () => {
 
                         <section>
                             <h2 className="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-800 pb-2">Recent Sessions</h2>
-                            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-x-auto">
+                            <div className="bg-slate-900 border border-slate-800 rounded-xl overtxio-x-auto">
                                 <table className="w-full text-left min-w-[500px]">
                                     <thead className="bg-slate-950 text-xs text-slate-500 uppercase">
                                         <tr>
@@ -222,7 +222,7 @@ export const ProfilePage: React.FC = () => {
                         <div className="p-6 rounded-xl bg-gradient-to-br from-sui-900/40 to-slate-900 border border-sui-500/20">
                             <h3 className="text-white font-bold mb-2">Upgrade to Team</h3>
                             <p className="text-xs text-slate-400 mb-4">Collaborate with your team on shared collections and environment configs.</p>
-                            <button onClick={() => appStore.showToast('Upgrade flow not implemented', 'info')} className="w-full py-2 bg-white text-slate-900 font-bold text-xs rounded uppercase tracking-wider hover:bg-sui-50 transition-colors">View Plans</button>
+                            <button onClick={() => appStore.showToast('Upgrade txio not implemented', 'info')} className="w-full py-2 bg-white text-slate-900 font-bold text-xs rounded uppercase tracking-wider hover:bg-sui-50 transition-colors">View Plans</button>
                         </div>
                     </div>
                 </div>

@@ -51,8 +51,8 @@ export const WalletTab: React.FC<WalletTabProps> = ({
 
   if (!connectedAddress) {
     return (
-      <div className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-6">
-        <div className="p-8 text-center border border-dashed border-white/10 rounded-xl bg-white/[0.02] relative overflow-hidden group">
+      <div className="flex-1 overtxio-y-auto p-4 custom-scrollbar space-y-6">
+        <div className="p-8 text-center border border-dashed border-white/10 rounded-xl bg-white/[0.02] relative overtxio-hidden group">
           {/* Animated gradient background */}
           <div className="absolute inset-0 bg-gradient-to-br from-sui-500/5 via-transparent to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
           
@@ -68,7 +68,7 @@ export const WalletTab: React.FC<WalletTabProps> = ({
             
             {/* Custom styled ConnectButton */}
             <ConnectButton 
-              className="!w-full !bg-gradient-to-r !from-sui-600 !to-cyan-600 hover:!from-sui-500 hover:!to-cyan-500 !text-white !font-bold !py-3 !px-6 !rounded-xl !shadow-lg !shadow-sui-900/50 !transition-all !duration-300 hover:!scale-[1.02] hover:!shadow-xl hover:!shadow-sui-900/70 !border-0 !relative !overflow-hidden group/btn"
+              className="!w-full !bg-gradient-to-r !from-sui-600 !to-cyan-600 hover:!from-sui-500 hover:!to-cyan-500 !text-white !font-bold !py-3 !px-6 !rounded-xl !shadow-lg !shadow-sui-900/50 !transition-all !duration-300 hover:!scale-[1.02] hover:!shadow-xl hover:!shadow-sui-900/70 !border-0 !relative !overtxio-hidden group/btn"
               connectText={
                 <span className="relative z-10 flex items-center justify-center gap-2">
                   <Wallet size={16} />
@@ -124,8 +124,8 @@ export const WalletTab: React.FC<WalletTabProps> = ({
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-6">
-      <div className="bg-gradient-to-br from-[#111] via-[#0c0c0e] to-black rounded-xl p-5 border border-white/10 shadow-xl relative overflow-hidden group">
+    <div className="flex-1 overtxio-y-auto p-4 custom-scrollbar space-y-6">
+      <div className="bg-gradient-to-br from-[#111] via-[#0c0c0e] to-black rounded-xl p-5 border border-white/10 shadow-xl relative overtxio-hidden group">
         <div className="absolute -top-10 -right-10 w-32 h-32 bg-sui-500/10 blur-[40px] rounded-full group-hover:bg-sui-500/20 transition-all duration-700"></div>
         
         <div className="relative z-10">

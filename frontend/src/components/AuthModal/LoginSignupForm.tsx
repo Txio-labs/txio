@@ -29,7 +29,7 @@ export const LoginSignupForm: React.FC<LoginSignupFormProps> = ({
         <p className="text-slate-400 text-sm">
           {mode === 'login' 
             ? 'Enter your credentials to access your workspace' 
-            : 'Join Flow for free'}
+            : 'Join txio for free'}
         </p>
       </div>
       

@@ -43,7 +43,7 @@ export const EnvironmentList: React.FC<EnvironmentListProps> = ({
         <div 
           key={i} 
           className={`
-            group rounded-xl border transition-all duration-200 relative overflow-hidden
+            group rounded-xl border transition-all duration-200 relative overtxio-hidden
             ${v.enabled 
               ? 'bg-white/[0.02] border-white/10 hover:border-white/20' 
               : 'bg-transparent border-white/5 opacity-50 grayscale'}
