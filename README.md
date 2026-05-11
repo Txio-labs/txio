@@ -1,7 +1,7 @@
 # txio 🚀
 
 <div align="center">
-  <img src="assets/banner.png" alt="txio Banner" width="100%">
+  <img src="assets/txio.png" alt="txio Banner" width="100%">
   <br />
   <p align="center">
     <strong>The Universal Multi-Chain Blockchain Gateway</strong>
