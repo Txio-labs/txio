@@ -40,7 +40,7 @@ interface AppState {
     envVariables: EnvironmentVariable[];
     activityLogs: ActivityLog[];
     comments: Record<string, Comment[]>; 
-    viewMode: 'landing' | 'app' | 'docs' | 'auth' | 'ecosystem' | 'signin' | 'signup'; // Added signin/signup
+    viewMode: 'landing' | 'app' | 'docs' | 'auth' | 'ecosystem' | 'signin' | 'signup' | 'features'; // Added signin/signup and features
 }
 
 // --- INITIAL STATE ---
@@ -481,7 +481,7 @@ export const appStore = {
         emit();
     },
 
-    setViewMode(mode: 'landing' | 'app' | 'docs' | 'auth' | 'ecosystem' | 'signin' | 'signup') {
+    setViewMode(mode: 'landing' | 'app' | 'docs' | 'auth' | 'ecosystem' | 'signin' | 'signup' | 'features') {
         state = { ...state, viewMode: mode };
         emit();
     },

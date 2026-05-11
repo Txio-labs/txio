@@ -28,6 +28,9 @@ import { ProfilePage } from "@/features/ProfilePage";
 import { SettingsPage } from "@/features/SettingsPage";
 import { AIChat } from "@/features/AIChat";
 import { CollectionRunner } from "@/features/CollectionRunner";
+import { FeaturesPage } from "@/features/FeaturesPage";
+import { MoveBuilder } from "@/features/MoveBuilder";
+import { Playground } from "@/features/Playground";
 
 const MOCK_TEAM: TeamMember[] = [];
 
@@ -76,11 +79,9 @@ const WorkspaceContent: React.FC = () => {
         case 'runner':
             return <CollectionRunner collectionId={activeTab.data?.collectionId} />;
         case 'move':
-            // Create or import MoveBuilder component
-            return <div className="p-8 text-white">Contract Builder (Coming Soon)</div>;
+            return <MoveBuilder />;
         case 'playground':
-            // Create or import Playground component
-            return <div className="p-8 text-white">Playground (Coming Soon)</div>;
+            return <Playground />;
         default:
             return <Dashboard />;
     }
@@ -109,6 +110,11 @@ const App: React.FC = () => {
     useEffect(() => {
         appStore.initialize();
     }, []);
+
+    // Scroll to top on viewMode change
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [viewMode]);
 
     const currentWorkspace =
         workspaces.find((w) => w.id === currentWorkspaceId) || workspaces[0];
@@ -149,6 +155,14 @@ const App: React.FC = () => {
         return (
             <QueryClientProvider client={queryClient}>
                 <GetStartedPage />
+            </QueryClientProvider>
+        );
+    }
+
+    if (viewMode === 'features') {
+        return (
+            <QueryClientProvider client={queryClient}>
+                <FeaturesPage />
             </QueryClientProvider>
         );
     }

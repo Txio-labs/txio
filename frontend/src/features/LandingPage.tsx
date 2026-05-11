@@ -55,7 +55,12 @@ export const LandingPage: React.FC = () => {
                 </div>
                 
                 <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-400">
-                    <a href="#features" className="hover:text-white transition-colors">Features</a>
+                    <button 
+                        onClick={() => appStore.setViewMode('features')}
+                        className="hover:text-white transition-colors"
+                    >
+                        Features
+                    </button>
                     <button 
                         onClick={() => appStore.setViewMode('ecosystem')}
                         className="hover:text-white transition-colors"

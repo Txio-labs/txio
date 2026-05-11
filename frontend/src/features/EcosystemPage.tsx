@@ -12,160 +12,274 @@ export const EcosystemPage: React.FC = () => {
     const { theme } = useAppStore();
     const logo = theme === 'dark' ? logoDark : logoLight;
 
+    React.useEffect(() => {
+        document.body.style.overflow = 'auto';
+        document.body.style.overflowX = 'hidden';
+        return () => {
+            document.body.style.overflow = 'hidden';
+        };
+    }, []);
+
     const chains = [
-        { name: 'Sui', desc: 'Object-centric L1 for mass adoption.', color: '#38bdf8' },
-        { name: 'Solana', desc: 'High-performance blockchain with parallel execution.', color: '#14f195' },
-        { name: 'EVM', desc: 'Universal support for Ethereum and L2 ecosystems.', color: '#6366f1' },
-        { name: 'Aptos', desc: 'The safe and scalable Layer 1 blockchain.', color: '#2dd4bf' },
-        { name: 'Cosmos', desc: 'The internet of blockchains.', color: '#ef4444' },
-        { name: 'Polkadot', desc: 'The multi-chain vision.', color: '#e6007a' }
+        { name: 'Sui', desc: 'Object-centric L1 for mass adoption.', color: '#38bdf8', tps: '297k', latency: '390ms', status: 'Optimal' },
+        { name: 'Solana', desc: 'High-performance blockchain with parallel execution.', color: '#14f195', tps: '65k', latency: '400ms', status: 'Optimal' },
+        { name: 'Ethereum', desc: 'The foundation of decentralized finance.', color: '#6366f1', tps: '15', latency: '12s', status: 'Congested' },
+        { name: 'Aptos', desc: 'The safe and scalable Move-based L1.', color: '#2dd4bf', tps: '160k', latency: '450ms', status: 'Optimal' },
+        { name: 'Starknet', desc: 'Validity-Rollup scaling for Ethereum.', color: '#ef4444', tps: '1.2k', latency: '1.5s', status: 'Optimal' },
+        { name: 'Arbitrum', desc: 'Optimistic Rollup scaling solution.', color: '#2b58de', tps: '4.5k', latency: '2s', status: 'Optimal' }
     ];
 
     const partners = [
-        { name: 'Mysten Labs', role: 'Core Infrastructure' },
-        { name: 'Solana Foundation', role: 'Strategic Partner' },
-        { name: 'Coinbase', role: 'Wallet Integration' },
-        { name: 'Chainlink', role: 'Data Oracle' }
+        { name: 'Mysten Labs', role: 'Infrastructure', logo: <Blocks size={20} /> },
+        { name: 'Jump Crypto', role: 'Validator', logo: <Cpu size={20} /> },
+        { name: 'Coinbase', role: 'Custody', logo: <Database size={20} /> },
+        { name: 'Circle', role: 'Liquidity', logo: <Globe size={20} /> }
     ];
 
     return (
-        <div className={`min-h-screen font-sans selection:bg-electric-violet/30 overflow-x-hidden ${
-            theme === 'dark' ? 'bg-near-black text-white' : 'bg-slate-50 text-slate-900'
+        <div className={`min-h-screen font-sans selection:bg-electric-violet/30 ${
+            theme === 'dark' ? 'bg-[#050505] text-white' : 'bg-slate-50 text-slate-900'
         }`}>
             {/* Nav */}
             <nav className={`fixed top-0 left-0 right-0 h-20 border-b z-50 px-6 md:px-12 flex items-center justify-between backdrop-blur-xl ${
-                theme === 'dark' ? 'bg-near-black/50 border-white/5' : 'bg-white/50 border-slate-200'
+                theme === 'dark' ? 'bg-black/50 border-white/5' : 'bg-white/50 border-slate-200'
             }`}>
                 <div className="flex items-center gap-6">
                     <button 
                         onClick={() => appStore.setViewMode('landing')}
-                        className={`flex items-center gap-2 text-sm font-medium transition-colors ${
+                        className={`flex items-center gap-2 text-sm font-bold transition-all group ${
                             theme === 'dark' ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
                         }`}
                     >
-                        <ArrowLeft size={16} />
-                        Home
+                        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                        <span>Back</span>
                     </button>
                     <div className="h-6 w-px bg-slate-200 dark:bg-white/10"></div>
-                    <div className="flex items-center gap-2">
-                        <img src={logo} alt="txio" className="h-6 w-auto" />
-                        <span className="font-bold tracking-tighter">ecosystem</span>
+                    <div className="flex items-center gap-3">
+                        <img src={logo} alt="txio" className="h-7 w-auto" />
+                        <span className="font-black tracking-tighter text-lg">ecosystem</span>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-6">
+                    <div className="hidden md:flex items-center gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                        <a href="#" className="hover:text-electric-violet transition-colors">Integrations</a>
+                        <a href="#" className="hover:text-electric-violet transition-colors">Infrastructure</a>
+                        <a href="#" className="hover:text-electric-violet transition-colors">Partners</a>
+                    </div>
                     <button 
                         onClick={() => appStore.setViewMode('app')}
-                        className="px-5 py-2 bg-electric-violet text-white rounded-lg font-bold text-xs hover:bg-soft-purple transition-colors shadow-lg"
+                        className="px-6 py-2.5 bg-electric-violet text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-soft-purple transition-all shadow-[0_10px_20px_-5px_rgba(123,63,242,0.4)] active:scale-95"
                     >
-                        Go to IDE
+                        Launch IDE
                     </button>
                 </div>
             </nav>
 
-            {/* Hero */}
-            <section className="relative pt-40 pb-20 px-6 md:px-12 max-w-7xl mx-auto text-center">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="space-y-6"
-                >
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-electric-violet/10 text-electric-violet text-[10px] font-bold uppercase tracking-widest border border-electric-violet/20">
-                        Universal Connectivity
-                    </div>
-                    <h1 className="text-5xl md:text-7xl font-bold tracking-tighter leading-[1.1]">
-                        United by <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet to-soft-purple">Universal Infrastructure.</span>
-                    </h1>
-                    <p className={`text-lg md:text-xl max-w-2xl mx-auto ${
-                        theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
-                    }`}>
-                        txio bridges the gap between fragmented ecosystems. One interface to build across all major protocols.
-                    </p>
-                </motion.div>
+            {/* Hero Section */}
+            <section className="relative pt-48 pb-32 px-6 md:px-12 overflow-hidden">
+                {/* Background Ambient Glows */}
+                <div className="absolute top-1/4 -left-20 w-[600px] h-[600px] bg-electric-violet/10 blur-[120px] rounded-full pointer-events-none" />
+                <div className="absolute bottom-1/4 -right-20 w-[600px] h-[600px] bg-soft-purple/10 blur-[120px] rounded-full pointer-events-none" />
+
+                <div className="max-w-7xl mx-auto relative z-10">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-center space-y-8"
+                    >
+                        <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/10 backdrop-blur-md">
+                            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Network Status: Operational</span>
+                        </div>
+                        
+                        <h1 className="text-6xl md:text-8xl font-black tracking-tight leading-[0.9] text-white">
+                            Global Chain <br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet via-soft-purple to-indigo-400">Infrastructure.</span>
+                        </h1>
+                        
+                        <p className={`text-lg md:text-xl max-w-3xl mx-auto leading-relaxed ${
+                            theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                        }`}>
+                            The most advanced integration layer for decentralized networks. 
+                            Build, test, and scale across any protocol through a single, unified development environment.
+                        </p>
+
+                        <div className="flex items-center justify-center gap-4 pt-4">
+                            <div className="flex -space-x-3">
+                                {[1,2,3,4].map(i => (
+                                    <div key={i} className="w-10 h-10 rounded-full border-2 border-[#050505] bg-slate-800 flex items-center justify-center text-[10px] font-bold">
+                                        {i === 4 ? '+50' : <div className="w-6 h-6 rounded-full bg-gradient-to-br from-slate-600 to-slate-800" />}
+                                    </div>
+                                ))}
+                            </div>
+                            <span className="text-xs font-bold text-slate-500">Trusted by 50+ Global Teams</span>
+                        </div>
+                    </motion.div>
+                </div>
             </section>
 
-            {/* Chains Grid */}
-            <section className="py-20 px-6 md:px-12 max-w-7xl mx-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Integrations Grid */}
+            <section className="py-24 px-6 md:px-12 max-w-7xl mx-auto">
+                <div className="flex items-end justify-between mb-16 px-4">
+                    <div className="space-y-2">
+                        <h2 className="text-3xl font-black tracking-tight">Active Integrations</h2>
+                        <p className="text-slate-500 font-bold text-sm">Real-time connectivity with the world's leading protocols.</p>
+                    </div>
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.02] border border-white/5 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                        <div className="w-1.5 h-1.5 rounded-full bg-electric-violet" />
+                        Live Metrics
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {chains.map((chain, i) => (
                         <motion.div 
                             key={chain.name}
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.1 }}
-                            whileHover={{ y: -10 }}
-                            className={`p-8 rounded-[2.5rem] border group transition-all ${
-                                theme === 'dark' ? 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05]' : 'bg-white border-slate-200 hover:shadow-2xl'
-                            }`}
+                            className={`p-1 rounded-[2.5rem] bg-gradient-to-br from-white/10 to-transparent hover:from-electric-violet/20 transition-all group`}
                         >
-                            <div className="flex justify-between items-start mb-6">
-                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center`} style={{ backgroundColor: `${chain.color}15`, color: chain.color }}>
-                                    <Network size={28} />
+                            <div className={`p-8 rounded-[2.3rem] h-full flex flex-col ${
+                                theme === 'dark' ? 'bg-[#0a0a0c]' : 'bg-white'
+                            }`}>
+                                <div className="flex justify-between items-start mb-8">
+                                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-2xl transition-transform group-hover:scale-110 duration-500" style={{ backgroundColor: `${chain.color}15`, color: chain.color }}>
+                                        <Network size={32} />
+                                    </div>
+                                    <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                                        chain.status === 'Optimal' 
+                                        ? 'border-emerald-500/20 text-emerald-400 bg-emerald-500/5' 
+                                        : 'border-amber-500/20 text-amber-400 bg-amber-500/5'
+                                    }`}>
+                                        {chain.status}
+                                    </div>
                                 </div>
-                                <div className="px-3 py-1 rounded-full bg-slate-500/10 text-[10px] font-bold uppercase tracking-widest text-slate-500">Active</div>
+
+                                <div className="space-y-4 flex-1">
+                                    <h3 className="text-2xl font-black tracking-tight">{chain.name}</h3>
+                                    <p className={`text-sm leading-relaxed ${
+                                        theme === 'dark' ? 'text-slate-500 font-medium' : 'text-slate-500'
+                                    }`}>{chain.desc}</p>
+                                </div>
+
+                                <div className="mt-10 grid grid-cols-2 gap-4">
+                                    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Peak Tps</div>
+                                        <div className="text-lg font-black text-white">{chain.tps}</div>
+                                    </div>
+                                    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Latency</div>
+                                        <div className="text-lg font-black text-white">{chain.latency}</div>
+                                    </div>
+                                </div>
+
+                                <button className="mt-8 flex items-center justify-center gap-2 py-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-white transition-all border border-transparent hover:border-white/10 active:scale-95">
+                                    Explorer <ExternalLink size={14} />
+                                </button>
                             </div>
-                            <h3 className="text-2xl font-bold mb-4">{chain.name}</h3>
-                            <p className={`text-sm leading-relaxed mb-8 ${
-                                theme === 'dark' ? 'text-slate-500' : 'text-slate-500'
-                            }`}>{chain.desc}</p>
-                            <button className="flex items-center gap-2 text-xs font-bold text-electric-violet group-hover:gap-3 transition-all uppercase tracking-widest">
-                                Explore Integration <ExternalLink size={14} />
-                            </button>
                         </motion.div>
                     ))}
                 </div>
             </section>
 
-            {/* Partner Section */}
-            <section className="py-32 px-6 md:px-12 max-w-7xl mx-auto border-t border-white/5">
-                <div className="flex flex-col md:flex-row gap-16 items-center">
-                    <div className="flex-1 space-y-6 text-center md:text-left">
-                        <h2 className="text-4xl font-bold tracking-tight">Our Strategic <br /> Partners.</h2>
-                        <p className={`text-lg ${
-                            theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
-                        }`}>Collaborating with core dev teams to build the future of blockchain tooling.</p>
-                        <div className="flex flex-wrap justify-center md:justify-start gap-4 pt-4">
+            {/* Strategic Partners */}
+            <section className="py-32 px-6 md:px-12 max-w-7xl mx-auto overflow-hidden">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+                    <div className="space-y-10">
+                        <div className="space-y-4">
+                            <h2 className="text-5xl font-black tracking-tighter leading-tight">Strategic <br /> Alliance.</h2>
+                            <p className={`text-lg leading-relaxed max-w-md ${
+                                theme === 'dark' ? 'text-slate-400 font-medium' : 'text-slate-500'
+                            }`}>
+                                We collaborate with core developers and foundations to provide deep, reliable integrations for high-performance builders.
+                            </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
                             {partners.map(p => (
-                                <div key={p.name} className={`px-6 py-3 rounded-2xl border ${
-                                    theme === 'dark' ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200 shadow-sm'
-                                }`}>
-                                    <div className="text-sm font-bold">{p.name}</div>
-                                    <div className="text-[10px] text-slate-500 uppercase tracking-widest">{p.role}</div>
-                                </div>
+                                <motion.div 
+                                    key={p.name} 
+                                    whileHover={{ x: 5 }}
+                                    className={`p-6 rounded-3xl border transition-all ${
+                                        theme === 'dark' ? 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]' : 'bg-white border-slate-200'
+                                    }`}
+                                >
+                                    <div className="mb-4 text-electric-violet">{p.logo}</div>
+                                    <div className="text-sm font-black text-white mb-1">{p.name}</div>
+                                    <div className="text-[10px] text-slate-600 font-black uppercase tracking-widest">{p.role}</div>
+                                </motion.div>
                             ))}
                         </div>
                     </div>
-                    <div className="flex-1 relative">
-                        <div className="absolute inset-0 bg-electric-violet/20 blur-[100px] rounded-full"></div>
-                        <div className={`relative p-12 rounded-[3rem] border backdrop-blur-3xl grid grid-cols-2 gap-8 ${
-                            theme === 'dark' ? 'bg-near-black/50 border-white/10' : 'bg-white/50 border-slate-200 shadow-2xl'
+
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-electric-violet/20 blur-[120px] rounded-full animate-pulse" />
+                        <div className={`relative p-8 md:p-16 rounded-[4rem] border backdrop-blur-3xl aspect-square flex items-center justify-center overflow-hidden ${
+                            theme === 'dark' ? 'bg-[#0a0a0c]/80 border-white/10' : 'bg-white/80 border-slate-200 shadow-2xl'
                         }`}>
-                            <div className="aspect-square rounded-2xl bg-slate-500/10 flex items-center justify-center"><Blocks size={40} className="text-slate-500" /></div>
-                            <div className="aspect-square rounded-2xl bg-electric-violet/10 flex items-center justify-center"><Chip size={40} className="text-electric-violet" /></div>
-                            <div className="aspect-square rounded-2xl bg-soft-purple/10 flex items-center justify-center"><Database size={40} className="text-soft-purple" /></div>
-                            <div className="aspect-square rounded-2xl bg-slate-500/10 flex items-center justify-center"><Layers size={40} className="text-slate-500" /></div>
+                            {/* Abstract Connection Visualization */}
+                            <div className="relative w-full h-full flex items-center justify-center">
+                                <div className="absolute inset-0 border-[40px] border-white/[0.02] rounded-full animate-[spin_20s_linear_infinite]" />
+                                <div className="absolute inset-20 border-[2px] border-dashed border-white/5 rounded-full animate-[spin_10s_linear_infinite_reverse]" />
+                                <motion.div 
+                                    animate={{ scale: [1, 1.1, 1] }}
+                                    transition={{ duration: 4, repeat: Infinity }}
+                                    className="w-32 h-32 rounded-[2.5rem] bg-electric-violet shadow-[0_0_50px_rgba(123,63,242,0.4)] flex items-center justify-center z-10"
+                                >
+                                    <img src={logoDark} alt="txio" className="w-16 h-auto" />
+                                </motion.div>
+                                
+                                {/* Orbiting Icons */}
+                                <div className="absolute top-10 left-1/2 -translate-x-1/2 w-12 h-12 rounded-2xl bg-[#050505] border border-white/10 flex items-center justify-center"><Network size={20} className="text-emerald-400" /></div>
+                                <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-12 h-12 rounded-2xl bg-[#050505] border border-white/10 flex items-center justify-center"><Cpu size={20} className="text-sky-400" /></div>
+                                <div className="absolute left-10 top-1/2 -translate-y-1/2 w-12 h-12 rounded-2xl bg-[#050505] border border-white/10 flex items-center justify-center"><Database size={20} className="text-amber-400" /></div>
+                                <div className="absolute right-10 top-1/2 -translate-y-1/2 w-12 h-12 rounded-2xl bg-[#050505] border border-white/10 flex items-center justify-center"><Zap size={20} className="text-indigo-400" /></div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* CTA */}
-            <section className="py-20 px-6 text-center">
-                <div className={`max-w-4xl mx-auto p-16 rounded-[4rem] relative overflow-hidden ${
-                    theme === 'dark' ? 'bg-electric-violet border border-electric-violet/20' : 'bg-slate-900 text-white'
-                }`}>
-                    <div className="absolute top-0 right-0 p-8 opacity-10"><Globe size={160} /></div>
-                    <h3 className="text-3xl md:text-5xl font-bold mb-8 relative z-10">Add your protocol to <br /> the txio network.</h3>
-                    <div className="flex justify-center gap-6 relative z-10">
-                        <button className="px-8 py-4 bg-white text-near-black rounded-2xl font-bold hover:bg-slate-100 transition-all active:scale-95">Integrate Now</button>
-                        <button className="px-8 py-4 bg-near-black/20 text-white border border-white/10 rounded-2xl font-bold hover:bg-white/5 transition-all">Developer Docs</button>
+            {/* Unified CTA */}
+            <section className="py-32 px-6">
+                <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    className={`max-w-6xl mx-auto p-16 md:p-24 rounded-[5rem] relative overflow-hidden text-center border ${
+                        theme === 'dark' ? 'bg-electric-violet border-white/10' : 'bg-slate-900 border-transparent text-white'
+                    }`}
+                >
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none" />
+                    <div className="absolute top-0 right-0 p-12 opacity-5 scale-150"><Globe size={240} /></div>
+                    
+                    <div className="relative z-10 space-y-12">
+                        <h3 className="text-4xl md:text-7xl font-black tracking-tighter leading-tight">
+                            Build the next <br /> generation of Web3.
+                        </h3>
+                        <div className="flex flex-col md:flex-row justify-center gap-6 items-center">
+                            <button className="w-full md:w-auto px-10 py-5 bg-white text-near-black rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all active:scale-95 shadow-2xl">
+                                Request Access
+                            </button>
+                            <button className="w-full md:w-auto px-10 py-5 bg-near-black/20 text-white border border-white/20 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all">
+                                Documentation
+                            </button>
+                        </div>
+                        <div className="pt-8 text-[10px] font-black uppercase tracking-[0.5em] text-white/40">
+                            txio infrastructure network • v2.4.0
+                        </div>
                     </div>
-                </div>
+                </motion.div>
             </section>
 
-            <footer className="py-12 text-center text-[10px] uppercase font-bold tracking-[0.5em] text-slate-500">
-                Universal Infrastructure Ecosystem © 2026
+            <footer className="py-20 text-center space-y-4">
+                <div className="text-[10px] uppercase font-black tracking-[0.8em] text-slate-600">
+                    Universal Infrastructure Ecosystem
+                </div>
+                <div className="text-slate-700 text-[10px] font-bold">
+                    © 2026 txio labs • all rights reserved
+                </div>
             </footer>
         </div>
     );
