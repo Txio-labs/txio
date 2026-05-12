@@ -5,7 +5,7 @@
     "dev:backend": "cd backend/api && cargo run",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:desktop": "cd desktop && npm start",
-    "build": "npm run build --workspaces",
+    "build": "npm run build --workspaces && rm -rf dist && cp -R frontend/dist dist",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down"
   },

@@ -40,7 +40,7 @@ interface AppState {
     envVariables: EnvironmentVariable[];
     activityLogs: ActivityLog[];
     comments: Record<string, Comment[]>; 
-    viewMode: 'landing' | 'app' | 'docs' | 'auth' | 'ecosystem' | 'signin' | 'signup' | 'features'; // Added signin/signup and features
+    viewMode: 'landing' | 'app' | 'docs' | 'auth' | 'ecosystem' | 'signin' | 'signup' | 'features' | 'otp'; // Added signin/signup and features
 }
 
 // --- INITIAL STATE ---
@@ -481,7 +481,7 @@ export const appStore = {
         emit();
     },
 
-    setViewMode(mode: 'landing' | 'app' | 'docs' | 'auth' | 'ecosystem' | 'signin' | 'signup' | 'features') {
+    setViewMode(mode: 'landing' | 'app' | 'docs' | 'auth' | 'ecosystem' | 'signin' | 'signup' | 'features' | 'otp') {
         state = { ...state, viewMode: mode };
         emit();
     },
@@ -491,6 +491,7 @@ import { useSyncExternalStore } from 'react';
 export const useAppStore = () => {
     return useSyncExternalStore(appStore.subscribe, appStore.getSnapshot);
 };
+
 
 // Remove the invalid useTabRouter function that was incorrectly placed here
 // If you need a router integration hook, create it in a separate file:
