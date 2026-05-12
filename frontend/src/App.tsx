@@ -31,6 +31,11 @@ import { CollectionRunner } from "@/features/CollectionRunner";
 import { FeaturesPage } from "@/features/FeaturesPage";
 import { MoveBuilder } from "@/features/MoveBuilder";
 import { Playground } from "@/features/Playground";
+import { OTPPage } from "@/features/OTPPage";
+import { IntegrationsPage } from "@/features/IntegrationsPage";
+import { InfrastructurePage } from "@/features/InfrastructurePage";
+import { PartnersPage } from "@/features/PartnersPage";
+
 
 const MOCK_TEAM: TeamMember[] = [];
 
@@ -171,6 +176,38 @@ const App: React.FC = () => {
         return (
             <QueryClientProvider client={queryClient}>
                 <AuthPage />
+            </QueryClientProvider>
+        );
+    }
+
+    if (viewMode === 'otp') {
+        return (
+            <QueryClientProvider client={queryClient}>
+                <OTPPage />
+            </QueryClientProvider>
+        );
+    }
+
+    if (viewMode === 'integrations') {
+        return (
+            <QueryClientProvider client={queryClient}>
+                <IntegrationsPage />
+            </QueryClientProvider>
+        );
+    }
+
+    if (viewMode === 'infrastructure') {
+        return (
+            <QueryClientProvider client={queryClient}>
+                <InfrastructurePage />
+            </QueryClientProvider>
+        );
+    }
+
+    if (viewMode === 'partners') {
+        return (
+            <QueryClientProvider client={queryClient}>
+                <PartnersPage />
             </QueryClientProvider>
         );
     }

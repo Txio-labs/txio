@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { 
     Book, Code2, Cpu, Globe, Layers, Shield, Terminal, Zap, ChevronRight, Search, 
     Menu, X, Moon, Sun, ArrowLeft, ExternalLink, MessageSquare, BookOpen, Settings,
-    Lock, Database
+    Lock, Database, Sparkles
 } from 'lucide-react';
 import { appStore, useAppStore } from '@/lib/store';
 import logoDark from '../assets/txio2.png';
@@ -25,9 +25,14 @@ export const DocsPage: React.FC = () => {
 
     const navItems = [
         { id: 'introduction', title: 'Introduction', icon: BookOpen },
+        { id: 'installation', title: 'Installation', icon: Zap },
+        { id: 'cli', title: 'CLI Overview', icon: Terminal },
+        { id: 'auth', title: 'Authentication', icon: Lock },
         { id: 'architecture', title: 'Architecture', icon: Cpu },
         { id: 'tx-composer', title: 'TX Composer', icon: Layers },
         { id: 'rpc-builder', title: 'RPC Builder', icon: Terminal },
+        { id: 'collections', title: 'Collections', icon: Database },
+        { id: 'ai-console', title: 'AI Console', icon: MessageSquare },
         { id: 'security', title: 'Security', icon: Shield },
         { id: 'api-reference', title: 'API Reference', icon: Code2 },
     ];
@@ -37,6 +42,9 @@ export const DocsPage: React.FC = () => {
         { id: 'rpc-endpoints', title: 'RPC Endpoints' },
         { id: 'security-buffers', title: 'Security Buffers' },
         { id: 'cloud-sync', title: 'Cloud Sync' },
+        { id: 'deployment', title: 'Deployment' },
+        { id: 'extending', title: 'Extending txio' },
+        { id: 'roadmap', title: 'Roadmap' },
     ];
 
     const renderContent = () => {
@@ -64,49 +72,174 @@ export const DocsPage: React.FC = () => {
                                     </p>
                                 </div>
                                 <div className="space-y-4">
-                                    <h4 className="font-bold text-emerald-400">Zero-Latency Feedback</h4>
+                                    <h4 className="font-bold text-emerald-400">Multi-Chain is the Future</h4>
                                     <p className="text-sm text-slate-500 leading-relaxed">
-                                        Engineering at scale requires instant visibility. Our Hot-Connection layer maintains persistent 
-                                        WebSockets to global fullnodes, providing sub-10ms event monitoring and state updates.
+                                        The future is not single-chain. txio treats multi-chain interaction as a first-class concern, 
+                                        abstracting inconsistencies through standardized interfaces and adapters.
                                     </p>
                                 </div>
                             </div>
                         </div>
 
                         <div className="space-y-8 p-10 rounded-[3rem] bg-white/[0.02] border border-white/5">
-                            <h2 className="text-2xl font-black text-white">Quick Start Guide</h2>
+                            <h2 className="text-2xl font-black text-white">Why txio?</h2>
+                            <div className="grid grid-cols-1 gap-6">
+                                <p className="text-sm text-slate-400">Developers working across multiple ecosystems face significant fragmentation:</p>
+                                <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                                    {[
+                                        'Fragmented CLI tools',
+                                        'Learn different RPC structures',
+                                        'Incompatible wallet formats',
+                                        'Switching between block explorers',
+                                        'Manual curl request building',
+                                        'Complex cross-chain orchestration'
+                                    ].map(item => (
+                                        <li key={item} className="flex items-center gap-3 text-xs font-bold text-slate-500">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-electric-violet" />
+                                            {item}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    </motion.div>
+                );
+            case 'installation':
+                return (
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-16 pb-20">
+                        <div className="space-y-6">
+                            <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white">Installation.</h1>
+                            <p className="text-lg text-slate-400 leading-relaxed max-w-3xl">
+                                Get your environment ready in less than 60 seconds.
+                            </p>
+                        </div>
+
+                        <div className="space-y-10">
                             <div className="space-y-6">
-                                <p className="text-sm text-slate-400">Get your environment ready in less than 60 seconds by following these three steps:</p>
-                                <div className="space-y-4">
-                                    <div className="flex items-start gap-4">
-                                        <div className="w-8 h-8 rounded-full bg-electric-violet/20 flex items-center justify-center text-electric-violet font-black text-xs shrink-0">1</div>
-                                        <div>
-                                            <div className="font-bold text-white mb-1">Install the CLI</div>
-                                            <div className="p-4 rounded-xl bg-black font-mono text-xs text-slate-400 border border-white/5">
-                                                curl -fsSL https://get.txio.network | sh
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-start gap-4">
-                                        <div className="w-8 h-8 rounded-full bg-electric-violet/20 flex items-center justify-center text-electric-violet font-black text-xs shrink-0">2</div>
-                                        <div>
-                                            <div className="font-bold text-white mb-1">Authenticate</div>
-                                            <p className="text-xs text-slate-500 mb-2">Login to sync your workspace metadata across environments.</p>
-                                            <div className="p-4 rounded-xl bg-black font-mono text-xs text-slate-400 border border-white/5">
-                                                txio auth login
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-start gap-4">
-                                        <div className="w-8 h-8 rounded-full bg-electric-violet/20 flex items-center justify-center text-electric-violet font-black text-xs shrink-0">3</div>
-                                        <div>
-                                            <div className="font-bold text-white mb-1">Initialize Workspace</div>
-                                            <div className="p-4 rounded-xl bg-black font-mono text-xs text-slate-400 border border-white/5">
-                                                txio init my-project
-                                            </div>
-                                        </div>
+                                <h3 className="text-xl font-bold text-white">1. Global CLI</h3>
+                                <p className="text-sm text-slate-500">The most powerful way to use txio is through the terminal.</p>
+                                <div className="p-6 rounded-2xl bg-black border border-white/5 font-mono text-sm text-slate-400 flex justify-between items-center group">
+                                    <span>cargo install txio-cli</span>
+                                    <Terminal size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                            </div>
+
+                            <div className="space-y-6">
+                                <h3 className="text-xl font-bold text-white">2. Launch (Docker)</h3>
+                                <p className="text-sm text-slate-500">Run the full backend and frontend stack locally.</p>
+                                <div className="p-6 rounded-2xl bg-black border border-white/5 font-mono text-sm text-slate-400 space-y-2">
+                                    <div>git clone https://github.com/Kingvic300/Flow.git</div>
+                                    <div className="text-electric-violet">docker-compose up -d</div>
+                                </div>
+                            </div>
+
+                            <div className="p-10 rounded-[3rem] bg-emerald-500/5 border border-emerald-500/10 space-y-4">
+                                <div className="flex items-center gap-3 text-emerald-400">
+                                    <Shield size={20} />
+                                    <span className="font-bold text-sm uppercase tracking-widest">Security Tip</span>
+                                </div>
+                                <p className="text-xs text-slate-500 leading-relaxed">
+                                    Always verify the checksum of the installation script when using curl-based installers. 
+                                    txio uses signed binaries for all official releases.
+                                </p>
+                            </div>
+                        </div>
+                    </motion.div>
+                );
+            case 'cli':
+                return (
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-16 pb-20">
+                        <div className="space-y-6">
+                            <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white uppercase italic">CLI Overview.</h1>
+                            <p className="text-lg text-slate-400 leading-relaxed max-w-2xl">
+                                A universal blockchain terminal that abstracts away ecosystem-specific CLI friction.
+                            </p>
+                        </div>
+
+                        <div className="space-y-12">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="p-8 rounded-[2.5rem] bg-white/[0.02] border border-white/5 space-y-4">
+                                    <h4 className="font-bold text-white uppercase tracking-widest text-xs">Unified Syntax</h4>
+                                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                                        txio [GLOBAL_FLAGS] &lt;CHAIN&gt; &lt;SUBCOMMAND&gt; [ARGS]
+                                    </p>
+                                    <div className="p-4 rounded-xl bg-black font-mono text-[10px] text-emerald-400">
+                                        txio sui balance 0x123...
                                     </div>
                                 </div>
+                                <div className="p-8 rounded-[2.5rem] bg-white/[0.02] border border-white/5 space-y-4">
+                                    <h4 className="font-bold text-white uppercase tracking-widest text-xs">Fuzzy Matching</h4>
+                                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                                        Mistyped a chain name? txio uses Jaro-Winkler distance to suggest corrections instantly.
+                                    </p>
+                                    <div className="p-4 rounded-xl bg-black font-mono text-[10px] text-amber-400">
+                                        $ txio ethreum balance ... <br />
+                                        <span className="text-slate-500">Unknown chain. Did you mean: <span className="text-white">ethereum</span>?</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-6">
+                                <h3 className="text-2xl font-black text-white">Global Flags</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {[
+                                        { flag: '--network, -n', desc: 'Target network (mainnet, testnet, devnet, localnet)' },
+                                        { flag: '--rpc-url', desc: 'Override default nodes with a custom provider' },
+                                        { flag: '--pretty', desc: 'Enable syntax-highlighted, human-readable output' },
+                                        { flag: '--json', desc: 'Force raw JSON output for piping' }
+                                    ].map(item => (
+                                        <div key={item.flag} className="p-5 rounded-2xl bg-white/[0.01] border border-white/5 flex flex-col gap-1">
+                                            <span className="text-xs font-black font-mono text-electric-violet">{item.flag}</span>
+                                            <span className="text-[11px] text-slate-500 font-medium">{item.desc}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                );
+            case 'auth':
+                return (
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-16 pb-20">
+                        <div className="space-y-6">
+                            <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white">Authentication.</h1>
+                            <p className="text-lg text-slate-400 leading-relaxed max-w-3xl">
+                                Secure, cross-platform identity management for elite protocol teams.
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                            <div className="space-y-8">
+                                <h3 className="text-2xl font-black text-white italic">The OTP Flow</h3>
+                                <div className="space-y-6">
+                                    {[
+                                        { step: '1', title: 'Request', desc: 'Enter your email in the CLI or Web UI.' },
+                                        { step: '2', title: 'Verify', desc: 'Receive a 6-digit OTP via email (powered by Brevo).' },
+                                        { step: '3', title: 'Issue', desc: 'A JWT is generated and stored in your secure element.' }
+                                    ].map(item => (
+                                        <div key={item.step} className="flex gap-6">
+                                            <div className="w-10 h-10 rounded-full bg-electric-violet/20 border border-electric-violet/30 flex items-center justify-center text-electric-violet font-black shrink-0">{item.step}</div>
+                                            <div className="space-y-1">
+                                                <div className="font-bold text-white">{item.title}</div>
+                                                <p className="text-xs text-slate-500 leading-relaxed">{item.desc}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="p-10 rounded-[3rem] bg-white/[0.02] border border-white/5 flex flex-col justify-center gap-6">
+                                <div className="p-6 rounded-2xl bg-black border border-white/5 space-y-4">
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-600">Terminal Login</div>
+                                    <div className="font-mono text-xs text-emerald-400 italic">txio login</div>
+                                    <div className="font-mono text-[10px] text-slate-500">
+                                        ? Enter your email: <span className="text-white">dev@txio.io</span> <br />
+                                        ? Enter 6-digit code: <span className="text-white">******</span> <br />
+                                        <span className="text-emerald-400">✓ Authenticated successfully.</span>
+                                    </div>
+                                </div>
+                                <p className="text-[11px] text-slate-600 leading-relaxed italic text-center">
+                                    Tokens are signed using RS256 and stored in the system keychain when available.
+                                </p>
                             </div>
                         </div>
                     </motion.div>
@@ -293,6 +426,79 @@ export const DocsPage: React.FC = () => {
                                         {p} Ready
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+                    </motion.div>
+                );
+            case 'collections':
+                return (
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-20 pb-20">
+                        <div className="space-y-6">
+                            <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white">Collections.</h1>
+                            <p className="text-lg text-slate-400 leading-relaxed max-w-2xl">
+                                Organize your blockchain research into logical, persistent units.
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="p-10 rounded-[3rem] bg-white/[0.02] border border-white/5 space-y-6">
+                                <h4 className="text-xl font-bold text-white italic">Postman for Web3</h4>
+                                <p className="text-slate-500 text-sm leading-relaxed">
+                                    Replace messy bash histories with structured folders. Each collection stores method parameters, 
+                                    expected results, and execution history.
+                                </p>
+                                <ul className="space-y-3">
+                                    {['Nested Folders', 'Collection-level Variables', 'Batch Execution', 'Export to JSON'].map(item => (
+                                        <li key={item} className="flex items-center gap-3 text-xs font-bold text-slate-400">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-electric-violet" />
+                                            {item}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                            <div className="p-10 rounded-[3rem] bg-white/[0.02] border border-white/5 space-y-6">
+                                <h4 className="text-xl font-bold text-white italic">Environments</h4>
+                                <p className="text-slate-500 text-sm leading-relaxed">
+                                    Define variables like <span className="text-electric-violet">PACKAGE_ID</span> and reuse them across requests 
+                                    using the <span className="text-electric-violet">{"{{VAR}}"}</span> syntax.
+                                </p>
+                                <div className="p-5 rounded-2xl bg-black border border-white/5 font-mono text-[10px] text-slate-400">
+                                    "params": ["{"{{SUI_COIN_ID}}"}"]
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                );
+            case 'ai-console':
+                return (
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-16 pb-20">
+                        <div className="space-y-6">
+                            <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white uppercase italic">AI Console.</h1>
+                            <p className="text-lg text-slate-400 leading-relaxed max-w-2xl">
+                                Intelligence integrated directly into your infrastructure workflow.
+                            </p>
+                        </div>
+
+                        <div className="p-12 rounded-[4rem] bg-electric-violet/5 border border-electric-violet/10 space-y-10 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-12 opacity-10 text-electric-violet animate-pulse"><Sparkles size={200} /></div>
+                            <div className="relative z-10 space-y-8">
+                                <h3 className="text-2xl font-black text-white italic">Powered by Gemini</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-4">
+                                        <div className="font-bold text-white text-sm">Natural Language Controls</div>
+                                        <p className="text-xs text-slate-500 leading-relaxed">
+                                            Ask "What's the balance of this address?" and txio will programmatically generate 
+                                            the correct RPC tab with pre-filled parameters.
+                                        </p>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div className="font-bold text-white text-sm">Error Auditing</div>
+                                        <p className="text-xs text-slate-500 leading-relaxed">
+                                            Paste a complex Move abort code, and the AI will analyze the contract source 
+                                            to explain exactly why the transaction failed.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </motion.div>
@@ -626,6 +832,106 @@ export const DocsPage: React.FC = () => {
                         </div>
                     </motion.div>
                 );
+            case 'deployment':
+                return (
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-16 pb-20">
+                        <div className="space-y-6">
+                            <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white">Deployment.</h1>
+                            <p className="text-lg text-slate-400 leading-relaxed max-w-3xl">
+                                Scale your infrastructure from a local developer machine to a global team gateway.
+                            </p>
+                        </div>
+
+                        <div className="space-y-12">
+                            <div className="p-12 rounded-[3.5rem] bg-white/[0.02] border border-white/5 space-y-8">
+                                <h3 className="text-2xl font-black text-white italic">Docker Orchestration</h3>
+                                <p className="text-slate-500 text-sm leading-relaxed">
+                                    txio is designed to be fully self-hosted. Our multi-container architecture ensures 
+                                    data persistence and high availability.
+                                </p>
+                                <div className="p-8 rounded-[2rem] bg-black border border-white/5 font-mono text-xs text-slate-400 leading-loose">
+                                    <span className="text-slate-600"># Start the full stack</span> <br />
+                                    <span className="text-emerald-400">docker-compose</span> up -d <br /><br />
+                                    <span className="text-slate-600"># Services initialized:</span> <br />
+                                    - <span className="text-white">txio-db</span> (MongoDB 7.0) <br />
+                                    - <span className="text-white">txio-api</span> (Rust Backend) <br />
+                                    - <span className="text-white">txio-frontend</span> (Vite IDE)
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="p-8 rounded-[2.5rem] bg-white/[0.01] border border-white/5 space-y-4">
+                                    <div className="w-10 h-10 rounded-xl bg-sky-400/10 flex items-center justify-center text-sky-400"><Globe size={20} /></div>
+                                    <h4 className="font-bold text-white text-sm">GitHub Actions CI</h4>
+                                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                                        Automated test suites for every PR. Our CI ensures that new chain adapters 
+                                        never break existing protocol logic.
+                                    </p>
+                                </div>
+                                <div className="p-8 rounded-[2.5rem] bg-white/[0.01] border border-white/5 space-y-4">
+                                    <div className="w-10 h-10 rounded-xl bg-amber-400/10 flex items-center justify-center text-amber-400"><Cpu size={20} /></div>
+                                    <h4 className="font-bold text-white text-sm">Vercel Integration</h4>
+                                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                                        The txio frontend is optimized for edge deployment. Scale your visual IDE 
+                                        globally with zero-config hosting.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                );
+            case 'extending':
+                return (
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-16 pb-20">
+                        <div className="space-y-6">
+                            <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white">Extending.</h1>
+                            <p className="text-lg text-slate-400 leading-relaxed max-w-3xl">
+                                Built for developers who need to customize and expand their toolchain.
+                            </p>
+                        </div>
+
+                        <div className="space-y-12">
+                            <h2 className="text-2xl font-black text-white italic">Creating Chain Adapters</h2>
+                            <p className="text-slate-500 text-sm leading-relaxed">
+                                Adding a new blockchain ecosystem to txio is as simple as implementing the <code className="text-electric-violet">ChainAdapter</code> trait in Rust. 
+                                Once registered, your new chain gains full CLI, History, and IDE support automatically.
+                            </p>
+                            <div className="p-8 rounded-[2.5rem] bg-black border border-white/5 font-mono text-sm leading-relaxed">
+                                <div className="text-white">pub trait <span className="text-emerald-400">ChainAdapter</span> &#123;</div>
+                                <div className="pl-6 text-slate-500">/// Call a JSON-RPC method</div>
+                                <div className="pl-6 text-white italic">async fn call_rpc(&amp;self, method: &amp;str, params: Value) -&gt; Result&lt;Value&gt;;</div>
+                                <div className="text-white">&#125;</div>
+                            </div>
+                        </div>
+                    </motion.div>
+                );
+            case 'roadmap':
+                return (
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-16 pb-20">
+                        <div className="space-y-6">
+                            <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white">Roadmap.</h1>
+                            <p className="text-lg text-slate-400 leading-relaxed max-w-3xl">
+                                The future of universal blockchain infrastructure.
+                            </p>
+                        </div>
+
+                        <div className="space-y-12">
+                            {[
+                                { quarter: 'Q3 2026', title: 'Mobile Companion', desc: 'Monitor your RPC logs and execute simple transactions from your phone via the txio mobile bridge.' },
+                                { quarter: 'Q4 2026', title: 'Team Workspaces', desc: 'Real-time collaborative editing of Programmable Transaction Blocks (PTB) with shared state.' },
+                                { quarter: 'Q1 2027', title: 'Native Debugger', desc: 'Integrated source-level debugging for Move and Solidity contracts directly within the txio IDE.' }
+                            ].map(item => (
+                                <div key={item.quarter} className="flex gap-8 group">
+                                    <div className="w-24 shrink-0 text-[10px] font-black uppercase tracking-widest text-slate-600 group-hover:text-electric-violet transition-colors">{item.quarter}</div>
+                                    <div className="space-y-2 border-l border-white/10 pl-8 pb-12 group-last:pb-0">
+                                        <div className="font-bold text-white">{item.title}</div>
+                                        <p className="text-sm text-slate-500 leading-relaxed">{item.desc}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </motion.div>
+                );
             default:
                 return (
                     <div className="h-full flex items-center justify-center text-slate-600 font-black uppercase tracking-[0.5em] italic">
@@ -670,10 +976,10 @@ export const DocsPage: React.FC = () => {
                         />
                     </div>
                     <button 
-                        onClick={() => appStore.setViewMode('app')}
+                        onClick={() => appStore.setViewMode('signup')}
                         className="px-5 py-2 bg-electric-violet text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-soft-purple transition-all shadow-lg active:scale-95"
                     >
-                        Launch IDE
+                        Launch
                     </button>
                 </div>
             </nav>

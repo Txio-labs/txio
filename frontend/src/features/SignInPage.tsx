@@ -82,7 +82,7 @@ export const SignInPage: React.FC = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className={`w-full max-w-md p-10 rounded-[2.5rem] border shadow-2xl ${
-                        theme === 'dark' ? 'bg-white/[0.02] border-white/5' : 'bg-white border-slate-200'
+                        theme === 'dark' ? 'bg-white/[0.04] border-white/20' : 'bg-white border-slate-200'
                     }`}
                 >
                     <div className="text-center mb-10">

@@ -14,7 +14,7 @@ export const GetStartedPage: React.FC = () => {
         e.preventDefault();
         setIsLoading(true);
         setTimeout(() => {
-            appStore.setViewMode('app');
+            appStore.setViewMode('otp');
             setIsLoading(false);
         }, 1500);
     };
@@ -80,7 +80,7 @@ export const GetStartedPage: React.FC = () => {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className={`w-full max-w-md p-10 rounded-[2.5rem] border shadow-2xl ${
-                        theme === 'dark' ? 'bg-white/[0.02] border-white/5' : 'bg-white border-slate-200'
+                        theme === 'dark' ? 'bg-white/[0.04] border-white/20' : 'bg-white border-slate-200'
                     }`}
                 >
                     <div className="text-center mb-10">

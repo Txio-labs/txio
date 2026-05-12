@@ -10,11 +10,14 @@ services:
   api:
     build:
       context: .
-      dockerfile: backend/api/Dockerfile
+      dockerfile: backend/Dockerfile
     container_name: txio-api
     environment:
       MONGO_URI: mongodb://mongodb:27017/txio
       RUST_LOG: info
+      JWT_SECRET: dev-secret-key-at-least-32-chars-long-12345
+      BREVO_API_KEY: dummy-key
+      SUI_CLI_EMAIL: dev@txio.io
     ports:
       - "3000:3000"
     depends_on:
@@ -26,9 +29,11 @@ services:
       dockerfile: Dockerfile
     container_name: txio-frontend
     ports:
-      - "5173:5173"
+      - "5173:80"
     environment:
-      VITE_API_URL: http://localhost:3000
+      - VITE_API_URL=http://localhost:3000
+    depends_on:
+      - api
 
 volumes:
   mongodb_data:

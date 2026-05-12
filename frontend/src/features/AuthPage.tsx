@@ -19,7 +19,7 @@ export const AuthPage: React.FC = () => {
         setIsLoading(true);
         // Mock authentication delay
         setTimeout(() => {
-            appStore.setViewMode('app');
+            appStore.setViewMode('otp');
             setIsLoading(false);
         }, 1500);
     };
@@ -107,7 +107,7 @@ export const AuthPage: React.FC = () => {
                     animate={{ opacity: 1, scale: 1 }}
                     className={`w-full max-w-md p-10 rounded-[2.5rem] border shadow-2xl ${
                         theme === 'dark' 
-                        ? 'bg-white/[0.02] border-white/5' 
+                        ? 'bg-white/[0.04] border-white/20' 
                         : 'bg-white border-slate-200'
                     }`}
                 >

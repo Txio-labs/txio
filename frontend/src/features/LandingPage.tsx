@@ -62,6 +62,24 @@ export const LandingPage: React.FC = () => {
                         Features
                     </button>
                     <button 
+                        onClick={() => appStore.setViewMode('integrations')}
+                        className="hover:text-white transition-colors"
+                    >
+                        Integrations
+                    </button>
+                    <button 
+                        onClick={() => appStore.setViewMode('infrastructure')}
+                        className="hover:text-white transition-colors"
+                    >
+                        Infrastructure
+                    </button>
+                    <button 
+                        onClick={() => appStore.setViewMode('partners')}
+                        className="hover:text-white transition-colors"
+                    >
+                        Partners
+                    </button>
+                    <button 
                         onClick={() => appStore.setViewMode('ecosystem')}
                         className="hover:text-white transition-colors"
                     >
@@ -271,9 +289,11 @@ export const LandingPage: React.FC = () => {
                         <div className="space-y-4">
                             <div className="text-[11px] font-bold uppercase tracking-widest text-slate-200">Platform</div>
                             <ul className="space-y-3 text-sm text-slate-500">
-                                <li><a href="#" className="hover:text-white transition-colors">Workspace</a></li>
-                                <li><a href="#" className="hover:text-white transition-colors">Collections</a></li>
-                                <li><a href="#" className="hover:text-white transition-colors">Shared APIs</a></li>
+                                <li><span onClick={() => appStore.setViewMode('app')} className="hover:text-white transition-colors cursor-pointer">Workspace</span></li>
+                                <li><span onClick={() => appStore.setViewMode('integrations')} className="hover:text-white transition-colors cursor-pointer">Integrations</span></li>
+                                <li><span onClick={() => appStore.setViewMode('infrastructure')} className="hover:text-white transition-colors cursor-pointer">Infrastructure</span></li>
+                                <li><span onClick={() => appStore.setViewMode('partners')} className="hover:text-white transition-colors cursor-pointer">Partners</span></li>
+                                <li><span onClick={() => appStore.setViewMode('docs')} className="hover:text-white transition-colors cursor-pointer">Documentation</span></li>
                             </ul>
                         </div>
                         <div className="space-y-4">
