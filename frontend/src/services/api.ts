@@ -4,14 +4,16 @@ import { CollectionNode, RequestItem, UserProfile } from '../types';
 const API_BASE = 'http://127.0.0.1:3000/api/v1';
 
 class ApiService {
-    private token: string | null = localStorage.getItem('txio_token');
+    private token: string | null = typeof window !== 'undefined' ? localStorage.getItem('txio_token') : null;
 
     setToken(token: string | null) {
         this.token = token;
-        if (token) {
-            localStorage.setItem('txio_token', token);
-        } else {
-            localStorage.removeItem('txio_token');
+        if (typeof window !== 'undefined') {
+            if (token) {
+                localStorage.setItem('txio_token', token);
+            } else {
+                localStorage.removeItem('txio_token');
+            }
         }
     }
 

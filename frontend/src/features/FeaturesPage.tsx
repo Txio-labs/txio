@@ -64,7 +64,7 @@ export const FeaturesPage: React.FC = () => {
             }`}>
                 <div className="flex items-center gap-8">
                     <div className="flex items-center gap-3 cursor-pointer" onClick={() => appStore.setViewMode('landing')}>
-                        <img src={logo} alt="txio" className="h-7 w-auto" />
+                        <img src={logo as any} alt="txio" className="h-7 w-auto" />
                         <span className="font-black tracking-tighter text-lg">features</span>
                     </div>
                     <div className="hidden md:flex items-center gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
@@ -220,7 +220,7 @@ export const FeaturesPage: React.FC = () => {
             {/* Footer */}
             <footer className="py-32 px-6 border-t border-white/5 text-center space-y-12">
                 <div className="max-w-4xl mx-auto space-y-6">
-                    <img src={logoDark} alt="txio" className="h-10 w-auto mx-auto" />
+                    <img src={logoDark as any} alt="txio" className="h-10 w-auto mx-auto" />
                     <h3 className="text-3xl font-black tracking-tighter">Ready to scale your infrastructure?</h3>
                     <div className="flex justify-center gap-4">
                         <button onClick={() => appStore.setViewMode('app')} className="px-10 py-4 bg-electric-violet text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-soft-purple transition-all shadow-2xl active:scale-95">

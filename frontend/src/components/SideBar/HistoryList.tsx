@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { History, ArrowUpRight } from 'lucide-react';
-import { HistoryItem, Workspace } from '../../types';
+import { HistoryItem, Workspace, RequestType } from '../../types';
 import { appStore } from '@/lib/store';
 
 interface HistoryListProps {
@@ -41,7 +41,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({
       )}
       
       {workspaceHistory.map((item, i) => {
-        const isRpc = item.type === 'rpc';
+        const isRpc = item.type === RequestType.RPC;
         const isSuccess = item.status && item.status < 400;
         return (
           <div 
@@ -59,7 +59,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({
             </div>
             <div className="flex items-center gap-2 text-[10px] text-slate-500">
               <span className={`uppercase font-bold tracking-wider ${isRpc ? 'text-blue-400/80' : 'text-violet-400/80'}`}>
-                {isRpc ? 'TX' : 'TX'}
+                {isRpc ? 'RPC' : 'TX'}
               </span>
               <span className="w-0.5 h-0.5 bg-slate-600 rounded-full"></span>
               <span>{new Date(item.timestamp || 0).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</span>

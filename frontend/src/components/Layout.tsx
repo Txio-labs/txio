@@ -21,7 +21,7 @@ interface LayoutProps {
     onNewTab?: () => void;
 }
 
-const txioLogoSmall = () => (
+const TxioLogoSmall = () => (
   <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-[0_0_5px_rgba(56,189,248,0.5)]">
     <defs>
       <linearGradient id="swirl1-small" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -130,7 +130,7 @@ export const Layout: React.FC<LayoutProps> = ({
                         onClick={() => appStore.setActiveTab(null)}
                     >
                         <div className="w-6 h-6 rounded flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                            <txioLogoSmall />
+                            <TxioLogoSmall />
                         </div>
                         <span className="text-sm tracking-tight group-hover:text-sui-300 transition-colors">txio</span>
                     </div>

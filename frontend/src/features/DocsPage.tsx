@@ -961,7 +961,7 @@ export const DocsPage: React.FC = () => {
                     </button>
                     <div className="h-6 w-px bg-slate-200 dark:bg-white/10"></div>
                     <div className="flex items-center gap-2">
-                        <img src={logo} alt="txio" className="h-6 w-auto" />
+                        <img src={logo as any} alt="txio" className="h-6 w-auto" />
                         <span className="font-black tracking-tighter text-lg italic">docs</span>
                     </div>
                 </div>
