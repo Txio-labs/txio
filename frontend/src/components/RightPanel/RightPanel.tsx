@@ -175,8 +175,6 @@ export const RightPanel: React.FC<RightPanelProps> = ({
               network={network}
               balance={balance}
               loadingBalance={loadingBalance}
-              copied={copied}
-              onCopy={handleCopy}
               formatAddress={formatAddress}
             />  
         )}

@@ -5,8 +5,8 @@ import { useAppStore, appStore } from './lib/store';
 import { Tab } from './components/ui/Tabs';
 import { Avatar } from './components/ui/Avatar';
 import { TabItem } from './types';
-import logoDark from './assets/txio2.png';
-import logoLight from './assets/txio3.png';
+import logoDark from '@/assets/txio2.png';
+import logoLight from '@/assets/txio3.png';
 
 import { TerminalPanel } from './components/TerminalPanel';
 
@@ -42,7 +42,7 @@ export const Layout: React.FC<LayoutProps> = ({
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 font-bold text-slate-100">
                         <div className="w-6 h-6 flex items-center justify-center transition-transform duration-300 hover:rotate-12">
-                            <img src={useAppStore().theme === 'dark' ? logoDark : logoLight} alt="txio" className="w-full h-full object-contain" />
+                            <img src={(useAppStore().theme === 'dark' ? logoDark : logoLight) as any} alt="txio" className="w-full h-full object-contain" />
                         </div>
                         <span className="text-sm tracking-tight glow-text font-bold lowercase">txio</span>
                     </div>

@@ -4,8 +4,8 @@ import {
     Zap, Shield, Cpu, Globe, ArrowRight, Layers, Terminal, Sparkles, Code2, Rocket, Github, Twitter
 } from 'lucide-react';
 import { appStore, useAppStore } from '@/lib/store';
-import logoDark from '../assets/txio2.png';
-import logoLight from '../assets/txio3.png';
+import logoDark from '@/assets/txio2.png';
+import logoLight from '@/assets/txio3.png';
 
 export const LandingPage: React.FC = () => {
     const { theme } = useAppStore();
@@ -49,7 +49,7 @@ export const LandingPage: React.FC = () => {
                 >
                     <div className="relative">
                         <div className="absolute inset-0 bg-electric-violet/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <img src={logo} alt="txio" className="h-8 w-auto relative z-10 transition-transform group-hover:scale-110" />
+                        <img src={logo.src} alt="txio" className="h-8 w-auto relative z-10 transition-transform group-hover:scale-110" />
                     </div>
                     <span className="text-xl font-bold tracking-tighter">txio</span>
                 </div>

@@ -105,7 +105,7 @@ export const ResponsePanel: React.FC<ResponsePanelProps> = ({
         testResults={testResults}
         txDigest={txDigest}
         viewMode={viewMode}
-        onViewModeChange={setViewMode}
+        onViewModeChange={(mode) => setViewMode(mode as ViewMode)}
       />
 
       <ResponseTabs

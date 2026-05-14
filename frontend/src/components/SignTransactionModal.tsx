@@ -120,7 +120,7 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
                                  <span className="font-mono">0x7d2...94d1</span>
                                  <span className="ml-auto text-[10px] bg-blue-900/30 text-blue-400 px-1.5 rounded">Mutated</span>
                              </div>
-                             {request.moveParams.arguments.some(a => typeof a === 'string' && a.startsWith('0x')) && (
+                             {request.moveParams.arguments.some(a => a.value.startsWith('0x')) && (
                                  <div className="flex items-center gap-2 text-xs text-slate-400 p-2 bg-near-black rounded border border-white/5">
                                      <Box size={12} className="text-slate-500"/>
                                      <span className="font-mono">Input Object</span>

@@ -440,6 +440,7 @@ export const appStore = {
     },
 
     async initialize() {
+        if (typeof window === 'undefined') return;
         const token = localStorage.getItem('txio_token');
         if (token) {
             try {
@@ -489,7 +490,7 @@ export const appStore = {
 
 import { useSyncExternalStore } from 'react';
 export const useAppStore = () => {
-    return useSyncExternalStore(appStore.subscribe, appStore.getSnapshot);
+    return useSyncExternalStore(appStore.subscribe, appStore.getSnapshot, appStore.getSnapshot);
 };
 
 

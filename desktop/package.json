@@ -29,6 +29,7 @@
     "asar": true,
     "files": [
       "src/**/*",
+      "dist/**/*",
       "build/**/*",
       "package.json",
       "!**/*.map",

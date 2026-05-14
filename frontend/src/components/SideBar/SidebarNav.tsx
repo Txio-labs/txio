@@ -17,7 +17,7 @@ const TxioLogo = () => {
   
   return (
     <img 
-      src={logo} 
+      src={logo.src} 
       alt="txio" 
       className="w-7 h-7 object-contain drop-shadow-[0_0_12px_rgba(123,63,242,0.6)]"
     />

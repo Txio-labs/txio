@@ -36,7 +36,7 @@ export const GetStartedPage: React.FC = () => {
                         className="flex items-center gap-3 mb-16 cursor-pointer"
                         onClick={() => appStore.setViewMode('landing')}
                     >
-                        <img src={logoDark} alt="txio" className="h-10 w-auto" />
+                        <img src={logoDark as any} alt="txio" className="h-10 w-auto" />
                         <span className="text-2xl font-bold tracking-tighter text-white">txio</span>
                     </div>
 

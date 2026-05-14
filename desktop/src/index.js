@@ -12,7 +12,7 @@ const createWindow = () => {
     icon: path.join(__dirname, "../assets/logo/512x512.png")
   })
 
-  win.loadFile(path.join(__dirname, "index.html"))
+  win.loadFile(path.join(__dirname, "../dist/index.html"))
 }
 
 app.whenReady().then(() => {

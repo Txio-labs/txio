@@ -57,8 +57,8 @@ jobs:
         with:
           name: txio-dist-${{ matrix.os }}
           path: |
-            dist/*.exe
-            dist/*.dmg
-            dist/*.AppImage
-            frontend/dist/
+            desktop/dist/*.exe
+            desktop/dist/*.dmg
+            desktop/dist/*.AppImage
+            frontend/out/
           retention-days: 7
