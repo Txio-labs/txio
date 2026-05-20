@@ -10,12 +10,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends pkg-config libs
 
 WORKDIR /app
 
-# Copy only the Rust workspace files needed for the backend image.
+# Copy the full Rust workspace so Cargo can resolve all workspace members.
+# This avoids missing-path issues when workspace members have deeper path dependencies.
 COPY Cargo.toml Cargo.lock ./
-COPY backend/api/Cargo.toml backend/api/Cargo.toml
-COPY backend/api backend/api
-COPY cli/Cargo.toml cli/Cargo.toml
-COPY cli cli
+COPY backend ./backend
+COPY cli ./cli
 
 # Build both backend and cli from the workspace root.
 RUN cargo build --release --package txio-api --package txio
