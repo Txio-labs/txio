@@ -27,3 +27,4 @@ dirs-next = { workspace = true }
 mongodb = { workspace = true }
 dialoguer = { workspace = true }
 futures = { workspace = true }
+futures-util = "0.3"

@@ -17,6 +17,7 @@ use txio_api::utils::auth_jwt::{JwtHelper};
 use mongodb::bson::Document;
 use mongodb::bson::oid::ObjectId;
 use futures::stream::StreamExt;
+
 use dialoguer::{Input, Password};
 use std::str::FromStr;
 
@@ -97,10 +98,12 @@ impl CommandHandler {
                 let mut cursor = collection.find(None, None).await.map_err(|e| anyhow!("Failed to query users: {}", e))?;
                 let mut count = 0;
                 
-                while let Some(result) = cursor.next().await {
+while let Some(result) = cursor.next().await {
                     let doc: Document = result.map_err(|e| anyhow!("Cursor error: {}", e))?;
                     count += 1;
-                    if let Ok(email) = doc.get_str("email") {
+if let Ok(email) = doc.get_str("email") {
+                        let email: &str = email;
+                        
                         println!("  - {}", email.green());
                     } else {
                         println!("  - {}", "[User without email]".dimmed());

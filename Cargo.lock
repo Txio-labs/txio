@@ -3344,6 +3344,7 @@ dependencies = [
  "dirs-next",
  "dotenvy",
  "futures",
+ "futures-util",
  "indicatif",
  "mongodb",
  "regex",
