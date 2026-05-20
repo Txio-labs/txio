@@ -1,4 +1,5 @@
 {
-  "outputDirectory": "frontend/dist"
+  "outputDirectory": "frontend/out"
 }
+
 
