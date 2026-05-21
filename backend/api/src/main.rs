@@ -11,18 +11,35 @@ use ::txio_api::{
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
-    
+
     // 1. Initialize Logging
     utils::logger::init();
 
     // 2. Load Config
-    let config = Config::from_env()?;
+    tracing::info!("Loading configuration from environment...");
+    let config = Config::from_env().map_err(|e| {
+        tracing::error!(error = %e, "Failed to load configuration");
+        Box::new(e) as Box<dyn std::error::Error>
+    })?;
+
+    tracing::info!(
+        "Config loaded. MONGO_URI set={}, JWT_SECRET length={}, BREVO_API_KEY set={}",
+        !config.mongo_uri.trim().is_empty(),
+        config.jwt_secret.len(),
+        !config.brevo_api_key.trim().is_empty()
+    );
 
     // 3. Connect to Database
-    let db_client = establish_connection(&config.mongo_uri).await?;
+    tracing::info!("Connecting to MongoDB at {}...", config.mongo_uri);
+    let db_client = establish_connection(&config.mongo_uri).await.map_err(|e| {
+        tracing::error!(error = %e, "Failed to connect to MongoDB");
+        Box::new(e) as Box<dyn std::error::Error>
+    })?;
+
     tracing::info!("Connected to MongoDB at {}", config.mongo_uri);
 
     // 4. Initialize Repositories
+
     let user_repo = repositories::user_repository::UserRepository::new(&db_client);
     let otp_repo = repositories::otp_repository::OTPRepository::new(&db_client);
     let rpc_repo = repositories::rpc_repository::RpcRepository::new(&db_client);
@@ -66,7 +83,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nest("/api/v1/terminal", api::routers::terminal_router::router(terminal_service));
 
     // 8. Run Server
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let port = std::env::var("PORT")
+        .unwrap_or_else(|_| "3000".to_string())
+        .parse::<u16>()
+        .unwrap_or(3000);
+    let addr = SocketAddr::from(([0, 0, 0, 0], port));
     tracing::info!("Server listening on {}", addr);
     
     let listener = tokio::net::TcpListener::bind(addr).await?;
