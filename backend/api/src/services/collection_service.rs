@@ -1,4 +1,9 @@
-use crate::repositories::{collection_repository::CollectionRepository, request_repository::RequestRepository, user_repository::UserRepository};
+use crate::repositories::{
+    collection_repository::CollectionRepository,
+    request_repository::RequestRepository,
+    user_repository::UserRepository,
+    workspace_repository::WorkspaceRepository,
+};
 use crate::model::{collection::Collection, request::SavedRequest};
 use crate::utils::error::AppError;
 use crate::services::sui_service::SuiService;
@@ -10,6 +15,7 @@ pub struct CollectionService {
     collection_repo: CollectionRepository,
     request_repo: RequestRepository,
     user_repo: UserRepository,
+    workspace_repo: WorkspaceRepository,
     sui_service: SuiService,
 }
 
@@ -18,24 +24,76 @@ impl CollectionService {
         collection_repo: CollectionRepository,
         request_repo: RequestRepository,
         user_repo: UserRepository,
+        workspace_repo: WorkspaceRepository,
         sui_service: SuiService,
     ) -> Self {
         Self {
             collection_repo,
             request_repo,
             user_repo,
+            workspace_repo,
             sui_service,
         }
     }
 
+    async fn ensure_workspace_owner(
+        &self,
+        workspace_id: ObjectId,
+        user_id: ObjectId,
+    ) -> Result<(), AppError> {
+        let workspace = self.workspace_repo.find_by_id(workspace_id).await?;
+
+        if workspace.user_id != user_id {
+            return Err(AppError::Forbidden(
+                "Not authorized to access this workspace".into(),
+            ));
+        }
+
+        Ok(())
+    }
+
     // --- Collections ---
 
-    pub async fn create_collection(&self, user_id: ObjectId, name: String, description: Option<String>) -> Result<Collection, AppError> {
-        let new_collection = Collection::new(user_id, name, description);
+    pub async fn create_collection(
+        &self,
+        user_id: ObjectId,
+        workspace_id: ObjectId,
+        name: String,
+        description: Option<String>,
+    ) -> Result<Collection, AppError> {
+        self.ensure_workspace_owner(
+            workspace_id.clone(),
+            user_id.clone(),
+        )
+        .await?;
+
+        let new_collection = Collection::new(
+            user_id,
+            Some(workspace_id),
+            name,
+            description,
+        );
         self.collection_repo.save(&new_collection).await
     }
 
-    pub async fn get_user_collections(&self, user_id: ObjectId) -> Result<Vec<Collection>, AppError> {
+    pub async fn get_user_collections(
+        &self,
+        user_id: ObjectId,
+        workspace_id: Option<ObjectId>,
+    ) -> Result<Vec<Collection>, AppError> {
+        if let Some(workspace_id) = workspace_id {
+            self.ensure_workspace_owner(
+                workspace_id.clone(),
+                user_id.clone(),
+            )
+            .await?;
+
+            return self
+                .collection_repo
+                .find_all_by_user_and_workspace(user_id, workspace_id)
+                .await;
+        }
+
         self.collection_repo.find_all_by_user(user_id).await
     }
 

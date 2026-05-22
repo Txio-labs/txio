@@ -4,9 +4,17 @@ use serde_json::Value;
 
 #[derive(Debug, Deserialize, Validate)]
 pub struct CreateCollectionRequest {
+    #[validate(length(min = 1, message = "Workspace ID is required"))]
+    pub workspace_id: String,
+
     #[validate(length(min = 1, message = "Name cannot be empty"))]
     pub name: String,
     pub description: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CollectionQuery {
+    pub workspace_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Validate)]

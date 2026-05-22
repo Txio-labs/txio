@@ -29,6 +29,7 @@ export const TerminalPanel: React.FC = () => {
         appStore.pushLog(`➜ ${cmd}`, 'cli', 'system');
 
         if (cmd === 'clear') {
+            appStore.clearActivityLogs();
             appStore.showToast('Terminal cleared', 'info');
         } else if (cmd === 'help') {
             appStore.pushLog('Available commands: txio, cargo, help, clear', 'cli', 'system');

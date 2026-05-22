@@ -13,7 +13,7 @@ const TxioLogo = () => {
   const logo = theme === 'dark' ? logoDark : logoLight;
   return (
     <img 
-      src={logo as any} 
+      src={logo.src} 
       alt="txio Logo"
       className="w-full h-full object-contain drop-shadow-2xl"
     />

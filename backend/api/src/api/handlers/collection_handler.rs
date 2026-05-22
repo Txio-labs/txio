@@ -1,6 +1,15 @@
-use axum::{extract::{State, Path}, Json};
+use axum::{
+    extract::{Path, Query, State},
+    Json,
+};
 use crate::services::collection_service::CollectionService;
-use crate::dtos::collection_dtos::{CreateCollectionRequest, UpdateCollectionRequest, CreateSavedRequestRequest, UpdateSavedRequestRequest};
+use crate::dtos::collection_dtos::{
+    CollectionQuery,
+    CreateCollectionRequest,
+    CreateSavedRequestRequest,
+    UpdateCollectionRequest,
+    UpdateSavedRequestRequest,
+};
 use crate::utils::error::AppError;
 use crate::utils::auth_jwt::Claims;
 use serde_json::{json, Value};
@@ -18,8 +27,17 @@ pub async fn create_collection(
     payload.validate().map_err(|e| AppError::ValidationError(e.to_string()))?;
 
     let user_id = ObjectId::from_str(&claims.sub).map_err(|_| AppError::Unauthorized("Invalid user ID in token".into()))?;
-    
-    let collection = service.create_collection(user_id, payload.name, payload.description).await?;
+    let workspace_id = ObjectId::from_str(&payload.workspace_id)
+        .map_err(|_| AppError::BadRequest("Invalid workspace ID".into()))?;
+
+    let collection = service
+        .create_collection(
+            user_id,
+            workspace_id,
+            payload.name,
+            payload.description,
+        )
+        .await?;
     
     Ok(Json(serde_json::to_value(collection).unwrap()))
 }
@@ -27,10 +45,19 @@ pub async fn create_collection(
 pub async fn get_user_collections(
     State(service): State<CollectionService>,
     claims: Claims,
+    Query(query): Query<CollectionQuery>,
 ) -> Result<Json<Value>, AppError> {
     let user_id = ObjectId::from_str(&claims.sub).map_err(|_| AppError::Unauthorized("Invalid user ID in token".into()))?;
+    let workspace_id = query
+        .workspace_id
+        .as_deref()
+        .map(ObjectId::from_str)
+        .transpose()
+        .map_err(|_| AppError::BadRequest("Invalid workspace ID".into()))?;
     
-    let collections = service.get_user_collections(user_id).await?;
+    let collections = service
+        .get_user_collections(user_id, workspace_id)
+        .await?;
     
     Ok(Json(serde_json::to_value(collections).unwrap()))
 }

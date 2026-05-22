@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore, appStore } from '@/lib/store';
+import { useWallet } from '@/wallet';
 import { RequestPanel } from '../components/RequestPanel/RequestPanel';
 import { ResponsePanel } from '../components/ResponsePanel/ResponsePanel';
 import { RequestItem, RequestType } from '../types';
@@ -11,8 +12,10 @@ import { GripHorizontal } from 'lucide-react';
 import { NETWORKS } from '@/lib/constants';
 
 export const RPCBuilder: React.FC = () => {
-    const { tabs, activeTabId, network, connectedAddress, envVariables } = useAppStore();
+    const { tabs, activeTabId, network, envVariables } = useAppStore();
+    const { currentWallet, openModal } = useWallet();
     const activeTab = tabs.find(t => t.id === activeTabId);
+    const connectedAddress = currentWallet?.family === 'sui' ? currentWallet.address : null;
     
     // Local state for the current request execution
     const [response, setResponse] = useState<any>(null);
@@ -171,7 +174,8 @@ export const RPCBuilder: React.FC = () => {
                 isOpen={isSignModalOpen}
                 onClose={() => setIsSignModalOpen(false)}
                 onConfirm={handleSignAndSend}
-                walletAddress={connectedAddress}
+                wallet={currentWallet}
+                onRequestConnect={openModal}
                 request={request}
             />
         </motion.div>

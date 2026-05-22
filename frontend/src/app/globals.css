@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../../tailwind.config.ts";
 
 @layer base {
   :root {
@@ -48,4 +47,65 @@
 
 .dot-grid {
   background-image: radial-gradient(#27272a 1px, transparent 1px);
+}
+
+/* Dark theme overrides for @mysten/dapp-kit wallet modal */
+[data-dapp-kit] [data-radix-popper-content-wrapper],
+[data-dapp-kit] dialog,
+[data-dapp-kit] [role="dialog"] {
+  --dapp-kit-bg: #0a0a0c !important;
+  --dapp-kit-border: rgba(255,255,255,0.08) !important;
+}
+
+/* Modal overlay & container */
+[data-dapp-kit] [class*="overlay"],
+[data-dapp-kit] [class*="Overlay"] {
+  background-color: rgba(0, 0, 0, 0.75) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+[data-dapp-kit] [class*="content"],
+[data-dapp-kit] [class*="Content"],
+[data-dapp-kit] [class*="modal"],
+[data-dapp-kit] [class*="Modal"] {
+  background-color: #0a0a0c !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #e4e4e7 !important;
+  border-radius: 1.5rem !important;
+}
+
+/* Wallet list items */
+[data-dapp-kit] button,
+[data-dapp-kit] [class*="wallet"],
+[data-dapp-kit] [class*="Wallet"] {
+  color: #e4e4e7 !important;
+  background-color: transparent !important;
+}
+
+[data-dapp-kit] button:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Headings & text inside modal */
+[data-dapp-kit] h1,
+[data-dapp-kit] h2,
+[data-dapp-kit] h3,
+[data-dapp-kit] p,
+[data-dapp-kit] span,
+[data-dapp-kit] label {
+  color: #e4e4e7 !important;
+}
+
+/* Close / icon buttons */
+[data-dapp-kit] [class*="close"],
+[data-dapp-kit] [class*="Close"] {
+  color: #a1a1aa !important;
+}
+
+/* Connected button styling */
+[data-dapp-kit] [class*="connected"],
+[data-dapp-kit] [class*="Connected"] {
+  background-color: rgba(123, 63, 242, 0.1) !important;
+  border: 1px solid rgba(123, 63, 242, 0.2) !important;
+  color: #e4e4e7 !important;
 }

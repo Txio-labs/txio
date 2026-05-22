@@ -17,5 +17,7 @@ pub fn router(service: AuthService) -> Router {
         .route("/reset-password", post(auth_handler::reset_password_with_otp))
         .route("/switch-network", post(auth_handler::switch_network))
         .route("/logout", post(auth_handler::logout))
+        .route("/google/login", axum::routing::get(auth_handler::google_login))
+        .route("/google/callback", axum::routing::get(auth_handler::google_callback))
         .with_state(service)
 }

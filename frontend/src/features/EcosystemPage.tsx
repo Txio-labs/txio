@@ -56,7 +56,7 @@ export const EcosystemPage: React.FC = () => {
                     </button>
                     <div className="h-6 w-px bg-slate-200 dark:bg-white/10"></div>
                     <div className="flex items-center gap-3">
-                        <img src={logo as any} alt="txio" className="h-7 w-auto" />
+                        <img src={logo.src} alt="txio" className="h-7 w-auto" />
                         <span className="font-black tracking-tighter text-lg">ecosystem</span>
                     </div>
                 </div>
@@ -228,7 +228,7 @@ export const EcosystemPage: React.FC = () => {
                                     transition={{ duration: 4, repeat: Infinity }}
                                     className="w-32 h-32 rounded-[2.5rem] bg-electric-violet shadow-[0_0_50px_rgba(123,63,242,0.4)] flex items-center justify-center z-10"
                                 >
-                                    <img src={logoDark as any} alt="txio" className="w-16 h-auto" />
+                                    <img src={logoDark.src} alt="txio" className="h-10 w-auto mx-auto" />
                                 </motion.div>
                                 
                                 {/* Orbiting Icons */}

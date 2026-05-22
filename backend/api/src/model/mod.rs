@@ -3,3 +3,4 @@ pub mod otp;
 pub mod rpc;
 pub mod collection;
 pub mod request;
+pub mod workspace;

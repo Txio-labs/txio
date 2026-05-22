@@ -5,6 +5,7 @@ import { getObject } from '../../../services/suiService';
 
 interface ObjectsTabProps {
   connectedAddress: string | null;
+  walletFamily: 'evm' | 'sui' | 'stellar' | null;
   network: Network;
   objects: any[];
   loadingObjects: boolean;
@@ -13,6 +14,7 @@ interface ObjectsTabProps {
 
 export const ObjectsTab: React.FC<ObjectsTabProps> = ({
   connectedAddress,
+  walletFamily,
   network,
   objects,
   loadingObjects,
@@ -40,7 +42,21 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center opacity-50">
         <Box size={24} className="mb-2 text-slate-600"/>
-        <p className="text-xs text-slate-500">Connect wallet to view objects</p>
+        <p className="text-xs text-slate-500">Connect a Sui wallet to inspect owned objects</p>
+      </div>
+    );
+  }
+
+  if (walletFamily !== 'sui') {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+        <div className="w-14 h-14 rounded-2xl border border-white/10 bg-white/[0.03] flex items-center justify-center mb-4">
+          <Box size={22} className="text-slate-500" />
+        </div>
+        <h3 className="text-sm font-bold text-white mb-2">Sui object inspection only</h3>
+        <p className="text-xs leading-6 text-slate-500 max-w-[220px]">
+          The object explorer currently reads Sui ownership data. Switch to a Sui wallet to browse on-chain objects here.
+        </p>
       </div>
     );
   }

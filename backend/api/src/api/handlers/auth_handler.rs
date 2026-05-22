@@ -1,6 +1,6 @@
 use axum::{extract::State, Json};
 use crate::services::auth_service::AuthService;
-use crate::dtos::{request::{RegisterUserRequest, LoginRequest, OTPRequest, VerifyOTPRequest, ResetPasswordWithOTPRequest, UpdateEmailRequest, UpdatePasswordRequest, SwitchNetworkRequest}, response::AuthResponse};
+use crate::dtos::{request::{RegisterUserRequest, LoginRequest, OTPRequest, VerifyOTPRequest, ResetPasswordWithOTPRequest, UpdateEmailRequest, UpdatePasswordRequest, SwitchNetworkRequest}, response::{AuthResponse, UserResponse}};
 use crate::utils::error::AppError;
 use serde_json::{json, Value};
 
@@ -61,9 +61,14 @@ pub async fn verify_otp(
 }
 
 pub async fn profile(
+    State(service): State<AuthService>,
     claims: crate::utils::auth_jwt::Claims,
-) -> Result<String, AppError> {
-    Ok(format!("Welcome, user {}! Your email is {}.", claims.sub, claims.email))
+) -> Result<Json<UserResponse>, AppError> {
+    let user = service
+        .get_user_profile_by_email(&claims.email)
+        .await?;
+
+    Ok(Json(user))
 }
 
 pub async fn logout() -> Result<Json<Value>, AppError> {
@@ -165,4 +170,71 @@ pub async fn switch_network(
         "message": "Network switched successfully",
         "user": user 
     })))
+}
+
+#[derive(serde::Deserialize)]
+pub struct OAuthCallbackQuery {
+    pub code: String,
+}
+
+pub async fn google_login() -> Result<axum::response::Redirect, AppError> {
+    let client_id = std::env::var("GOOGLE_CLIENT_ID").unwrap_or_default();
+    let redirect_uri = std::env::var("GOOGLE_REDIRECT_URL").unwrap_or_else(|_| "http://localhost:8000/api/v1/auth/google/callback".to_string());
+    
+    let url = format!(
+        "https://accounts.google.com/o/oauth2/v2/auth?client_id={}&redirect_uri={}&response_type=code&scope=email profile",
+        client_id, redirect_uri
+    );
+    Ok(axum::response::Redirect::temporary(&url))
+}
+
+pub async fn google_callback(
+    State(service): State<AuthService>,
+    axum::extract::Query(query): axum::extract::Query<OAuthCallbackQuery>,
+) -> Result<axum::response::Redirect, AppError> {
+    let client_id = std::env::var("GOOGLE_CLIENT_ID").unwrap_or_default();
+    let client_secret = std::env::var("GOOGLE_CLIENT_SECRET").unwrap_or_default();
+    let redirect_uri = std::env::var("GOOGLE_REDIRECT_URL").unwrap_or_else(|_| "http://localhost:8000/api/v1/auth/google/callback".to_string());
+    let frontend_url = std::env::var("FRONTEND_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
+
+    let client = reqwest::Client::new();
+    let token_res = client.post("https://oauth2.googleapis.com/token")
+        .form(&[
+            ("client_id", client_id.as_str()),
+            ("client_secret", client_secret.as_str()),
+            ("code", query.code.as_str()),
+            ("grant_type", "authorization_code"),
+            ("redirect_uri", redirect_uri.as_str()),
+        ])
+        .send()
+        .await
+        .map_err(|_| AppError::InternalError("Failed to get Google token".into()))?;
+
+    let token_data: Value = token_res.json().await
+        .map_err(|_| AppError::InternalError("Failed to parse Google token".into()))?;
+    let access_token = token_data["access_token"].as_str()
+        .ok_or(AppError::InternalError("No access token".into()))?;
+
+    let user_res = client.get("https://www.googleapis.com/oauth2/v2/userinfo")
+        .bearer_auth(access_token)
+        .send()
+        .await
+        .map_err(|_| AppError::InternalError("Failed to get Google user info".into()))?;
+
+    let user_data: Value = user_res.json().await
+        .map_err(|_| AppError::InternalError("Failed to parse Google user info".into()))?;
+    let email = user_data["email"].as_str()
+        .ok_or(AppError::InternalError("No email in Google profile".into()))?;
+
+    let auth_res = service.oauth_login_or_register(email.to_string()).await?;
+
+    // Pass the JWT back to the frontend as a query param so the SPA can
+    // pick it up, store it, and route the user into the app.
+    let redirect_to = format!(
+        "{}/?token={}",
+        frontend_url.trim_end_matches('/'),
+        auth_res.token
+    );
+
+    Ok(axum::response::Redirect::temporary(&redirect_to))
 }
