@@ -9,6 +9,9 @@ pub struct Collection {
     pub id: Option<ObjectId>,
 
     pub user_id: ObjectId,
+    
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub workspace_id: Option<ObjectId>,
 
     #[validate(length(min = 1, message = "Name cannot be empty"))]
     pub name: String,
@@ -20,10 +23,16 @@ pub struct Collection {
 }
 
 impl Collection {
-    pub fn new(user_id: ObjectId, name: String, description: Option<String>) -> Self {
+    pub fn new(
+        user_id: ObjectId,
+        workspace_id: Option<ObjectId>,
+        name: String,
+        description: Option<String>,
+    ) -> Self {
         Self {
             id: None,
             user_id,
+            workspace_id,
             name,
             description,
             created_at: Utc::now(),

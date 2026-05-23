@@ -4,7 +4,7 @@ import { User, Mail, Lock, ArrowRight } from 'lucide-react';
 interface LoginSignupFormProps {
   mode: 'login' | 'signup';
   onModeChange: (mode: 'login' | 'signup') => void;
-  onSubmit: (data: { name: string; email: string; password: string }) => void;
+  onSubmit: (data: { name: string; email: string; password: string }) => Promise<void>;
 }
 
 export const LoginSignupForm: React.FC<LoginSignupFormProps> = ({ 
@@ -13,11 +13,20 @@ export const LoginSignupForm: React.FC<LoginSignupFormProps> = ({
   onSubmit 
 }) => {
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
-    setFormData({ name: '', email: '', password: '' });
+    setIsSubmitting(true);
+
+    try {
+      await onSubmit(formData);
+      setFormData({ name: '', email: '', password: '' });
+    } catch {
+      // AuthModal surfaces the backend error toast.
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -82,10 +91,15 @@ export const LoginSignupForm: React.FC<LoginSignupFormProps> = ({
         </div>
         
         <button 
-          type="submit" 
-          className="w-full bg-electric-violet hover:bg-electric-violet text-white font-bold py-2.5 rounded-lg transition-all shadow-lg shadow-sui-900/50 mt-6 flex items-center justify-center gap-2"
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full bg-electric-violet hover:bg-electric-violet text-white font-bold py-2.5 rounded-lg transition-all shadow-lg shadow-sui-900/50 mt-6 flex items-center justify-center gap-2 disabled:opacity-60"
         >
-          {mode === 'login' ? 'Sign In' : 'Create Account'} 
+          {isSubmitting
+            ? 'Please wait...'
+            : mode === 'login'
+              ? 'Sign In'
+              : 'Create Account'} 
           <ArrowRight size={16} />
         </button>
       </form>

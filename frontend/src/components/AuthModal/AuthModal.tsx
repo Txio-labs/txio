@@ -7,6 +7,7 @@ import { GeneralTab } from './tabs/GeneralTab';
 import { TeamTab } from './tabs/TeamTab';
 import { SecurityTab } from './tabs/SecurityTab';
 import { ApiKeysTab } from './tabs/ApiKeysTab';
+import { appStore } from '@/lib/store';
 
 export const AuthModal: React.FC<AuthModalProps> = ({ 
   isOpen, 
@@ -20,14 +21,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [activeTab, setActiveTab] = useState<ProfileTab>('general');
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+  const isProfileDrawer = Boolean(user);
 
   if (!isOpen) return null;
 
-  const handleFormSubmit = (data: { name: string; email: string; password: string }) => {
-    if (mode === 'login') {
-      onLogin(data.email, data.password);
-    } else {
-      onSignup(data.name, data.email, data.password);
+  const handleFormSubmit = async (data: { name: string; email: string; password: string }) => {
+    try {
+      if (mode === 'login') {
+        await onLogin(data.email, data.password);
+      } else {
+        await onSignup(data.name, data.email, data.password);
+      }
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : 'Authentication failed. Please try again.';
+
+      appStore.showToast(message, 'error');
+      throw error;
     }
   };
 
@@ -49,22 +60,35 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-near-black/70 backdrop-blur-sm animate-in fade-in duration-200 font-sans">
+    <div
+      onClick={onClose}
+      className={`fixed inset-0 z-50 bg-near-black/70 backdrop-blur-sm animate-in fade-in duration-200 font-sans ${
+        isProfileDrawer
+          ? 'flex justify-end p-0'
+          : 'flex items-center justify-center p-4'
+      }`}
+    >
       <div 
-        className={`bg-dark-indigo-glow border border-white/10 rounded-xl shadow-2xl w-full overflow-hidden relative transition-all duration-300 flex flex-col ${
-          user ? 'max-w-4xl h-[85vh] md:h-[600px]' : 'max-w-md h-auto'
+        className={`bg-dark-indigo-glow border border-white/10 shadow-2xl w-full overflow-hidden relative transition-all duration-300 flex flex-col ${
+          isProfileDrawer
+            ? 'h-full max-w-full sm:max-w-[820px] md:max-w-[1080px] rounded-none border-y-0 border-r-0 border-l-white/10 animate-in slide-in-from-right-8 duration-300'
+            : 'max-w-md h-auto rounded-xl'
         }`}
         onClick={(e) => e.stopPropagation()}
       >
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 text-slate-500 hover:text-white transition-colors bg-dark-indigo-glow/50 p-1 rounded-full hover:bg-white/5"
+          className={`absolute top-4 right-4 z-10 text-slate-500 hover:text-white transition-colors p-1 rounded-full hover:bg-white/5 ${
+            isProfileDrawer
+              ? 'bg-near-black/70'
+              : 'bg-dark-indigo-glow/50'
+          }`}
         >
           <X size={20} />
         </button>
 
         {user ? (
-          <div className="flex flex-col md:flex-row h-full">
+          <div className="flex h-full flex-col md:flex-row">
             <ProfileSidebar 
               user={user}
               activeTab={activeTab}
@@ -72,8 +96,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               onLogout={onLogout}
             />
             
-            <div className="flex-1 bg-dark-indigo-glow p-6 md:p-8 overflow-y-auto custom-scrollbar">
-              {renderTabContent()}
+            <div className="relative min-w-0 flex-1 overflow-hidden bg-[linear-gradient(180deg,#070709_0%,#0b0b10_52%,#060608_100%)]">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(123,63,242,0.14),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(167,139,250,0.1),transparent_30%)]" />
+              <div className="relative h-full overflow-y-auto p-5 md:p-8 custom-scrollbar">
+                {renderTabContent()}
+              </div>
             </div>
           </div>
         ) : (

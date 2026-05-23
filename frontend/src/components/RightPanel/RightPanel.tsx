@@ -1,12 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Wallet, Box, X, BrainCircuit, MessageSquare } from 'lucide-react';
 import { Network, ActivityLog, Comment } from '../../types';
-import { getOwnedObjects, getObject, getBalance } from '../../services/suiService';
-import {
-  useCurrentAccount,
-  useDisconnectWallet,
-} from '@mysten/dapp-kit';
-import { appStore } from '@/lib/store';
+import { getOwnedObjects } from '../../services/suiService';
+import { useWallet } from '@/wallet';
 import {
   WalletTab,
   ObjectsTab,
@@ -33,31 +29,13 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   const [activeTab, setActiveTab] = useState<'wallet' | 'objects' | 'analysis' | 'discuss'>('wallet');
   const [objects, setObjects] = useState<any[]>([]);
   const [loadingObjects, setLoadingObjects] = useState(false);
-  const [balance, setBalance] = useState<string | null>(null);
-  const [loadingBalance, setLoadingBalance] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [commentInput, setCommentInput] = useState('');
   
-  const account = useCurrentAccount();
-  const connectedAddress = account?.address || null;
-  const { mutate: disconnect } = useDisconnectWallet();
+  const { currentWallet } = useWallet();
+  const connectedAddress = currentWallet?.family === 'sui' ? currentWallet.address : null;
 
   const formatAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
-
-  const handleCopy = () => {
-    if (connectedAddress) {
-      navigator.clipboard.writeText(connectedAddress);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const handleDisconnect = () => {
-    if (disconnect) {
-      disconnect();
-    }
   };
 
   const fetchObjects = async () => {
@@ -77,42 +55,9 @@ export const RightPanel: React.FC<RightPanelProps> = ({
     }
   };
 
-  // Remove this useEffect - we're not syncing with the store anymore
-  // useEffect(() => {
-  //   if (account?.address) {
-  //     appStore.setConnectedAddress(account.address);
-  //   } else {
-  //     appStore.setConnectedAddress(null);
-  //   }
-  // }, [account]);
-
-  const fetchBalance = async () => {
-    if (!connectedAddress) {
-      setBalance(null);
-      return;
-    }
-    setLoadingBalance(true);
-    try {
-      const res = await getBalance(network, connectedAddress);
-      if (res.result && res.result.totalBalance) {
-        const mist = Number(res.result.totalBalance);
-        setBalance((mist / 1_000_000_000).toFixed(4));
-      } else {
-        setBalance('0.0000');
-      }
-    } catch (e) {
-      setBalance('0.0000');
-    } finally {
-      setLoadingBalance(false);
-    }
-  };
-
   useEffect(() => {
     if (activeTab === 'objects' && connectedAddress) {
       fetchObjects();
-    }
-    if (activeTab === 'wallet' && connectedAddress) {
-      fetchBalance();
     }
   }, [activeTab, connectedAddress, network]);
 
@@ -172,9 +117,6 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         {/* --- WALLET TAB --- */}
         {activeTab === 'wallet' && (
             <WalletTab
-              network={network}
-              balance={balance}
-              loadingBalance={loadingBalance}
               formatAddress={formatAddress}
             />  
         )}
@@ -184,6 +126,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           <div className="flex-1 flex flex-col min-h-0 bg-near-black">
             <ObjectsTab
               connectedAddress={connectedAddress}
+              walletFamily={currentWallet?.family || null}
               network={network}
               objects={objects}
               loadingObjects={loadingObjects}

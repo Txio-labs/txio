@@ -1,3 +1,4 @@
 pub mod request;
 pub mod response;
 pub mod collection_dtos;
+pub mod workspace_dtos;

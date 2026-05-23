@@ -1,6 +1,13 @@
-use axum::{routing::get, Router};
+use axum::{
+    http::{
+        HeaderValue,
+    },
+    routing::get,
+    Router,
+};
 use std::net::SocketAddr;
 use dotenvy::dotenv;
+use tower_http::cors::{Any, CorsLayer};
 
 use ::txio_api::{
     api, services, model, repositories, utils,
@@ -45,6 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let rpc_repo = repositories::rpc_repository::RpcRepository::new(&db_client);
     let collection_repo = repositories::collection_repository::CollectionRepository::new(&db_client);
     let request_repo = repositories::request_repository::RequestRepository::new(&db_client);
+    let workspace_repo = repositories::workspace_repository::WorkspaceRepository::new(&db_client);
 
     // 5. Initialize JWT Helper
     let jwt_helper = utils::auth_jwt::JwtHelper::new(config.jwt_secret);
@@ -67,20 +75,56 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     
     let collection_service = services::collection_service::CollectionService::new(
-        collection_repo,
+        collection_repo.clone(),
         request_repo,
-        user_repo,
+        user_repo.clone(),
+        workspace_repo.clone(),
         sui_service,
     );
 
+    let workspace_service = services::workspace_service::WorkspaceService::new(
+        workspace_repo,
+        collection_repo,
+    );
+
     let terminal_service = services::terminal_service::TerminalService::new();
+
+    let frontend_url = std::env::var("FRONTEND_URL")
+        .unwrap_or_else(|_| "http://localhost:3000".to_string());
+    let frontend_origin = reqwest::Url::parse(&frontend_url)
+        .map(|url| url.origin().ascii_serialization())
+        .unwrap_or_else(|_| frontend_url.trim_end_matches('/').to_string());
+    let cors_origin = HeaderValue::from_str(&frontend_origin).map_err(|e| {
+        tracing::error!(
+            error = %e,
+            frontend_origin = %frontend_origin,
+            "Invalid frontend origin for CORS"
+        );
+        Box::new(e) as Box<dyn std::error::Error>
+    })?;
+    let allowed_origins = vec![
+        cors_origin,
+        HeaderValue::from_static("http://localhost:3000"),
+        HeaderValue::from_static("http://127.0.0.1:3000"),
+    ];
+    let cors = CorsLayer::new()
+        .allow_origin(allowed_origins)
+        .allow_methods(Any)
+        .allow_headers(Any);
+
+    tracing::info!(
+        frontend_origin = %frontend_origin,
+        "Configured CORS for frontend access"
+    );
 
     // 7. Build Router
     let app = Router::new()
         .route("/health", get(|| async { "txio Backend Operational" }))
         .nest("/api/v1/auth", api::routers::auth_router::router(auth_service))
         .nest("/api/v1/collections", api::routers::collection_router::router(collection_service))
-        .nest("/api/v1/terminal", api::routers::terminal_router::router(terminal_service));
+        .nest("/api/v1/workspaces", api::routers::workspace_router::router(workspace_service))
+        .nest("/api/v1/terminal", api::routers::terminal_router::router(terminal_service))
+        .layer(cors);
 
     // 8. Run Server
     let port = std::env::var("PORT")

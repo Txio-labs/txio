@@ -33,6 +33,28 @@ impl CollectionRepository {
         Ok(collections)
     }
 
+    pub async fn find_all_by_user_and_workspace(
+        &self,
+        user_id: ObjectId,
+        workspace_id: ObjectId,
+    ) -> Result<Vec<Collection>, AppError> {
+        let filter = doc! {
+            "user_id": user_id,
+            "workspace_id": workspace_id,
+        };
+        let mut cursor = self.collection.find(filter, None).await?;
+
+        let mut collections = Vec::new();
+        while cursor.advance().await? {
+            let c: Collection = cursor
+                .deserialize_current()
+                .map_err(AppError::Database)?;
+            collections.push(c);
+        }
+
+        Ok(collections)
+    }
+
     pub async fn find_by_id(&self, id: ObjectId) -> Result<Collection, AppError> {
         let filter = doc! { "_id": id };
         let result = self.collection.find_one(filter, None).await?;
@@ -54,6 +76,32 @@ impl CollectionRepository {
         if result.deleted_count == 0 {
             return Err(AppError::NotFound(format!("Collection not found for deletion: {}", id)));
         }
+        Ok(())
+    }
+
+    pub async fn assign_workspace_to_unscoped_user_collections(
+        &self,
+        user_id: ObjectId,
+        workspace_id: ObjectId,
+    ) -> Result<(), AppError> {
+        self.collection
+            .update_many(
+                doc! {
+                    "user_id": user_id,
+                    "$or": [
+                        { "workspace_id": { "$exists": false } },
+                        { "workspace_id": mongodb::bson::Bson::Null }
+                    ]
+                },
+                doc! {
+                    "$set": {
+                        "workspace_id": workspace_id
+                    }
+                },
+                None,
+            )
+            .await?;
+
         Ok(())
     }
 }

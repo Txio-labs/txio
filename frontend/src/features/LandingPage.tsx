@@ -146,8 +146,14 @@ export const LandingPage: React.FC = () => {
                                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                             </span>
                         </button>
-                        <button className="px-10 py-5 bg-near-black border border-white/10 rounded-2xl font-bold text-lg hover:border-white/20 transition-all flex items-center gap-3 group">
-                            <Github size={20} className="text-slate-400 group-hover:text-white" />
+                        <button
+                            onClick={() => window.open("https://github.com/Kingvic300/txio/", "_blank")}
+                            className="px-10 py-5 bg-near-black border border-white/10 rounded-2xl font-bold text-lg hover:border-white/20 transition-all flex items-center gap-3 group"
+                            >
+                            <Github
+                                size={20}
+                                className="text-slate-400 group-hover:text-white"
+                            />
                             View on GitHub
                         </button>
                     </motion.div>

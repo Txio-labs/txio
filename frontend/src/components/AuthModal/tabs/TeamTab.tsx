@@ -1,5 +1,11 @@
 import React from 'react';
-import { Plus, MoreVertical } from 'lucide-react';
+import {
+  Plus,
+  MoreVertical,
+  Shield,
+  Users,
+  Sparkles
+} from 'lucide-react';
 import { Avatar } from '../../ui/Avatar';
 import { TeamMember } from '../../../types';
 import { appStore } from '@/lib/store';
@@ -8,77 +14,165 @@ interface TeamTabProps {
   teamMembers?: TeamMember[];
 }
 
-export const TeamTab: React.FC<TeamTabProps> = ({ teamMembers = [] }) => {
+export const TeamTab: React.FC<TeamTabProps> = ({
+  teamMembers = []
+}) => {
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
-      <div className="flex justify-between items-start">
-        <div>
-          <h2 className="text-xl font-bold text-white mb-1">Team Members</h2>
-          <p className="text-slate-400 text-sm">Manage access and roles for your workspace.</p>
-        </div>
-        <button 
-          onClick={() => appStore.showToast('Invite txio not implemented', 'info')} 
-          className="px-3 py-1.5 bg-electric-violet hover:bg-electric-violet text-white text-xs font-bold rounded flex items-center gap-2"
-        >
-          <Plus size={14} /> <span className="hidden sm:inline">Invite Member</span>
-        </button>
-      </div>
+    <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+      <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(145deg,rgba(123,63,242,0.14)_0%,rgba(10,10,14,0.96)_42%,rgba(6,6,8,1)_100%)] p-6">
+        <div className="absolute -right-10 top-0 h-32 w-32 rounded-full bg-soft-purple/15 blur-3xl" />
 
-      <div className="border border-white/5 rounded-lg overflow-x-auto bg-near-black">
-        <table className="w-full text-left text-sm min-w-[500px]">
-          <thead className="bg-dark-indigo-glow border-b border-white/5 text-xs text-slate-500 uppercase font-medium">
-            <tr>
-              <th className="px-4 py-3">User</th>
-              <th className="px-4 py-3">Role</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-800">
-            {teamMembers.map((member) => (
-              <tr key={member.id} className="group hover:bg-dark-indigo-glow/50 transition-colors">
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <Avatar size="sm" type={member.name.includes('AI') ? 'bot' : 'user'} seed={member.email} />
-                    <div>
-                      <div className="text-slate-200 font-medium">{member.name}</div>
-                      <div className="text-xs text-slate-500">{member.email}</div>
+        <div className="relative flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-electric-violet/20 bg-electric-violet/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.28em] text-electric-violet">
+              <Users size={12} />
+              Team Surface
+            </div>
+
+            <h2 className="mt-4 text-3xl font-bold tracking-tight text-white">
+              Manage who gets inside the workspace.
+            </h2>
+
+            <p className="mt-3 text-sm leading-relaxed text-slate-400">
+              Invite operators, assign roles, and keep shared access aligned
+              with the same precision as the rest of the toolchain.
+            </p>
+          </div>
+
+          <button
+            onClick={() =>
+              appStore.showToast('Invite flow not implemented yet', 'info')
+            }
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-electric-violet px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white shadow-[0_18px_35px_-20px_rgba(123,63,242,0.8)] transition-colors hover:bg-soft-purple"
+          >
+            <Plus size={14} />
+            Invite Member
+          </button>
+        </div>
+      </section>
+
+      {teamMembers.length === 0 ? (
+        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_320px]">
+          <div className="rounded-[1.75rem] border border-white/10 bg-[#0b0b10]/85 p-6">
+            <div className="rounded-[1.5rem] border border-dashed border-white/10 bg-white/[0.02] p-8 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-electric-violet/10 text-electric-violet">
+                <Users size={28} />
+              </div>
+              <h3 className="mt-5 text-xl font-bold text-white">
+                No team members yet
+              </h3>
+              <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-400">
+                Start with a focused operator crew. Invite collaborators when
+                you are ready to share collections, requests, and execution
+                visibility.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="rounded-[1.75rem] border border-white/10 bg-[#0b0b10]/85 p-5">
+              <div className="flex items-start gap-3">
+                <div className="rounded-2xl bg-electric-violet/10 p-3 text-electric-violet">
+                  <Shield size={18} />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-white">
+                    Tight permission model
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                    Add editors only when they need access to shared requests or
+                    execution flows.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[1.75rem] border border-white/10 bg-[#0b0b10]/85 p-5">
+              <div className="flex items-start gap-3">
+                <div className="rounded-2xl bg-soft-purple/10 p-3 text-soft-purple">
+                  <Sparkles size={18} />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-white">
+                    Shared collection strategy
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                    Keep a clean split between personal experiments and team
+                    operational requests.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {teamMembers.map((member) => (
+            <div
+              key={member.id}
+              className="rounded-[1.75rem] border border-white/10 bg-[#0b0b10]/85 p-5"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Avatar
+                    size="md"
+                    type={member.name.includes('AI') ? 'bot' : 'user'}
+                    seed={member.email}
+                  />
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-semibold text-white">
+                      {member.name}
+                    </div>
+                    <div className="truncate text-xs text-slate-500">
+                      {member.email}
                     </div>
                   </div>
-                </td>
-                <td className="px-4 py-3">
-                  <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${
-                    member.role === 'Admin' ? 'bg-purple-900/20 text-purple-400 border-purple-900/50' : 
-                    member.role === 'Editor' ? 'bg-blue-900/20 text-blue-400 border-blue-900/50' : 
-                    'bg-slate-800 text-slate-400 border-white/10'
-                  }`}>
-                    {member.role}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  {member.status === 'Active' ? (
-                    <span className="text-emerald-400 text-xs flex items-center gap-1.5">
-                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div> Active
-                    </span>
-                  ) : (
-                    <span className="text-amber-400 text-xs flex items-center gap-1.5">
-                      <div className="w-1.5 h-1.5 bg-amber-500 rounded-full"></div> Pending
-                    </span>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <button 
-                    onClick={() => appStore.showToast('Member actions not implemented', 'info')} 
-                    className="text-slate-500 hover:text-white p-1 rounded hover:bg-white/5"
-                  >
-                    <MoreVertical size={16} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                </div>
+
+                <button
+                  onClick={() =>
+                    appStore.showToast('Member actions not implemented', 'info')
+                  }
+                  className="rounded-xl p-2 text-slate-500 transition-colors hover:bg-white/[0.05] hover:text-white"
+                >
+                  <MoreVertical size={16} />
+                </button>
+              </div>
+
+              <div className="mt-5 flex items-center justify-between">
+                <span
+                  className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${
+                    member.role === 'Admin'
+                      ? 'border-electric-violet/20 bg-electric-violet/10 text-electric-violet'
+                      : member.role === 'Editor'
+                        ? 'border-blue-500/20 bg-blue-500/10 text-blue-400'
+                        : 'border-white/10 bg-white/[0.04] text-slate-300'
+                  }`}
+                >
+                  {member.role}
+                </span>
+
+                <span
+                  className={`inline-flex items-center gap-2 text-xs font-medium ${
+                    member.status === 'Active'
+                      ? 'text-emerald-400'
+                      : 'text-amber-400'
+                  }`}
+                >
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      member.status === 'Active'
+                        ? 'bg-emerald-500'
+                        : 'bg-amber-500'
+                    }`}
+                  />
+                  {member.status}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

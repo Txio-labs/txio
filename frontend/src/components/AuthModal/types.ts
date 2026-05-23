@@ -4,8 +4,8 @@ export interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: UserProfile | null;
-  onLogin: (email: string, pass: string) => void;
-  onSignup: (name: string, email: string, pass: string) => void;
+  onLogin: (email: string, pass: string) => Promise<void>;
+  onSignup: (name: string, email: string, pass: string) => Promise<void>;
   onLogout: () => void;
   teamMembers?: TeamMember[];
 }

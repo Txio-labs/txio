@@ -19,6 +19,26 @@ pub struct AuthService {
 }
 
 impl AuthService {
+    fn to_user_response(user: &User) -> UserResponse {
+        let name = user
+            .email
+            .split('@')
+            .next()
+            .unwrap_or("user")
+            .to_string();
+
+        UserResponse {
+            id: user
+                .id
+                .as_ref()
+                .map(|id| id.to_string())
+                .unwrap_or_default(),
+            name,
+            email: user.email.clone(),
+            created_at: user.created_at.to_string(),
+        }
+    }
+
     pub fn new(
         repo: UserRepository, 
         rpc_repo: RpcRepository,
@@ -68,11 +88,7 @@ impl AuthService {
 
         Ok(AuthResponse {
             token,
-            user: UserResponse {
-                id: saved_user.id.map(|id| id.to_string()).unwrap_or_default(),
-                email: saved_user.email,
-                created_at: saved_user.created_at.to_string(),
-            },
+            user: Self::to_user_response(&saved_user),
         })
     }
 
@@ -104,22 +120,14 @@ impl AuthService {
 
         Ok(AuthResponse {
             token,
-            user: UserResponse {
-                id: user.id.map(|id| id.to_string()).unwrap_or_default(),
-                email: user.email,
-                created_at: user.created_at.to_string(),
-            },
+            user: Self::to_user_response(&user),
         })
     }
 
     pub async fn get_user_profile_by_email(&self, email: &str) -> Result<UserResponse, AppError> {
         let user = self.repo.find_by_email(email).await?;
 
-        Ok(UserResponse {
-            id: user.id.map(|id| id.to_string()).unwrap_or_default(),
-            email: user.email,
-            created_at: user.created_at.to_string(),
-        })
+        Ok(Self::to_user_response(&user))
     }
 
     pub async fn delete_user_by_email(&self, email: &str) -> Result<UserResponse, AppError> {
@@ -127,11 +135,7 @@ impl AuthService {
         let user_id = user.id.map(|id| id.to_string()).ok_or(AppError::InternalError("User ID missing".into()))?;
         let deleted_user = self.repo.delete_by_id(&user_id).await?;
 
-        Ok(UserResponse {
-            id: deleted_user.id.map(|id| id.to_string()).unwrap_or_default(),
-            email: deleted_user.email,
-            created_at: deleted_user.created_at.to_string(),
-        })
+        Ok(Self::to_user_response(&deleted_user))
     }
 
     pub async fn update_user_email_by_email(&self, old_email: &str, new_email: &str) -> Result<UserResponse, AppError> {
@@ -140,11 +144,7 @@ impl AuthService {
 
         let updated_user = self.repo.update(&user).await?;
 
-        Ok(UserResponse {
-            id: updated_user.id.map(|id| id.to_string()).unwrap_or_default(),
-            email: updated_user.email,
-            created_at: updated_user.created_at.to_string(),
-        })
+        Ok(Self::to_user_response(&updated_user))
     }
 
     pub async fn update_user_password_by_email(&self, email: &str, new_password: &str) -> Result<UserResponse, AppError> {
@@ -163,11 +163,7 @@ impl AuthService {
 
         let updated_user = self.repo.update(&user).await?;
 
-        Ok(UserResponse {
-            id: updated_user.id.map(|id| id.to_string()).unwrap_or_default(),
-            email: updated_user.email,
-            created_at: updated_user.created_at.to_string(),
-        })
+        Ok(Self::to_user_response(&updated_user))
     }
 
     pub async fn reset_password_with_otp(
@@ -219,10 +215,35 @@ impl AuthService {
 
         let updated_user = self.repo.update(&user).await?;
 
-        Ok(UserResponse {
-            id: updated_user.id.map(|id| id.to_string()).unwrap_or_default(),
-            email: updated_user.email,
-            created_at: updated_user.created_at.to_string(),
+        Ok(Self::to_user_response(&updated_user))
+    }
+
+    pub async fn oauth_login_or_register(
+        &self,
+        email: String,
+    ) -> Result<AuthResponse, AppError> {
+        let user_result = self.repo.find_by_email(&email).await;
+        
+        let user = match user_result {
+            Ok(u) => u,
+            Err(_) => {
+                let random_password = uuid::Uuid::new_v4().to_string();
+                let password_hash = bcrypt::hash(
+                    random_password.as_bytes(),
+                    bcrypt::DEFAULT_COST,
+                )
+                .map_err(|_| AppError::InternalError("Failed to hash password".into()))?;
+                
+                let new_user = User::new(email.clone(), password_hash);
+                self.repo.save(&new_user).await?
+            }
+        };
+
+        let token = self.jwt_helper.generate_token(&user.id.map(|id| id.to_string()).unwrap_or_default(), &user.email)?;
+
+        Ok(AuthResponse {
+            token,
+            user: Self::to_user_response(&user),
         })
     }
 }

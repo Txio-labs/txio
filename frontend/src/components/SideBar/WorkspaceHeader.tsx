@@ -21,6 +21,10 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
 }) => {
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [newWsName, setNewWsName] = useState('');
+  const workspaceCountLabel =
+    workspaces.length === 1
+      ? '1 workspace'
+      : `${workspaces.length} workspaces`;
 
   const handleCreateWorkspace = () => {
     if (newWsName.trim()) {
@@ -37,20 +41,36 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
       
       <button 
         onClick={onToggleDropdown} 
-        className="flex items-center justify-between group py-2 px-3 rounded-xl hover:bg-white/[0.03] transition-all border border-transparent hover:border-white/5 active:scale-[0.98]"
+        className="group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[1.15rem] border border-white/8 bg-white/[0.02] px-3 py-3 text-left transition-all hover:border-electric-violet/20 hover:bg-white/[0.035] active:scale-[0.98]"
       >
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-2 h-2 rounded-full bg-electric-violet shadow-[0_0_8px_rgba(123,63,242,0.6)]" />
-          <span className="text-sm font-bold text-white group-hover:text-electric-violet transition-colors truncate tracking-tight">{currentWorkspace.name}</span>
-          <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase border tracking-widest ${
-            currentWorkspace.type === 'Personal' 
-            ? 'border-white/10 text-slate-500' 
-            : 'border-electric-violet/30 text-electric-violet bg-electric-violet/10'
-          }`}>
-            {currentWorkspace.type}
-          </span>
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-electric-violet shadow-[0_0_8px_rgba(123,63,242,0.6)]" />
+
+          <div className="min-w-0 flex-1">
+            <div
+              title={currentWorkspace.name}
+              className="truncate text-sm font-bold tracking-tight text-white transition-colors group-hover:text-electric-violet"
+            >
+              {currentWorkspace.name}
+            </div>
+
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.22em] ${
+                currentWorkspace.type === 'Personal'
+                  ? 'border-white/10 bg-white/[0.03] text-slate-400'
+                  : 'border-electric-violet/30 bg-electric-violet/10 text-electric-violet'
+              }`}>
+                {currentWorkspace.type}
+              </span>
+
+              <span className="truncate text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+                {workspaceCountLabel}
+              </span>
+            </div>
+          </div>
         </div>
-        <ChevronDown size={14} className={`text-slate-500 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+
+        <ChevronDown size={14} className={`mt-0.5 shrink-0 text-slate-500 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isDropdownOpen && (
@@ -60,13 +80,27 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
               <button
                 key={ws.id}
                 onClick={() => { onSwitchWorkspace(ws); onToggleDropdown(); }}
-                className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between transition-all ${
+                className={`grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all ${
                   ws.id === currentWorkspace.id 
                   ? 'bg-electric-violet/10 text-white' 
                   : 'text-slate-400 hover:bg-white/[0.05] hover:text-white'
                 }`}
               >
-                <span className="truncate">{ws.name}</span>
+                <div className="min-w-0">
+                  <div className="truncate text-xs font-bold">
+                    {ws.name}
+                  </div>
+                  <div className="mt-1">
+                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.22em] ${
+                      ws.type === 'Personal'
+                        ? 'border-white/10 text-slate-500'
+                        : 'border-electric-violet/30 bg-electric-violet/10 text-electric-violet'
+                    }`}>
+                      {ws.type}
+                    </span>
+                  </div>
+                </div>
+
                 {ws.id === currentWorkspace.id && <Check size={14} className="text-electric-violet shrink-0"/>}
               </button>
             ))}
@@ -96,10 +130,17 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
             ) : (
               <button 
                 onClick={() => setIsCreatingWorkspace(true)}
-                className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-slate-400 hover:text-white hover:bg-white/[0.05] rounded-xl transition-all"
+                className="w-full flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-400 transition-all hover:bg-white/[0.05] hover:text-white"
               >
-                <Plus size={14} className="text-electric-violet" /> 
-                <span>Create Workspace</span>
+                <span className="flex min-w-0 items-center gap-2">
+                  <Plus size={14} className="shrink-0 text-electric-violet" /> 
+                  <span className="truncate whitespace-nowrap">
+                    Create Workspace
+                  </span>
+                </span>
+                <span className="shrink-0 rounded-full border border-white/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.22em] text-slate-500">
+                  New
+                </span>
               </button>
             )}
           </div>

@@ -4,7 +4,15 @@ const nextConfig: NextConfig = {
   /* config options here */
   output: 'export',
   reactStrictMode: true,
-  transpilePackages: ['@mysten/dapp-kit', '@mysten/sui'],
+  transpilePackages: [
+    '@mysten/dapp-kit',
+    '@mysten/sui',
+    'wagmi',
+    '@wagmi/connectors',
+    '@wagmi/core',
+    '@stellar/freighter-api',
+    '@lobstrco/signer-extension-api'
+  ],
   images: {
     unoptimized: true,
   },
