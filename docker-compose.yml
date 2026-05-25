@@ -12,14 +12,17 @@ services:
       context: .
       dockerfile: ./Dockerfile
     container_name: txio-api
+    env_file:
+      - ./backend/api/.env
     environment:
       MONGO_URI: mongodb://mongodb:27017/txio
       RUST_LOG: info
       JWT_SECRET: dev-secret-key-at-least-32-chars-long-12345
       BREVO_API_KEY: dummy-key
+      PORT: 8000
       SUI_CLI_EMAIL: dev@txio.io
     ports:
-      - "3000:3000"
+      - "8000:8000"
     depends_on:
       - mongodb
 
@@ -31,7 +34,7 @@ services:
     ports:
       - "5173:80"
     environment:
-      - VITE_API_URL=http://localhost:3000
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
     depends_on:
       - api
 

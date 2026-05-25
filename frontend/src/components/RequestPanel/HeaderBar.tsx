@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Play, Zap, Loader2, Server, Terminal, Layers } from 'lucide-react';
 import { Select } from '../Select';
 import { RequestType, Network, RPCHealthMetric } from '../../types';
-import { NETWORKS } from '@/lib/constants';
-import { fetchRPCHealth } from '../../services/mockService';
+import { useAppStore } from '@/lib/store';
+import { resolveRpcUrl } from '@/lib/appConfig';
+import { getSuiRpcHealth } from '../../services/suiService';
 
 interface HeaderBarProps {
   requestType: RequestType;
@@ -24,16 +25,26 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onSend,
   onExecute
 }) => {
+  const { settings } = useAppStore();
   const [rpcHealth, setRpcHealth] = useState<RPCHealthMetric | null>(null);
-  const endpoint = NETWORKS[network];
+  const endpoint = resolveRpcUrl(network, settings);
 
   useEffect(() => {
+    let mounted = true;
+
     const getHealth = async () => {
-      const metrics = await fetchRPCHealth();
-      const current = metrics.find(m => m.endpoint === endpoint) || metrics.find(m => m.endpoint.includes(network));
-      setRpcHealth(current || null);
+      const health = await getSuiRpcHealth(network);
+
+      if (mounted) {
+        setRpcHealth(health);
+      }
     };
+
     getHealth();
+
+    return () => {
+      mounted = false;
+    };
   }, [network, endpoint]);
 
   return (
@@ -61,8 +72,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         </div>
         {rpcHealth && (
           <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-white/10" title={`Status: ${rpcHealth.status}`}>
-            <div className={`w-1.5 h-1.5 rounded-full ${rpcHealth.status === 'healthy' ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]' : 'bg-amber-500'}`}></div>
-            <span className={`text-[10px] font-mono ${rpcHealth.status === 'healthy' ? 'text-emerald-500' : 'text-amber-500'}`}>
+            <div className={`w-1.5 h-1.5 rounded-full ${rpcHealth.status === 'healthy' ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]' : rpcHealth.status === 'degraded' ? 'bg-amber-500' : 'bg-red-500'}`}></div>
+            <span className={`text-[10px] font-mono ${rpcHealth.status === 'healthy' ? 'text-emerald-500' : rpcHealth.status === 'degraded' ? 'text-amber-500' : 'text-red-400'}`}>
               {Math.round(rpcHealth.latency[rpcHealth.latency.length-1])}ms
             </span>
           </div>
@@ -84,7 +95,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             onClick={onExecute}
             disabled={isLoading || !activeAddress}
             className="h-[38px] bg-emerald-600 hover:bg-emerald-500 text-white px-3 rounded-lg font-bold flex items-center justify-center transition-all shadow-lg shadow-emerald-900/40 active:scale-95 disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed"
-            title={activeAddress ? "Sign & Execute" : "Connect Wallet to Sign"}
+            title={activeAddress ? 'Review wallet-based simulation' : 'Connect Wallet to review simulation'}
+            aria-label={activeAddress ? 'Review wallet-based simulation' : 'Connect wallet to review simulation'}
           >
             <Zap size={14} fill="currentColor" />
           </button>

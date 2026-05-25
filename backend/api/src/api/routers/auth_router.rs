@@ -1,6 +1,6 @@
-use axum::{Router, routing::post};
-use crate::services::auth_service::AuthService;
 use crate::api::handlers::auth_handler;
+use crate::services::auth_service::AuthService;
+use axum::{Router, routing::post};
 
 pub fn router(service: AuthService) -> Router {
     Router::new()
@@ -14,10 +14,19 @@ pub fn router(service: AuthService) -> Router {
         .route("/update-password", post(auth_handler::update_user_password))
         .route("/delete-user", post(auth_handler::delete_user))
         .route("/forgot-password", post(auth_handler::forgot_password))
-        .route("/reset-password", post(auth_handler::reset_password_with_otp))
+        .route(
+            "/reset-password",
+            post(auth_handler::reset_password_with_otp),
+        )
         .route("/switch-network", post(auth_handler::switch_network))
         .route("/logout", post(auth_handler::logout))
-        .route("/google/login", axum::routing::get(auth_handler::google_login))
-        .route("/google/callback", axum::routing::get(auth_handler::google_callback))
+        .route(
+            "/google/login",
+            axum::routing::get(auth_handler::google_login),
+        )
+        .route(
+            "/google/callback",
+            axum::routing::get(auth_handler::google_callback),
+        )
         .with_state(service)
 }

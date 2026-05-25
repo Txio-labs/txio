@@ -1,13 +1,14 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { PanelLeft, PanelRight, Settings, ChevronDown, Globe, Loader2, Key, LayoutGrid, User, LogOut, MoreVertical, Trash2, Save, RotateCcw, Bookmark, Plus, Layers, Command, Sparkles, Search, X, CheckCircle, AlertCircle, Info, Server, Check } from 'lucide-react';
+import { PanelLeft, PanelRight, Settings, ChevronDown, Globe, Loader2, Key, LayoutGrid, User, LogOut, MoreVertical, Trash2, Save, RotateCcw, Bookmark, Plus, Layers, Command, Sparkles, Search, X, CheckCircle, AlertCircle, Info, Server, Check, Terminal } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { Tab } from './ui/Tabs';
-import { TabItem, Network } from '../types';
+import { TabItem, Network, RPCHealthMetric } from '../types';
 import { NetworkSwitcherModal } from './NetworkSwitcherModal';
 import { Avatar } from './ui/Avatar';
-import { fetchRPCHealth } from '../services/mockService';
 import { CommandPalette } from './CommandPalette';
+import { TerminalPanel } from './TerminalPanel';
+import { getSuiRpcHealth } from '../services/suiService';
 
 interface LayoutProps {
     sidebar: React.ReactNode;
@@ -56,24 +57,38 @@ export const Layout: React.FC<LayoutProps> = ({
     onRenameTab,
     onNewTab
 }) => {
-    const { isSidebarOpen, isInspectorOpen, user, network, isSyncing, scanStep, notifications } = useAppStore();
-    const [healthStatus, setHealthStatus] = useState<'healthy' | 'degraded' | 'down'>('healthy');
+    const {
+        isSidebarOpen,
+        isInspectorOpen,
+        user,
+        network,
+        isSyncing,
+        scanStep,
+        notifications,
+        isTerminalOpen
+    } = useAppStore();
+    const [rpcHealth, setRpcHealth] =
+        useState<RPCHealthMetric | null>(
+            null
+        );
     const [isNetworkMenuOpen, setIsNetworkMenuOpen] = useState(false);
     const networkMenuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         let mounted = true;
         const updateHealth = async () => {
-            try {
-                const metrics = await fetchRPCHealth();
-                if (!mounted) return;
-                const currentMetric = metrics.find(m => m.endpoint.includes(network));
-                if (currentMetric) setHealthStatus(currentMetric.status);
-            } catch (error) {
+            const health =
+                await getSuiRpcHealth(network);
+
+            if (mounted) {
+                setRpcHealth(health);
             }
         };
         updateHealth();
-        const interval = setInterval(updateHealth, 5000); 
+        const interval = setInterval(
+            updateHealth,
+            15000
+        );
         return () => { mounted = false; clearInterval(interval); };
     }, [network]);
 
@@ -157,7 +172,7 @@ export const Layout: React.FC<LayoutProps> = ({
                             onClick={() => setIsNetworkMenuOpen(!isNetworkMenuOpen)}
                             className={`flex items-center gap-2 px-3 py-1 rounded-full bg-dark-indigo-glow border border-white/10 text-xs hover:bg-[#111] transition-all hover:border-white/20 shadow-sm ${isNetworkMenuOpen ? 'border-slate-600 bg-slate-800' : ''}`}
                         >
-                            <div className={`w-2 h-2 rounded-full ${healthStatus === 'healthy' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' : 'bg-amber-500'} animate-pulse`}></div>
+                            <div className={`w-2 h-2 rounded-full ${rpcHealth?.status === 'healthy' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' : rpcHealth?.status === 'degraded' ? 'bg-amber-500' : 'bg-red-500'} animate-pulse`}></div>
                             <span className="text-slate-300 capitalize font-medium">{network}</span>
                             <ChevronDown size={10} className={`text-slate-500 transition-transform duration-200 ${isNetworkMenuOpen ? 'rotate-180' : ''}`}/>
                         </button>
@@ -190,8 +205,10 @@ export const Layout: React.FC<LayoutProps> = ({
                                 <div className="border-t border-white/10 p-2 bg-near-black/20">
                                     <div className="flex justify-between text-[9px] text-slate-500 font-mono">
                                         <span>Latency</span>
-                                        <span className={healthStatus === 'healthy' ? 'text-emerald-500' : 'text-amber-500'}>
-                                            {healthStatus === 'healthy' ? '~120ms' : '~400ms'}
+                                        <span className={rpcHealth?.status === 'healthy' ? 'text-emerald-500' : rpcHealth?.status === 'degraded' ? 'text-amber-500' : 'text-red-400'}>
+                                            {rpcHealth?.latency?.[0]
+                                                ? `${Math.round(rpcHealth.latency[0])}ms`
+                                                : '--'}
                                         </span>
                                     </div>
                                 </div>
@@ -249,6 +266,8 @@ export const Layout: React.FC<LayoutProps> = ({
                     </aside>
                 )}
             </div>
+
+            <TerminalPanel />
             
             <footer className="h-7 bg-near-black border-t border-white/10 flex items-center justify-between px-3 text-[10px] text-slate-500 select-none z-20">
                 <div className="flex items-center gap-4">
@@ -263,6 +282,18 @@ export const Layout: React.FC<LayoutProps> = ({
                         className="hover:text-emerald-400 cursor-pointer transition-colors flex items-center gap-1"
                     >
                         <div className="w-1 h-1 bg-emerald-500 rounded-full"></div> System Optimal
+                    </span>
+                    <span
+                        onClick={() =>
+                            appStore.toggleTerminal()
+                        }
+                        className={`flex items-center gap-1 cursor-pointer transition-colors ${
+                            isTerminalOpen
+                                ? 'text-electric-violet'
+                                : 'hover:text-slate-300'
+                        }`}
+                    >
+                        <Terminal size={10} /> Terminal
                     </span>
                 </div>
                 <div className="flex items-center gap-4">

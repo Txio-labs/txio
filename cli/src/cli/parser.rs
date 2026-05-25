@@ -52,6 +52,18 @@ pub enum Commands {
     /// Login to your txio account
     Login,
 
+    /// Logout from your txio account
+    Logout,
+
+    /// Show current CLI status (chain, network, login state, RPC health)
+    Status,
+
+    /// Manage CLI configuration key-value settings
+    Config {
+        #[command(subcommand)]
+        action: ConfigAction,
+    },
+
     /// Manage user profiles
     Profile {
         #[command(subcommand)]
@@ -114,7 +126,7 @@ pub enum Commands {
 
 #[derive(Subcommand)]
 pub enum ChainCommand {
-    /// Call an RPC method
+    /// Call a raw RPC method
     Call {
         #[arg(short, long)]
         method: String,
@@ -125,10 +137,43 @@ pub enum ChainCommand {
     Balance {
         address: String,
     },
-    /// Query a specific object or account
-    Query {
+    /// Fetch a transaction by hash or digest
+    #[command(alias = "hash")]
+    Tx {
+        hash: String,
+    },
+    /// Inspect an object or account by ID
+    #[command(alias = "account")]
+    Object {
         id: String,
     },
+    /// Get recent transaction history for an address
+    History {
+        address: String,
+        /// Maximum number of transactions to return
+        #[arg(short, long, default_value_t = 10)]
+        limit: u32,
+    },
+    /// Get the current gas price / reference fee
+    Gas,
+    /// Get the latest block, checkpoint, or ledger (or by number)
+    Block {
+        /// Block number / checkpoint sequence / slot to fetch
+        #[arg(short, long)]
+        number: Option<u64>,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum ConfigAction {
+    /// List all configuration settings
+    List,
+    /// Get a specific configuration value
+    Get { key: String },
+    /// Set a configuration value
+    Set { key: String, value: String },
+    /// Remove a configuration key
+    Unset { key: String },
 }
 
 #[derive(Subcommand)]
@@ -149,4 +194,16 @@ pub enum WalletAction {
 pub enum DbAction {
     /// List all registered users
     ListUsers,
+    /// Delete a user by email (admin only)
+    DeleteUser {
+        email: String,
+    },
+    /// Show database statistics (users, RPC call count)
+    Stats,
+    /// List recent RPC call logs
+    ListLogs {
+        /// Maximum number of log entries to show
+        #[arg(short, long, default_value_t = 20)]
+        limit: u64,
+    },
 }

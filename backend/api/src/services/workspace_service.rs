@@ -1,7 +1,6 @@
 use crate::model::workspace::{Workspace, WorkspaceType};
 use crate::repositories::{
-    collection_repository::CollectionRepository,
-    workspace_repository::WorkspaceRepository,
+    collection_repository::CollectionRepository, workspace_repository::WorkspaceRepository,
 };
 use crate::utils::error::AppError;
 use mongodb::bson::oid::ObjectId;
@@ -13,10 +12,7 @@ pub struct WorkspaceService {
 }
 
 impl WorkspaceService {
-    pub fn new(
-        workspace_repo: WorkspaceRepository,
-        collection_repo: CollectionRepository,
-    ) -> Self {
+    pub fn new(workspace_repo: WorkspaceRepository, collection_repo: CollectionRepository) -> Self {
         Self {
             workspace_repo,
             collection_repo,
@@ -36,20 +32,13 @@ impl WorkspaceService {
 
         let workspace = self
             .workspace_repo
-            .save(&Workspace::new(
-                user_id.clone(),
-                name,
-                workspace_type,
-            ))
+            .save(&Workspace::new(user_id.clone(), name, workspace_type))
             .await?;
 
         if existing_workspaces.is_empty() {
             if let Some(workspace_id) = workspace.id.clone() {
                 self.collection_repo
-                    .assign_workspace_to_unscoped_user_collections(
-                        user_id,
-                        workspace_id,
-                    )
+                    .assign_workspace_to_unscoped_user_collections(user_id, workspace_id)
                     .await?;
             }
         }
@@ -57,10 +46,7 @@ impl WorkspaceService {
         Ok(workspace)
     }
 
-    pub async fn get_user_workspaces(
-        &self,
-        user_id: ObjectId,
-    ) -> Result<Vec<Workspace>, AppError> {
+    pub async fn get_user_workspaces(&self, user_id: ObjectId) -> Result<Vec<Workspace>, AppError> {
         self.workspace_repo.find_all_by_user(user_id).await
     }
 

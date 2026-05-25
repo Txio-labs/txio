@@ -8,9 +8,16 @@ import {
 } from '../types';
 import { DEFAULT_MOVE_CALL } from '../lib/constants';
 
+const DEFAULT_API_BASE =
+    process.env.NODE_ENV === 'development'
+        ? 'http://localhost:8000/api/v1'
+        : 'https://txio.onrender.com/api/v1';
+
 export const API_BASE =
     process.env.NEXT_PUBLIC_API_URL ||
-    'https://txio.onrender.com/api/v1';
+    DEFAULT_API_BASE;
+
+const COMMAND_POLL_INTERVAL_MS = 500;
 
 type MongoIdLike =
     | string
@@ -63,6 +70,13 @@ interface BackendSavedRequest {
     last_executed_at?: string | null;
 }
 
+const isNetwork = (
+    value: string | null | undefined
+): value is Network =>
+    value === 'mainnet' ||
+    value === 'testnet' ||
+    value === 'devnet';
+
 interface BackendMessageResponse {
     message: string;
 }
@@ -74,6 +88,40 @@ interface BackendWrappedUserResponse {
 interface BackendSwitchNetworkResponse {
     message: string;
     user: BackendUserProfile;
+}
+
+export type CommandExecutionState =
+    | 'running'
+    | 'success'
+    | 'error'
+    | 'cancelled'
+    | 'timed_out';
+
+export interface CommandExecutionResponse {
+    executionId: string;
+    command: string;
+    state: CommandExecutionState;
+    output?: string | null;
+    stdout?: string | null;
+    stderr?: string | null;
+    exitCode?: number | null;
+    durationMs?: number | null;
+}
+
+export interface AiChatMessage {
+    role: 'user' | 'model';
+    text: string;
+}
+
+export interface AiToolCall {
+    name: string;
+    args: Record<string, unknown>;
+}
+
+export interface AiChatResponse {
+    role: 'model';
+    text: string;
+    toolCall?: AiToolCall | null;
 }
 
 export class ApiError extends Error {
@@ -187,6 +235,9 @@ const normalizeSavedRequest = (
             request.method?.trim() ||
             'Saved Request',
         type: RequestType.RPC,
+        network: isNetwork(request.network)
+            ? request.network
+            : undefined,
         rpcParams: {
             method: request.method || '',
             params: normalizeRpcParams(
@@ -272,6 +323,110 @@ const normalizeWorkspace = (
     };
 };
 
+const isCommandExecutionState = (
+    value: unknown
+): value is CommandExecutionState =>
+    value === 'running' ||
+    value === 'success' ||
+    value === 'error' ||
+    value === 'cancelled' ||
+    value === 'timed_out';
+
+const isOptionalString = (
+    value: unknown
+): value is string | null | undefined =>
+    typeof value === 'string' ||
+    value === null ||
+    typeof value === 'undefined';
+
+const isOptionalNumber = (
+    value: unknown
+): value is number | null | undefined =>
+    typeof value === 'number' ||
+    value === null ||
+    typeof value === 'undefined';
+
+const isCommandExecutionResponse = (
+    value: unknown
+): value is CommandExecutionResponse => {
+    if (!value || typeof value !== 'object') {
+        return false;
+    }
+
+    const response =
+        value as Record<string, unknown>;
+
+    return (
+        typeof response.executionId ===
+            'string' &&
+        typeof response.command ===
+            'string' &&
+        isCommandExecutionState(
+            response.state
+        ) &&
+        isOptionalString(
+            response.output
+        ) &&
+        isOptionalString(
+            response.stdout
+        ) &&
+        isOptionalString(
+            response.stderr
+        ) &&
+        isOptionalNumber(
+            response.exitCode
+        ) &&
+        isOptionalNumber(
+            response.durationMs
+        )
+    );
+};
+
+const isAiToolCall = (
+    value: unknown
+): value is AiToolCall => {
+    if (!value || typeof value !== 'object') {
+        return false;
+    }
+
+    const toolCall =
+        value as Record<string, unknown>;
+
+    return (
+        typeof toolCall.name === 'string' &&
+        !!toolCall.args &&
+        typeof toolCall.args === 'object' &&
+        !Array.isArray(toolCall.args)
+    );
+};
+
+const isAiChatResponse = (
+    value: unknown
+): value is AiChatResponse => {
+    if (!value || typeof value !== 'object') {
+        return false;
+    }
+
+    const response =
+        value as Record<string, unknown>;
+    const toolCall =
+        response.toolCall ??
+        response.tool_call;
+
+    return (
+        response.role === 'model' &&
+        typeof response.text === 'string' &&
+        (typeof toolCall === 'undefined' ||
+            toolCall === null ||
+            isAiToolCall(toolCall))
+    );
+};
+
+const sleep = (ms: number) =>
+    new Promise((resolve) =>
+        setTimeout(resolve, ms)
+    );
+
 class ApiService {
     private token: string | null =
         typeof window !==
@@ -339,6 +494,16 @@ class ApiService {
                 }
             );
         } catch (error) {
+            if (
+                error instanceof Error &&
+                error.name === 'AbortError'
+            ) {
+                throw new ApiError(
+                    'Request cancelled.',
+                    499
+                );
+            }
+
             const message =
                 error instanceof Error &&
                 error.message.trim() &&
@@ -356,7 +521,7 @@ class ApiService {
                 ) || '';
 
             let message =
-                'API request failed';
+                `HTTP ${response.status} ${response.statusText || 'API request failed'}`;
 
             if (
                 contentType.includes(
@@ -772,9 +937,9 @@ class ApiService {
                         params:
                             request.rpcParams
                                 ?.params,
-                        network: request.isLoading
-                            ? 'testnet'
-                            : 'mainnet'
+                        network:
+                            request.network ??
+                            'mainnet'
                     })
                 }
             );
@@ -790,22 +955,194 @@ class ApiService {
         };
     }
 
+    async sendAiChat(
+        messages: AiChatMessage[],
+        options: {
+            signal?: AbortSignal;
+        } = {}
+    ): Promise<AiChatResponse> {
+        let response: unknown;
+
+        try {
+            response =
+                await this.request<unknown>(
+                    '/ai/chat',
+                    {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            messages
+                        }),
+                        signal: options.signal
+                    }
+                );
+        } catch (error) {
+            if (
+                error instanceof ApiError &&
+                error.status === 404
+            ) {
+                throw new ApiError(
+                    'AI endpoint not found. Restart the backend so /api/v1/ai/chat is available.',
+                    404
+                );
+            }
+
+            throw error;
+        }
+
+        if (!isAiChatResponse(response)) {
+            throw new ApiError(
+                'AI response was malformed.',
+                502
+            );
+        }
+
+        return {
+            role: 'model',
+            text: response.text,
+            toolCall:
+                response.toolCall ??
+                null
+        };
+    }
+
     // Terminal
+    async startCommandExecution(
+        command: string,
+        options: {
+            signal?: AbortSignal;
+        } = {}
+    ): Promise<CommandExecutionResponse> {
+        const response =
+            await this.request<unknown>(
+                '/terminal/execute',
+                {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        command
+                    }),
+                    signal: options.signal
+                }
+            );
+
+        if (
+            !isCommandExecutionResponse(
+                response
+            )
+        ) {
+            throw new ApiError(
+                'Terminal response was malformed.',
+                502
+            );
+        }
+
+        return response;
+    }
+
+    async getCommandExecution(
+        executionId: string,
+        options: {
+            signal?: AbortSignal;
+        } = {}
+    ): Promise<CommandExecutionResponse> {
+        const response =
+            await this.request<unknown>(
+                `/terminal/executions/${executionId}`,
+                {
+                    signal: options.signal
+                }
+            );
+
+        if (
+            !isCommandExecutionResponse(
+                response
+            )
+        ) {
+            throw new ApiError(
+                'Terminal execution status was malformed.',
+                502
+            );
+        }
+
+        return response;
+    }
+
+    async cancelCommandExecution(
+        executionId: string,
+        options: {
+            signal?: AbortSignal;
+        } = {}
+    ): Promise<CommandExecutionResponse> {
+        const response =
+            await this.request<unknown>(
+                `/terminal/executions/${executionId}/cancel`,
+                {
+                    method: 'POST',
+                    signal: options.signal
+                }
+            );
+
+        if (
+            !isCommandExecutionResponse(
+                response
+            )
+        ) {
+            throw new ApiError(
+                'Terminal cancellation response was malformed.',
+                502
+            );
+        }
+
+        return response;
+    }
+
     async executeCommand(
-        command: string
-    ): Promise<{
-        output: string;
-        status: 'success' | 'error';
-    }> {
-        return this.request<{
-            output: string;
-            status: 'success' | 'error';
-        }>('/terminal/execute', {
-            method: 'POST',
-            body: JSON.stringify({
-                command
-            })
-        });
+        command: string,
+        options: {
+            signal?: AbortSignal;
+            pollIntervalMs?: number;
+        } = {}
+    ): Promise<CommandExecutionResponse> {
+        const started =
+            await this.startCommandExecution(
+                command,
+                {
+                    signal: options.signal
+                }
+            );
+
+        if (started.state !== 'running') {
+            return started;
+        }
+
+        while (true) {
+            if (options.signal?.aborted) {
+                await this.cancelCommandExecution(
+                    started.executionId
+                ).catch(() => undefined);
+
+                throw new ApiError(
+                    'Request cancelled.',
+                    499
+                );
+            }
+
+            await sleep(
+                options.pollIntervalMs ??
+                    COMMAND_POLL_INTERVAL_MS
+            );
+
+            const current =
+                await this.getCommandExecution(
+                    started.executionId,
+                    {
+                        signal: options.signal
+                    }
+                );
+
+            if (current.state !== 'running') {
+                return current;
+            }
+        }
     }
 }
 

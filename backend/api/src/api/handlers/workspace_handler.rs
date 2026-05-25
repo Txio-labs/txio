@@ -2,7 +2,7 @@ use crate::dtos::workspace_dtos::CreateWorkspaceRequest;
 use crate::services::workspace_service::WorkspaceService;
 use crate::utils::auth_jwt::Claims;
 use crate::utils::error::AppError;
-use axum::{extract::State, Json};
+use axum::{Json, extract::State};
 use mongodb::bson::oid::ObjectId;
 use serde_json::Value;
 use std::str::FromStr;

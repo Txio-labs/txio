@@ -104,6 +104,8 @@ cargo run --bin sui_cli -- -m sui_getChainIdentifier --pretty
 | `MONGO_URI` | Database connection. |
 | `JWT_SECRET` | Signing authentication tokens. |
 | `BREVO_API_KEY` | Sending OTP emails via Brevo. |
+| `GROQ_API_KEYS` | Comma-separated Groq API keys for the AI Console. |
+| `GROQ_MODEL` | Groq model ID used by the AI Console. |
 
 ---
 

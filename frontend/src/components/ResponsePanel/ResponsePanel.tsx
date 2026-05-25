@@ -17,6 +17,8 @@ import {
   hasEvents,
   hasEffects
 } from './utils/testUtils';
+import { useAppStore } from '@/lib/store';
+import { getSuiTransactionExplorerUrl } from '@/lib/appConfig';
 
 export const ResponsePanel: React.FC<ResponsePanelProps> = ({ 
   request,
@@ -30,9 +32,21 @@ export const ResponsePanel: React.FC<ResponsePanelProps> = ({
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<ContentTab>('body');
   const [viewMode, setViewMode] = useState<ViewMode>('pretty');
+  const { network, settings } = useAppStore();
 
   // Memoized computations
   const txDigest = useMemo(() => getTransactionDigest(response), [response]);
+  const txExplorerUrl = useMemo(
+    () =>
+      txDigest
+        ? getSuiTransactionExplorerUrl(
+            txDigest,
+            network,
+            settings.explorer
+          )
+        : null,
+    [network, settings.explorer, txDigest]
+  );
   const gasSummary = useMemo(() => getGasSummary(response), [response]);
   const eventsPresent = useMemo(() => hasEvents(response), [response]);
   const effectsPresent = useMemo(() => hasEffects(response), [response]);
@@ -104,6 +118,7 @@ export const ResponsePanel: React.FC<ResponsePanelProps> = ({
         duration={duration}
         testResults={testResults}
         txDigest={txDigest}
+        txExplorerUrl={txExplorerUrl}
         viewMode={viewMode}
         onViewModeChange={(mode) => setViewMode(mode as ViewMode)}
       />

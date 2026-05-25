@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from "react";
-import { Layout } from "@/Layout";
+import { Layout } from "@/components/Layout";
 import { Sidebar } from "@/components/SideBar/Sidebar";
 import { RightPanel } from "@/components/RightPanel/RightPanel";
 import { AuthModal } from "@/components/AuthModal/AuthModal";
@@ -22,6 +22,12 @@ import { CollectionRunner } from "@/features/CollectionRunner";
 import { MoveBuilder } from "@/features/MoveBuilder";
 import { Playground } from "@/features/Playground";
 import { WorkspaceOnboarding } from "@/features/WorkspaceOnboarding";
+import { DocsPage } from "@/features/DocsPage";
+import { EcosystemPage } from "@/features/EcosystemPage";
+import { FeaturesPage } from "@/features/FeaturesPage";
+import { IntegrationsPage } from "@/features/IntegrationsPage";
+import { InfrastructurePage } from "@/features/InfrastructurePage";
+import { PartnersPage } from "@/features/PartnersPage";
 
 const MOCK_TEAM: TeamMember[] = [];
 
@@ -56,6 +62,18 @@ const WorkspaceContent: React.FC = () => {
             return <MoveBuilder />;
         case 'playground':
             return <Playground />;
+        case 'docs':
+            return <DocsPage embedded />;
+        case 'ecosystem':
+            return <EcosystemPage embedded />;
+        case 'features':
+            return <FeaturesPage embedded />;
+        case 'integrations':
+            return <IntegrationsPage embedded />;
+        case 'infrastructure':
+            return <InfrastructurePage embedded />;
+        case 'partners':
+            return <PartnersPage embedded />;
         default:
             return <Dashboard />;
     }

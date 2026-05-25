@@ -8,17 +8,56 @@ import { appStore, useAppStore } from '@/lib/store';
 import logoDark from '../assets/txio2.png';
 import logoLight from '../assets/txio3.png';
 
-export const EcosystemPage: React.FC = () => {
+interface EcosystemPageProps {
+    embedded?: boolean;
+}
+
+export const EcosystemPage: React.FC<
+    EcosystemPageProps
+> = ({ embedded = false }) => {
     const { theme } = useAppStore();
     const logo = theme === 'dark' ? logoDark : logoLight;
 
+    const navigateTo = (
+        target:
+            | 'landing'
+            | 'integrations'
+            | 'infrastructure'
+            | 'partners'
+            | 'signup'
+            | 'docs'
+    ) => {
+        if (embedded) {
+            if (target === 'landing') {
+                appStore.setActiveTab(null);
+                return;
+            }
+
+            if (target === 'signup') {
+                appStore.openTab(
+                    'new_request'
+                );
+                return;
+            }
+
+            appStore.openTab(target);
+            return;
+        }
+
+        appStore.setViewMode(target);
+    };
+
     React.useEffect(() => {
+        if (embedded) {
+            return;
+        }
+
         document.body.style.overflow = 'auto';
         document.body.style.overflowX = 'hidden';
         return () => {
             document.body.style.overflow = 'hidden';
         };
-    }, []);
+    }, [embedded]);
 
     const chains = [
         { name: 'Sui', desc: 'Object-centric L1 for mass adoption.', color: '#38bdf8', tps: '297k', latency: '390ms', status: 'Optimal' },
@@ -37,16 +76,18 @@ export const EcosystemPage: React.FC = () => {
     ];
 
     return (
-        <div className={`min-h-screen font-sans selection:bg-electric-violet/30 ${
+        <div className={`${embedded ? 'h-full overflow-y-auto custom-scrollbar' : 'min-h-screen'} font-sans selection:bg-electric-violet/30 ${
             theme === 'dark' ? 'bg-[#050505] text-white' : 'bg-slate-50 text-slate-900'
         }`}>
             {/* Nav */}
-            <nav className={`fixed top-0 left-0 right-0 h-20 border-b z-50 px-6 md:px-12 flex items-center justify-between backdrop-blur-xl ${
+            <nav className={`${embedded ? 'sticky top-0' : 'fixed top-0 left-0 right-0'} h-20 border-b z-50 px-6 md:px-12 flex items-center justify-between backdrop-blur-xl ${
                 theme === 'dark' ? 'bg-black/50 border-white/5' : 'bg-white/50 border-slate-200'
             }`}>
                 <div className="flex items-center gap-6">
                     <button 
-                        onClick={() => appStore.setViewMode('landing')}
+                        onClick={() =>
+                            navigateTo('landing')
+                        }
                         className={`flex items-center gap-2 text-sm font-bold transition-all group ${
                             theme === 'dark' ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
                         }`}
@@ -63,21 +104,23 @@ export const EcosystemPage: React.FC = () => {
 
                 <div className="flex items-center gap-6">
                     <div className="hidden md:flex items-center gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-                        <span onClick={() => appStore.setViewMode('integrations')} className="hover:text-electric-violet transition-colors cursor-pointer">Integrations</span>
-                        <span onClick={() => appStore.setViewMode('infrastructure')} className="hover:text-electric-violet transition-colors cursor-pointer">Infrastructure</span>
-                        <span onClick={() => appStore.setViewMode('partners')} className="hover:text-electric-violet transition-colors cursor-pointer">Partners</span>
+                        <span onClick={() => navigateTo('integrations')} className="hover:text-electric-violet transition-colors cursor-pointer">Integrations</span>
+                        <span onClick={() => navigateTo('infrastructure')} className="hover:text-electric-violet transition-colors cursor-pointer">Infrastructure</span>
+                        <span onClick={() => navigateTo('partners')} className="hover:text-electric-violet transition-colors cursor-pointer">Partners</span>
                     </div>
                     <button 
-                        onClick={() => appStore.setViewMode('signup')}
+                        onClick={() =>
+                            navigateTo('signup')
+                        }
                         className="px-6 py-2.5 bg-electric-violet text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-soft-purple transition-all shadow-[0_10px_20px_-5px_rgba(123,63,242,0.4)] active:scale-95"
                     >
-                        Launch
+                        {embedded ? 'New Request' : 'Launch'}
                     </button>
                 </div>
             </nav>
 
             {/* Hero Section */}
-            <section className="relative pt-48 pb-32 px-6 md:px-12 overflow-hidden">
+            <section className={`relative ${embedded ? 'pt-28' : 'pt-48'} pb-32 px-6 md:px-12 overflow-hidden`}>
                 {/* Background Ambient Glows */}
                 <div className="absolute top-1/4 -left-20 w-[600px] h-[600px] bg-electric-violet/10 blur-[120px] rounded-full pointer-events-none" />
                 <div className="absolute bottom-1/4 -right-20 w-[600px] h-[600px] bg-soft-purple/10 blur-[120px] rounded-full pointer-events-none" />

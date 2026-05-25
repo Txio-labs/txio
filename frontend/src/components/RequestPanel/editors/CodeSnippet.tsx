@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
 import { Check, Copy } from 'lucide-react';
-import { RequestType } from '../../../types';
-import { NETWORKS } from '@/lib/constants';
+import { RequestType, Network } from '../../../types';
+import { resolveRpcUrl } from '@/lib/appConfig';
+import { useAppStore } from '@/lib/store';
 
 interface CodeSnippetProps {
   request: any;
-  network: string;
+  network: Network;
 }
 
 export const CodeSnippet: React.FC<CodeSnippetProps> = ({ request, network }) => {
   const [isCopied, setIsCopied] = useState(false);
+  const { settings } = useAppStore();
 
   const generateSnippet = () => {
     if (request.type === RequestType.RPC) {
-      const endpoint = NETWORKS[network];
+      const endpoint = resolveRpcUrl(network, settings);
       return `curl -X POST ${endpoint} \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "jsonrpc": "2.0",\n    "id": 1,\n    "method": "${request.rpcParams.method}",\n    "params": ${JSON.stringify(request.rpcParams.params)}\n  }'`;
     }
     

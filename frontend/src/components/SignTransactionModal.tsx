@@ -50,9 +50,9 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
         <div className="p-4 border-b border-white/5 flex justify-between items-center bg-near-black">
           <div>
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <Shield size={18} className="text-electric-violet" /> Sign Transaction
+              <Shield size={18} className="text-electric-violet" /> Review Simulation
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">Review details before executing on-chain.</p>
+            <p className="text-xs text-slate-400 mt-0.5">Review details before running a wallet-address simulation.</p>
           </div>
           <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors">
             <X size={20} />
@@ -65,14 +65,14 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
                     <div className="bg-near-black border border-white/5 rounded-lg p-6 flex flex-col items-center justify-center text-center">
                         <Wallet size={32} className={`mb-3 ${canSign ? 'text-emerald-400' : 'text-slate-600'}`} />
                         <h3 className="text-sm font-bold text-white mb-1">
-                            {canSign ? 'Sui Wallet Ready' : wallet ? 'Wrong Wallet Family' : 'Wallet Required'}
+                            {canSign ? 'Sui Wallet Ready' : wallet ? 'Wrong Wallet Family' : 'Wallet Recommended'}
                         </h3>
                         <p className="text-xs text-slate-500 mb-4">
                             {canSign
-                                ? 'Your connected Sui wallet can sign this transaction.'
+                                ? 'Your connected Sui wallet address will be used as the simulation sender.'
                                 : wallet
-                                  ? `This builder signs Sui transactions only. ${wallet.name} is connected on ${wallet.family.toUpperCase()}.`
-                                  : 'Connect a Sui wallet in the Inspector panel to sign and execute.'}
+                                  ? `This simulation flow supports Sui sender addresses only. ${wallet.name} is connected on ${wallet.family.toUpperCase()}.`
+                                  : 'Connect a Sui wallet in the Inspector panel to simulate with your real sender address.'}
                         </p>
                         
                         {canSign ? (
@@ -91,7 +91,7 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
                          <div>
                              <h4 className="text-xs font-bold text-amber-500">Security Note</h4>
                              <p className="text-[10px] text-amber-500/80 mt-1">
-                                 Transaction signing is handled by your connected wallet. No private keys are ever stored or transmitted by this app.
+                                 This flow does not sign or broadcast on-chain. It runs a dev-inspect simulation and never handles private keys.
                              </p>
                          </div>
                      </div>
@@ -149,7 +149,7 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
                 onClick={canSign ? handleConfirm : onRequestConnect}
                 className="px-6 py-2 bg-electric-violet hover:bg-electric-violet disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded shadow-lg shadow-sui-900/20 flex items-center gap-2 transition-all"
              >
-                 {canSign ? 'Sign with Wallet' : wallet ? 'Connect Sui Wallet' : 'Connect Wallet'} <ArrowRight size={14} />
+                 {canSign ? 'Run Simulation' : wallet ? 'Connect Sui Wallet' : 'Connect Wallet'} <ArrowRight size={14} />
              </button>
         </div>
       </div>

@@ -1,8 +1,8 @@
-use crate::repositories::otp_repository::OTPRepository;
 use crate::model::otp::OTP;
+use crate::repositories::otp_repository::OTPRepository;
 use crate::utils::error::AppError;
 use crate::utils::generate_otp::generate_otp;
-use chrono::{Utc, Duration};
+use chrono::{Duration, Utc};
 
 #[derive(Clone)]
 pub struct OTPService {

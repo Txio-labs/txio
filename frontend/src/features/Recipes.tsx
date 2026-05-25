@@ -3,13 +3,13 @@ import React from 'react';
 import { FileCode, Play, Plus } from 'lucide-react';
 import { appStore } from '@/lib/store';
 
-const MOCK_RECIPES = [
-    { id: 1, title: "Mint DevNet NFT", type: "MoveCall" },
-    { id: 2, title: "Split & Transfer SUI", type: "PTB" },
-    { id: 3, title: "Publish Package (Standard)", type: "Publish" },
-    { id: 4, title: "Oracle Update (Pyth)", type: "MoveCall" },
-    { id: 5, title: "Stake SUI to Validator", type: "MoveCall" },
-    { id: 6, title: "Unstake SUI", type: "MoveCall" },
+const RECIPE_TEMPLATES = [
+    { id: 1, title: "Transfer Coins", type: "PTB" },
+    { id: 2, title: "Split & Transfer", type: "PTB" },
+    { id: 3, title: "Move Call", type: "MoveCall" },
+    { id: 4, title: "Publish Package", type: "Publish" },
+    { id: 5, title: "Stake to Validator", type: "MoveCall" },
+    { id: 6, title: "Batch Operations", type: "PTB" },
 ];
 
 export const Recipes: React.FC = () => {
@@ -24,7 +24,7 @@ export const Recipes: React.FC = () => {
 
             <div className="border border-white/5 rounded bg-dark-indigo-glow overflow-hidden">
                 <div className="grid grid-cols-1 divide-y divide-slate-800">
-                    {MOCK_RECIPES.map((recipe) => (
+                    {RECIPE_TEMPLATES.map((recipe) => (
                         <div key={recipe.id} className="p-3 flex items-center justify-between hover:bg-white/5/50 group">
                             <div className="flex items-center gap-3">
                                 <FileCode size={16} className="text-slate-500" />

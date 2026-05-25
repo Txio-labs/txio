@@ -4,6 +4,8 @@ import type {
     WalletConnectErrorShape,
     WalletId
 } from './types';
+import type { AppSettings, Network } from '../types';
+import { getSuiAccountExplorerUrl } from '../lib/appConfig';
 
 declare global {
     interface Window {
@@ -11,15 +13,27 @@ declare global {
             isMetaMask?: boolean;
             isCoinbaseWallet?: boolean;
             isPhantom?: boolean;
+            isTrust?: boolean;
+            isTrustWallet?: boolean;
+            isRainbow?: boolean;
+            isOKExWallet?: boolean;
+            isBraveWallet?: boolean;
             providers?: Array<{
                 isMetaMask?: boolean;
                 isCoinbaseWallet?: boolean;
                 isPhantom?: boolean;
+                isTrust?: boolean;
+                isTrustWallet?: boolean;
+                isRainbow?: boolean;
+                isOKExWallet?: boolean;
+                isBraveWallet?: boolean;
             }>;
         };
         phantom?: {
             ethereum?: unknown;
         };
+        trustwallet?: unknown;
+        okxwallet?: unknown;
         freighter?: boolean;
         lobstrSignerExtensionApi?: {
             isConnected?: () => Promise<boolean>;
@@ -150,7 +164,11 @@ export const detectInjectedWallets =
             return {
                 metamask: false,
                 coinbase: false,
-                phantom: false
+                phantom: false,
+                trust: false,
+                rainbow: false,
+                okx: false,
+                brave: false
             };
         }
 
@@ -177,7 +195,28 @@ export const detectInjectedWallets =
                 providers.some(
                     (provider) =>
                         provider?.isPhantom
-                )
+                ),
+            trust:
+                Boolean(window.trustwallet) ||
+                providers.some(
+                    (provider) =>
+                        provider?.isTrust ||
+                        provider?.isTrustWallet
+                ),
+            rainbow: providers.some(
+                (provider) =>
+                    provider?.isRainbow
+            ),
+            okx:
+                Boolean(window.okxwallet) ||
+                providers.some(
+                    (provider) =>
+                        provider?.isOKExWallet
+                ),
+            brave: providers.some(
+                (provider) =>
+                    provider?.isBraveWallet
+            )
         };
     };
 
@@ -186,16 +225,26 @@ const EVM_EXPLORERS: Record<
     string
 > = {
     'eip155:1': 'https://etherscan.io/address/',
-    'eip155:8453':
-        'https://basescan.org/address/',
-    'eip155:11155111':
-        'https://sepolia.etherscan.io/address/',
-    'eip155:84532':
-        'https://sepolia.basescan.org/address/'
+    'eip155:8453': 'https://basescan.org/address/',
+    'eip155:137': 'https://polygonscan.com/address/',
+    'eip155:42161': 'https://arbiscan.io/address/',
+    'eip155:10': 'https://optimistic.etherscan.io/address/',
+    'eip155:43114': 'https://snowtrace.io/address/',
+    'eip155:56': 'https://bscscan.com/address/',
+    'eip155:7777777': 'https://explorer.zora.energy/address/',
+    'eip155:11155111': 'https://sepolia.etherscan.io/address/',
+    'eip155:84532': 'https://sepolia.basescan.org/address/',
+    'eip155:80002': 'https://amoy.polygonscan.com/address/',
+    'eip155:421614': 'https://sepolia.arbiscan.io/address/',
+    'eip155:11155420': 'https://sepolia-optimism.etherscan.io/address/',
+    'eip155:43113': 'https://testnet.snowtrace.io/address/',
+    'eip155:97': 'https://testnet.bscscan.com/address/'
 };
 
 export const getWalletExplorerUrl = (
-    wallet: ConnectedWallet
+    wallet: ConnectedWallet,
+    explorer: AppSettings['explorer'] =
+        'suiscan'
 ) => {
     if (wallet.family === 'evm') {
         const explorer =
@@ -217,7 +266,11 @@ export const getWalletExplorerUrl = (
                   ? 'devnet'
                   : 'testnet';
 
-        return `https://suiscan.xyz/${network}/account/${wallet.address}`;
+        return getSuiAccountExplorerUrl(
+            wallet.address,
+            network as Network,
+            explorer
+        );
     }
 
     const networkPath =

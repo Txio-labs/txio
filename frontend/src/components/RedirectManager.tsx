@@ -4,6 +4,29 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useAppStore, appStore } from '@/lib/store';
 import { apiService } from '@/services/api';
+import { FeatureId } from '@/types';
+
+const workspaceViewModeToTab: Partial<
+    Record<string, FeatureId>
+> = {
+    docs: 'docs',
+    ecosystem: 'ecosystem',
+    features: 'features',
+    integrations: 'integrations',
+    infrastructure: 'infrastructure',
+    partners: 'partners'
+};
+
+const workspacePathToTab: Partial<
+    Record<string, FeatureId>
+> = {
+    '/docs': 'docs',
+    '/ecosystem': 'ecosystem',
+    '/features': 'features',
+    '/integrations': 'integrations',
+    '/infrastructure': 'infrastructure',
+    '/partners': 'partners'
+};
 
 export function RedirectManager() {
     const { viewMode, user } = useAppStore();
@@ -84,11 +107,21 @@ export function RedirectManager() {
         }
 
         // If authenticated, always stay on workspace.
-        if (
-            viewMode === 'app' ||
-            user ||
-            hasStoredToken
-        ) {
+        if (user || hasStoredToken) {
+            const workspaceTab =
+                workspacePathToTab[pathname] ||
+                workspaceViewModeToTab[
+                    viewMode
+                ];
+
+            if (workspaceTab) {
+                appStore.openTab(workspaceTab);
+
+                if (viewMode !== 'app') {
+                    appStore.setViewMode('app');
+                }
+            }
+
             const targetPath = '/workspace';
             if (pathname !== targetPath) {
                 router.replace(targetPath);

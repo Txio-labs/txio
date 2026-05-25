@@ -2,17 +2,82 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore, appStore } from '@/lib/store';
+import { resolveRpcUrl } from '@/lib/appConfig';
 import { useWallet } from '@/wallet';
 import { RequestPanel } from '../components/RequestPanel/RequestPanel';
 import { ResponsePanel } from '../components/ResponsePanel/ResponsePanel';
 import { RequestItem, RequestType } from '../types';
-import { executeSuiRpc, simulateMoveCall } from '../services/suiService';
+import {
+    executeSuiRpc,
+    simulateMoveCall,
+    SuiRpcError,
+} from '../services/suiService';
 import { SignTransactionModal } from '../components/SignTransactionModal';
 import { GripHorizontal } from 'lucide-react';
-import { NETWORKS } from '@/lib/constants';
+
+const ZERO_ADDRESS =
+    '0x0000000000000000000000000000000000000000000000000000000000000000';
+
+const resolveVariables = (
+    raw: string,
+    vars: { key: string; value: string }[]
+): string =>
+    vars.reduce(
+        (str, v) =>
+            str.replaceAll(`{{${v.key}}}`, v.value),
+        raw
+    );
+
+const resolveRequestVars = (
+    request: RequestItem,
+    vars: { key: string; value: string }[]
+): RequestItem => {
+    if (!vars.length) return request;
+
+    if (request.type === RequestType.RPC) {
+        try {
+            const raw = JSON.stringify(request.rpcParams.params);
+            const resolved = resolveVariables(raw, vars);
+            return {
+                ...request,
+                rpcParams: {
+                    ...request.rpcParams,
+                    method: resolveVariables(request.rpcParams.method, vars),
+                    params: JSON.parse(resolved)
+                }
+            };
+        } catch {
+            return request;
+        }
+    }
+
+    const mp = request.moveParams;
+    return {
+        ...request,
+        moveParams: {
+            ...mp,
+            packageId: resolveVariables(mp.packageId, vars),
+            module: resolveVariables(mp.module, vars),
+            function: resolveVariables(mp.function, vars),
+            typeArguments: mp.typeArguments.map((t: string) =>
+                resolveVariables(t, vars)
+            ),
+            arguments: mp.arguments.map((a: any) => ({
+                ...a,
+                value: resolveVariables(String(a.value), vars)
+            }))
+        }
+    };
+};
 
 export const RPCBuilder: React.FC = () => {
-    const { tabs, activeTabId, network, envVariables } = useAppStore();
+    const {
+        tabs,
+        activeTabId,
+        network,
+        envVariables,
+        settings
+    } = useAppStore();
     const { currentWallet, openModal } = useWallet();
     const activeTab = tabs.find(t => t.id === activeTabId);
     const connectedAddress = currentWallet?.family === 'sui' ? currentWallet.address : null;
@@ -32,7 +97,33 @@ export const RPCBuilder: React.FC = () => {
 
     // Synchronize tab data with the panel
     const request = activeTab?.data as RequestItem;
-    const endpoint = NETWORKS[network];
+    const endpoint = resolveRpcUrl(
+        network,
+        settings
+    );
+
+    useEffect(() => {
+        if (
+            activeTabId &&
+            request &&
+            request.network !== network
+        ) {
+            appStore.finalizeRequest(
+                activeTabId,
+                request.type === RequestType.RPC
+                    ? 'rpc'
+                    : 'ptb',
+                {
+                    ...request,
+                    network
+                }
+            );
+        }
+    }, [
+        activeTabId,
+        network,
+        request
+    ]);
 
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
@@ -78,48 +169,120 @@ export const RPCBuilder: React.FC = () => {
 
     const handleSend = async () => {
         if (!request) return;
-        executeCall();
+        await executeCall();
     };
 
-    const executeCall = async () => {
+    const executeCall = async (
+        simulationSender = connectedAddress ||
+            ZERO_ADDRESS
+    ) => {
+        if (!request) {
+            return;
+        }
+
         setIsLoading(true);
         setError(undefined);
         setResponse(null);
+        setStatus(undefined);
+        setDuration(undefined);
         // Expand response panel if it's too small when sending
         if (responseHeight < 100) setResponseHeight(250);
 
-        let res;
-        
-        if (request.type === RequestType.TRANSACTION) {
-             const sender = connectedAddress || "0x0000000000000000000000000000000000000000000000000000000000000000";
-             const { packageId, module, function: func, typeArguments, arguments: args } = request.moveParams;
-             res = await simulateMoveCall(network, sender, packageId, module, func, typeArguments, args);
-        } else {
-             res = await executeSuiRpc(
-                network,
-                request.rpcParams.method,
-                request.rpcParams.params
+        const resolved = resolveRequestVars(request, envVariables);
+
+        try {
+            let res;
+
+            if (
+                resolved.type ===
+                RequestType.TRANSACTION
+            ) {
+                const {
+                    packageId,
+                    module,
+                    function: func,
+                    typeArguments,
+                    arguments: args
+                } = resolved.moveParams;
+
+                res =
+                    await simulateMoveCall(
+                        network,
+                        simulationSender,
+                        packageId,
+                        module,
+                        func,
+                        typeArguments,
+                        args
+                    );
+            } else {
+                res =
+                    await executeSuiRpc(
+                        network,
+                        resolved.rpcParams.method,
+                        resolved.rpcParams.params
+                    );
+            }
+
+            const {
+                result,
+                duration,
+                status
+            } = res;
+
+            setResponse(result);
+            setDuration(duration);
+            setStatus(status);
+
+            appStore.addToHistory(
+                request,
+                status,
+                duration
             );
-        }
+            appStore.pushLog(
+                `${request.type === RequestType.RPC ? 'Executed' : 'Simulated'} ${request.name}`,
+                network,
+                'request'
+            );
+        } catch (error) {
+            const rpcError =
+                error instanceof SuiRpcError
+                    ? error
+                    : null;
+            const message =
+                error instanceof Error &&
+                error.message.trim()
+                    ? error.message
+                    : 'Request failed.';
 
-        const { result, duration, status } = res;
+            setError(message);
+            setStatus(
+                rpcError?.status ?? 500
+            );
+            setDuration(
+                rpcError?.duration
+            );
 
-        setResponse(result);
-        setDuration(duration);
-        setStatus(status);
-        setIsLoading(false);
-
-        // Record in history
-        if (request) {
-            appStore.addToHistory(request, status, duration);
-            appStore.pushLog(`Executed ${request.type === RequestType.RPC ? 'RPC' : 'PTB'} request: ${request.name}`, network, 'request');
+            appStore.addToHistory(
+                request,
+                rpcError?.status ?? 500,
+                rpcError?.duration ?? 0
+            );
+            appStore.pushLog(
+                `Failed ${request.type === RequestType.RPC ? 'RPC' : 'simulation'} ${request.name}: ${message}`,
+                network,
+                'error'
+            );
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const handleSignAndSend = (signer: string) => {
+    const handleReviewSimulation = (
+        signer: string
+    ) => {
         setIsSignModalOpen(false);
-        // In a real app, this would sign and submit to the wallet provider. For now, we simulate.
-        executeCall();
+        void executeCall(signer);
     };
 
     if (!request) return null;
@@ -136,6 +299,7 @@ export const RPCBuilder: React.FC = () => {
                 <RequestPanel 
                     request={request}
                     network={network}
+                    isLoading={isLoading}
                     onChange={handleRequestChange}
                     onSend={handleSend}
                     onExecute={() => setIsSignModalOpen(true)}
@@ -173,7 +337,7 @@ export const RPCBuilder: React.FC = () => {
             <SignTransactionModal 
                 isOpen={isSignModalOpen}
                 onClose={() => setIsSignModalOpen(false)}
-                onConfirm={handleSignAndSend}
+                onConfirm={handleReviewSimulation}
                 wallet={currentWallet}
                 onRequestConnect={openModal}
                 request={request}

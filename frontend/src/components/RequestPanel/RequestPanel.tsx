@@ -13,6 +13,7 @@ import { RequestType } from '../../types';
 export const RequestPanel: React.FC<RequestPanelProps> = ({ 
   request, 
   network,
+  isLoading,
   onChange, 
   onSend,
   onExecute,
@@ -79,7 +80,7 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
       <HeaderBar 
         requestType={request.type}
         network={network}
-        isLoading={request.isLoading || false}
+        isLoading={isLoading}
         activeAddress={activeAddress}
         onTypeChange={handleTypeChange}
         onSend={onSend}

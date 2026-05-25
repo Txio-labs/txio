@@ -17,6 +17,7 @@ import {
 } from '@/wallet';
 import { ConnectWalletButton } from '@/components/wallet/ConnectWalletButton';
 import { Avatar } from '@/components/ui/Avatar';
+import { useAppStore } from '@/lib/store';
 
 interface WalletTabProps {
     formatAddress: (address: string) => string;
@@ -37,6 +38,7 @@ export const WalletTab: React.FC<
         balance,
         isLoading
     } = useWalletBalance();
+    const { settings } = useAppStore();
 
     const handleCopy = async () => {
         if (!currentWallet) {
@@ -99,7 +101,8 @@ export const WalletTab: React.FC<
 
     const explorerUrl =
         getWalletExplorerUrl(
-            currentWallet
+            currentWallet,
+            settings.explorer
         );
 
     return (

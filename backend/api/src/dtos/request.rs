@@ -20,7 +20,7 @@ pub struct LoginRequest {
 #[derive(Debug, Deserialize, Validate)]
 pub struct OTPRequest {
     #[validate(email)]
-    pub email: String
+    pub email: String,
 }
 
 #[derive(Debug, Deserialize, Validate)]

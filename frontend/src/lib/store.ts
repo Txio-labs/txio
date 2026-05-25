@@ -17,6 +17,10 @@ import {
 
 import { DEFAULT_MOVE_CALL } from './constants';
 import {
+    DEFAULT_APP_SETTINGS,
+    normalizeAppSettings
+} from './appConfig';
+import {
     ApiError,
     apiService
 } from '../services/api';
@@ -40,6 +44,10 @@ const storedUserStorageKey =
     'txio_user';
 const currentWorkspaceStorageKey =
     'txio_current_workspace';
+const settingsStorageKey =
+    'txio_settings';
+const networkStorageKey =
+    'txio_network';
 
 const emit = () => {
     listeners.forEach((l) => l());
@@ -239,6 +247,66 @@ const persistCurrentWorkspaceId = (
     );
 };
 
+const readStoredSettings = () => {
+    if (typeof window === 'undefined') {
+        return DEFAULT_APP_SETTINGS;
+    }
+
+    try {
+        return normalizeAppSettings(
+            JSON.parse(
+                localStorage.getItem(
+                    settingsStorageKey
+                ) || 'null'
+            )
+        );
+    } catch {
+        return DEFAULT_APP_SETTINGS;
+    }
+};
+
+const persistSettings = (
+    settings: AppSettings
+) => {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    localStorage.setItem(
+        settingsStorageKey,
+        JSON.stringify(settings)
+    );
+};
+
+const readStoredNetwork = () => {
+    if (typeof window === 'undefined') {
+        return 'mainnet' as Network;
+    }
+
+    const storedNetwork =
+        localStorage.getItem(
+            networkStorageKey
+        );
+
+    return storedNetwork === 'testnet' ||
+        storedNetwork === 'devnet'
+        ? storedNetwork
+        : 'mainnet';
+};
+
+const persistNetwork = (
+    network: Network
+) => {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    localStorage.setItem(
+        networkStorageKey,
+        network
+    );
+};
+
 const resolveWorkspaceSelection = (
     workspaces: Workspace[],
     preferredId?: string
@@ -415,6 +483,10 @@ interface AppState {
 const hasToken =
     typeof window !== 'undefined' &&
     !!localStorage.getItem('txio_token');
+const initialSettings =
+    readStoredSettings();
+const initialNetwork =
+    readStoredNetwork();
 
 let state: AppState = {
     activeTabId: null,
@@ -447,9 +519,9 @@ let state: AppState = {
 
     user: null,
 
-    theme: 'dark',
+    theme: initialSettings.theme,
 
-    network: 'mainnet',
+    network: initialNetwork,
 
     isSyncing: false,
 
@@ -465,18 +537,7 @@ let state: AppState = {
 
     comments: {},
 
-    settings: {
-        theme: 'dark',
-        showLineNumbers: true,
-        autoSave: true,
-        telemetry: true,
-        customRpc: {
-            mainnet: '',
-            testnet: '',
-            devnet: ''
-        },
-        explorer: 'suiscan'
-    },
+    settings: initialSettings,
 
     notifications: [],
 
@@ -546,7 +607,13 @@ export const appStore = {
         const singletonFeatures = [
             'settings',
             'profile',
-            'ai_chat'
+            'ai_chat',
+            'docs',
+            'ecosystem',
+            'features',
+            'integrations',
+            'infrastructure',
+            'partners'
         ];
 
         if (singletonFeatures.includes(type)) {
@@ -609,6 +676,30 @@ export const appStore = {
                     title = 'Runner';
                     break;
 
+                case 'docs':
+                    title = 'Documentation';
+                    break;
+
+                case 'ecosystem':
+                    title = 'Ecosystem';
+                    break;
+
+                case 'features':
+                    title = 'Features';
+                    break;
+
+                case 'integrations':
+                    title = 'Integrations';
+                    break;
+
+                case 'infrastructure':
+                    title = 'Infrastructure';
+                    break;
+
+                case 'partners':
+                    title = 'Partners';
+                    break;
+
                 default:
                     title = 'Tab';
             }
@@ -638,6 +729,7 @@ export const appStore = {
                     id,
                     name: 'New Request',
                     type: RequestType.RPC,
+                    network: state.network,
                     rpcParams: {
                         method: '',
                         params: []
@@ -651,6 +743,7 @@ export const appStore = {
                     id,
                     name: 'New PTB',
                     type: RequestType.TRANSACTION,
+                    network: state.network,
                     rpcParams: {
                         method: '',
                         params: []
@@ -883,6 +976,7 @@ export const appStore = {
                 scanStep: ''
             };
 
+            persistNetwork(network);
             emit();
         }, 2000);
     },
@@ -1745,14 +1839,23 @@ export const appStore = {
     updateSettings(
         updates: Partial<AppSettings>
     ) {
+        const settings =
+            normalizeAppSettings({
+                ...state.settings,
+                ...updates,
+                customRpc: {
+                    ...state.settings.customRpc,
+                    ...(updates.customRpc || {})
+                }
+            });
+
         state = {
             ...state,
-            settings: {
-                ...state.settings,
-                ...updates
-            }
+            settings,
+            theme: settings.theme
         };
 
+        persistSettings(settings);
         emit();
     },
 

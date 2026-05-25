@@ -4,10 +4,40 @@ import { ArrowLeft, Cpu, Zap, Shield, Database, Layout, Server, Activity } from 
 import { appStore, useAppStore } from '@/lib/store';
 import gsap from 'gsap';
 
-export const InfrastructurePage: React.FC = () => {
+interface InfrastructurePageProps {
+    embedded?: boolean;
+}
+
+export const InfrastructurePage: React.FC<
+    InfrastructurePageProps
+> = ({ embedded = false }) => {
     const { theme } = useAppStore();
 
+    const navigateTo = (
+        target:
+            | 'app'
+            | 'ecosystem'
+    ) => {
+        if (embedded) {
+            if (target === 'app') {
+                appStore.openTab(
+                    'new_request'
+                );
+                return;
+            }
+
+            appStore.openTab(target);
+            return;
+        }
+
+        appStore.setViewMode(target);
+    };
+
     React.useEffect(() => {
+        if (embedded) {
+            return;
+        }
+
         document.body.style.overflow = 'auto';
         document.body.style.overflowX = 'hidden';
 
@@ -43,7 +73,7 @@ export const InfrastructurePage: React.FC = () => {
             document.body.style.overflow = 'hidden';
             ctx.revert();
         };
-    }, []);
+    }, [embedded]);
 
     const tiers = [
         { name: 'Edge Nodes', desc: 'Global distributed network of high-frequency nodes for minimal latency.', icon: <Activity size={24} />, color: 'emerald' },
@@ -53,16 +83,20 @@ export const InfrastructurePage: React.FC = () => {
     ];
 
     return (
-        <div className={`min-h-screen font-sans selection:bg-electric-violet/30 ${
+        <div className={`${embedded ? 'h-full overflow-y-auto custom-scrollbar' : 'min-h-screen'} font-sans selection:bg-electric-violet/30 ${
             theme === 'dark' ? 'bg-[#050505] text-white' : 'bg-slate-50 text-slate-900'
         }`}>
             {/* Nav */}
-            <nav className={`fixed top-0 left-0 right-0 h-20 border-b z-50 px-6 md:px-12 flex items-center justify-between backdrop-blur-xl ${
+            <nav className={`${embedded ? 'sticky top-0' : 'fixed top-0 left-0 right-0'} h-20 border-b z-50 px-6 md:px-12 flex items-center justify-between backdrop-blur-xl ${
                 theme === 'dark' ? 'bg-black/50 border-white/5' : 'bg-white/50 border-slate-200'
             }`}>
                 <div className="flex items-center gap-6">
                     <button 
-                        onClick={() => appStore.setViewMode('ecosystem')}
+                        onClick={() =>
+                            navigateTo(
+                                'ecosystem'
+                            )
+                        }
                         className={`flex items-center gap-2 text-sm font-bold transition-all group ${
                             theme === 'dark' ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
                         }`}
@@ -77,14 +111,18 @@ export const InfrastructurePage: React.FC = () => {
                 </div>
 
                 <button 
-                    onClick={() => appStore.setViewMode('app')}
+                    onClick={() =>
+                        navigateTo('app')
+                    }
                     className="px-6 py-2.5 bg-electric-violet text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-soft-purple transition-all shadow-[0_10px_20px_-5px_rgba(123,63,242,0.4)] active:scale-95"
                 >
-                    Launch
+                    {embedded
+                        ? 'New Request'
+                        : 'Launch'}
                 </button>
             </nav>
 
-            <section className="relative pt-48 pb-32 px-6 md:px-12">
+            <section className={`relative ${embedded ? 'pt-28' : 'pt-48'} pb-32 px-6 md:px-12`}>
                 <div className="max-w-7xl mx-auto">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center mb-32">
                         <motion.div 
