@@ -9,17 +9,54 @@ import { appStore, useAppStore } from '@/lib/store';
 import logoDark from '../assets/txio2.png';
 import logoLight from '../assets/txio3.png';
 
-export const FeaturesPage: React.FC = () => {
+interface FeaturesPageProps {
+    embedded?: boolean;
+}
+
+export const FeaturesPage: React.FC<
+    FeaturesPageProps
+> = ({ embedded = false }) => {
     const { theme } = useAppStore();
     const logo = theme === 'dark' ? logoDark : logoLight;
 
+    const navigateTo = (
+        target:
+            | 'landing'
+            | 'ecosystem'
+            | 'docs'
+            | 'app'
+    ) => {
+        if (embedded) {
+            if (target === 'landing') {
+                appStore.setActiveTab(null);
+                return;
+            }
+
+            if (target === 'app') {
+                appStore.openTab(
+                    'new_request'
+                );
+                return;
+            }
+
+            appStore.openTab(target);
+            return;
+        }
+
+        appStore.setViewMode(target);
+    };
+
     React.useEffect(() => {
+        if (embedded) {
+            return;
+        }
+
         document.body.style.overflow = 'auto';
         document.body.style.overflowX = 'hidden';
         return () => {
             document.body.style.overflow = 'hidden';
         };
-    }, []);
+    }, [embedded]);
 
     const mainFeatures = [
         {
@@ -55,36 +92,36 @@ export const FeaturesPage: React.FC = () => {
     ];
 
     return (
-        <div className={`min-h-screen font-sans selection:bg-electric-violet/30 overflow-x-hidden ${
+        <div className={`${embedded ? 'h-full overflow-y-auto custom-scrollbar' : 'min-h-screen'} font-sans selection:bg-electric-violet/30 overflow-x-hidden ${
             theme === 'dark' ? 'bg-[#050505] text-white' : 'bg-slate-50 text-slate-900'
         }`}>
             {/* Nav */}
-            <nav className={`fixed top-0 left-0 right-0 h-20 border-b z-50 px-6 md:px-12 flex items-center justify-between backdrop-blur-xl ${
+            <nav className={`${embedded ? 'sticky top-0' : 'fixed top-0 left-0 right-0'} h-20 border-b z-50 px-6 md:px-12 flex items-center justify-between backdrop-blur-xl ${
                 theme === 'dark' ? 'bg-black/50 border-white/5' : 'bg-white/50 border-slate-200'
             }`}>
                 <div className="flex items-center gap-8">
-                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => appStore.setViewMode('landing')}>
+                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('landing')}>
                         <img src={logo.src} alt="txio" className="h-7 w-auto" />
                         <span className="font-black tracking-tighter text-lg">features</span>
                     </div>
                     <div className="hidden md:flex items-center gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-                        <button onClick={() => appStore.setViewMode('ecosystem')} className="hover:text-electric-violet transition-colors">Ecosystem</button>
-                        <button onClick={() => appStore.setViewMode('docs')} className="hover:text-electric-violet transition-colors">Documentation</button>
+                        <button onClick={() => navigateTo('ecosystem')} className="hover:text-electric-violet transition-colors">Ecosystem</button>
+                        <button onClick={() => navigateTo('docs')} className="hover:text-electric-violet transition-colors">Documentation</button>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-4">
                     <button 
-                        onClick={() => appStore.setViewMode('app')}
+                        onClick={() => navigateTo('app')}
                         className="px-6 py-2.5 bg-electric-violet text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-soft-purple transition-all shadow-xl active:scale-95"
                     >
-                        Get Started
+                        {embedded ? 'New Request' : 'Get Started'}
                     </button>
                 </div>
             </nav>
 
             {/* Hero */}
-            <section className="relative pt-48 pb-32 px-6 overflow-hidden">
+            <section className={`relative ${embedded ? 'pt-28' : 'pt-48'} pb-32 px-6 overflow-hidden`}>
                 <div className="absolute top-1/4 -left-20 w-[600px] h-[600px] bg-electric-violet/10 blur-[120px] rounded-full" />
                 <div className="absolute bottom-1/4 -right-20 w-[600px] h-[600px] bg-soft-purple/10 blur-[120px] rounded-full" />
 
@@ -223,10 +260,10 @@ export const FeaturesPage: React.FC = () => {
                     <img src={logoDark.src} alt="txio" className="h-10 w-auto mx-auto" />
                     <h3 className="text-3xl font-black tracking-tighter">Ready to scale your infrastructure?</h3>
                     <div className="flex justify-center gap-4">
-                        <button onClick={() => appStore.setViewMode('app')} className="px-10 py-4 bg-electric-violet text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-soft-purple transition-all shadow-2xl active:scale-95">
-                            Get Started Free
+                        <button onClick={() => navigateTo('app')} className="px-10 py-4 bg-electric-violet text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-soft-purple transition-all shadow-2xl active:scale-95">
+                            {embedded ? 'New Request' : 'Get Started Free'}
                         </button>
-                        <button onClick={() => appStore.setViewMode('docs')} className="px-10 py-4 bg-white/5 border border-white/10 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all">
+                        <button onClick={() => navigateTo('docs')} className="px-10 py-4 bg-white/5 border border-white/10 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all">
                             Documentation
                         </button>
                     </div>

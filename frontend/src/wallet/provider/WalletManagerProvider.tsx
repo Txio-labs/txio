@@ -686,15 +686,6 @@ export function WalletManagerProvider({
                         );
                     }
 
-                    if (
-                        walletId ===
-                        'phantom'
-                    ) {
-                        throw new Error(
-                            'Phantom support is prepared, but the EVM connector is not enabled yet.'
-                        );
-                    }
-
                     const connector =
                         evmConnectors.find(
                             (
@@ -930,6 +921,13 @@ export function WalletManagerProvider({
                 recentWalletIds
             );
 
+        const evmConnectorIdSet =
+            new Set(
+                evmConnectors.map(
+                    (c) => c.id
+                )
+            );
+
         return WALLET_DESCRIPTORS.map(
             (descriptor) => {
                 let availability:
@@ -967,13 +965,48 @@ export function WalletManagerProvider({
                         break;
                     case 'phantom':
                         availability =
-                            injected.phantom
+                            injected.phantom ||
+                            evmConnectorIdSet.has(
+                                'app.phantom'
+                            )
                                 ? 'installed'
-                                : 'coming-soon';
-                        helperText =
-                            injected.phantom
-                                ? descriptor.description
-                                : 'Prepared for future Phantom support.';
+                                : 'available';
+                        break;
+                    case 'trust-wallet':
+                        availability =
+                            injected.trust ||
+                            evmConnectorIdSet.has(
+                                'com.trustwallet.app'
+                            )
+                                ? 'installed'
+                                : 'not-installed';
+                        break;
+                    case 'rainbow':
+                        availability =
+                            injected.rainbow ||
+                            evmConnectorIdSet.has(
+                                'me.rainbow'
+                            )
+                                ? 'installed'
+                                : 'not-installed';
+                        break;
+                    case 'okx-wallet':
+                        availability =
+                            injected.okx ||
+                            evmConnectorIdSet.has(
+                                'com.okex.wallet'
+                            )
+                                ? 'installed'
+                                : 'not-installed';
+                        break;
+                    case 'brave-wallet':
+                        availability =
+                            injected.brave ||
+                            evmConnectorIdSet.has(
+                                'com.brave.wallet'
+                            )
+                                ? 'installed'
+                                : 'not-installed';
                         break;
                     case 'sui-wallet':
                     case 'suiet':

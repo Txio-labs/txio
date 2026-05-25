@@ -1,6 +1,6 @@
 export type Network = 'mainnet' | 'testnet' | 'devnet';
 
-export type FeatureId = 'dashboard' | 'rpc' | 'ptb' | 'move' | 'playground' | 'history' | 'settings' | 'new_request' | 'profile' | 'ai_chat' | 'runner' | 'docs';
+export type FeatureId = 'dashboard' | 'rpc' | 'ptb' | 'move' | 'playground' | 'history' | 'settings' | 'new_request' | 'profile' | 'ai_chat' | 'runner' | 'docs' | 'ecosystem' | 'features' | 'integrations' | 'infrastructure' | 'partners';
 
 export interface TabItem {
   id: string;
@@ -114,6 +114,7 @@ export interface RequestItem {
   id: string;
   type: RequestType;
   name: string;
+  network?: Network;
   rpcParams: {
     method: string;
     params: any[];

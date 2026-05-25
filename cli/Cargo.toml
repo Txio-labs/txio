@@ -9,7 +9,7 @@ repository.workspace = true
 homepage.workspace = true
 
 [dependencies]
-txio-api = { path = "../backend/api", version = "0.1.1" }
+txio-api = { path = "../backend/api", version = "0.1.2" }
 clap = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }

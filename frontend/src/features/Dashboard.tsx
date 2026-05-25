@@ -1,21 +1,66 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import {
     Activity, Terminal, Layers, Globe, Zap, Fuel, Clock, Plus, ChevronRight, Shield, Cpu, Sparkles, ZapOff
 } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { RequestType } from '@/types';
+import { executeSuiRpc } from '@/services/suiService';
 
 export const Dashboard: React.FC = () => {
     const { network, isSyncing, history, currentWorkspaceId, user } = useAppStore();
-    const [tps, setTps] = useState<number>(245);
+    const [gasPrice, setGasPrice] = useState<string>('—');
+    const [latency, setLatency] = useState<string>('—');
+    const [tps, setTps] = useState<string>('—');
 
     useEffect(() => {
-        const interval = setInterval(() => {
+        let cancelled = false;
+        let prevCheckpoint = 0;
+        let prevTime = 0;
+
+        const fetchMetrics = async () => {
             if (isSyncing) return;
-            setTps(Math.floor((network === 'mainnet' ? 400 : 150) + Math.random() * 100));
-        }, 3000);
-        return () => clearInterval(interval);
+            const t0 = performance.now();
+            try {
+                const [gasResult, cpResult] = await Promise.all([
+                    executeSuiRpc(network, 'suix_getReferenceGasPrice', []),
+                    executeSuiRpc(network, 'sui_getLatestCheckpointSequenceNumber', [])
+                ]);
+                if (cancelled) return;
+
+                const ping = Math.round(performance.now() - t0);
+                setLatency(`${ping}ms`);
+
+                if (gasResult.result) {
+                    const mist = Number(gasResult.result);
+                    setGasPrice(`${mist.toLocaleString()} MIST`);
+                }
+
+                const cp = Number(cpResult.result);
+                const now = Date.now();
+                if (prevCheckpoint > 0 && prevTime > 0) {
+                    const deltaCp = cp - prevCheckpoint;
+                    const deltaSec = (now - prevTime) / 1000;
+                    if (deltaSec > 0 && deltaCp > 0) {
+                        setTps(Math.round(deltaCp / deltaSec).toLocaleString());
+                    }
+                }
+                prevCheckpoint = cp;
+                prevTime = now;
+            } catch {
+                if (!cancelled) {
+                    setGasPrice('Unavailable');
+                    setLatency('Unavailable');
+                }
+            }
+        };
+
+        void fetchMetrics();
+        const interval = setInterval(() => { void fetchMetrics(); }, 6000);
+        return () => {
+            cancelled = true;
+            clearInterval(interval);
+        };
     }, [network, isSyncing]);
 
     const workspaceHistory = useMemo(() => {
@@ -121,9 +166,9 @@ export const Dashboard: React.FC = () => {
             <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
                 {[
                     { label: 'Network', value: network, icon: Globe, color: 'text-blue-400', bg: 'bg-blue-400/5' },
-                    { label: 'Throughput', value: tps, icon: Zap, color: 'text-amber-400', bg: 'bg-amber-400/5' },
-                    { label: 'Gas Price', value: '1,000 Units', icon: Fuel, color: 'text-emerald-400', bg: 'bg-emerald-400/5' },
-                    { label: 'Latency', value: '42ms', icon: Cpu, color: 'text-soft-purple', bg: 'bg-soft-purple/5' }
+                    { label: 'Checkpoints/s', value: tps, icon: Zap, color: 'text-amber-400', bg: 'bg-amber-400/5' },
+                    { label: 'Gas Price', value: gasPrice, icon: Fuel, color: 'text-emerald-400', bg: 'bg-emerald-400/5' },
+                    { label: 'RPC Latency', value: latency, icon: Cpu, color: 'text-soft-purple', bg: 'bg-soft-purple/5' }
                 ].map((item, i) => (
                     <motion.div 
                         key={i} 

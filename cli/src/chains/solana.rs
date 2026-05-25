@@ -61,4 +61,48 @@ impl ChainAdapter for SolanaAdapter {
         let params = json!([address]);
         self.call_rpc("getBalance", params).await
     }
+
+    async fn get_transaction(&self, hash: &str) -> Result<Value> {
+        self.call_rpc("getTransaction", json!([
+            hash,
+            { "encoding": "jsonParsed", "maxSupportedTransactionVersion": 0 }
+        ])).await
+    }
+
+    async fn get_block(&self, block: Option<u64>) -> Result<Value> {
+        let slot = match block {
+            Some(n) => n,
+            None => {
+                let val = self.call_rpc("getSlot", json!([])).await?;
+                val.as_u64().unwrap_or(0)
+            }
+        };
+        self.call_rpc("getBlock", json!([
+            slot,
+            {
+                "encoding": "jsonParsed",
+                "maxSupportedTransactionVersion": 0,
+                "transactionDetails": "full",
+                "rewards": false
+            }
+        ])).await
+    }
+
+    async fn get_gas_price(&self) -> Result<Value> {
+        self.call_rpc("getRecentPrioritizationFees", json!([[]])).await
+    }
+
+    async fn get_account(&self, address: &str) -> Result<Value> {
+        self.call_rpc("getAccountInfo", json!([
+            address,
+            { "encoding": "jsonParsed" }
+        ])).await
+    }
+
+    async fn get_history(&self, address: &str, limit: u32) -> Result<Value> {
+        self.call_rpc("getSignaturesForAddress", json!([
+            address,
+            { "limit": limit }
+        ])).await
+    }
 }

@@ -48,7 +48,7 @@ impl SuiAdapter {
             let msg = error.get("message").and_then(|m| m.as_str()).unwrap_or("Unknown RPC Error");
             let data = error.get("data").and_then(|d| d.as_str()).unwrap_or("");
             let code = error.get("code").and_then(|c| c.as_i64()).unwrap_or(0);
-            
+
             let err_str = if data.is_empty() {
                 format!("{} (Code: {})", msg, code)
             } else {
@@ -70,7 +70,7 @@ impl SuiAdapter {
                     let matches: Vec<String> = suins_regex.find_iter(s)
                         .map(|m| m.as_str().to_string())
                         .collect();
-                    
+
                     for name in matches {
                         if let Ok(Some(addr)) = self.resolve_name(&name).await {
                             new_string = new_string.replace(&name, &addr);
@@ -106,7 +106,6 @@ impl ChainAdapter for SuiAdapter {
     }
 
     async fn call_rpc(&self, method: &str, mut params: Value) -> Result<Value> {
-        // Resolve names in the parameters before making the call
         self.resolve_names_in_value(&mut params).await?;
         self.call_rpc_internal(method, params).await
     }
@@ -116,7 +115,6 @@ impl ChainAdapter for SuiAdapter {
             return Ok(None);
         }
         let params = json!([name]);
-        // Call internal RPC to prevent infinite recursion
         let result = self.call_rpc_internal("suix_resolveNameServiceAddress", params).await?;
         Ok(result.as_str().map(|s| s.to_string()))
     }
@@ -124,5 +122,55 @@ impl ChainAdapter for SuiAdapter {
     async fn get_balance(&self, address: &str) -> Result<Value> {
         let params = json!([address]);
         self.call_rpc("suix_getAllBalances", params).await
+    }
+
+    async fn get_transaction(&self, hash: &str) -> Result<Value> {
+        let params = json!([
+            hash,
+            {
+                "showInput": true,
+                "showEffects": true,
+                "showEvents": true,
+                "showObjectChanges": true,
+                "showBalanceChanges": true
+            }
+        ]);
+        self.call_rpc_internal("sui_getTransactionBlock", params).await
+    }
+
+    async fn get_block(&self, block: Option<u64>) -> Result<Value> {
+        if let Some(seq) = block {
+            let params = json!([seq.to_string()]);
+            self.call_rpc_internal("sui_getCheckpoint", params).await
+        } else {
+            let seq = self.call_rpc_internal("sui_getLatestCheckpointSequenceNumber", json!([])).await?;
+            let params = json!([seq]);
+            self.call_rpc_internal("sui_getCheckpoint", params).await
+        }
+    }
+
+    async fn get_gas_price(&self) -> Result<Value> {
+        self.call_rpc_internal("suix_getReferenceGasPrice", json!([])).await
+    }
+
+    async fn get_account(&self, id: &str) -> Result<Value> {
+        let params = json!([
+            id,
+            { "showType": true, "showContent": true, "showOwner": true, "showDisplay": true }
+        ]);
+        self.call_rpc_internal("sui_getObject", params).await
+    }
+
+    async fn get_history(&self, address: &str, limit: u32) -> Result<Value> {
+        let params = json!([
+            {
+                "filter": { "FromAddress": address },
+                "options": { "showInput": true, "showEffects": true }
+            },
+            null,
+            limit,
+            true
+        ]);
+        self.call_rpc_internal("suix_queryTransactionBlocks", params).await
     }
 }

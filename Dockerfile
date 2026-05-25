@@ -36,7 +36,7 @@ RUN mkdir -p /app/temp
 ENV RUST_LOG=info
 ENV MONGO_URI=mongodb://mongodb:27017/txio
 
-EXPOSE 3000
+EXPOSE 8000
 
 # The entrypoint is the backend API
 CMD ["./api"]

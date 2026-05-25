@@ -1,6 +1,6 @@
 use serde::Deserialize;
-use validator::Validate;
 use serde_json::Value;
+use validator::Validate;
 
 #[derive(Debug, Deserialize, Validate)]
 pub struct CreateCollectionRequest {
@@ -28,12 +28,12 @@ pub struct UpdateCollectionRequest {
 pub struct CreateSavedRequestRequest {
     #[validate(length(min = 1, message = "Name cannot be empty"))]
     pub name: String,
-    
+
     #[validate(length(min = 1, message = "Method cannot be empty"))]
     pub method: String,
-    
+
     pub params: Value,
-    
+
     // Optional overrides
     pub network: Option<String>,
     pub rpc_url: Option<String>,
@@ -49,5 +49,5 @@ pub struct UpdateSavedRequestRequest {
     pub last_response: Option<Value>,
 }
 
-// Responses could just use the Models directly since they are Serialize, 
+// Responses could just use the Models directly since they are Serialize,
 // or wrap them. For simplicity, we'll return models directly in handlers.

@@ -24,7 +24,8 @@ impl EmailService {
             "htmlContent": format!("<p>Your verification code is: <strong>{}</strong></p><p>This code will expire in 10 minutes.</p>", otp)
         });
 
-        let response = self.client
+        let response = self
+            .client
             .post("https://api.brevo.com/v3/smtp/email")
             .header("api-key", &self.api_key)
             .header("Content-Type", "application/json")
@@ -35,7 +36,10 @@ impl EmailService {
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(AppError::ExternalService(format!("Brevo API error: {}", error_text)));
+            return Err(AppError::ExternalService(format!(
+                "Brevo API error: {}",
+                error_text
+            )));
         }
 
         Ok(())

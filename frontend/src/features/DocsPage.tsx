@@ -9,11 +9,35 @@ import { appStore, useAppStore } from '@/lib/store';
 import logoDark from '../assets/txio2.png';
 import logoLight from '../assets/txio3.png';
 
-export const DocsPage: React.FC = () => {
+interface DocsPageProps {
+    embedded?: boolean;
+}
+
+export const DocsPage: React.FC<
+    DocsPageProps
+> = ({ embedded = false }) => {
     const { theme } = useAppStore();
     const [activePage, setActivePage] = useState('introduction');
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const scrollRef = React.useRef<HTMLElement>(null);
+
+    const navigateTo = (
+        target:
+            | 'landing'
+            | 'signup'
+    ) => {
+        if (embedded) {
+            if (target === 'landing') {
+                appStore.setActiveTab(null);
+                return;
+            }
+
+            appStore.openTab('new_request');
+            return;
+        }
+
+        appStore.setViewMode(target);
+    };
 
     React.useEffect(() => {
         if (scrollRef.current) {
@@ -608,7 +632,9 @@ export const DocsPage: React.FC = () => {
                                 {[
                                     { method: 'POST', path: '/api/v1/workspace/sync', desc: 'Trigger an immediate metadata synchronization.' },
                                     { method: 'GET', path: '/api/v1/metrics/latency', desc: 'Retrieve global latency metrics for active RPCs.' },
-                                    { method: 'POST', path: '/api/v1/terminal/execute', desc: 'Execute remote terminal commands via the txio gateway.' }
+                                    { method: 'POST', path: '/api/v1/terminal/execute', desc: 'Start a terminal execution and return an execution identifier immediately.' },
+                                    { method: 'GET', path: '/api/v1/terminal/executions/:execution_id', desc: 'Poll the current state, exit code, duration, and output for a terminal execution.' },
+                                    { method: 'POST', path: '/api/v1/terminal/executions/:execution_id/cancel', desc: 'Cancel a running terminal execution on the backend.' }
                                 ].map(api => (
                                     <div key={api.path} className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:bg-white/[0.04] transition-all">
                                         <div className="flex items-center gap-4">
@@ -942,16 +968,20 @@ export const DocsPage: React.FC = () => {
     };
 
     return (
-        <div className={`min-h-screen font-sans selection:bg-electric-violet/30 overflow-hidden ${
+        <div className={`${embedded ? 'h-full' : 'min-h-screen'} font-sans selection:bg-electric-violet/30 overflow-hidden ${
             theme === 'dark' ? 'bg-[#050505] text-white' : 'bg-slate-50 text-slate-900'
         }`}>
             {/* Nav */}
-            <nav className={`fixed top-0 left-0 right-0 h-16 border-b z-50 px-6 flex items-center justify-between backdrop-blur-xl ${
+            <nav className={`${embedded ? 'sticky top-0' : 'fixed top-0 left-0 right-0'} h-16 border-b z-50 px-6 flex items-center justify-between backdrop-blur-xl ${
                 theme === 'dark' ? 'bg-black/50 border-white/5' : 'bg-white/50 border-slate-200'
             }`}>
                 <div className="flex items-center gap-6">
                     <button 
-                        onClick={() => appStore.setViewMode('landing')}
+                        onClick={() =>
+                            navigateTo(
+                                'landing'
+                            )
+                        }
                         className={`flex items-center gap-2 text-sm font-bold transition-all group ${
                             theme === 'dark' ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
                         }`}
@@ -976,15 +1006,21 @@ export const DocsPage: React.FC = () => {
                         />
                     </div>
                     <button 
-                        onClick={() => appStore.setViewMode('signup')}
+                        onClick={() =>
+                            navigateTo(
+                                'signup'
+                            )
+                        }
                         className="px-5 py-2 bg-electric-violet text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-soft-purple transition-all shadow-lg active:scale-95"
                     >
-                        Launch
+                        {embedded
+                            ? 'New Request'
+                            : 'Launch'}
                     </button>
                 </div>
             </nav>
 
-            <div className="flex pt-16 h-screen">
+            <div className={`flex ${embedded ? 'h-[calc(100%-4rem)]' : 'pt-16 h-screen'}`}>
                 {/* Sidebar */}
                 <aside className={`w-72 flex flex-col border-r h-full overflow-hidden transition-all duration-300 ${
                     sidebarOpen ? 'translate-x-0' : '-translate-x-full'

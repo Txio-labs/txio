@@ -24,6 +24,7 @@ export const NewRequestPage: React.FC<NewRequestPageProps> = ({ tabId }) => {
       id: tabId,
       name: name,
       type: reqType,
+      network: appStore.getSnapshot().network,
       rpcParams: { method: '', params: [] },
       moveParams: { ...DEFAULT_MOVE_CALL },
       localVars: []

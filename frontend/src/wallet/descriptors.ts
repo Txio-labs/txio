@@ -72,16 +72,94 @@ export const WALLET_DESCRIPTORS: WalletDescriptor[] =
             tags: [
                 'evm',
                 'multichain',
-                'optional'
+                'solana',
+                'browser'
             ],
             description:
-                'Prepared for Phantom EVM support when the provider is available.',
+                'Multi-chain wallet supporting EVM networks with injected provider.',
             installUrl:
                 'https://phantom.com/download',
             mobileUrl:
                 'https://phantom.app/ul/browse/',
-            badge: 'Prepared',
-            iconSeed: 'phantom'
+            badge: 'Multi-chain',
+            iconSeed: 'phantom',
+            isFeatured: true
+        },
+        {
+            id: 'trust-wallet',
+            name: 'Trust Wallet',
+            shortName: 'TW',
+            chainFamily: 'evm',
+            methods: ['injected', 'deeplink'],
+            tags: [
+                'evm',
+                'mobile',
+                'multichain',
+                'browser'
+            ],
+            description:
+                'Non-custodial multi-chain wallet supporting EVM and 100+ networks.',
+            installUrl:
+                'https://trustwallet.com/download',
+            mobileUrl:
+                'https://link.trustwallet.com/open_url?coin_id=60&url=',
+            iconSeed: 'trust-wallet'
+        },
+        {
+            id: 'rainbow',
+            name: 'Rainbow',
+            shortName: 'RB',
+            chainFamily: 'evm',
+            methods: ['injected', 'deeplink'],
+            tags: [
+                'evm',
+                'mobile',
+                'browser',
+                'nft'
+            ],
+            description:
+                'Fun, simple Ethereum wallet with NFT and DeFi support.',
+            installUrl:
+                'https://rainbow.me/download',
+            mobileUrl:
+                'https://rnbwapp.com/wc?uri=',
+            iconSeed: 'rainbow'
+        },
+        {
+            id: 'okx-wallet',
+            name: 'OKX Wallet',
+            shortName: 'OKX',
+            chainFamily: 'evm',
+            methods: ['injected', 'deeplink'],
+            tags: [
+                'evm',
+                'multichain',
+                'exchange',
+                'browser'
+            ],
+            description:
+                'Multi-chain Web3 wallet from OKX with cross-chain swap capabilities.',
+            installUrl:
+                'https://www.okx.com/web3',
+            iconSeed: 'okx-wallet'
+        },
+        {
+            id: 'brave-wallet',
+            name: 'Brave Wallet',
+            shortName: 'BW',
+            chainFamily: 'evm',
+            methods: ['injected'],
+            tags: [
+                'evm',
+                'browser',
+                'native',
+                'hardware'
+            ],
+            description:
+                'Native browser wallet built into Brave with hardware wallet support.',
+            installUrl:
+                'https://brave.com/download',
+            iconSeed: 'brave-wallet'
         },
         {
             id: 'sui-wallet',

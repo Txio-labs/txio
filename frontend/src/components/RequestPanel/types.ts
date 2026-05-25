@@ -3,6 +3,7 @@ import { RequestItem, RequestType, Network, RPCHealthMetric, EnvironmentVariable
 export interface RequestPanelProps {
   request: RequestItem;
   network: Network;
+  isLoading: boolean;
   onChange: (updatedReq: RequestItem) => void;
   onSend: () => void;
   onExecute?: () => void;

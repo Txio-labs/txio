@@ -1,23 +1,19 @@
-use axum::{
-    http::{
-        HeaderValue,
-    },
-    routing::get,
-    Router,
-};
-use std::net::SocketAddr;
-use dotenvy::dotenv;
+use axum::{Router, http::HeaderValue, routing::get};
+use dotenvy::{dotenv, from_path_override};
+use std::{net::SocketAddr, path::PathBuf};
 use tower_http::cors::{Any, CorsLayer};
 
 use ::txio_api::{
-    api, services, model, repositories, utils,
+    api,
+    infra::db::{describe_connection_error, establish_connection},
+    model, repositories, services, utils,
     utils::config::Config,
-    infra::db::establish_connection,
 };
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
+    load_project_env();
 
     // 1. Initialize Logging
     utils::logger::init();
@@ -39,8 +35,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 3. Connect to Database
     tracing::info!("Connecting to MongoDB at {}...", config.mongo_uri);
     let db_client = establish_connection(&config.mongo_uri).await.map_err(|e| {
-        tracing::error!(error = %e, "Failed to connect to MongoDB");
-        Box::new(e) as Box<dyn std::error::Error>
+        let message = describe_connection_error(&config.mongo_uri, &e);
+        tracing::error!(error = %message, "Failed to connect to MongoDB");
+        Box::new(std::io::Error::other(message)) as Box<dyn std::error::Error>
     })?;
 
     tracing::info!("Connected to MongoDB at {}", config.mongo_uri);
@@ -50,7 +47,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let user_repo = repositories::user_repository::UserRepository::new(&db_client);
     let otp_repo = repositories::otp_repository::OTPRepository::new(&db_client);
     let rpc_repo = repositories::rpc_repository::RpcRepository::new(&db_client);
-    let collection_repo = repositories::collection_repository::CollectionRepository::new(&db_client);
+    let collection_repo =
+        repositories::collection_repository::CollectionRepository::new(&db_client);
     let request_repo = repositories::request_repository::RequestRepository::new(&db_client);
     let workspace_repo = repositories::workspace_repository::WorkspaceRepository::new(&db_client);
 
@@ -60,7 +58,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 5.1 Initialize Support Services
     let email_service = services::email_service::EmailService::new(config.brevo_api_key);
     let otp_service = services::otp_service::OTPService::new(otp_repo.clone());
-    
+
     // Default Mainnet URL for SuiService (can be overridden dynamically)
     let default_sui_url = model::user::SuiNetwork::Mainnet.url().to_string();
     let sui_service = services::sui_service::SuiService::new(rpc_repo.clone(), default_sui_url);
@@ -69,11 +67,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let auth_service = services::auth_service::AuthService::new(
         user_repo.clone(),
         rpc_repo,
-        jwt_helper, 
-        otp_service, 
-        email_service
+        jwt_helper,
+        otp_service,
+        email_service,
     );
-    
+
     let collection_service = services::collection_service::CollectionService::new(
         collection_repo.clone(),
         request_repo,
@@ -82,15 +80,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         sui_service,
     );
 
-    let workspace_service = services::workspace_service::WorkspaceService::new(
-        workspace_repo,
-        collection_repo,
-    );
+    let workspace_service =
+        services::workspace_service::WorkspaceService::new(workspace_repo, collection_repo);
 
     let terminal_service = services::terminal_service::TerminalService::new();
+    let ai_service = services::ai_service::AiService::from_env();
 
-    let frontend_url = std::env::var("FRONTEND_URL")
-        .unwrap_or_else(|_| "http://localhost:3000".to_string());
+    tracing::info!(
+        groq_key_count = ai_service.configured_key_count(),
+        groq_model = %ai_service.model(),
+        "Configured AI service"
+    );
+
+    let frontend_url =
+        std::env::var("FRONTEND_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
     let frontend_origin = reqwest::Url::parse(&frontend_url)
         .map(|url| url.origin().ascii_serialization())
         .unwrap_or_else(|_| frontend_url.trim_end_matches('/').to_string());
@@ -120,22 +123,52 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 7. Build Router
     let app = Router::new()
         .route("/health", get(|| async { "txio Backend Operational" }))
-        .nest("/api/v1/auth", api::routers::auth_router::router(auth_service))
-        .nest("/api/v1/collections", api::routers::collection_router::router(collection_service))
-        .nest("/api/v1/workspaces", api::routers::workspace_router::router(workspace_service))
-        .nest("/api/v1/terminal", api::routers::terminal_router::router(terminal_service))
+        .nest(
+            "/api/v1/auth",
+            api::routers::auth_router::router(auth_service),
+        )
+        .nest("/api/v1/ai", api::routers::ai_router::router(ai_service))
+        .nest(
+            "/api/v1/collections",
+            api::routers::collection_router::router(collection_service),
+        )
+        .nest(
+            "/api/v1/workspaces",
+            api::routers::workspace_router::router(workspace_service),
+        )
+        .nest(
+            "/api/v1/terminal",
+            api::routers::terminal_router::router(terminal_service),
+        )
         .layer(cors);
 
     // 8. Run Server
     let port = std::env::var("PORT")
-        .unwrap_or_else(|_| "3000".to_string())
+        .unwrap_or_else(|_| "8000".to_string())
         .parse::<u16>()
-        .unwrap_or(3000);
+        .unwrap_or(8000);
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
+
+    let listener = tokio::net::TcpListener::bind(addr).await.map_err(|e| {
+        tracing::error!(error = %e, %addr, "Failed to bind API server");
+        Box::new(std::io::Error::new(
+            e.kind(),
+            format!(
+                "Failed to bind API server to {}. Set PORT to override the default bind port. {}",
+                addr, e
+            ),
+        )) as Box<dyn std::error::Error>
+    })?;
     tracing::info!("Server listening on {}", addr);
-    
-    let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, app).await?;
 
     Ok(())
+}
+
+fn load_project_env() {
+    let manifest_env = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(".env");
+    let workspace_env = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../.env");
+
+    from_path_override(&manifest_env).ok();
+    from_path_override(&workspace_env).ok();
 }

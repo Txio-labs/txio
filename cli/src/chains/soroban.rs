@@ -15,6 +15,14 @@ impl SorobanAdapter {
         Self::with_rpc(None, Network::Mainnet)
     }
 
+    fn horizon_url(&self) -> &'static str {
+        if self.rpc_url.contains("mainnet") {
+            "https://horizon.stellar.org"
+        } else {
+            "https://horizon-testnet.stellar.org"
+        }
+    }
+
     pub fn with_rpc(rpc_url: Option<String>, network: Network) -> Self {
         let url = rpc_url.unwrap_or_else(|| match network {
             Network::Mainnet => "https://soroban-rpc.mainnet.stellar.org".to_string(),
@@ -64,11 +72,39 @@ impl ChainAdapter for SorobanAdapter {
     }
 
     async fn get_balance(&self, address: &str) -> Result<Value> {
-        // Typically stellar balances are fetched via Horizon API, but for Soroban RPC
-        // we can fetch ledger entries. For simplicity, we just use getLatestLedger as a ping
-        // or attempt to query if the user requests it. We'll return a simulated response for now 
-        // until a specific Soroban token ID is provided.
-        // Let's just do a generic getLatestLedger to ensure the RPC works
-        self.call_rpc("getLatestLedger", json!([])).await
+        let horizon = self.horizon_url();
+        let url = format!("{}/accounts/{}", horizon, address);
+        Ok(self.client.get(&url).send().await?.json().await?)
+    }
+
+    async fn get_transaction(&self, hash: &str) -> Result<Value> {
+        self.call_rpc("getTransaction", json!({ "hash": hash })).await
+    }
+
+    async fn get_block(&self, block: Option<u64>) -> Result<Value> {
+        match block {
+            Some(seq) => {
+                self.call_rpc("getLedgers", json!({ "startLedger": seq, "limit": 1 })).await
+            }
+            None => {
+                self.call_rpc("getLatestLedger", json!({})).await
+            }
+        }
+    }
+
+    async fn get_gas_price(&self) -> Result<Value> {
+        self.call_rpc("getFeeStats", json!({})).await
+    }
+
+    async fn get_account(&self, address: &str) -> Result<Value> {
+        let horizon = self.horizon_url();
+        let url = format!("{}/accounts/{}", horizon, address);
+        Ok(self.client.get(&url).send().await?.json().await?)
+    }
+
+    async fn get_history(&self, address: &str, limit: u32) -> Result<Value> {
+        let horizon = self.horizon_url();
+        let url = format!("{}/accounts/{}/transactions?limit={}&order=desc", horizon, address, limit);
+        Ok(self.client.get(&url).send().await?.json().await?)
     }
 }

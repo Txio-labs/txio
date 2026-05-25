@@ -4,13 +4,11 @@ use validator::Validate;
 
 #[derive(Debug, Deserialize, Validate)]
 pub struct CreateWorkspaceRequest {
-    #[validate(
-        length(
-            min = 2,
-            max = 48,
-            message = "Workspace name must be between 2 and 48 characters"
-        )
-    )]
+    #[validate(length(
+        min = 2,
+        max = 48,
+        message = "Workspace name must be between 2 and 48 characters"
+    ))]
     pub name: String,
     pub workspace_type: Option<WorkspaceType>,
 }

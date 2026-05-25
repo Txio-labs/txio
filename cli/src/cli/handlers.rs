@@ -1,24 +1,26 @@
-use crate::cli::parser::{Cli, Commands, ChainCommand, DbAction};
 use crate::chains::factory::ChainFactory;
 use crate::chains::traits::ChainAdapter;
+use crate::cli::parser::{ChainCommand, Cli, Commands, ConfigAction, DbAction};
 use crate::utils;
 use anyhow::{Result, anyhow};
-use serde_json::Value;
 use colored::*;
-use std::sync::Arc;
-use txio_api::utils::config::Config;
-use txio_api::infra::db::establish_connection;
-use txio_api::repositories::user_repository::UserRepository;
-use txio_api::repositories::rpc_repository::RpcRepository;
-use txio_api::model::rpc::RpcLog;
-use txio_api::dtos::request::LoginRequest;
-use txio_api::dtos::response::AuthResponse;
-use txio_api::utils::auth_jwt::{JwtHelper};
+use futures::stream::StreamExt;
+use mongodb::bson::doc;
 use mongodb::bson::Document;
 use mongodb::bson::oid::ObjectId;
-use futures::stream::StreamExt;
+use mongodb::options::FindOptions;
+use serde_json::Value;
+use std::sync::Arc;
+use txio_api::dtos::request::LoginRequest;
+use txio_api::dtos::response::AuthResponse;
+use txio_api::infra::db::{describe_connection_error, establish_connection};
+use txio_api::model::rpc::RpcLog;
+use txio_api::repositories::rpc_repository::RpcRepository;
+use txio_api::repositories::user_repository::UserRepository;
+use txio_api::utils::auth_jwt::JwtHelper;
+use txio_api::utils::config::Config;
 
-use dialoguer::{Input, Password};
+use dialoguer::{Confirm, Input, Password};
 use std::str::FromStr;
 
 pub struct CommandHandler;
@@ -35,7 +37,11 @@ impl CommandHandler {
             Commands::Switch { chain } => {
                 if ChainFactory::list_chains().contains(&chain.to_lowercase().as_str()) {
                     utils::save_current_chain(&chain.to_lowercase())?;
-                    println!("{} Switched default chain to {}", "✔".green(), chain.bold().cyan());
+                    println!(
+                        "{} Switched default chain to {}",
+                        "✔".green(),
+                        chain.bold().cyan()
+                    );
                 } else {
                     let msg = format!("Unknown chain '{}'", chain);
                     let suggestion = ChainFactory::suggest_chain(&chain);
@@ -49,24 +55,83 @@ impl CommandHandler {
             Commands::Login => {
                 Self::handle_login().await?;
             }
+            Commands::Logout => {
+                utils::remove_token()?;
+                println!("{} Logged out successfully.", "✔".green());
+            }
+            Commands::Status => {
+                let chain = utils::get_current_chain().unwrap_or_else(|| "sui".to_string());
+                let logged_in = utils::get_token().is_some();
+                println!("{}", "─── txio Status ───".bold().cyan());
+                println!("  {} Default chain:  {}", "»".dimmed(), chain.green().bold());
+                println!("  {} Network:        {}", "»".dimmed(), format!("{:?}", cli.network).yellow());
+                println!("  {} Authenticated:  {}", "»".dimmed(),
+                    if logged_in { "Yes".green().bold() } else { "No".red().bold() }
+                );
+                if let Ok(adapter) = ChainFactory::get_adapter(&chain, cli.rpc_url.clone(), cli.network.clone()) {
+                    let rpc = cli.rpc_url.as_deref().unwrap_or(adapter.default_rpc());
+                    let healthy = adapter.get_gas_price().await.is_ok();
+                    println!("  {} RPC endpoint:   {}", "»".dimmed(), rpc.dimmed());
+                    println!("  {} RPC health:     {}", "»".dimmed(),
+                        if healthy { "✔ OK".green().bold() } else { "✖ Unreachable".red().bold() }
+                    );
+                }
+            }
+            Commands::Config { action } => {
+                match action {
+                    ConfigAction::List => {
+                        let entries = utils::list_config()?;
+                        if entries.is_empty() {
+                            println!("{}", "No configuration entries set.".dimmed());
+                        } else {
+                            println!("{}", "CLI Configuration:".bold().cyan());
+                            for (k, v) in entries {
+                                println!("  {} = {}", k.yellow(), v.green());
+                            }
+                        }
+                    }
+                    ConfigAction::Get { key } => {
+                        match utils::get_config(&key)? {
+                            Some(v) => println!("{} = {}", key.yellow(), v.green()),
+                            None => println!("{} Key '{}' not found.", "✖".red(), key),
+                        }
+                    }
+                    ConfigAction::Set { key, value } => {
+                        utils::save_config(&key, &value)?;
+                        println!("{} Set {} = {}", "✔".green(), key.yellow(), value.green());
+                    }
+                    ConfigAction::Unset { key } => {
+                        utils::remove_config(&key)?;
+                        println!("{} Removed key '{}'.", "✔".green(), key.yellow());
+                    }
+                }
+            }
             Commands::Sui { command } => {
-                let adapter = ChainFactory::get_adapter("sui", cli.rpc_url.clone(), cli.network.clone())?;
+                let adapter =
+                    ChainFactory::get_adapter("sui", cli.rpc_url.clone(), cli.network.clone())?;
                 Self::handle_chain_command(adapter, command, cli.pretty, cli.email).await?;
             }
             Commands::Ethereum { command } => {
-                let adapter = ChainFactory::get_adapter("ethereum", cli.rpc_url.clone(), cli.network.clone())?;
+                let adapter = ChainFactory::get_adapter(
+                    "ethereum",
+                    cli.rpc_url.clone(),
+                    cli.network.clone(),
+                )?;
                 Self::handle_chain_command(adapter, command, cli.pretty, cli.email).await?;
             }
             Commands::Solana { command } => {
-                let adapter = ChainFactory::get_adapter("solana", cli.rpc_url.clone(), cli.network.clone())?;
+                let adapter =
+                    ChainFactory::get_adapter("solana", cli.rpc_url.clone(), cli.network.clone())?;
                 Self::handle_chain_command(adapter, command, cli.pretty, cli.email).await?;
             }
             Commands::Aptos { command } => {
-                let adapter = ChainFactory::get_adapter("aptos", cli.rpc_url.clone(), cli.network.clone())?;
+                let adapter =
+                    ChainFactory::get_adapter("aptos", cli.rpc_url.clone(), cli.network.clone())?;
                 Self::handle_chain_command(adapter, command, cli.pretty, cli.email).await?;
             }
             Commands::Soroban { command } => {
-                let adapter = ChainFactory::get_adapter("soroban", cli.rpc_url.clone(), cli.network.clone())?;
+                let adapter =
+                    ChainFactory::get_adapter("soroban", cli.rpc_url.clone(), cli.network.clone())?;
                 Self::handle_chain_command(adapter, command, cli.pretty, cli.email).await?;
             }
             Commands::Db { action } => {
@@ -86,32 +151,110 @@ impl CommandHandler {
 
     async fn handle_db_command(action: DbAction) -> Result<()> {
         let config = Config::from_env().map_err(|e| anyhow!("Failed to load config: {}", e))?;
-        let client = establish_connection(&config.mongo_uri).await.map_err(|e| anyhow!("Failed to connect to MongoDB: {}", e))?;
-        
+        let client = establish_connection(&config.mongo_uri)
+            .await
+            .map_err(|e| anyhow!("{}", describe_connection_error(&config.mongo_uri, &e)))?;
+        let db = client.database("txio_db");
+
         match action {
             DbAction::ListUsers => {
-                let db = client.database("txio_db");
                 let collection = db.collection::<Document>("users");
-
                 println!("{}", "Registered Users:".bold().cyan());
-                
-                let mut cursor = collection.find(None, None).await.map_err(|e| anyhow!("Failed to query users: {}", e))?;
+
+                let mut cursor = collection
+                    .find(None, None)
+                    .await
+                    .map_err(|e| anyhow!("Failed to query users: {}", e))?;
                 let mut count = 0;
-                
-while let Some(result) = cursor.next().await {
+
+                while let Some(result) = cursor.next().await {
                     let doc: Document = result.map_err(|e| anyhow!("Cursor error: {}", e))?;
                     count += 1;
-if let Ok(email) = doc.get_str("email") {
-                        let email: &str = email;
-                        
+                    if let Ok(email) = doc.get_str("email") {
                         println!("  - {}", email.green());
                     } else {
                         println!("  - {}", "[User without email]".dimmed());
                     }
                 }
-                
+
                 if count == 0 {
                     println!("  {}", "No users found.".yellow());
+                }
+            }
+            DbAction::DeleteUser { email } => {
+                let confirmed = Confirm::new()
+                    .with_prompt(format!("Delete user '{}'? This cannot be undone", email.red()))
+                    .default(false)
+                    .interact()?;
+
+                if !confirmed {
+                    println!("{} Aborted.", "✖".red());
+                    return Ok(());
+                }
+
+                let user_repo = UserRepository::new(&client);
+                match user_repo.find_by_email(&email).await {
+                    Ok(user) => {
+                        if let Some(id) = user.id {
+                            match user_repo.delete_by_id(&id.to_hex()).await {
+                                Ok(_) => println!("{} User '{}' deleted.", "✔".green(), email.bold()),
+                                Err(e) => println!("{} Delete failed: {}", "✖".red(), e),
+                            }
+                        } else {
+                            println!("{} User record has no ID.", "✖".red());
+                        }
+                    }
+                    Err(_) => println!("{} User '{}' not found.", "✖".red(), email),
+                }
+            }
+            DbAction::Stats => {
+                let user_count = db
+                    .collection::<Document>("users")
+                    .count_documents(None, None)
+                    .await
+                    .unwrap_or(0);
+                let log_count = db
+                    .collection::<Document>("rpc_logs")
+                    .count_documents(None, None)
+                    .await
+                    .unwrap_or(0);
+
+                println!("{}", "─── Database Stats ───".bold().cyan());
+                println!("  {} Registered users: {}", "»".dimmed(), user_count.to_string().green().bold());
+                println!("  {} Total RPC logs:   {}", "»".dimmed(), log_count.to_string().yellow().bold());
+            }
+            DbAction::ListLogs { limit } => {
+                let opts = FindOptions::builder()
+                    .sort(doc! { "_id": -1 })
+                    .limit(Some(limit as i64))
+                    .build();
+
+                let mut cursor = db
+                    .collection::<Document>("rpc_logs")
+                    .find(None, Some(opts))
+                    .await
+                    .map_err(|e| anyhow!("Failed to query logs: {}", e))?;
+
+                println!("{}", "Recent RPC Logs:".bold().cyan());
+                let mut count = 0u64;
+
+                while let Some(result) = cursor.next().await {
+                    let doc = result.map_err(|e| anyhow!("Cursor error: {}", e))?;
+                    count += 1;
+                    let method = doc.get_str("method").unwrap_or("unknown");
+                    let success = doc.get_bool("success").unwrap_or(false);
+                    let status = if success { "OK".green() } else { "ERR".red() };
+                    let err = doc.get_str("error_message").unwrap_or("").dimmed();
+                    println!(
+                        "  [{}] {} {}",
+                        status,
+                        method.cyan(),
+                        if !err.is_empty() { format!("— {}", err) } else { String::new() }
+                    );
+                }
+
+                if count == 0 {
+                    println!("  {}", "No logs found.".yellow());
                 }
             }
         }
@@ -120,14 +263,9 @@ if let Ok(email) = doc.get_str("email") {
 
     async fn handle_login() -> Result<()> {
         println!("{}", "--- txio Account Login ---".bold().cyan());
-        
-        let email: String = Input::new()
-            .with_prompt("Email")
-            .interact_text()?;
-            
-        let password = Password::new()
-            .with_prompt("Password")
-            .interact()?;
+
+        let email: String = Input::new().with_prompt("Email").interact_text()?;
+        let password = Password::new().with_prompt("Password").interact()?;
 
         println!("\n{} Logging in...", "⏳".yellow());
 
@@ -137,9 +275,11 @@ if let Ok(email) = doc.get_str("email") {
         };
 
         let client = reqwest::Client::new();
-        let api_url = std::env::var("API_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
-        
-        let response = client.post(format!("{}/api/auth/login", api_url))
+        let api_url =
+            std::env::var("API_URL").unwrap_or_else(|_| "http://localhost:8000".to_string());
+
+        let response = client
+            .post(format!("{}/api/v1/auth/login", api_url))
             .json(&login_request)
             .send()
             .await?;
@@ -147,21 +287,33 @@ if let Ok(email) = doc.get_str("email") {
         if response.status().is_success() {
             let auth_response: AuthResponse = response.json().await?;
             utils::save_token(&auth_response.token)?;
-            println!("{} Login successful! Welcome, {}.", "✔".green(), auth_response.user.email.bold().cyan());
+            println!(
+                "{} Login successful! Welcome, {}.",
+                "✔".green(),
+                auth_response.user.email.bold().cyan()
+            );
         } else {
             let status = response.status();
-            let error_body = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
-            println!("{} Login failed ({}): {}", "✖".red(), status, error_body.red());
+            let error_body = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            println!(
+                "{} Login failed ({}): {}",
+                "✖".red(),
+                status,
+                error_body.red()
+            );
         }
 
         Ok(())
     }
 
     async fn handle_chain_command(
-        adapter: Arc<dyn ChainAdapter>, 
-        command: ChainCommand, 
-        pretty: bool, 
-        email: Option<String>
+        adapter: Arc<dyn ChainAdapter>,
+        command: ChainCommand,
+        pretty: bool,
+        email: Option<String>,
     ) -> Result<()> {
         match command {
             ChainCommand::Call { method, params } => {
@@ -171,24 +323,25 @@ if let Ok(email) = doc.get_str("email") {
                     Value::Array(vec![])
                 };
 
-                println!("{} Calling {} on {}...", "🚀".bold(), method.cyan(), adapter.name().green());
-                
+                println!(
+                    "{} Calling {} on {}...",
+                    "🚀".bold(),
+                    method.cyan(),
+                    adapter.name().green()
+                );
+
                 let result = adapter.call_rpc(&method, params_val.clone()).await;
-                
-                // Determine user ID for logging
+
                 let mut user_id_to_log: Option<ObjectId> = None;
 
                 if let Ok(config) = Config::from_env() {
                     if let Ok(client) = establish_connection(&config.mongo_uri).await {
-                        // Priority 1: --email flag (admin override)
                         if let Some(user_email) = email {
                             let user_repo = UserRepository::new(&client);
                             if let Ok(user) = user_repo.find_by_email(&user_email).await {
                                 user_id_to_log = user.id;
                             }
-                        } 
-                        // Priority 2: Logged in user (token)
-                        else if let Some(token) = utils::get_token() {
+                        } else if let Some(token) = utils::get_token() {
                             let jwt_helper = JwtHelper::new(config.jwt_secret);
                             if let Ok(claims) = jwt_helper.verify_token(&token) {
                                 if let Ok(oid) = ObjectId::from_str(&claims.sub) {
@@ -197,7 +350,6 @@ if let Ok(email) = doc.get_str("email") {
                             }
                         }
 
-                        // Perform logging if we have a user ID
                         if let Some(user_id) = user_id_to_log {
                             let rpc_repo = RpcRepository::new(&client);
                             let log = RpcLog::new(
@@ -213,22 +365,31 @@ if let Ok(email) = doc.get_str("email") {
                 }
 
                 let response = result?;
-                
-                if pretty {
-                    println!("{}", serde_json::to_string_pretty(&response)?);
-                } else {
-                    println!("{}", serde_json::to_string(&response)?);
-                }
+                Self::print_value(&response, pretty)?;
             }
             ChainCommand::Balance { address } => {
-                println!("{} Fetching balance for {} on {}...\n", "💰".bold(), address.dimmed(), adapter.name().green());
-                
+                println!(
+                    "{} Fetching balance for {} on {}...\n",
+                    "💰".bold(),
+                    address.dimmed(),
+                    adapter.name().green()
+                );
+
                 let resolved_address = if let Some(addr) = adapter.resolve_name(&address).await? {
-                    println!("{} Resolved {} to {}\n", "🔍".blue(), address.yellow(), addr.cyan());
+                    println!(
+                        "{} Resolved {} to {}\n",
+                        "🔍".blue(),
+                        address.yellow(),
+                        addr.cyan()
+                    );
                     addr
                 } else {
                     if address.ends_with(".sui") || address.ends_with(".eth") {
-                        println!("{} {} could not be resolved! Proceeding with raw input...\n", "⚠️".yellow(), address.yellow());
+                        println!(
+                            "{} {} could not be resolved! Proceeding with raw input...\n",
+                            "⚠️".yellow(),
+                            address.yellow()
+                        );
                     }
                     address
                 };
@@ -241,14 +402,28 @@ if let Ok(email) = doc.get_str("email") {
                         if arr.is_empty() {
                             println!("  {} No coins found.", "0".dimmed());
                         } else {
-                            println!("{0: <15} | {1: <10} | {2}", "Balance".bold(), "Objects".bold(), "Coin Type".bold());
+                            println!(
+                                "{0: <15} | {1: <10} | {2}",
+                                "Balance".bold(),
+                                "Objects".bold(),
+                                "Coin Type".bold()
+                            );
                             println!("{0:-<15}-+-{0:-<10}-+-{0:-<40}", "");
-                            
+
                             for item in arr {
-                                let balance = item.get("totalBalance").and_then(|v| v.as_str()).unwrap_or("0");
-                                let count = item.get("coinObjectCount").and_then(|v| v.as_u64()).unwrap_or(0);
-                                let coin_type = item.get("coinType").and_then(|v| v.as_str()).unwrap_or("Unknown");
-                                
+                                let balance = item
+                                    .get("totalBalance")
+                                    .and_then(|v| v.as_str())
+                                    .unwrap_or("0");
+                                let count = item
+                                    .get("coinObjectCount")
+                                    .and_then(|v| v.as_u64())
+                                    .unwrap_or(0);
+                                let coin_type = item
+                                    .get("coinType")
+                                    .and_then(|v| v.as_str())
+                                    .unwrap_or("Unknown");
+
                                 let display_balance = if coin_type == "0x2::sui::SUI" {
                                     if let Ok(b) = balance.parse::<f64>() {
                                         format!("{:.4} SUI", b / 1_000_000_000.0)
@@ -264,41 +439,56 @@ if let Ok(email) = doc.get_str("email") {
                                     if parts.len() >= 3 {
                                         format!("{}::{}", parts[1].blue(), parts[2].cyan())
                                     } else {
-                                        format!("{}...{}", &coin_type[..10], &coin_type[coin_type.len()-10..]).cyan().to_string()
+                                        format!(
+                                            "{}...{}",
+                                            &coin_type[..10],
+                                            &coin_type[coin_type.len() - 10..]
+                                        )
+                                        .cyan()
+                                        .to_string()
                                     }
                                 } else {
                                     coin_type.cyan().to_string()
                                 };
 
-                                println!("{0: <15} | {1: <10} | {2}", 
-                                    display_balance.green().bold(), 
-                                    count.to_string().yellow(), 
+                                println!(
+                                    "{0: <15} | {1: <10} | {2}",
+                                    display_balance.green().bold(),
+                                    count.to_string().yellow(),
                                     short_coin
                                 );
                             }
                             println!();
                         }
                     } else {
-                        println!("{}", serde_json::to_string_pretty(&result)?);
+                        Self::print_value(&result, pretty)?;
                     }
                 } else if chain_name == "Ethereum" {
                     if let Some(hex_str) = result.as_str() {
                         let clean_hex = hex_str.trim_start_matches("0x");
                         if let Ok(wei) = u128::from_str_radix(clean_hex, 16) {
                             let eth = wei as f64 / 1_000_000_000_000_000_000.0;
-                            println!("{} {:.4} ETH", "Balance:".bold().cyan(), eth.to_string().green().bold());
+                            println!(
+                                "{} {:.4} ETH",
+                                "Balance:".bold().cyan(),
+                                eth.to_string().green().bold()
+                            );
                         } else {
                             println!("{} {}", "Balance (Wei Hex):".bold().cyan(), hex_str.green());
                         }
                     } else {
-                        println!("{}", serde_json::to_string_pretty(&result)?);
+                        Self::print_value(&result, pretty)?;
                     }
                 } else if chain_name == "Solana" {
                     if let Some(val) = result.get("value").and_then(|v| v.as_u64()) {
                         let sol = val as f64 / 1_000_000_000.0;
-                        println!("{} {:.4} SOL", "Balance:".bold().cyan(), sol.to_string().green().bold());
+                        println!(
+                            "{} {:.4} SOL",
+                            "Balance:".bold().cyan(),
+                            sol.to_string().green().bold()
+                        );
                     } else {
-                        println!("{}", serde_json::to_string_pretty(&result)?);
+                        Self::print_value(&result, pretty)?;
                     }
                 } else if chain_name == "Aptos" {
                     let mut found = false;
@@ -306,11 +496,19 @@ if let Ok(email) = doc.get_str("email") {
                         for resource in arr {
                             if let Some(res_type) = resource.get("type").and_then(|t| t.as_str()) {
                                 if res_type == "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>" {
-                                    if let Some(coin) = resource.get("data").and_then(|d| d.get("coin")) {
-                                        if let Some(val_str) = coin.get("value").and_then(|v| v.as_str()) {
+                                    if let Some(coin) =
+                                        resource.get("data").and_then(|d| d.get("coin"))
+                                    {
+                                        if let Some(val_str) =
+                                            coin.get("value").and_then(|v| v.as_str())
+                                        {
                                             if let Ok(val) = val_str.parse::<f64>() {
-                                                let apt = val / 100_000_000.0; 
-                                                println!("{} {:.4} APT", "Balance:".bold().cyan(), apt.to_string().green().bold());
+                                                let apt = val / 100_000_000.0;
+                                                println!(
+                                                    "{} {:.4} APT",
+                                                    "Balance:".bold().cyan(),
+                                                    apt.to_string().green().bold()
+                                                );
                                                 found = true;
                                                 break;
                                             }
@@ -321,35 +519,111 @@ if let Ok(email) = doc.get_str("email") {
                         }
                     }
                     if !found {
-                        if pretty {
-                            println!("{}", serde_json::to_string_pretty(&result)?);
-                        } else {
-                            println!("{}", serde_json::to_string(&result)?);
-                        }
-                    }
-                } else if chain_name == "Soroban" {
-                    if let Some(sequence) = result.get("sequence").and_then(|v| v.as_u64()) {
-                        println!("{} {}", "Latest Ledger Sequence:".bold().cyan(), sequence.to_string().green().bold());
-                        println!("{} {}", "Status:".bold().cyan(), "Connected to Soroban RPC".green().bold());
-                    } else {
-                        if pretty {
-                            println!("{}", serde_json::to_string_pretty(&result)?);
-                        } else {
-                            println!("{}", serde_json::to_string(&result)?);
-                        }
+                        Self::print_value(&result, pretty)?;
                     }
                 } else {
-                    if pretty {
-                        println!("{}", serde_json::to_string_pretty(&result)?);
-                    } else {
-                        println!("{}", serde_json::to_string(&result)?);
-                    }
+                    Self::print_value(&result, pretty)?;
                 }
             }
-            ChainCommand::Query { id } => {
-                println!("{} Querying ID {} on {}...", "🔎".bold(), id.cyan(), adapter.name().green());
-                println!("{}", "Query feature integration in progress...".yellow());
+            ChainCommand::Tx { hash } => {
+                println!(
+                    "{} Fetching transaction {} on {}...\n",
+                    "🔎".bold(),
+                    hash.dimmed(),
+                    adapter.name().green()
+                );
+                let result = adapter.get_transaction(&hash).await?;
+                Self::print_value(&result, pretty)?;
             }
+            ChainCommand::Object { id } => {
+                println!(
+                    "{} Inspecting {} on {}...\n",
+                    "🔎".bold(),
+                    id.dimmed(),
+                    adapter.name().green()
+                );
+                let result = adapter.get_account(&id).await?;
+                Self::print_value(&result, pretty)?;
+            }
+            ChainCommand::History { address, limit } => {
+                println!(
+                    "{} Fetching {} recent transactions for {} on {}...\n",
+                    "📜".bold(),
+                    limit,
+                    address.dimmed(),
+                    adapter.name().green()
+                );
+                let result = adapter.get_history(&address, limit).await?;
+                Self::print_value(&result, pretty)?;
+            }
+            ChainCommand::Gas => {
+                println!(
+                    "{} Fetching gas price on {}...\n",
+                    "⛽".bold(),
+                    adapter.name().green()
+                );
+                let result = adapter.get_gas_price().await?;
+                let chain = adapter.name();
+
+                if chain == "Sui" {
+                    let mist = result
+                        .as_str()
+                        .and_then(|s| s.parse::<u64>().ok())
+                        .or_else(|| result.as_u64())
+                        .unwrap_or(0);
+                    println!(
+                        "{} {} MIST  ({:.9} SUI per gas unit)",
+                        "Reference Gas Price:".bold().cyan(),
+                        mist.to_string().green().bold(),
+                        mist as f64 / 1_000_000_000.0
+                    );
+                } else if chain == "Ethereum" {
+                    if let Some(hex) = result.as_str() {
+                        let clean = hex.trim_start_matches("0x");
+                        if let Ok(wei) = u128::from_str_radix(clean, 16) {
+                            let gwei = wei as f64 / 1_000_000_000.0;
+                            println!(
+                                "{} {:.4} Gwei  ({} wei)",
+                                "Gas Price:".bold().cyan(),
+                                gwei.to_string().green().bold(),
+                                wei.to_string().yellow()
+                            );
+                        } else {
+                            Self::print_value(&result, pretty)?;
+                        }
+                    } else {
+                        Self::print_value(&result, pretty)?;
+                    }
+                } else {
+                    Self::print_value(&result, pretty)?;
+                }
+            }
+            ChainCommand::Block { number } => {
+                match number {
+                    Some(n) => println!(
+                        "{} Fetching block #{} on {}...\n",
+                        "📦".bold(),
+                        n,
+                        adapter.name().green()
+                    ),
+                    None => println!(
+                        "{} Fetching latest block on {}...\n",
+                        "📦".bold(),
+                        adapter.name().green()
+                    ),
+                }
+                let result = adapter.get_block(number).await?;
+                Self::print_value(&result, pretty)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn print_value(value: &Value, pretty: bool) -> Result<()> {
+        if pretty {
+            println!("{}", serde_json::to_string_pretty(value)?);
+        } else {
+            println!("{}", serde_json::to_string(value)?);
         }
         Ok(())
     }

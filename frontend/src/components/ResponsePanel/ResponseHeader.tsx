@@ -7,6 +7,7 @@ interface ResponseHeaderProps {
   duration?: number;
   testResults: TestResult[];
   txDigest: string | null;
+  txExplorerUrl?: string | null;
   viewMode: string;
   onViewModeChange: (mode: string) => void;
 }
@@ -16,6 +17,7 @@ export const ResponseHeader: React.FC<ResponseHeaderProps> = ({
   duration,
   testResults,
   txDigest,
+  txExplorerUrl,
   viewMode,
   onViewModeChange
 }) => {
@@ -46,9 +48,9 @@ export const ResponseHeader: React.FC<ResponseHeaderProps> = ({
           </div>
         )}
         
-        {txDigest && (
+        {txDigest && txExplorerUrl && (
           <div 
-            onClick={() => window.open(`https://suiscan.xyz/mainnet/tx/${txDigest}`, '_blank')}
+            onClick={() => window.open(txExplorerUrl, '_blank')}
             className="flex items-center gap-2 text-electric-violet hover:text-sui-300 cursor-pointer"
           >
             <Activity size={12} /> 

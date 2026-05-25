@@ -4,8 +4,34 @@ import { ArrowLeft, Globe, Network, Shield, Zap, Cpu, Database, Blocks, External
 import { appStore, useAppStore } from '@/lib/store';
 import gsap from 'gsap';
 
-export const IntegrationsPage: React.FC = () => {
+interface IntegrationsPageProps {
+    embedded?: boolean;
+}
+
+export const IntegrationsPage: React.FC<
+    IntegrationsPageProps
+> = ({ embedded = false }) => {
     const { theme } = useAppStore();
+
+    const navigateTo = (
+        target:
+            | 'app'
+            | 'ecosystem'
+    ) => {
+        if (embedded) {
+            if (target === 'app') {
+                appStore.openTab(
+                    'new_request'
+                );
+                return;
+            }
+
+            appStore.openTab(target);
+            return;
+        }
+
+        appStore.setViewMode(target);
+    };
 
     React.useEffect(() => {
         const ctx = gsap.context(() => {
@@ -31,12 +57,16 @@ export const IntegrationsPage: React.FC = () => {
     }, []);
 
     React.useEffect(() => {
+        if (embedded) {
+            return;
+        }
+
         document.body.style.overflow = 'auto';
         document.body.style.overflowX = 'hidden';
         return () => {
             document.body.style.overflow = 'hidden';
         };
-    }, []);
+    }, [embedded]);
 
     const integrations = [
         { name: 'Sui', type: 'Layer 1', desc: 'Next-generation object-centric blockchain for low-latency, high-throughput applications.', status: 'Mainnet Live', color: '#38bdf8' },
@@ -50,16 +80,20 @@ export const IntegrationsPage: React.FC = () => {
     ];
 
     return (
-        <div className={`min-h-screen font-sans selection:bg-electric-violet/30 ${
+        <div className={`${embedded ? 'h-full overflow-y-auto custom-scrollbar' : 'min-h-screen'} font-sans selection:bg-electric-violet/30 ${
             theme === 'dark' ? 'bg-[#050505] text-white' : 'bg-slate-50 text-slate-900'
         }`}>
             {/* Nav */}
-            <nav className={`fixed top-0 left-0 right-0 h-20 border-b z-50 px-6 md:px-12 flex items-center justify-between backdrop-blur-xl ${
+            <nav className={`${embedded ? 'sticky top-0' : 'fixed top-0 left-0 right-0'} h-20 border-b z-50 px-6 md:px-12 flex items-center justify-between backdrop-blur-xl ${
                 theme === 'dark' ? 'bg-black/50 border-white/5' : 'bg-white/50 border-slate-200'
             }`}>
                 <div className="flex items-center gap-6">
                     <button 
-                        onClick={() => appStore.setViewMode('ecosystem')}
+                        onClick={() =>
+                            navigateTo(
+                                'ecosystem'
+                            )
+                        }
                         className={`flex items-center gap-2 text-sm font-bold transition-all group ${
                             theme === 'dark' ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
                         }`}
@@ -74,14 +108,18 @@ export const IntegrationsPage: React.FC = () => {
                 </div>
 
                 <button 
-                    onClick={() => appStore.setViewMode('app')}
+                    onClick={() =>
+                        navigateTo('app')
+                    }
                     className="px-6 py-2.5 bg-electric-violet text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-soft-purple transition-all shadow-[0_10px_20px_-5px_rgba(123,63,242,0.4)] active:scale-95"
                 >
-                    Launch
+                    {embedded
+                        ? 'New Request'
+                        : 'Launch'}
                 </button>
             </nav>
 
-            <section className="relative pt-48 pb-24 px-6 md:px-12">
+            <section className={`relative ${embedded ? 'pt-28' : 'pt-48'} pb-24 px-6 md:px-12`}>
                 <div className="max-w-7xl mx-auto">
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
