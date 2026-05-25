@@ -4,7 +4,6 @@ import { ResponsePanelProps, ViewMode, ContentTab } from './types';
 import { ResponseHeader } from './ResponseHeader';
 import { ResponseTabs } from './ResponseTabs';
 import { LoadingState } from './LoadingState';
-import { EmptyState } from './EmptyState';
 import { PrettyView } from './veiws/PrettyView';
 import { RawView } from './veiws/RawView';
 import { MetaView } from './veiws/MetaView';
@@ -64,13 +63,17 @@ export const ResponsePanel: React.FC<ResponsePanelProps> = ({
   };
 
   const isError = status ? status >= 400 : !!error;
+  const hasContent =
+    isLoading ||
+    response !== null && response !== undefined ||
+    !!error;
 
   if (isLoading) {
     return <LoadingState />;
   }
 
-  if (!response && !error) {
-    return <EmptyState />;
+  if (!hasContent) {
+    return null;
   }
 
   const renderContent = () => {

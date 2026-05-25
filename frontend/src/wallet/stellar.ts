@@ -87,6 +87,11 @@ export const detectStellarWallets =
                 isFreighterConnected()
             ]);
 
+        const browserWindow =
+            typeof window !== 'undefined'
+                ? window
+                : undefined;
+
         return {
             lobstr:
                 lobstr.status ===
@@ -98,7 +103,19 @@ export const detectStellarWallets =
                 Boolean(
                     freighter.value
                         .isConnected
-                )
+                ),
+            albedo: Boolean(
+                browserWindow?.albedo
+            ),
+            xbull: Boolean(
+                browserWindow?.xBullSDK
+            ),
+            rabet: Boolean(
+                browserWindow?.rabet
+            ),
+            hana: Boolean(
+                browserWindow?.hana
+            )
         };
     };
 

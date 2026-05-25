@@ -37,7 +37,11 @@ export type WalletId =
     | 'suiet'
     | 'ethos'
     | 'lobstr'
-    | 'freighter';
+    | 'freighter'
+    | 'albedo'
+    | 'xbull'
+    | 'rabet'
+    | 'hana-wallet';
 
 export interface WalletDescriptor {
     id: WalletId;

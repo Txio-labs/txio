@@ -38,6 +38,10 @@ declare global {
         lobstrSignerExtensionApi?: {
             isConnected?: () => Promise<boolean>;
         };
+        albedo?: unknown;
+        xBullSDK?: unknown;
+        rabet?: unknown;
+        hana?: unknown;
     }
 }
 
