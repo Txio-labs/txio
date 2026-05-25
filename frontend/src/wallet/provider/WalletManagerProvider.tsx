@@ -173,7 +173,11 @@ export function WalletManagerProvider({
         setStellarAvailability
     ] = useState({
         lobstr: false,
-        freighter: false
+        freighter: false,
+        albedo: false,
+        xbull: false,
+        rabet: false,
+        hana: false
     });
 
     const restoreAttemptedRef =
@@ -238,7 +242,11 @@ export function WalletManagerProvider({
             } catch {
                 setStellarAvailability({
                     lobstr: false,
-                    freighter: false
+                    freighter: false,
+                    albedo: false,
+                    xbull: false,
+                    rabet: false,
+                    hana: false
                 });
             }
         }, []);
@@ -1030,6 +1038,30 @@ export function WalletManagerProvider({
                                 ? 'installed'
                                 : 'not-installed';
                         break;
+                    case 'albedo':
+                        availability =
+                            stellarAvailability.albedo
+                                ? 'installed'
+                                : 'available';
+                        break;
+                    case 'xbull':
+                        availability =
+                            stellarAvailability.xbull
+                                ? 'installed'
+                                : 'not-installed';
+                        break;
+                    case 'rabet':
+                        availability =
+                            stellarAvailability.rabet
+                                ? 'installed'
+                                : 'not-installed';
+                        break;
+                    case 'hana-wallet':
+                        availability =
+                            stellarAvailability.hana
+                                ? 'installed'
+                                : 'not-installed';
+                        break;
                     default:
                         availability =
                             'not-installed';
@@ -1057,6 +1089,7 @@ export function WalletManagerProvider({
             }
         );
     }, [
+        evmConnectors,
         recentWalletIds,
         stellarAvailability,
         suiWallets

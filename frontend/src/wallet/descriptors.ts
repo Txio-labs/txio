@@ -256,6 +256,74 @@ export const WALLET_DESCRIPTORS: WalletDescriptor[] =
             installUrl:
                 'https://www.freighter.app/',
             iconSeed: 'freighter'
+        },
+        {
+            id: 'albedo',
+            name: 'Albedo',
+            shortName: 'AL',
+            chainFamily: 'stellar',
+            methods: ['sdk', 'deeplink'],
+            tags: [
+                'stellar',
+                'albedo',
+                'web'
+            ],
+            description:
+                'Albedo web-based Stellar signer with passwordless flows.',
+            installUrl:
+                'https://albedo.link/',
+            iconSeed: 'albedo'
+        },
+        {
+            id: 'xbull',
+            name: 'xBull',
+            shortName: 'XB',
+            chainFamily: 'stellar',
+            methods: ['sdk', 'injected'],
+            tags: [
+                'stellar',
+                'xbull',
+                'extension'
+            ],
+            description:
+                'xBull browser extension for Stellar account management.',
+            installUrl:
+                'https://xbull.app/',
+            iconSeed: 'xbull'
+        },
+        {
+            id: 'rabet',
+            name: 'Rabet',
+            shortName: 'RB',
+            chainFamily: 'stellar',
+            methods: ['sdk', 'injected'],
+            tags: [
+                'stellar',
+                'rabet',
+                'extension'
+            ],
+            description:
+                'Rabet browser extension Stellar wallet.',
+            installUrl:
+                'https://rabet.io/',
+            iconSeed: 'rabet'
+        },
+        {
+            id: 'hana-wallet',
+            name: 'Hana Wallet',
+            shortName: 'HN',
+            chainFamily: 'stellar',
+            methods: ['sdk', 'injected'],
+            tags: [
+                'stellar',
+                'hana',
+                'multichain'
+            ],
+            description:
+                'Hana multi-chain wallet with Stellar support.',
+            installUrl:
+                'https://hanawallet.io/',
+            iconSeed: 'hana-wallet'
         }
     ];
 

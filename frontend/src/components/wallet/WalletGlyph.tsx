@@ -28,6 +28,22 @@ const GLYPH_STYLES: Record<
         ring: 'from-fuchsia-500/70 to-violet-300/40',
         fill: 'from-fuchsia-500 to-violet-300'
     },
+    'trust-wallet': {
+        ring: 'from-sky-500/70 to-blue-400/40',
+        fill: 'from-sky-500 to-blue-400'
+    },
+    rainbow: {
+        ring: 'from-pink-400/70 to-yellow-300/40',
+        fill: 'from-pink-500 via-amber-400 to-sky-400'
+    },
+    'okx-wallet': {
+        ring: 'from-zinc-500/70 to-slate-300/40',
+        fill: 'from-zinc-700 to-slate-400'
+    },
+    'brave-wallet': {
+        ring: 'from-orange-500/70 to-red-400/40',
+        fill: 'from-orange-500 to-red-500'
+    },
     'sui-wallet': {
         ring: 'from-electric-violet/80 to-soft-purple/40',
         fill: 'from-electric-violet to-soft-purple'
@@ -47,6 +63,22 @@ const GLYPH_STYLES: Record<
     freighter: {
         ring: 'from-lime-400/70 to-emerald-300/40',
         fill: 'from-lime-400 to-emerald-300'
+    },
+    albedo: {
+        ring: 'from-indigo-500/70 to-purple-300/40',
+        fill: 'from-indigo-500 to-purple-400'
+    },
+    xbull: {
+        ring: 'from-yellow-400/70 to-orange-300/40',
+        fill: 'from-yellow-500 to-orange-400'
+    },
+    rabet: {
+        ring: 'from-teal-400/70 to-cyan-300/40',
+        fill: 'from-teal-500 to-cyan-400'
+    },
+    'hana-wallet': {
+        ring: 'from-pink-400/70 to-rose-300/40',
+        fill: 'from-pink-500 to-rose-400'
     }
 };
 
