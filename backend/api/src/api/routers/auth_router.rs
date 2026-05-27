@@ -4,6 +4,7 @@ use axum::{Router, routing::post};
 
 pub fn router(service: AuthService) -> Router {
     Router::new()
+        .route("/health", post("Welcome to txio"))
         .route("/register", post(auth_handler::register))
         .route("/login", post(auth_handler::login))
         .route("/request-otp", post(auth_handler::request_otp))
