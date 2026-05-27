@@ -1,128 +1,131 @@
-# txio 🌊
+# txio
 
-**The Universal Multi-Chain Blockchain Terminal**
+**One terminal. Every chain.**
 
-txio is a production-grade, modular CLI tool designed to provide a unified developer experience across multiple blockchains. Instead of installing a dozen different CLIs, `txio` acts as a pluggable terminal interface for Sui, Ethereum, Solana, Aptos, and Soroban. 
+txio is a CLI for developers who'd rather not install six different blockchain tools. One binary covers Sui, Ethereum, Solana, Aptos, and Soroban — same flags, same commands, predictable output.
 
-## Features
-- **Multi-Chain Support**: Currently supports Sui, Ethereum, Solana, Aptos, and Soroban (Stellar).
-- **Smart Network Switching**: Effortlessly toggle between `mainnet`, `testnet`, `devnet`, and `localnet`.
-- **Typo Correction**: Built-in fuzzy-matching (Did you mean `ethereum` instead of `ethreum`?).
-- **Intelligent Formatting**: Beautiful, premium terminal output with raw JSON fallbacks (`--pretty`).
-- **Domain Name Resolution**: Automatically resolves human-readable names like `.sui` directly in your requests.
+## What it does
+
+- **Five chains, one CLI.** Sui, Ethereum, Solana, Aptos, Soroban.
+- **Network switching that gets out of the way.** `--network testnet` and move on.
+- **Names, not hex.** `aliphatic.sui` resolves before the request fires.
+- **Did-you-mean built in.** Typo'd `ethreum`? It'll suggest `ethereum`.
+- **Readable output by default.** `--pretty` if you want raw JSON.
 
 ---
 
-## 🛠 Installation
+## Install
 
-To install `txio` globally on your system, you can pull it directly from the terminal without having to download the source files manually (just like Git or Claude Code).
+Pick whichever fits your setup.
 
-**Via Cargo (Rust)**
-If you have Cargo installed, simply run:
+**Cargo (Rust):**
 ```bash
-cargo install txio-cli   # publishes the `txio` binary
+cargo install txio-cli   # installs the `txio` binary
 ```
-*(For local development you can also run `cargo install --path .` from the repository root.)*
+For local dev: `cargo install --path .` from the repo root.
 
-**Via Homebrew (macOS/Linux)**
+**Homebrew (macOS/Linux):**
 ```bash
 brew tap txio-cli/txio
 brew install txio
 ```
 
-**Via NPM (Node.js)**
+**npm (Node.js):**
 ```bash
 npm install -g @txio-cli/txio
 ```
 
-**Via Quick Bash Script**
+**Shell script:**
 ```bash
 curl -fsSL https://txio-cli.dev/install.sh | bash
 ```
 
-Once installed, you can run the `txio` command from anywhere in your terminal!
+Then `txio` is on your PATH.
 
 ---
 
-## 🚀 Quick Start
+## Quick start
 
-### 1. Authenticate
-Before using any chain‑specific commands you should log in to your txio account. This stores a JWT locally and enables request logging.
+### 1. Log in
 
 ```bash
 txio login
 ```
 
-### 2. Check Balances
-Once logged in, you can format and read balances for any address. `txio` automatically handles decimals and hex‑conversions for the specific chain.
+Stores a JWT in `~/.txio/token` so requests get logged to your account.
+
+### 2. Check balances
 
 ```bash
-# Sui (Mainnet)
+# Sui (mainnet by default)
 txio sui balance 0x10735ec3c80f136c482c694d5cba775ee1ac7f971686fcd3d47f3f0175e5ff8b
 
-# Solana (Devnet)
+# Solana (devnet)
 txio --network devnet solana balance <address>
 
-# Ethereum (Testnet)
+# Ethereum (testnet)
 txio --network testnet eth balance <address>
 ```
 
-### 3. Network Switching
-By default, commands run on `mainnet`. You can override this globally with the `--network` (or `-n`) flag.
+Decimals and hex conversions are handled for you.
+
+### 3. Switch networks
+
+Mainnet is the default. Override with `--network` (or `-n`):
 
 ```bash
 txio --network testnet sui balance 0x123...
 txio --network localnet solana call --method getHealth
 ```
-*Supported networks: `mainnet`, `testnet`, `devnet`, `localnet`.*
 
-### 4. Name Resolution
-For supported chains, you can directly pass domain names instead of hex addresses. 
+Supported: `mainnet`, `testnet`, `devnet`, `localnet`.
+
+### 4. Use names
+
+Where chains support it, pass names instead of addresses:
 
 ```bash
 txio sui balance aliphatic.sui
 ```
-*txio will automatically resolve `aliphatic.sui` to its hex address before executing the command.*
 
-### 5. Custom RPC URLs
-If you want to bypass the default public nodes, pass your own RPC endpoint using the `--rpc-url` flag:
+txio resolves to the hex address before the call goes out.
+
+### 5. Custom RPC
+
+Skip the default public nodes with `--rpc-url`:
 
 ```bash
 txio --rpc-url https://my.custom.node sui balance <address>
 ```
 
-### 6. Make Direct RPC Calls
-You can easily make generic JSON‑RPC calls to any integrated chain. Authenticated requests will be logged under your account.
+### 6. Raw JSON-RPC
 
 ```bash
 txio sui call --method suix_getChainIdentifier
-```
-
-Pass parameters as a JSON array string:
-```bash
 txio solana call --method getAccountInfo --params '["<address>"]'
 ```
 
----
-
-## 🧩 Architecture (For Developers)
-txio uses a dynamic `ChainAdapter` pattern. Every blockchain is implemented as a pluggable module inside the `src/chains/` directory.
-
-To add a new chain:
-1. Create a new file `src/chains/mychain.rs`.
-2. Implement the `ChainAdapter` trait (which requires methods like `call_rpc` and `get_balance`).
-3. Register your chain in the `ChainFactory` inside `src/chains/factory.rs`.
+If you're logged in, the call is logged under your account.
 
 ---
 
-## 💡 Get Help
-To see all available global flags and subcommands, just run:
+## Adding a chain
+
+txio uses a `ChainAdapter` trait. Every chain lives in `src/chains/`.
+
+1. Drop a new file at `src/chains/mychain.rs`.
+2. Implement `ChainAdapter` — at minimum, `call_rpc` and `get_balance`.
+3. Register it in `ChainFactory` (`src/chains/factory.rs`).
+
+That's the whole flow.
+
+---
+
+## Help & auth commands
 
 ```bash
-txio --help
+txio --help         # everything
+txio login          # interactive login, stores JWT in ~/.txio/token
+txio profile        # view, update email, change password
+txio db list-users  # admin only
 ```
-
-## 🔐 Authentication Commands
-- `txio login` – Interactive login, stores a JWT in `~/.txio/token`.
-- `txio profile` – Manage your user profile (view, update email, change password).
-- `txio db list-users` – Admin command to list all registered users (requires admin email flag).

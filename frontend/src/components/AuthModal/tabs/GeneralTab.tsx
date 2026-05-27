@@ -1,542 +1,207 @@
-import React, {
-  useEffect,
-  useMemo,
-  useState
-} from 'react';
-import {
-  Activity,
-  BadgeCheck,
-  Check,
-  Clock3,
-  Layers3,
-  LogOut,
-  Mail,
-  PencilLine,
-  ShieldCheck,
-  Sparkles,
-  UserRound,
-  Waypoints,
-  Workflow
-} from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { AlertCircle, Check, Github, LogOut, Mail, User as UserIcon } from 'lucide-react';
 
-import {
-  appStore,
-  useAppStore
-} from '@/lib/store';
+import { appStore, useAppStore } from '@/lib/store';
 import { CollectionNode } from '@/types';
-import { Avatar } from '../../ui/Avatar';
 import { TabProps } from './types';
 
-const countRequests = (
-  nodes: CollectionNode[]
-): number => {
-  return nodes.reduce((total, node) => {
-    if (node.type === 'request') {
-      return total + 1;
-    }
+const SAVED_FLASH_MS = 1800;
+const NAME_MAX_LENGTH = 60;
 
-    if (node.children) {
-      return total + countRequests(node.children);
-    }
+const countRequests = (nodes: CollectionNode[]): number =>
+    nodes.reduce((total, node) => {
+        if (node.type === 'request') return total + 1;
+        if (node.children) return total + countRequests(node.children);
+        return total;
+    }, 0);
 
-    return total;
-  }, 0);
-};
+interface StatProps {
+    label: string;
+    value: number;
+}
 
-const SnapshotCard: React.FC<{
-  label: string;
-  value: number | string;
-  detail: string;
-  icon: React.ElementType;
-  toneClassName: string;
-}> = ({
-  label,
-  value,
-  detail,
-  icon: Icon,
-  toneClassName
-}) => {
-  return (
-    <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.035] p-4 shadow-[0_18px_40px_-30px_rgba(0,0,0,0.85)] backdrop-blur-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">
-            {label}
-          </div>
-          <div className="mt-3 text-3xl font-bold tracking-tight text-white">
-            {value}
-          </div>
-        </div>
-
-        <div
-          className={`rounded-[1rem] border border-white/8 p-2.5 ${toneClassName}`}
-        >
-          <Icon size={16} />
-        </div>
-      </div>
-
-      <div className="mt-3 text-xs text-slate-500">
-        {detail}
-      </div>
+const Stat: React.FC<StatProps> = ({ label, value }) => (
+    <div className="flex-1 min-w-0">
+        <div className="text-xs text-slate-500">{label}</div>
+        <div className="text-xl font-semibold text-white tracking-tight mt-0.5">{value}</div>
     </div>
-  );
-};
+);
 
-const PostureItem: React.FC<{
-  title: string;
-  description: string;
-  icon: React.ElementType;
-  accentClassName: string;
-}> = ({
-  title,
-  description,
-  icon: Icon,
-  accentClassName
-}) => {
-  return (
-    <div className="rounded-[1.35rem] border border-white/8 bg-white/[0.03] p-4">
-      <div className="flex items-start gap-3">
-        <div
-          className={`mt-0.5 rounded-[1rem] border border-white/8 p-2.5 ${accentClassName}`}
-        >
-          <Icon size={15} />
-        </div>
+interface FieldProps {
+    label: string;
+    htmlFor?: string;
+    error?: string;
+    hint?: string;
+    children: React.ReactNode;
+}
 
-        <div>
-          <div className="text-sm font-semibold text-white">
-            {title}
-          </div>
-          <p className="mt-1 text-xs leading-relaxed text-slate-400">
-            {description}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export const GeneralTab: React.FC<
-  TabProps & { onLogout: () => void }
-> = ({ user, onLogout }) => {
-  const { history, collections, network } =
-    useAppStore();
-
-  const [editName, setEditName] =
-    useState(user?.name || '');
-  const [saved, setSaved] =
-    useState(false);
-
-  useEffect(() => {
-    setEditName(user?.name || '');
-    setSaved(false);
-  }, [user?.name]);
-
-  const savedRequestCount = useMemo(
-    () => countRequests(collections),
-    [collections]
-  );
-
-  if (!user) {
-    return null;
-  }
-
-  const normalizedName =
-    editName.trim();
-  const hasNameChanged =
-    normalizedName.length > 0 &&
-    normalizedName !== user.name;
-  const profileHandle = `@${user.email
-    .split('@')[0]
-    .toLowerCase()}`;
-  const shortUserId =
-    user.id.length > 16
-      ? `${user.id.slice(0, 8)}...${user.id.slice(-4)}`
-      : user.id;
-
-  const handleSaveProfile = () => {
-    if (!normalizedName) {
-      appStore.showToast(
-        'Display name cannot be empty',
-        'error'
-      );
-      return;
-    }
-
-    appStore.updateUser({
-      name: normalizedName
-    });
-
-    setEditName(normalizedName);
-    setSaved(true);
-
-    appStore.showToast(
-      'Profile updated',
-      'success'
-    );
-
-    window.setTimeout(() => {
-      setSaved(false);
-    }, 1800);
-  };
-
-  return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-      <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(145deg,rgba(16,16,24,0.96)_0%,rgba(8,8,12,0.98)_55%,rgba(5,5,7,1)_100%)] p-6 shadow-[0_35px_90px_-55px_rgba(0,0,0,0.95)] md:p-8">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(123,63,242,0.16),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(167,139,250,0.09),transparent_32%)]" />
-
-        <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_340px]">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-electric-violet/20 bg-electric-violet/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.3em] text-electric-violet">
-              <Sparkles size={12} />
-              Profile Overview
-            </div>
-
-            <h2 className="mt-4 max-w-2xl text-3xl font-bold tracking-tight text-white md:text-4xl">
-              Account settings built like a control surface.
-            </h2>
-
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">
-              Manage your visible identity, verify workspace status, and keep
-              profile data aligned across the active txio session.
+const Field: React.FC<FieldProps> = ({ label, htmlFor, error, hint, children }) => (
+    <div className="space-y-1.5">
+        <label htmlFor={htmlFor} className="block text-xs font-medium text-slate-400">{label}</label>
+        {children}
+        {error ? (
+            <p className="flex items-center gap-1.5 text-[11px] text-rose-400">
+                <AlertCircle size={11} /> {error}
             </p>
-
-            <div className="mt-6 rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-4 shadow-[0_18px_40px_-30px_rgba(0,0,0,0.8)] backdrop-blur-sm md:p-5">
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-center">
-                <div className="flex items-center gap-4">
-                  <div className="rounded-[1.5rem] border border-white/10 bg-black/35 p-1.5">
-                    <Avatar
-                      size="xl"
-                      src={user.avatarUrl}
-                      seed={user.email}
-                    />
-                  </div>
-
-                  <div className="min-w-0">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">
-                      Primary Account
-                    </div>
-                    <div className="mt-2 truncate text-xl font-bold text-white">
-                      {user.name}
-                    </div>
-                    <div className="truncate text-sm text-slate-400">
-                      {user.email}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid flex-1 gap-3 min-[520px]:grid-cols-3">
-                  <div className="rounded-[1.25rem] border border-white/8 bg-black/25 p-3">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-600">
-                      Handle
-                    </div>
-                    <div className="mt-2 truncate text-sm font-semibold text-white">
-                      {profileHandle}
-                    </div>
-                  </div>
-
-                  <div className="rounded-[1.25rem] border border-white/8 bg-black/25 p-3">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-600">
-                      Network
-                    </div>
-                    <div className="mt-2 text-sm font-semibold capitalize text-white">
-                      {network}
-                    </div>
-                  </div>
-
-                  <div className="rounded-[1.25rem] border border-white/8 bg-black/25 p-3">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-600">
-                      Status
-                    </div>
-                    <div className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-emerald-400">
-                      <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.55)]" />
-                      Synced
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-3 min-[520px]:grid-cols-3 xl:grid-cols-1">
-            <SnapshotCard
-              label="Calls"
-              value={history.length}
-              detail="Tracked executions in the current session."
-              icon={Activity}
-              toneClassName="bg-electric-violet/10 text-electric-violet"
-            />
-            <SnapshotCard
-              label="Collections"
-              value={collections.length}
-              detail="Saved request groups available in the workspace."
-              icon={Layers3}
-              toneClassName="bg-soft-purple/10 text-soft-purple"
-            />
-            <SnapshotCard
-              label="Requests"
-              value={savedRequestCount}
-              detail="Reusable request definitions stored across collections."
-              icon={Workflow}
-              toneClassName="bg-white/8 text-slate-300"
-            />
-          </div>
-        </div>
-      </section>
-
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_320px]">
-        <section className="rounded-[1.9rem] border border-white/10 bg-[linear-gradient(180deg,rgba(13,13,18,0.96)_0%,rgba(8,8,12,0.98)_100%)] p-6 shadow-[0_30px_70px_-55px_rgba(0,0,0,0.95)]">
-          <div className="flex flex-col gap-3 border-b border-white/8 pb-5 md:flex-row md:items-end md:justify-between">
-            <div>
-              <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-600">
-                Identity
-              </div>
-              <h3 className="mt-2 text-xl font-bold text-white">
-                Profile details
-              </h3>
-              <p className="mt-1 text-sm text-slate-400">
-                Keep the identity markers used in the header, drawer, and
-                workspace aligned.
-              </p>
-            </div>
-
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-semibold text-slate-300">
-              <BadgeCheck
-                size={14}
-                className="text-electric-violet"
-              />
-              Verified operator
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                Display Name
-              </label>
-
-              <div className="flex items-center gap-3 rounded-[1.3rem] border border-white/10 bg-black/35 px-4 py-3 transition-colors focus-within:border-electric-violet/40">
-                <UserRound
-                  size={16}
-                  className="text-electric-violet"
-                />
-
-                <input
-                  value={editName}
-                  onChange={(e) => {
-                    setSaved(false);
-                    setEditName(
-                      e.target.value
-                    );
-                  }}
-                  placeholder="Display name"
-                  className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                Email Address
-              </label>
-
-              <div className="flex items-center gap-3 rounded-[1.3rem] border border-white/10 bg-black/25 px-4 py-3 text-sm text-slate-300">
-                <Mail
-                  size={16}
-                  className="text-slate-500"
-                />
-                <span className="truncate">
-                  {user.email}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <div className="rounded-[1.35rem] border border-white/8 bg-white/[0.03] p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-[1rem] border border-electric-violet/15 bg-electric-violet/10 p-2.5 text-electric-violet">
-                  <Waypoints size={16} />
-                </div>
-
-                <div>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-600">
-                    Workspace Handle
-                  </div>
-                  <div className="mt-1 text-sm font-semibold text-white">
-                    {profileHandle}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-[1.35rem] border border-white/8 bg-white/[0.03] p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-[1rem] border border-white/8 bg-white/[0.04] p-2.5 text-slate-300">
-                  <ShieldCheck size={16} />
-                </div>
-
-                <div>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-600">
-                    Account ID
-                  </div>
-                  <div className="mt-1 font-mono text-sm text-white">
-                    {shortUserId}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-6 rounded-[1.6rem] border border-electric-violet/15 bg-[linear-gradient(145deg,rgba(123,63,242,0.12)_0%,rgba(18,18,28,0.92)_55%,rgba(9,9,13,1)_100%)] p-5 shadow-[0_24px_65px_-50px_rgba(123,63,242,0.65)]">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-              <div className="max-w-2xl">
-                <div className="inline-flex items-center gap-2 rounded-full border border-electric-violet/20 bg-electric-violet/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-electric-violet">
-                  <Sparkles size={12} />
-                  Profile Continuity
-                </div>
-
-                <h4 className="mt-3 text-lg font-semibold text-white">
-                  Changes stay consistent across the active workspace.
-                </h4>
-
-                <p className="mt-2 text-sm leading-relaxed text-slate-400">
-                  Display identity updates are applied immediately in the
-                  account drawer and current workspace session while server-side
-                  profile storage continues expanding.
-                </p>
-              </div>
-
-              <div className="rounded-[1.25rem] border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-300">
-                Ready to sync
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-6 flex flex-col gap-4 rounded-[1.55rem] border border-white/10 bg-white/[0.03] p-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <div className="text-sm font-semibold text-white">
-                Apply profile updates
-              </div>
-              <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                Changes are reflected across active workspace surfaces
-                immediately.
-              </p>
-            </div>
-
-            <button
-              onClick={handleSaveProfile}
-              disabled={!hasNameChanged}
-              className={`inline-flex items-center justify-center gap-2 rounded-[1.2rem] px-5 py-3 text-xs font-bold uppercase tracking-[0.22em] transition-all duration-300 disabled:cursor-not-allowed ${
-                saved
-                  ? 'bg-emerald-500 text-black'
-                  : hasNameChanged
-                    ? 'bg-electric-violet text-white shadow-[0_22px_45px_-25px_rgba(123,63,242,0.9)] hover:bg-soft-purple'
-                    : 'border border-white/10 bg-white/[0.04] text-slate-500'
-              }`}
-            >
-              {saved ? (
-                <Check size={14} />
-              ) : (
-                <PencilLine size={14} />
-              )}
-              {saved
-                ? 'Saved'
-                : 'Save Changes'}
-            </button>
-          </div>
-        </section>
-
-        <div className="space-y-6">
-          <section className="rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,rgba(13,13,18,0.96)_0%,rgba(8,8,12,0.98)_100%)] p-5 shadow-[0_24px_55px_-45px_rgba(0,0,0,0.9)]">
-            <div className="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-600">
-              Account Posture
-            </div>
-
-            <div className="mt-4 space-y-3">
-              <PostureItem
-                title="Verified session"
-                description="Your current operator session is authenticated and available across the workspace."
-                icon={ShieldCheck}
-                accentClassName="bg-electric-violet/10 text-electric-violet"
-              />
-              <PostureItem
-                title="Fast identity updates"
-                description="Display name changes are reflected locally right away to keep the UI consistent."
-                icon={Sparkles}
-                accentClassName="bg-soft-purple/10 text-soft-purple"
-              />
-              <PostureItem
-                title="Workspace continuity"
-                description="Saved collections, requests, and account context stay visible inside the active session."
-                icon={Workflow}
-                accentClassName="bg-white/8 text-slate-300"
-              />
-            </div>
-          </section>
-
-          <section className="rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,rgba(13,13,18,0.96)_0%,rgba(8,8,12,0.98)_100%)] p-5 shadow-[0_24px_55px_-45px_rgba(0,0,0,0.9)]">
-            <div className="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-600">
-              Workspace Footprint
-            </div>
-
-            <div className="mt-4 space-y-4">
-              <div className="flex items-center justify-between gap-4 rounded-[1.2rem] border border-white/8 bg-white/[0.03] px-4 py-3">
-                <div>
-                  <div className="text-sm font-semibold text-white">
-                    Collection groups
-                  </div>
-                  <div className="mt-1 text-xs text-slate-500">
-                    Active saved request sets
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-white">
-                  {collections.length}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between gap-4 rounded-[1.2rem] border border-white/8 bg-white/[0.03] px-4 py-3">
-                <div>
-                  <div className="text-sm font-semibold text-white">
-                    Request library
-                  </div>
-                  <div className="mt-1 text-xs text-slate-500">
-                    Saved reusable request entries
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-white">
-                  {savedRequestCount}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between gap-4 rounded-[1.2rem] border border-white/8 bg-white/[0.03] px-4 py-3">
-                <div>
-                  <div className="text-sm font-semibold text-white">
-                    Latest activity
-                  </div>
-                  <div className="mt-1 text-xs text-slate-500">
-                    Recorded request executions
-                  </div>
-                </div>
-                <div className="inline-flex items-center gap-2 text-sm font-semibold text-slate-300">
-                  <Clock3
-                    size={14}
-                    className="text-electric-violet"
-                  />
-                  {history.length}
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <button
-            onClick={onLogout}
-            className="flex w-full items-center justify-center gap-3 rounded-[1.5rem] border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-400 transition-colors hover:bg-red-500/15 hover:text-red-300 md:hidden"
-          >
-            <LogOut size={16} />
-            Sign Out
-          </button>
-        </div>
-      </div>
+        ) : (
+            hint && <p className="text-[11px] text-slate-500">{hint}</p>
+        )}
     </div>
-  );
+);
+
+const inputBase =
+    'w-full bg-near-black border rounded-lg px-3 py-2 text-sm outline-none transition-colors';
+const editableInput = `${inputBase} border-white/[0.08] text-slate-200 placeholder:text-slate-600 focus:border-electric-violet/60 focus:bg-white/[0.02]`;
+const errorInput = `${inputBase} border-rose-500/40 text-slate-200 focus:border-rose-500/60`;
+const readonlyInput = `${inputBase} border-white/[0.08] text-slate-500 cursor-not-allowed`;
+
+export const GeneralTab: React.FC<TabProps & { onLogout: () => void }> = ({ user, onLogout }) => {
+    const { history, collections } = useAppStore();
+
+    const [editName, setEditName] = useState(user?.name || '');
+    const [saved, setSaved] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        setEditName(user?.name || '');
+        setSaved(false);
+        setError(null);
+    }, [user?.name]);
+
+    useEffect(() => {
+        if (!saved) return;
+        const t = window.setTimeout(() => setSaved(false), SAVED_FLASH_MS);
+        return () => window.clearTimeout(t);
+    }, [saved]);
+
+    const savedRequestCount = useMemo(() => countRequests(collections), [collections]);
+
+    if (!user) return null;
+
+    const trimmed = editName.trim();
+    const isDirty = trimmed.length > 0 && trimmed !== user.name;
+    const shortUserId = user.id.length > 16 ? `${user.id.slice(0, 8)}…${user.id.slice(-4)}` : user.id;
+
+    const handleSave = (e?: React.FormEvent) => {
+        e?.preventDefault();
+        if (!trimmed) {
+            setError('Display name is required.');
+            return;
+        }
+        setError(null);
+        appStore.updateUser({ name: trimmed });
+        setEditName(trimmed);
+        setSaved(true);
+        appStore.showToast('Profile updated', 'success');
+    };
+
+    return (
+        <div className="space-y-5 animate-in fade-in slide-in-from-right-2 duration-200">
+            {/* Workspace stats — single compact row */}
+            <section className="rounded-xl border border-white/[0.08] bg-dark-indigo-glow px-5 py-4">
+                <div className="flex items-center divide-x divide-white/[0.06]">
+                    <Stat label="Calls" value={history.length} />
+                    <div className="px-5"><Stat label="Collections" value={collections.length} /></div>
+                    <Stat label="Requests" value={savedRequestCount} />
+                </div>
+            </section>
+
+            {/* Profile details form */}
+            <section className="rounded-xl border border-white/[0.08] bg-dark-indigo-glow overflow-hidden">
+                <div className="px-5 py-4 border-b border-white/[0.06]">
+                    <h3 className="text-sm font-semibold text-slate-100 tracking-tight">Profile details</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">Update how you appear across txio.</p>
+                </div>
+
+                <form className="p-5 space-y-4" onSubmit={handleSave}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Field label="Display name" htmlFor="general-name" error={error ?? undefined}>
+                            <div className="relative">
+                                <UserIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                                <input
+                                    id="general-name"
+                                    className={`${error ? errorInput : editableInput} pl-9`}
+                                    value={editName}
+                                    onChange={(e) => {
+                                        setEditName(e.target.value);
+                                        if (error) setError(null);
+                                        if (saved) setSaved(false);
+                                    }}
+                                    placeholder="Your name"
+                                    maxLength={NAME_MAX_LENGTH + 10}
+                                    autoComplete="name"
+                                />
+                            </div>
+                        </Field>
+
+                        <Field label="Email" htmlFor="general-email" hint="Used for sign-in.">
+                            <div className="relative">
+                                <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                                <input
+                                    id="general-email"
+                                    className={`${readonlyInput} pl-9`}
+                                    value={user.email}
+                                    readOnly
+                                    aria-readonly
+                                />
+                            </div>
+                        </Field>
+
+                        <Field label="GitHub" hint="Publish recipes and sync gists.">
+                            <div className={`${readonlyInput} flex items-center gap-2`}>
+                                <Github size={14} className="text-slate-500 shrink-0" />
+                                <span className="truncate">Not connected</span>
+                                <button
+                                    type="button"
+                                    onClick={() => appStore.showToast('GitHub OAuth not implemented', 'info')}
+                                    className="ml-auto text-[11px] text-electric-violet hover:text-soft-purple font-medium transition-colors"
+                                >
+                                    Connect →
+                                </button>
+                            </div>
+                        </Field>
+
+                        <Field label="Account ID">
+                            <div className={`${readonlyInput} font-mono`}>
+                                <span className="truncate">{shortUserId}</span>
+                            </div>
+                        </Field>
+                    </div>
+                </form>
+
+                <div className="flex items-center justify-between gap-4 px-5 py-3 border-t border-white/[0.06] bg-white/[0.015]">
+                    <p className="text-[11px] text-slate-500">
+                        {error
+                            ? <span className="text-rose-400 inline-flex items-center gap-1.5"><AlertCircle size={11} /> {error}</span>
+                            : isDirty
+                                ? 'You have unsaved changes.'
+                                : saved
+                                    ? 'All changes saved.'
+                                    : 'No changes yet.'}
+                    </p>
+                    <button
+                        onClick={() => handleSave()}
+                        disabled={!isDirty && !saved}
+                        className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${
+                            saved
+                                ? 'bg-emerald-500/[0.15] text-emerald-300 border border-emerald-500/30'
+                                : 'bg-electric-violet hover:bg-electric-violet/90 text-white'
+                        }`}
+                    >
+                        {saved && <Check size={13} />}
+                        {saved ? 'Saved' : 'Save changes'}
+                    </button>
+                </div>
+            </section>
+
+            {/* Mobile-only sign out (sidebar holds it on desktop) */}
+            <button
+                onClick={onLogout}
+                className="md:hidden flex w-full items-center justify-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/[0.08] px-4 py-2.5 text-sm font-medium text-rose-300 hover:bg-rose-500/[0.12] transition-colors"
+            >
+                <LogOut size={14} />
+                Sign Out
+            </button>
+        </div>
+    );
 };

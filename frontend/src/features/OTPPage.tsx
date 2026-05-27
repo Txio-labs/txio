@@ -91,7 +91,7 @@ export const OTPPage: React.FC = () => {
         e.preventDefault();
         const code = otp.join('');
         if (code.length < 6) {
-            appStore.showToast('Please enter the full 6-digit code', 'error');
+            appStore.showToast('Enter the full 6 digits.', 'error');
             return;
         }
 
@@ -112,7 +112,7 @@ export const OTPPage: React.FC = () => {
         setTimer(59);
         setOtp(['', '', '', '', '', '']);
         inputRefs.current[0]?.focus();
-        appStore.showToast('New verification code sent!', 'info');
+        appStore.showToast('New code on the way.', 'info');
     };
 
     return (
@@ -169,12 +169,12 @@ export const OTPPage: React.FC = () => {
                         </motion.div>
                         
                         <h2 className="text-4xl font-bold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-400">
-                            Two-Step Verification
+                            Check your inbox.
                         </h2>
                         <p className={`text-base max-w-sm mx-auto leading-relaxed ${
                             theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
                         }`}>
-                            We've sent a 6-digit verification code to your registered email <span className="text-white font-medium">v***@t***.io</span>
+                            We sent a 6-digit code to <span className="text-white font-medium">v***@t***.io</span>. Drop it in below.
                         </p>
                     </div>
 
@@ -226,7 +226,7 @@ export const OTPPage: React.FC = () => {
                                             animate={{ y: 0, opacity: 1 }}
                                             className="flex items-center gap-2"
                                         >
-                                            Verified Successfully
+                                            You're in.
                                         </motion.div>
                                     ) : (
                                         <motion.div 
@@ -235,7 +235,7 @@ export const OTPPage: React.FC = () => {
                                             animate={{ opacity: 1 }}
                                             className="flex items-center gap-2"
                                         >
-                                            Verify Identity
+                                            Verify
                                             <Sparkles size={20} className="group-hover:rotate-12 transition-transform" />
                                         </motion.div>
                                     )}
@@ -246,7 +246,7 @@ export const OTPPage: React.FC = () => {
                                 <p className={`text-sm font-medium ${
                                     theme === 'dark' ? 'text-slate-500' : 'text-slate-400'
                                 }`}>
-                                    Didn't receive the code?
+                                    Code didn't show up?
                                 </p>
                                 <button 
                                     type="button"
@@ -259,7 +259,7 @@ export const OTPPage: React.FC = () => {
                                     }`}
                                 >
                                     <RefreshCw size={16} className={timer === 0 ? 'animate-spin-slow' : ''} />
-                                    {timer > 0 ? `Resend in ${timer}s` : 'Resend Code Now'}
+                                    {timer > 0 ? `Resend in ${timer}s` : 'Send a new one'}
                                 </button>
                             </div>
                         </div>
@@ -285,7 +285,7 @@ export const OTPPage: React.FC = () => {
                 <footer className={`mt-12 text-[10px] font-bold uppercase tracking-[0.5em] text-center ${
                     theme === 'dark' ? 'text-slate-700' : 'text-slate-400'
                 }`}>
-                    Powered by <span className="text-electric-violet">txio</span> secure-flow technology
+                    txio · sign-in flow
                 </footer>
             </div>
         </div>

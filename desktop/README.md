@@ -1,7 +1,19 @@
-# txio Desktop App
+# txio Desktop
 
-txio is a professional-grade API client and visual transaction builder tailored specifically for the Sui blockchain. This repository contains the desktop application for txio.
+The txio web app, wrapped as a desktop binary. Same API client, same visual transaction builder for Sui — just outside the browser.
+
+Built on Electron, packaged for Linux/macOS/Windows via `electron-builder`.
+
+## Building
+
+From the repo root:
+
+```bash
+npm run build
+```
+
+That runs the frontend build, copies the output into `desktop/dist/`, and hands off to `electron-builder` to package the executables.
 
 ## License
 
-This project is open-source and licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+MIT. See [LICENSE](LICENSE).

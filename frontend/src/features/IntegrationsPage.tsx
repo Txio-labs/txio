@@ -69,14 +69,14 @@ export const IntegrationsPage: React.FC<
     }, [embedded]);
 
     const integrations = [
-        { name: 'Sui', type: 'Layer 1', desc: 'Next-generation object-centric blockchain for low-latency, high-throughput applications.', status: 'Mainnet Live', color: '#38bdf8' },
-        { name: 'Solana', type: 'Layer 1', desc: 'Parallel execution engine providing high scalability and sub-second confirmation times.', status: 'Mainnet Live', color: '#14f195' },
-        { name: 'Ethereum', type: 'Layer 1', desc: 'The industry standard for smart contracts and decentralized finance ecosystems.', status: 'Mainnet Live', color: '#6366f1' },
-        { name: 'Aptos', type: 'Layer 1', desc: 'A safe, scalable, and upgradeable Web3 infrastructure powered by the Move language.', status: 'Mainnet Live', color: '#2dd4bf' },
-        { name: 'Starknet', type: 'Layer 2', desc: 'A permissionless validity-rollup that operates as an L2 network over Ethereum.', status: 'Mainnet Live', color: '#ef4444' },
-        { name: 'Arbitrum', type: 'Layer 2', desc: 'Optimistic rollup scaling solution for Ethereum with high compatibility.', status: 'Mainnet Live', color: '#2b58de' },
-        { name: 'Base', type: 'Layer 2', desc: 'A secure, low-cost, builder-friendly Ethereum L2 built by Coinbase.', status: 'Mainnet Live', color: '#0052ff' },
-        { name: 'Optimism', type: 'Layer 2', desc: 'Low-cost and lightning-fast Ethereum L2, a collective committed to public goods.', status: 'Mainnet Live', color: '#ff0420' }
+        { name: 'Sui', type: 'Layer 1', desc: 'Object-centric chain built for low-latency, high-throughput apps. Move-native.', status: 'Mainnet Live', color: '#38bdf8' },
+        { name: 'Solana', type: 'Layer 1', desc: 'Parallel execution. Sub-second confirmations. The fast chain.', status: 'Mainnet Live', color: '#14f195' },
+        { name: 'Ethereum', type: 'Layer 1', desc: 'The original smart contract platform. Where most of DeFi still lives.', status: 'Mainnet Live', color: '#6366f1' },
+        { name: 'Aptos', type: 'Layer 1', desc: 'Move-based chain, designed to be upgradeable without breaking what shipped.', status: 'Mainnet Live', color: '#2dd4bf' },
+        { name: 'Starknet', type: 'Layer 2', desc: 'Validity rollup on Ethereum. ZK proofs, not optimistic challenges.', status: 'Mainnet Live', color: '#ef4444' },
+        { name: 'Arbitrum', type: 'Layer 2', desc: 'Optimistic rollup. EVM-compatible. Most Ethereum dApps run here unchanged.', status: 'Mainnet Live', color: '#2b58de' },
+        { name: 'Base', type: 'Layer 2', desc: 'Coinbase\'s L2. Cheap, fast, and friendly to builders.', status: 'Mainnet Live', color: '#0052ff' },
+        { name: 'Optimism', type: 'Layer 2', desc: 'Ethereum L2 with a public-goods bent. OP Stack-everything.', status: 'Mainnet Live', color: '#ff0420' }
     ];
 
     return (
@@ -127,12 +127,11 @@ export const IntegrationsPage: React.FC<
                         className="mb-20 space-y-6 header-content"
                     >
                         <h1 className="text-5xl md:text-7xl font-black tracking-tight">
-                            Connect to the <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet to-soft-purple">Multi-Chain Future.</span>
+                            Every chain we <br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet to-soft-purple">actually speak.</span>
                         </h1>
                         <p className="text-xl text-slate-400 max-w-2xl leading-relaxed">
-                            Txio provides direct, high-performance integration with every major blockchain network. 
-                            Built for developers who need more than just an RPC endpoint.
+                            Direct connections to every major chain — not just an RPC URL. Schema, names, gas estimation, the whole thing.
                         </p>
                     </motion.div>
 

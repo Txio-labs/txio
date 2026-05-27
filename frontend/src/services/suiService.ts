@@ -201,6 +201,56 @@ export const getSuiRpcHealth =
     }
   };
 
+// ─── SuiNS resolution ────────────────────────────────────────────────────
+// Sui RPC methods that take an "owner" expect a 0x-prefixed hex address.
+// These helpers let callers pass either a raw address or a SuiNS name
+// like `aliphatic.sui` and auto-resolve through `suix_resolveNameServiceAddress`.
+
+const SUI_ADDRESS_RE = /^0x[0-9a-fA-F]{1,64}$/;
+const SUI_NS_RE = /^[a-z0-9-]+(\.[a-z0-9-]+)*\.sui$/i;
+
+export const looksLikeSuiAddress = (value: string): boolean =>
+    SUI_ADDRESS_RE.test(value.trim());
+
+export const looksLikeSuiNs = (value: string): boolean =>
+    SUI_NS_RE.test(value.trim());
+
+const suiNsCache = new Map<string, string>();
+const cacheKey = (network: Network, name: string) => `${network}:${name.trim().toLowerCase()}`;
+
+/**
+ * Resolve a Sui address or SuiNS name to a raw 0x address.
+ * Returns the input unchanged if it already looks like an address.
+ * Throws SuiRpcError if the name cannot be resolved.
+ */
+export const resolveSuiAddress = async (
+    network: Network,
+    input: string,
+): Promise<string> => {
+    const value = input.trim();
+    if (looksLikeSuiAddress(value)) return value;
+    if (!looksLikeSuiNs(value)) {
+        // Pass through unchanged — let the underlying RPC reject if invalid.
+        return value;
+    }
+
+    const key = cacheKey(network, value);
+    const cached = suiNsCache.get(key);
+    if (cached) return cached;
+
+    const { result } = await executeSuiRpc(network, 'suix_resolveNameServiceAddress', [value]);
+    if (typeof result !== 'string' || !looksLikeSuiAddress(result)) {
+        throw new SuiRpcError(`Could not resolve ${value}`, {
+            status: 200,
+            endpoint: getActiveSuiRpcUrl(network),
+            duration: 0,
+        });
+    }
+
+    suiNsCache.set(key, result);
+    return result;
+};
+
 export const simulateMoveCall = async (
   network: Network,
   sender: string,
@@ -226,25 +276,28 @@ export const simulateMoveCall = async (
         return arg.value;
     });
 
+    const resolvedSender = await resolveSuiAddress(network, sender);
+
     const method = 'sui_devInspectTransactionBlock';
     const params = [
-        sender,
+        resolvedSender,
         {
             kind: 'moveCall',
             target: `${packageId}::${module}::${func}`,
             typeArguments: typeArgs,
             arguments: rawArgs
         },
-        null, 
+        null,
         null
     ];
-    
+
     return executeSuiRpc(network, method, params);
 };
 
 export const getOwnedObjects = async (network: Network, address: string) => {
+    const resolved = await resolveSuiAddress(network, address);
     return executeSuiRpc(network, 'suix_getOwnedObjects', [
-        address,
+        resolved,
         { options: { showType: true, showContent: true, showDisplay: true } }
     ]);
 };
@@ -257,8 +310,9 @@ export const getObject = async (network: Network, objectId: string) => {
 };
 
 export const getBalance = async (network: Network, owner: string) => {
+    const resolved = await resolveSuiAddress(network, owner);
     return executeSuiRpc(network, 'suix_getBalance', [
-        owner,
+        resolved,
         '0x2::sui::SUI'
     ]);
 };

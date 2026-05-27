@@ -64,7 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <div className="flex h-full bg-near-black border-r border-white/10 font-sans select-none">
+    <div className="flex h-full bg-near-black border-r border-white/[0.06] font-sans select-none">
       {/* Navigation Rail */}
       <SidebarNav 
         activeMode={mode}

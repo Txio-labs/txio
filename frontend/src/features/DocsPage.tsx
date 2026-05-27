@@ -79,44 +79,40 @@ export const DocsPage: React.FC<
                         <div className="space-y-6">
                             <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white">Introduction.</h1>
                             <p className="text-lg text-slate-400 leading-relaxed max-w-3xl">
-                                txio is a high-performance infrastructure orchestration platform designed for the next generation of decentralized networks. 
-                                It provides a unified interface for interacting with heterogeneous protocols, bridging the gap between low-level JSON-RPC and high-level application logic.
+                                txio is one workspace for every chain you build on. It sits between you and raw JSON-RPC — handling the boring parts (names, gas, schemas) so you can focus on what you're actually shipping.
                             </p>
                         </div>
 
                         <div className="space-y-8">
-                            <h2 className="text-2xl font-black text-white">Core Philosophy</h2>
+                            <h2 className="text-2xl font-black text-white">How we think about it</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-4">
-                                    <h4 className="font-bold text-electric-violet">Protocol Agnosticism</h4>
+                                    <h4 className="font-bold text-electric-violet">Every chain, first-class</h4>
                                     <p className="text-sm text-slate-500 leading-relaxed">
-                                        Unlike traditional IDEs locked to a single chain, txio treats every network as a first-class citizen. 
-                                        Whether you are building on Sui's object-centric model or Solana's account-based parallel engine, 
-                                        the underlying developer experience remains consistent.
+                                        Most IDEs pick a chain and stop there. txio doesn't. Sui's object model, Solana's accounts, Ethereum's storage slots — same workflow, same shortcuts, same muscle memory.
                                     </p>
                                 </div>
                                 <div className="space-y-4">
-                                    <h4 className="font-bold text-emerald-400">Multi-Chain is the Future</h4>
+                                    <h4 className="font-bold text-emerald-400">Multi-chain isn't optional</h4>
                                     <p className="text-sm text-slate-500 leading-relaxed">
-                                        The future is not single-chain. txio treats multi-chain interaction as a first-class concern, 
-                                        abstracting inconsistencies through standardized interfaces and adapters.
+                                        Real apps span chains now. We built the adapter layer once so you don't have to keep reinventing it per project.
                                     </p>
                                 </div>
                             </div>
                         </div>
 
                         <div className="space-y-8 p-10 rounded-[3rem] bg-white/[0.02] border border-white/5">
-                            <h2 className="text-2xl font-black text-white">Why txio?</h2>
+                            <h2 className="text-2xl font-black text-white">Why bother?</h2>
                             <div className="grid grid-cols-1 gap-6">
-                                <p className="text-sm text-slate-400">Developers working across multiple ecosystems face significant fragmentation:</p>
+                                <p className="text-sm text-slate-400">Working across ecosystems means dealing with all of this:</p>
                                 <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
                                     {[
-                                        'Fragmented CLI tools',
-                                        'Learn different RPC structures',
-                                        'Incompatible wallet formats',
-                                        'Switching between block explorers',
-                                        'Manual curl request building',
-                                        'Complex cross-chain orchestration'
+                                        'A different CLI per chain',
+                                        'Six flavors of JSON-RPC',
+                                        'Wallet formats that don\'t talk to each other',
+                                        'Tab-hopping between explorers',
+                                        'Hand-rolling curl commands',
+                                        'Cross-chain glue you wrote at 2am'
                                     ].map(item => (
                                         <li key={item} className="flex items-center gap-3 text-xs font-bold text-slate-500">
                                             <div className="w-1.5 h-1.5 rounded-full bg-electric-violet" />
@@ -141,7 +137,7 @@ export const DocsPage: React.FC<
                         <div className="space-y-10">
                             <div className="space-y-6">
                                 <h3 className="text-xl font-bold text-white">1. Global CLI</h3>
-                                <p className="text-sm text-slate-500">The most powerful way to use txio is through the terminal.</p>
+                                <p className="text-sm text-slate-500">The terminal is where txio is fastest. Install once, run anywhere.</p>
                                 <div className="p-6 rounded-2xl bg-black border border-white/5 font-mono text-sm text-slate-400 flex justify-between items-center group">
                                     <span>cargo install txio-cli</span>
                                     <Terminal size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -176,7 +172,7 @@ export const DocsPage: React.FC<
                         <div className="space-y-6">
                             <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white uppercase italic">CLI Overview.</h1>
                             <p className="text-lg text-slate-400 leading-relaxed max-w-2xl">
-                                A universal blockchain terminal that abstracts away ecosystem-specific CLI friction.
+                                One CLI for every chain. No more installing a new tool every time you switch ecosystems.
                             </p>
                         </div>
 
@@ -228,7 +224,7 @@ export const DocsPage: React.FC<
                         <div className="space-y-6">
                             <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white">Authentication.</h1>
                             <p className="text-lg text-slate-400 leading-relaxed max-w-3xl">
-                                Secure, cross-platform identity management for elite protocol teams.
+                                Sign in once, sign in everywhere. OTP-based, no password to lose.
                             </p>
                         </div>
 
@@ -274,7 +270,7 @@ export const DocsPage: React.FC<
                         <div className="space-y-6 text-center md:text-left">
                             <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white uppercase italic">Architecture.</h1>
                             <p className="text-lg text-slate-400 leading-relaxed max-w-2xl">
-                                Understanding the unified abstraction layer that powers txio's cross-chain capabilities.
+                                How the cross-chain layer actually works under the hood.
                             </p>
                         </div>
 
@@ -284,11 +280,9 @@ export const DocsPage: React.FC<
                                 <div className="p-12 rounded-[2.9rem] bg-[#050505] space-y-10">
                                     <div className="flex flex-col md:flex-row gap-12 items-center">
                                         <div className="flex-1 space-y-6">
-                                            <h3 className="text-xl font-bold text-white">Unified Hot-Connection Layer</h3>
+                                            <h3 className="text-xl font-bold text-white">Hot connections</h3>
                                             <p className="text-slate-500 text-sm leading-relaxed">
-                                                At the base of our architecture sits the Hot-Connection Layer. Unlike standard clients that open 
-                                                and close HTTP connections for every request, txio maintains long-lived, multiplexed streams to 
-                                                globally distributed nodes.
+                                                Most clients open a fresh HTTP connection per request and pay the handshake cost every time. We don't. Long-lived multiplexed streams stay open to nodes around the world, so requests start moving the moment you hit send.
                                             </p>
                                             <ul className="space-y-3">
                                                 {['Multiplexed RPC Streams', 'Intelligent Request Routing', 'Automated Latency Rebalancing', 'Failover redundancy'].map(item => (
@@ -335,7 +329,7 @@ export const DocsPage: React.FC<
                         <div className="space-y-6">
                             <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white">TX Composer.</h1>
                             <p className="text-lg text-slate-400 leading-relaxed max-w-2xl">
-                                The ultimate environment for multi-step transaction engineering.
+                                Build multi-step transactions visually. Move calls, transfers, splits — chain them together, watch the dependencies, simulate before signing.
                             </p>
                         </div>
 
@@ -343,10 +337,9 @@ export const DocsPage: React.FC<
                             <div className="flex items-center gap-6 p-10 rounded-[3rem] bg-white/[0.02] border border-white/5">
                                 <div className="w-16 h-16 rounded-2xl bg-electric-violet/10 flex items-center justify-center text-electric-violet shrink-0"><Layers size={32} /></div>
                                 <div>
-                                    <h3 className="text-xl font-bold text-white mb-2">Atomic Batching (PTB)</h3>
+                                    <h3 className="text-xl font-bold text-white mb-2">PTBs, atomically</h3>
                                     <p className="text-slate-500 text-sm leading-relaxed">
-                                        Compose multiple operations into a single atomic transaction block. Our composer supports 
-                                        Move call batching, token transfers, and custom logic execution with real-time dependency tracking.
+                                        Pack multiple operations into one transaction block. Move calls, token transfers, custom logic — all batched, all atomic. Dependencies wire up as you build, so the composer catches dangling references before you do.
                                     </p>
                                 </div>
                             </div>
@@ -401,16 +394,14 @@ export const DocsPage: React.FC<
                         <div className="space-y-6">
                             <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white">RPC Builder.</h1>
                             <p className="text-lg text-slate-400 leading-relaxed max-w-2xl">
-                                The most powerful interface for constructing and executing raw JSON-RPC requests across any protocol.
+                                Write JSON-RPC calls against any chain. Autocomplete on the methods, validation on the params, results in the panel below.
                             </p>
                         </div>
-                        
+
                         <div className="space-y-12">
-                            <h2 className="text-3xl font-black text-white border-l-4 border-electric-violet pl-6 uppercase">Deep Introspection</h2>
+                            <h2 className="text-3xl font-black text-white border-l-4 border-electric-violet pl-6 uppercase">It actually knows the chain</h2>
                             <p className="text-slate-500 text-sm leading-relaxed max-w-3xl">
-                                txio's RPC Builder goes beyond simple Postman-style requests. It deeply understands the underlying schema of 
-                                every blockchain it connects to. When you connect to a new endpoint, our engine automatically crawls the 
-                                available methods, parameter types, and documentation.
+                                The builder isn't just Postman with a different skin. When you point it at an endpoint, it crawls the available methods, parameter shapes, and docs — and feeds that back into autocomplete.
                             </p>
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -425,7 +416,7 @@ export const DocsPage: React.FC<
                                     <div className="w-12 h-12 rounded-2xl bg-emerald-400/10 flex items-center justify-center text-emerald-400"><Cpu size={24} /></div>
                                     <h4 className="text-xl font-bold text-white">Execution Sandbox</h4>
                                     <p className="text-slate-500 text-sm leading-relaxed">
-                                        Test your requests in a controlled environment. Capture headers, timing metrics, and raw payloads effortlessly.
+                                        Run requests in a sandbox. See headers, timing, and the full payload — without leaving the panel.
                                     </p>
                                 </div>
                             </div>
@@ -678,8 +669,7 @@ export const DocsPage: React.FC<
                                 <div className="absolute top-0 right-0 p-10 opacity-5 scale-150 text-emerald-400"><Cpu size={180} /></div>
                                 <h3 className="text-3xl font-black text-white">Solana Integration</h3>
                                 <p className="text-slate-500 text-sm leading-relaxed">
-                                    High-frequency account monitoring and transaction simulation for the Solana ecosystem. 
-                                    Built-in support for PDA calculation and instruction decoding.
+                                    Watch accounts in real time, simulate transactions before they hit the network. PDAs and instruction decoding work out of the box.
                                 </p>
                                 <ul className="space-y-2">
                                     {['PDA Derivation', 'Instruction Inspection', 'Token Program support', 'Mainnet/Devnet failover'].map(i => (
@@ -780,9 +770,7 @@ export const DocsPage: React.FC<
                                 <div className="space-y-6 max-w-2xl">
                                     <h2 className="text-3xl font-black text-emerald-400">Pre-flight Validation</h2>
                                     <p className="text-slate-500 text-sm leading-relaxed font-medium">
-                                        Every single request, transaction, or PTB engineered in txio passes through a local Security Buffer. 
-                                        This layer performs static analysis and predictive state-change modeling to identify high-risk 
-                                        operations.
+                                        Every request, transaction, and PTB hits the local Security Buffer first. It runs static analysis and predicts state changes so the risky stuff gets flagged before it goes anywhere.
                                     </p>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
@@ -801,9 +789,7 @@ export const DocsPage: React.FC<
                         <div className="space-y-12">
                             <h2 className="text-3xl font-black text-white border-l-4 border-white pl-6 uppercase">Buffer Configuration</h2>
                             <p className="text-slate-500 text-sm leading-relaxed max-w-3xl">
-                                Developers can configure the strictness of the security buffer based on their environment. 
-                                In production mode, the buffer can be set to strictly block any request that doesn't meet 
-                                a predefined safety threshold.
+                                Strictness is per-environment. Run loose in dev, lock it down in prod — the buffer will outright block anything that doesn't clear your safety threshold.
                             </p>
                             <div className="p-8 rounded-[2.5rem] bg-black border border-white/5 font-mono text-sm leading-loose">
                                 <div className="text-slate-500"># txio security policy config</div>
@@ -821,16 +807,16 @@ export const DocsPage: React.FC<
                             <div className="w-24 h-24 rounded-full bg-electric-violet/10 flex items-center justify-center text-electric-violet mx-auto md:mx-0 animate-pulse"><Layers size={48} /></div>
                             <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white uppercase italic">Cloud Sync.</h1>
                             <p className="text-lg text-slate-400 leading-relaxed max-w-2xl">
-                                Seamless workspace synchronization with zero compromises on privacy or data ownership.
+                                Your workspace, everywhere you log in. Encrypted before it leaves your machine — we can't read it, and that's the point.
                             </p>
                         </div>
 
                         <div className="space-y-16">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 {[
-                                    { title: 'Full Workspace Sync', desc: 'Sync all collections, requests, and metadata across your local dev machine, CI, and server.' },
-                                    { title: 'Real-time Collab', desc: 'Share collections with team members and see live updates as they refine requests.' },
-                                    { title: 'Conflict Resolution', desc: 'Intelligent merging of request history to prevent data loss in collaborative environments.' }
+                                    { title: 'Workspace sync', desc: 'Collections, requests, and metadata stay in sync between your laptop, CI, and any server you log in from.' },
+                                    { title: 'Live collab', desc: 'Share a collection. Watch teammates edit it in real time. Like a doc, but for RPC calls.' },
+                                    { title: 'Conflict handling', desc: 'When two people touch the same thing, the merge is smart enough to keep both — no lost work.' }
                                 ].map(item => (
                                     <div key={item.title} className="p-10 rounded-[3rem] bg-white/[0.02] border border-white/5 space-y-6 hover:bg-white/[0.04] transition-all">
                                         <div className="font-bold text-white uppercase tracking-widest text-xs">{item.title}</div>
@@ -844,10 +830,7 @@ export const DocsPage: React.FC<
                                 <div className="relative z-10 max-w-2xl space-y-6">
                                     <h2 className="text-3xl font-black text-white leading-tight">Zero-Knowledge <br /> Metadata Syncing</h2>
                                     <p className="text-slate-500 text-sm leading-relaxed font-medium">
-                                        Our cloud sync architecture is built on a zero-knowledge proof system. Every byte of your 
-                                        workspace data is encrypted with your master key before it leaves your machine. txio 
-                                        infrastructure acts as a blind relay, storing only the encrypted blobs that only you 
-                                        (and authorized team members) can decrypt.
+                                        Sync runs on a zero-knowledge model. Your data is encrypted with your master key before it ever leaves your laptop. Our servers see encrypted blobs and nothing else. Only you (and the teammates you let in) can decrypt them.
                                     </p>
                                     <div className="flex gap-4">
                                         <div className="px-6 py-2 rounded-xl bg-electric-violet/10 border border-electric-violet/20 text-electric-violet text-[10px] font-black uppercase tracking-widest italic">Privacy First</div>
@@ -864,7 +847,7 @@ export const DocsPage: React.FC<
                         <div className="space-y-6">
                             <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white">Deployment.</h1>
                             <p className="text-lg text-slate-400 leading-relaxed max-w-3xl">
-                                Scale your infrastructure from a local developer machine to a global team gateway.
+                                Start on your laptop. Move to a shared server when the team needs it. Same binary, same config.
                             </p>
                         </div>
 
@@ -890,16 +873,14 @@ export const DocsPage: React.FC<
                                     <div className="w-10 h-10 rounded-xl bg-sky-400/10 flex items-center justify-center text-sky-400"><Globe size={20} /></div>
                                     <h4 className="font-bold text-white text-sm">GitHub Actions CI</h4>
                                     <p className="text-[11px] text-slate-600 leading-relaxed">
-                                        Automated test suites for every PR. Our CI ensures that new chain adapters 
-                                        never break existing protocol logic.
+                                        Tests run on every PR. New chain adapters can't break the existing ones — the suite catches it before merge.
                                     </p>
                                 </div>
                                 <div className="p-8 rounded-[2.5rem] bg-white/[0.01] border border-white/5 space-y-4">
                                     <div className="w-10 h-10 rounded-xl bg-amber-400/10 flex items-center justify-center text-amber-400"><Cpu size={20} /></div>
-                                    <h4 className="font-bold text-white text-sm">Vercel Integration</h4>
+                                    <h4 className="font-bold text-white text-sm">Vercel-ready</h4>
                                     <p className="text-[11px] text-slate-600 leading-relaxed">
-                                        The txio frontend is optimized for edge deployment. Scale your visual IDE 
-                                        globally with zero-config hosting.
+                                        The frontend builds for edge deployment out of the box. Push, deploy, done.
                                     </p>
                                 </div>
                             </div>
@@ -912,15 +893,14 @@ export const DocsPage: React.FC<
                         <div className="space-y-6">
                             <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white">Extending.</h1>
                             <p className="text-lg text-slate-400 leading-relaxed max-w-3xl">
-                                Built for developers who need to customize and expand their toolchain.
+                                Need a chain we don't support? Add it. It's one file and a trait impl.
                             </p>
                         </div>
 
                         <div className="space-y-12">
-                            <h2 className="text-2xl font-black text-white italic">Creating Chain Adapters</h2>
+                            <h2 className="text-2xl font-black text-white italic">Writing a chain adapter</h2>
                             <p className="text-slate-500 text-sm leading-relaxed">
-                                Adding a new blockchain ecosystem to txio is as simple as implementing the <code className="text-electric-violet">ChainAdapter</code> trait in Rust. 
-                                Once registered, your new chain gains full CLI, History, and IDE support automatically.
+                                Implement the <code className="text-electric-violet">ChainAdapter</code> trait, register it, you're done. The CLI, history, and IDE pick it up automatically — you don't have to touch any of them.
                             </p>
                             <div className="p-8 rounded-[2.5rem] bg-black border border-white/5 font-mono text-sm leading-relaxed">
                                 <div className="text-white">pub trait <span className="text-emerald-400">ChainAdapter</span> &#123;</div>
@@ -937,15 +917,15 @@ export const DocsPage: React.FC<
                         <div className="space-y-6">
                             <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white">Roadmap.</h1>
                             <p className="text-lg text-slate-400 leading-relaxed max-w-3xl">
-                                The future of universal blockchain infrastructure.
+                                What's coming. No promises on the dates, but the work is real.
                             </p>
                         </div>
 
                         <div className="space-y-12">
                             {[
-                                { quarter: 'Q3 2026', title: 'Mobile Companion', desc: 'Monitor your RPC logs and execute simple transactions from your phone via the txio mobile bridge.' },
-                                { quarter: 'Q4 2026', title: 'Team Workspaces', desc: 'Real-time collaborative editing of Programmable Transaction Blocks (PTB) with shared state.' },
-                                { quarter: 'Q1 2027', title: 'Native Debugger', desc: 'Integrated source-level debugging for Move and Solidity contracts directly within the txio IDE.' }
+                                { quarter: 'Q3 2026', title: 'Mobile companion', desc: 'Watch your RPC logs and fire off simple transactions from your phone. Pager-style.' },
+                                { quarter: 'Q4 2026', title: 'Team workspaces', desc: 'PTBs you can edit together, in real time. Shared state, shared cursors.' },
+                                { quarter: 'Q1 2027', title: 'Source-level debugger', desc: 'Step through Move and Solidity right in the IDE. Breakpoints, watches, the whole thing.' }
                             ].map(item => (
                                 <div key={item.quarter} className="flex gap-8 group">
                                     <div className="w-24 shrink-0 text-[10px] font-black uppercase tracking-widest text-slate-600 group-hover:text-electric-violet transition-colors">{item.quarter}</div>

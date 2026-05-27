@@ -11,12 +11,13 @@ export default {
   theme: {
     extend: {
       fontSize: {
-        'xs': ['0.85rem', { lineHeight: '1rem' }],
-        'sm': ['0.95rem', { lineHeight: '1.25rem' }],
-        'base': ['1.05rem', { lineHeight: '1.5rem' }],
-        'lg': ['1.15rem', { lineHeight: '1.75rem' }],
-        'xl': ['1.35rem', { lineHeight: '1.75rem' }],
-        '2xl': ['1.65rem', { lineHeight: '2rem' }],
+        '2xs': ['0.6875rem', { lineHeight: '1rem' }],
+        'xs': ['0.75rem', { lineHeight: '1rem' }],
+        'sm': ['0.8125rem', { lineHeight: '1.25rem' }],
+        'base': ['0.875rem', { lineHeight: '1.375rem' }],
+        'lg': ['1rem', { lineHeight: '1.5rem' }],
+        'xl': ['1.25rem', { lineHeight: '1.75rem' }],
+        '2xl': ['1.5rem', { lineHeight: '2rem' }],
       },
       fontFamily: {
         sans: ["var(--font-space-grotesk)", "var(--font-inter)", "sans-serif"],
@@ -26,7 +27,7 @@ export default {
         'near-black': '#000000',
         'electric-violet': '#7b3ff2',
         'soft-purple': '#a78bfa',
-        'dark-indigo-glow': '#050505',
+        'dark-indigo-glow': '#0a0a0c',
         slate: {
           50: '#fafafa',
           100: '#f4f4f5',

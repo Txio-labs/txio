@@ -1,19 +1,23 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useAppStore, appStore } from '@/lib/store';
-import { resolveRpcUrl } from '@/lib/appConfig';
 import { useWallet } from '@/wallet';
 import { RequestPanel } from '../components/RequestPanel/RequestPanel';
-import { ResponsePanel } from '../components/ResponsePanel/ResponsePanel';
 import { RequestItem, RequestType } from '../types';
 import {
     executeSuiRpc,
+    looksLikeSuiNs,
+    resolveSuiAddress,
     simulateMoveCall,
     SuiRpcError,
 } from '../services/suiService';
+import { ADDRESS_FIRST_PARAM_METHODS } from '@/lib/constants';
 import { SignTransactionModal } from '../components/SignTransactionModal';
-import { GripHorizontal } from 'lucide-react';
+import {
+    ensureTerminalOpen,
+    logCommandToTerminal
+} from '@/lib/terminalLog';
 
 const ZERO_ADDRESS =
     '0x0000000000000000000000000000000000000000000000000000000000000000';
@@ -76,31 +80,15 @@ export const RPCBuilder: React.FC = () => {
         activeTabId,
         network,
         envVariables,
-        settings
     } = useAppStore();
     const { currentWallet, openModal } = useWallet();
     const activeTab = tabs.find(t => t.id === activeTabId);
     const connectedAddress = currentWallet?.family === 'sui' ? currentWallet.address : null;
-    
-    // Local state for the current request execution
-    const [response, setResponse] = useState<any>(null);
+
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | undefined>(undefined);
-    const [status, setStatus] = useState<number | undefined>(undefined);
-    const [duration, setDuration] = useState<number | undefined>(undefined);
     const [isSignModalOpen, setIsSignModalOpen] = useState(false);
 
-    // Layout State
-    const [responseHeight, setResponseHeight] = useState(250);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const isDragging = useRef(false);
-
-    // Synchronize tab data with the panel
     const request = activeTab?.data as RequestItem;
-    const endpoint = resolveRpcUrl(
-        network,
-        settings
-    );
 
     useEffect(() => {
         if (
@@ -125,42 +113,6 @@ export const RPCBuilder: React.FC = () => {
         request
     ]);
 
-    useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            if (!isDragging.current || !containerRef.current) return;
-            const containerRect = containerRef.current.getBoundingClientRect();
-            const newHeight = containerRect.bottom - e.clientY;
-            
-            // Constraints
-            const maxHeight = containerRect.height - 100; // Leave space for request
-            const minHeight = 48; // Collapsed state (header only approx)
-            
-            setResponseHeight(Math.max(minHeight, Math.min(newHeight, maxHeight)));
-        };
-
-        const handleMouseUp = () => {
-            isDragging.current = false;
-            document.body.style.cursor = '';
-            document.body.style.userSelect = '';
-        };
-
-        if (isDragging) {
-            document.addEventListener('mousemove', handleMouseMove);
-            document.addEventListener('mouseup', handleMouseUp);
-        }
-
-        return () => {
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-        };
-    }, []);
-
-    const startDragging = () => {
-        isDragging.current = true;
-        document.body.style.cursor = 'row-resize';
-        document.body.style.userSelect = 'none';
-    };
-
     const handleRequestChange = (updatedReq: RequestItem) => {
         if (activeTabId) {
             appStore.finalizeRequest(activeTabId, updatedReq.type === RequestType.RPC ? 'rpc' : 'ptb', updatedReq);
@@ -181,14 +133,45 @@ export const RPCBuilder: React.FC = () => {
         }
 
         setIsLoading(true);
-        setError(undefined);
-        setResponse(null);
-        setStatus(undefined);
-        setDuration(undefined);
-        // Expand response panel if it's too small when sending
-        if (responseHeight < 100) setResponseHeight(250);
 
         const resolved = resolveRequestVars(request, envVariables);
+
+        // Auto-resolve SuiNS in the first param for address-taking RPC methods.
+        if (
+            resolved.type === RequestType.RPC &&
+            ADDRESS_FIRST_PARAM_METHODS.has(resolved.rpcParams.method) &&
+            Array.isArray(resolved.rpcParams.params) &&
+            typeof resolved.rpcParams.params[0] === 'string' &&
+            looksLikeSuiNs(resolved.rpcParams.params[0])
+        ) {
+            const originalName = resolved.rpcParams.params[0];
+            try {
+                const address = await resolveSuiAddress(network, originalName);
+                resolved.rpcParams = {
+                    ...resolved.rpcParams,
+                    params: [address, ...resolved.rpcParams.params.slice(1)],
+                };
+            } catch (err) {
+                const message =
+                    err instanceof Error && err.message.trim()
+                        ? err.message
+                        : `Could not resolve ${originalName}`;
+                appStore.pushLog(`SuiNS resolution failed: ${message}`, 'cli', 'error');
+                setIsLoading(false);
+                return;
+            }
+        }
+
+        const commandLine =
+            resolved.type === RequestType.TRANSACTION
+                ? `txio sui simulate ${resolved.moveParams.packageId}::${resolved.moveParams.module}::${resolved.moveParams.function}`
+                : `txio sui call --method ${resolved.rpcParams.method}${
+                      resolved.rpcParams.params?.length
+                          ? ` --params ${JSON.stringify(resolved.rpcParams.params)}`
+                          : ''
+                  }`;
+
+        ensureTerminalOpen();
 
         try {
             let res;
@@ -224,26 +207,21 @@ export const RPCBuilder: React.FC = () => {
                     );
             }
 
-            const {
-                result,
-                duration,
-                status
-            } = res;
+            const { result, duration, status } = res;
 
-            setResponse(result);
-            setDuration(duration);
-            setStatus(status);
+            appStore.addToHistory(request, status, duration);
 
-            appStore.addToHistory(
-                request,
-                status,
-                duration
-            );
-            appStore.pushLog(
-                `${request.type === RequestType.RPC ? 'Executed' : 'Simulated'} ${request.name}`,
+            logCommandToTerminal({
+                command: commandLine,
                 network,
-                'request'
-            );
+                body: result,
+                status,
+                duration,
+                successLabel:
+                    request.type === RequestType.RPC
+                        ? 'executed'
+                        : 'simulated'
+            });
         } catch (error) {
             const rpcError =
                 error instanceof SuiRpcError
@@ -255,24 +233,19 @@ export const RPCBuilder: React.FC = () => {
                     ? error.message
                     : 'Request failed.';
 
-            setError(message);
-            setStatus(
-                rpcError?.status ?? 500
-            );
-            setDuration(
-                rpcError?.duration
-            );
-
             appStore.addToHistory(
                 request,
                 rpcError?.status ?? 500,
                 rpcError?.duration ?? 0
             );
-            appStore.pushLog(
-                `Failed ${request.type === RequestType.RPC ? 'RPC' : 'simulation'} ${request.name}: ${message}`,
+
+            logCommandToTerminal({
+                command: commandLine,
                 network,
-                'error'
-            );
+                error: message,
+                status: rpcError?.status ?? 500,
+                duration: rpcError?.duration
+            });
         } finally {
             setIsLoading(false);
         }
@@ -287,21 +260,14 @@ export const RPCBuilder: React.FC = () => {
 
     if (!request) return null;
 
-    const hasResponsePanelContent =
-        isLoading ||
-        response !== null && response !== undefined ||
-        !!error;
-
     return (
-        <motion.div 
+        <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            ref={containerRef} 
             className="flex flex-col h-full overflow-hidden bg-near-black"
         >
-            {/* Top half: Request Configuration */}
             <div className="flex-1 flex flex-col min-h-0">
-                <RequestPanel 
+                <RequestPanel
                     request={request}
                     network={network}
                     isLoading={isLoading}
@@ -313,37 +279,7 @@ export const RPCBuilder: React.FC = () => {
                 />
             </div>
 
-            {hasResponsePanelContent && (
-                <>
-                    {/* Drag Handle */}
-                    <div 
-                        onMouseDown={startDragging}
-                        className="h-1.5 bg-near-black hover:bg-electric-violet/50 cursor-row-resize transition-colors z-20 shrink-0 border-t border-b border-white/5 flex items-center justify-center group"
-                    >
-                        <div className="w-12 h-0.5 bg-slate-800 group-hover:bg-soft-purple rounded-full transition-all duration-300 group-hover:w-24" />
-                    </div>
-
-                    {/* Bottom half: Response Inspection */}
-                    <motion.div 
-                        animate={{ height: responseHeight }}
-                        transition={{ type: 'spring', damping: 30, stiffness: 300, mass: 0.8 }}
-                        className="min-h-0 shrink-0 flex flex-col shadow-[0_-8px_20px_rgba(0,0,0,0.4)] z-10 bg-dark-indigo-glow"
-                    >
-                        <ResponsePanel 
-                            requestId={activeTabId || undefined}
-                            request={request}
-                            response={response}
-                            isLoading={isLoading}
-                            error={error}
-                            status={status}
-                            duration={duration}
-                            endpoint={endpoint}
-                        />
-                    </motion.div>
-                </>
-            )}
-
-            <SignTransactionModal 
+            <SignTransactionModal
                 isOpen={isSignModalOpen}
                 onClose={() => setIsSignModalOpen(false)}
                 onConfirm={handleReviewSimulation}

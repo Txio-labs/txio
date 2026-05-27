@@ -230,15 +230,14 @@ export const SignInPage: React.FC = () => {
 
                     <div className="space-y-6">
                         <h1 className="text-6xl font-bold tracking-tight text-white leading-[1.1]">
-                            Welcome back to the <br />
+                            Welcome back. <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet to-soft-purple">
-                                Future of Dev.
+                                Let's get to it.
                             </span>
                         </h1>
 
                         <p className="text-lg text-slate-400 max-w-md leading-relaxed">
-                            Sign in to continue building your infrastructure on
-                            the most advanced Web3 IDE.
+                            Pick up where you left off. Your workspaces, collections, and history are right where you put them.
                         </p>
                     </div>
                 </div>
@@ -309,7 +308,7 @@ export const SignInPage: React.FC = () => {
                         </h2>
 
                         <p className="text-sm text-slate-500">
-                            Enter your credentials to access your workspace.
+                            Email and password. That's all we need.
                         </p>
                     </div>
 

@@ -51,11 +51,11 @@ export const AuthPage: React.FC = () => {
                             className="space-y-6 max-w-lg"
                         >
                             <h1 className="text-5xl font-bold tracking-tight leading-[1.1] text-white">
-                                Build the next era of <br />
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet to-soft-purple">Web3 Infrastructure.</span>
+                                One workspace. <br />
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet to-soft-purple">Every chain.</span>
                             </h1>
                             <p className="text-lg text-slate-400 leading-relaxed">
-                                Join thousands of elite engineers building, debugging, and scaling decentralized protocols with txio.
+                                Thousands of devs already build, debug, and ship on txio. You're a signup away from joining them.
                             </p>
                         </motion.div>
                     </div>
@@ -71,14 +71,14 @@ export const AuthPage: React.FC = () => {
                                 <Zap size={18} />
                                 <span className="font-bold text-sm uppercase tracking-widest">Speed</span>
                             </div>
-                            <p className="text-xs text-slate-500">Sub-millisecond network latency and optimized execution.</p>
+                            <p className="text-xs text-slate-500">Sub-millisecond latency. Connections stay warm.</p>
                         </div>
                         <div className="space-y-2">
                             <div className="flex items-center gap-2 text-soft-purple">
                                 <ShieldCheck size={18} />
                                 <span className="font-bold text-sm uppercase tracking-widest">Secure</span>
                             </div>
-                            <p className="text-xs text-slate-500">Enterprise-grade encryption for all workspace secrets.</p>
+                            <p className="text-xs text-slate-500">Secrets encrypted before they leave your machine.</p>
                         </div>
                     </motion.div>
                 </div>
@@ -116,14 +116,14 @@ export const AuthPage: React.FC = () => {
                             <Sparkles className="text-electric-violet" size={32} />
                         </div>
                         <h2 className="text-3xl font-bold tracking-tight mb-2">
-                            {mode === 'login' ? 'Welcome Back' : 'Create Account'}
+                            {mode === 'login' ? 'Welcome back' : 'Create your account'}
                         </h2>
                         <p className={`text-sm ${
                             theme === 'dark' ? 'text-slate-500' : 'text-slate-500'
                         }`}>
-                            {mode === 'login' 
-                                ? 'Sign in to access your workspace' 
-                                : 'Get started with the most powerful Web3 IDE'}
+                            {mode === 'login'
+                                ? 'Sign in and pick up where you left off.'
+                                : 'Takes about thirty seconds. Email is all we need.'}
                         </p>
                     </div>
 

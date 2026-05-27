@@ -1,75 +1,77 @@
-# 🌊 txio Backend: Sui RPC & Collection Manager
+# txio Backend
 
 [![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg?style=flat-square&logo=rust)](https://www.rust-lang.org/)
 [![Axum](https://img.shields.io/badge/Axum-0.7-blue.svg?style=flat-square)](https://github.com/tokio-rs/axum)
 [![MongoDB](https://img.shields.io/badge/MongoDB-2.8-green.svg?style=flat-square&logo=mongodb)](https://www.mongodb.com/)
 
-> **txio Backend** is a purpose-built gateway for Sui blockchain developers. It combines the power of a decentralized network with the developer experience of modern API tools like Postman.
+The API behind txio. Caches RPC traffic, persists collections, handles auth, resolves names — and serves the CLI and dashboard from the same surface.
+
+Think Postman, but it speaks Sui (and a few others) natively.
 
 ---
 
-## 🏗️ Architecture & txio
+## How it fits together
 
 ```mermaid
 graph TD
     User((Developer)) -->|HTTP/JWT| API[Axum API Layer]
     User -->|CLI Args| CLI[Sui CLI Tool]
-    
+
     API -->|Auth/CRUD| Auth[Auth & Collection Services]
     CLI -->|RPC Call| SuiSvc[Sui Service]
     Auth -->|Execute| SuiSvc
-    
+
     SuiSvc -->|Regex Parse| SuiNS[SuiNS Resolver]
     SuiSvc -->|JSON-RPC| Node[Sui Fullnode]
-    
+
     Auth -->|Persist| DB[(MongoDB)]
     SuiSvc -->|Log| DB
 ```
 
 ---
 
-## 🧠 Philosophy: The "Whys" Behind txio
+## Why these choices
 
-### 1. Why Rust & Axum?
-Traditional web backends often sacrifice performance for speed of development. We chose **Rust** because:
-- **Type Safety**: Blockchain interactions involve complex hex addresses and Move types. Rust's strict type system prevents "invalid address" bugs at compile time.
-- **Concurrency**: Handing hundreds of simultaneous RPC calls to different fullnodes requires a highly efficient asynchronous runtime (**Tokio**), which Rust provides natively.
-- **Axum**: We chose Axum because it's built on top of `tower`, allowing us to use standardized middleware for things like CORS, logging, and state management without reinventing the wheel.
+### Rust + Axum
 
-### 2. Why MongoDB?
-In blockchain development, RPC parameters and responses are highly dynamic.
-- **Schemaless Flexibility**: The `params` and `result` fields in a Sui RPC call vary wildly. **MongoDB** allows us to store these as BSON/JSON without complex relational mapping or expensive migrations every time the Sui RPC API changes.
-- **Audit Logs**: txio persists every execution in an `rpc_logs` collection. MongoDB's document-based nature is perfect for storing these heterogeneous log entries.
+Blockchain calls juggle complex hex addresses and Move types. Rust's type system catches the "invalid address" class of bugs before the code ships, and Tokio handles fanning out to dozens of fullnodes without breaking a sweat.
 
-### 3. Why the Repository Pattern?
-txio implements a clean **Repository Pattern** (`src/repositories/`).
-- **Why?**: This separates the "How" (MongoDB queries) from the "What" (Business logic inside Services). If we ever need to switch to PostgreSQL or a different DB, we only change the Repository layer, leaving the core logic in `collection_service.rs` untouched.
+Axum sits on top of `tower`, so middleware for CORS, logging, and state is standardized — we're not reinventing it.
 
-### 4. Why Regex-based SuiNS Resolution?
-Most SuiNS resolvers only handle exact string matches. txio uses a **Recursive Regex Scanner** (`r"([a-zA-Z0-9-]+\.sui)"`).
-- **Why?**: Developers often embed addresses inside complex Move Type Tags (e.g., `0x2::sui::SUI` or `0x...::Coin<names.sui>`). A simple string match would miss these nested names. Our regex approach ensures that *every* occurrence of a `.sui` name is identified and resolved before the call is sent.
+### MongoDB
 
-### 5. Why Response & Error Standardization?
-When a node is down or a name fails to resolve, most tools return a raw HTTP error or a CLI panic.
-- **Why synthesize?**: We want to provide a "Frontend-First" experience. By synthesizing valid **JSON-RPC 2.0 error envelopes** for transport failures, we ensure that integrating frontends don't need special logic for "network errors" vs "RPC errors"—they all arrive in the same standard format.
+RPC `params` and `result` shapes change all the time. A document store fits — no migrations every time Sui ships a new method. Same goes for the `rpc_logs` collection: heterogeneous entries, no schema fights.
 
----
+### Repository pattern
 
-## � Key Technical Features
+Queries live in `src/repositories/`. Business logic lives in services. Swap the DB someday? Touch one layer, leave the rest alone.
 
-### 📁 Postman-like Collections
-Organize your RPC research into logical folders. Every request persists its configuration and **execution history**.
-- **Context Preservation**: Replaces the need for hundreds of `curl` commands in your bash history.
+### Regex-based SuiNS resolution
 
-### 🌐 Global Network Switching
-Switch between **Mainnet**, **Testnet**, and **Devnet** once, and it reflects everywhere.
-- **Why?**: It's common to switch environments during a sprint. By persisting this in the `User` model, your CLI tool and API calls stay in sync without needing flags on every command.
+Most resolvers do exact string matches. We use a recursive scan: `r"([a-zA-Z0-9-]+\.sui)"`. Why? Devs embed names inside Move type tags — `0x...::Coin<names.sui>` — and a flat string match misses them. The regex catches every occurrence before the call goes out.
+
+### Standardized error envelopes
+
+When a node goes down or a name fails to resolve, most tools throw a raw HTTP error or a CLI panic. We wrap everything in valid JSON-RPC 2.0 error envelopes, so frontends don't need separate code paths for "network error" vs "RPC error" — they all arrive in the same shape.
 
 ---
 
-## 📦 Data Models
+## What you get
 
-### 🛰️ SavedRequest
+### Collections, Postman-style
+
+Organize RPC calls into folders. Each request remembers its config and execution history — no more `curl` archaeology in your bash history.
+
+### Global network switching
+
+Set Mainnet, Testnet, or Devnet once. It sticks across CLI and API. Persisted on the User model so your tools stay in sync without per-command flags.
+
+---
+
+## Data models
+
+### SavedRequest
+
 ```json
 {
   "_id": "ObjectId",
@@ -83,38 +85,37 @@ Switch between **Mainnet**, **Testnet**, and **Devnet** once, and it reflects ev
 
 ---
 
-## 💻 CLI Documentation (`sui_cli`)
-
-### Commands
-- `--method`, `-m`: RPC method.
-- `--params`, `-p`: JSON array of args.
-- `--pretty`: Syntax-highlighted output.
+## sui_cli
 
 ```bash
 cargo run --bin sui_cli -- -m sui_getChainIdentifier --pretty
 ```
 
+Flags:
+- `--method`, `-m` — RPC method.
+- `--params`, `-p` — JSON array of args.
+- `--pretty` — syntax-highlighted output.
+
 ---
 
-## �️ Setup & Environment
+## Environment
 
-### Environment Variables
-| Variable | Purpose |
+| Variable | What it's for |
 | :--- | :--- |
-| `MONGO_URI` | Database connection. |
-| `JWT_SECRET` | Signing authentication tokens. |
-| `BREVO_API_KEY` | Sending OTP emails via Brevo. |
-| `GROQ_API_KEYS` | Comma-separated Groq API keys for the AI Console. |
-| `GROQ_MODEL` | Groq model ID used by the AI Console. |
+| `MONGO_URI` | Database connection |
+| `JWT_SECRET` | Signs auth tokens |
+| `BREVO_API_KEY` | Sends OTP emails via Brevo |
+| `GROQ_API_KEYS` | Comma-separated Groq keys for the AI Console |
+| `GROQ_MODEL` | Groq model ID for the AI Console |
 
 ---
 
 > [!IMPORTANT]
-> This project follows a "Fail-Fast" principle. Inputs are validated using `validator::Validate` before reaching any service layer.
+> Fail-fast: inputs hit `validator::Validate` before any service layer touches them.
 
 > [!TIP]
-> All RPC errors use the code range `-32000` to `-32002` for internal synthesis. Check the `walkthrough.md` for the full error registry.
+> Internal RPC errors live in the `-32000` to `-32002` range. Full registry is in `walkthrough.md`.
 
 ## License
 
-This project is open-source and licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+MIT. See [LICENSE](LICENSE).

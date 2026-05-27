@@ -40,39 +40,47 @@ export const Layout: React.FC<LayoutProps> = ({
     return (
         <div className="flex flex-col h-screen bg-near-black text-slate-200">
             {/* Command Bar / Header */}
-            <header className="h-12 bg-dark-indigo-glow border-b border-white/5 flex items-center justify-between px-4 shrink-0 z-20">
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 font-bold text-slate-100">
-                        <div className="w-6 h-6 flex items-center justify-center transition-transform duration-300 hover:rotate-12">
+            <header className="h-11 bg-dark-indigo-glow border-b border-white/[0.06] flex items-center justify-between px-3 shrink-0 z-20">
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 text-slate-100">
+                        <div className="w-5 h-5 flex items-center justify-center transition-transform duration-300 hover:rotate-12">
                             <img src={useAppStore().theme === 'dark' ? logoDark.src : logoLight.src} alt="txio" className="w-full h-full object-contain" />
                         </div>
-                        <span className="text-sm tracking-tight glow-text font-bold lowercase">txio</span>
+                        <span className="text-sm tracking-tight font-semibold lowercase">txio</span>
                     </div>
-                    <div className="h-4 w-px bg-white/10 mx-2"></div>
-                    <button onClick={() => appStore.toggleSidebar()} className={`p-1.5 rounded hover:bg-white/5 ${isSidebarOpen ? 'text-electric-violet' : 'text-slate-500'}`}>
-                        <PanelLeft size={16} />
+                    <div className="h-4 w-px bg-white/[0.08] mx-1"></div>
+                    <button
+                        onClick={() => appStore.toggleSidebar()}
+                        className={`p-1.5 rounded-md transition-colors hover:bg-white/[0.05] ${isSidebarOpen ? 'text-electric-violet' : 'text-slate-500 hover:text-slate-300'}`}
+                        aria-label="Toggle sidebar"
+                    >
+                        <PanelLeft size={14} />
                     </button>
-                    <button className="flex items-center gap-2 bg-near-black border border-white/5 hover:border-white/10 px-3 py-1.5 rounded text-xs text-slate-400 w-64 transition-colors group">
-                        <Search size={12} />
-                        <span>Search commands...</span>
-                        <div className="ml-auto flex items-center gap-1">
-                            <span className="bg-white/5 px-1 rounded text-[10px] text-slate-500 group-hover:text-slate-400">⌘</span>
-                            <span className="bg-white/5 px-1 rounded text-[10px] text-slate-500 group-hover:text-slate-400">K</span>
+                    <button className="flex items-center gap-2 bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.12] hover:bg-white/[0.04] px-2.5 py-1 rounded-md text-xs text-slate-400 hover:text-slate-300 w-64 transition-colors group">
+                        <Search size={12} className="text-slate-500" />
+                        <span>Search commands…</span>
+                        <div className="ml-auto flex items-center gap-0.5 text-slate-500 group-hover:text-slate-400">
+                            <kbd className="bg-white/[0.05] border border-white/[0.06] px-1 rounded text-[10px] font-mono">⌘</kbd>
+                            <kbd className="bg-white/[0.05] border border-white/[0.06] px-1 rounded text-[10px] font-mono">K</kbd>
                         </div>
                     </button>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-electric-violet/10 border border-electric-violet/20 text-xs">
-                        <div className="w-2 h-2 rounded-full bg-soft-purple animate-pulse"></div>
-                        <span className="text-electric-violet/80 font-medium">Mainnet</span>
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-electric-violet/[0.08] border border-electric-violet/20 text-xs">
+                        <div className="w-1.5 h-1.5 rounded-full bg-electric-violet animate-pulse"></div>
+                        <span className="text-electric-violet font-medium">Mainnet</span>
                     </div>
-                     <button onClick={() => appStore.toggleInspector()} className={`p-1.5 rounded hover:bg-white/5 ${isInspectorOpen ? 'text-electric-violet' : 'text-slate-500'}`}>
-                        <PanelRight size={16} />
+                    <button
+                        onClick={() => appStore.toggleInspector()}
+                        className={`p-1.5 rounded-md transition-colors hover:bg-white/[0.05] ${isInspectorOpen ? 'text-electric-violet' : 'text-slate-500 hover:text-slate-300'}`}
+                        aria-label="Toggle inspector"
+                    >
+                        <PanelRight size={14} />
                     </button>
-                    <button 
-                        onClick={() => appStore.setAuthModal(true)} 
-                        className="relative group transition-transform active:scale-95 outline-none"
+                    <button
+                        onClick={() => appStore.setAuthModal(true)}
+                        className="relative group transition-transform active:scale-95 outline-none ml-1"
                     >
                         <Avatar size="sm" seed={user?.email || 'txio-user'} status="online" className="cursor-pointer" />
                     </button>
@@ -101,9 +109,9 @@ export const Layout: React.FC<LayoutProps> = ({
                 {/* Workspace */}
                 <main className="flex-1 flex flex-col min-w-0 bg-near-black relative">
                     {/* Tab Bar */}
-                    <div className="h-9 bg-near-black border-b border-white/5 flex items-center overflow-x-auto no-scrollbar">
+                    <div className="h-9 bg-near-black border-b border-white/[0.06] flex items-center overflow-x-auto no-scrollbar">
                         {tabs.map(tab => (
-                            <Tab 
+                            <Tab
                                 key={tab.id}
                                 id={tab.id}
                                 title={tab.title}
@@ -114,11 +122,12 @@ export const Layout: React.FC<LayoutProps> = ({
                                 icon={tab.type === 'ptb' ? <Layers size={12}/> : tab.type === 'rpc' ? <Command size={12}/> : tab.type === 'ai_chat' ? <Sparkles size={12} className="text-soft-purple"/> : undefined}
                             />
                         ))}
-                        <button 
+                        <button
                             onClick={onNewTab}
-                            className="p-2 text-slate-500 hover:text-electric-violet hover:bg-white/5 transition-colors"
+                            className="px-2.5 py-2 text-slate-500 hover:text-electric-violet hover:bg-white/[0.03] transition-colors"
+                            aria-label="New tab"
                         >
-                            <Plus size={14} />
+                            <Plus size={13} />
                         </button>
                     </div>
                     
@@ -150,23 +159,23 @@ export const Layout: React.FC<LayoutProps> = ({
             </div>
             
             {/* Status Bar */}
-            <footer className="h-6 bg-near-black border-t border-white/5 flex items-center justify-between px-3 text-[10px] text-slate-500 select-none">
+            <footer className="h-7 bg-near-black border-t border-white/[0.06] flex items-center justify-between px-3 text-[11px] text-slate-500 select-none">
                 <div className="flex items-center gap-4">
-                    <span className="flex items-center gap-1 hover:text-slate-300 cursor-pointer"><Settings size={10} /> v2.4.0</span>
-                    <span 
+                    <span className="flex items-center gap-1.5 hover:text-slate-300 cursor-pointer transition-colors"><Settings size={11} /> v2.4.0</span>
+                    <span
                         onClick={() => appStore.toggleTerminal()}
-                        className={`flex items-center gap-1 cursor-pointer transition-colors ${useAppStore().isTerminalOpen ? 'text-electric-violet' : 'hover:text-slate-300'}`}
+                        className={`flex items-center gap-1.5 cursor-pointer transition-colors ${useAppStore().isTerminalOpen ? 'text-electric-violet' : 'hover:text-slate-300'}`}
                     >
-                        <Terminal size={10} /> Terminal
+                        <Terminal size={11} /> Terminal
                     </span>
-                    <span className="hover:text-slate-300 cursor-pointer">0 Errors</span>
+                    <span className="hover:text-slate-300 cursor-pointer transition-colors">0 Errors</span>
                 </div>
                 <div className="flex items-center gap-4">
                      <span>Gas Budget: Auto</span>
                      <span className={currentWallet ? 'text-electric-violet' : 'text-slate-500'}>
                         {currentWallet
-                            ? `Wallet: ${shortenAddress(currentWallet.address)}`
-                            : 'Wallet: Disconnected'}
+                            ? `Wallet ${shortenAddress(currentWallet.address)}`
+                            : 'Wallet disconnected'}
                      </span>
                 </div>
             </footer>
