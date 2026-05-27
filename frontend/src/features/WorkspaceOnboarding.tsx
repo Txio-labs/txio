@@ -78,11 +78,11 @@ export const WorkspaceOnboarding: React.FC<
             const message =
                 error instanceof Error
                     ? error.message
-                    : 'Failed to create workspace';
+                    : "Couldn't create the workspace";
 
             setFormError(
                 message ||
-                    'Failed to create workspace.'
+                    "Couldn't create the workspace. Try again?"
             );
         } finally {
             setIsSubmitting(false);
@@ -117,14 +117,11 @@ export const WorkspaceOnboarding: React.FC<
                         </div>
 
                         <h1 className="mt-6 max-w-3xl text-4xl font-black tracking-tight text-white md:text-5xl lg:text-6xl">
-                            Launch your first txio workspace with a proper
-                            control surface.
+                            One last thing — name your workspace.
                         </h1>
 
                         <p className="mt-5 max-w-2xl text-base leading-8 text-slate-400">
-                            Your account is ready. Before entering the IDE, set
-                            up the workspace that will hold your collections,
-                            requests, and operational context.
+                            Your account's good to go. Workspaces are where your collections, requests, and history live. You can have more than one later.
                         </p>
 
                         <div className="mt-8 grid gap-4 md:grid-cols-3">
@@ -132,21 +129,21 @@ export const WorkspaceOnboarding: React.FC<
                                 {
                                     title: 'Scoped collections',
                                     description:
-                                        'Requests and saved flows stay grouped under the workspace you create.',
+                                        'Your requests and saved flows live inside the workspace — not floating around in one big pile.',
                                     icon: Layers3,
                                     tone: 'text-electric-violet bg-electric-violet/10'
                                 },
                                 {
-                                    title: 'Team-ready posture',
+                                    title: 'Team-ready',
                                     description:
-                                        'Start personal now or choose a team surface you can grow into later.',
+                                        'Solo today, team later. Same workspace, just more people.',
                                     icon: Users,
                                     tone: 'text-soft-purple bg-soft-purple/10'
                                 },
                                 {
-                                    title: 'Operational security',
+                                    title: 'Isolated state',
                                     description:
-                                        'Keep workspace state isolated, authenticated, and easier to reason about.',
+                                        'Workspaces are isolated. Different projects, different auth, no crosstalk.',
                                     icon: ShieldCheck,
                                     tone: 'text-emerald-400 bg-emerald-500/10'
                                 }
@@ -177,7 +174,7 @@ export const WorkspaceOnboarding: React.FC<
                                 </div>
                                 <div>
                                     <div className="text-sm font-bold uppercase tracking-[0.22em] text-slate-500">
-                                        Operator
+                                        Signed in as
                                     </div>
                                     <div className="mt-2 text-xl font-bold text-white">
                                         {user.name}
@@ -187,7 +184,7 @@ export const WorkspaceOnboarding: React.FC<
                                     </p>
                                     <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-400">
                                         <CheckCircle2 size={14} />
-                                        Authenticated and ready
+                                        Account verified
                                     </div>
                                 </div>
                             </div>
@@ -216,11 +213,10 @@ export const WorkspaceOnboarding: React.FC<
                                         Create Workspace
                                     </div>
                                     <h2 className="mt-3 text-2xl font-black text-white">
-                                        Define your operating base
+                                        Name it and you're in.
                                     </h2>
                                     <p className="mt-2 text-sm leading-7 text-slate-400">
-                                        Start with a clean workspace and enter
-                                        the IDE with real persisted state.
+                                        Once you create it, the IDE opens with your workspace already wired up.
                                     </p>
                                 </div>
 
@@ -281,14 +277,14 @@ export const WorkspaceOnboarding: React.FC<
                                                 id: 'Personal' as const,
                                                 title: 'Personal',
                                                 description:
-                                                    'Best for individual building, prototyping, and private request libraries.',
+                                                    'For solo work — prototypes, private collections, anything you don\'t need to share.',
                                                 icon: Sparkles
                                             },
                                             {
                                                 id: 'Team' as const,
                                                 title: 'Team',
                                                 description:
-                                                    'Use a collaborative surface ready for shared ownership and multi-operator growth.',
+                                                    'Shared workspace. Invite teammates, collaborate on the same collections.',
                                                 icon: Users
                                             }
                                         ].map((option) => {

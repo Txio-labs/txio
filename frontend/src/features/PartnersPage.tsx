@@ -76,12 +76,12 @@ export const PartnersPage: React.FC<
     }, [embedded]);
 
     const partners = [
-        { name: 'Mysten Labs', role: 'Infrastructure Partner', desc: 'Core contributors to the Sui network, collaborating on high-throughput RPC infrastructure.', logo: <Blocks size={40} /> },
-        { name: 'Jump Crypto', role: 'Validation Strategy', desc: 'Strategic alliance focused on validator performance and MEV optimization frameworks.', logo: <Cpu size={40} /> },
-        { name: 'Coinbase Cloud', role: 'Custody Integration', desc: 'Deep integration with institutional-grade custody and staking solutions.', logo: <Database size={40} /> },
-        { name: 'Circle', role: 'Liquidity Layer', desc: 'Working together to provide seamless stablecoin settlement for multi-chain dApps.', logo: <Globe size={40} /> },
-        { name: 'Alchemy', role: 'Node Operations', desc: 'Expanding the global reach of our edge node network through combined infrastructure.', logo: <Zap size={40} /> },
-        { name: 'Chainlink', role: 'Oracle Framework', desc: 'Integrating industry-leading oracle services directly into the Txio development environment.', logo: <Star size={40} /> }
+        { name: 'Mysten Labs', role: 'Infrastructure', desc: 'The team building Sui. We work with them on high-throughput RPC infrastructure.', logo: <Blocks size={40} /> },
+        { name: 'Jump Crypto', role: 'Validation', desc: 'Joint work on validator performance and MEV-aware tooling.', logo: <Cpu size={40} /> },
+        { name: 'Coinbase Cloud', role: 'Custody', desc: 'Institutional custody and staking, wired directly into the workspace.', logo: <Database size={40} /> },
+        { name: 'Circle', role: 'Liquidity', desc: 'Stablecoin settlement for multi-chain dApps, without the usual bridging headaches.', logo: <Globe size={40} /> },
+        { name: 'Alchemy', role: 'Node ops', desc: 'Extra edge nodes, extra coverage. Their global footprint plus ours.', logo: <Zap size={40} /> },
+        { name: 'Chainlink', role: 'Oracles', desc: 'Oracle feeds plugged straight into txio — no separate integration step.', logo: <Star size={40} /> }
     ];
 
     return (
@@ -133,14 +133,14 @@ export const PartnersPage: React.FC<
                     >
                         <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-white/[0.03] border border-white/10">
                             <Handshake size={16} className="text-electric-violet" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Strategic Alliance Network</span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Who we work with</span>
                         </div>
                         <h1 className="text-6xl md:text-8xl font-black tracking-tight leading-tight">
                             Stronger <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet via-soft-purple to-indigo-400">Together.</span>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet via-soft-purple to-indigo-400">together.</span>
                         </h1>
                         <p className="text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed font-medium">
-                            We partner with the world's leading foundations, laboratories, and protocols to build a more robust and interconnected decentralized ecosystem.
+                            We work alongside the foundations, labs, and protocols already doing the heavy lifting — so you don't have to integrate them yourself.
                         </p>
                     </motion.div>
 
@@ -172,7 +172,7 @@ export const PartnersPage: React.FC<
 
                     {/* Joint Efforts Section */}
                     <div className="mt-40 text-center">
-                        <h2 className="text-3xl font-black mb-12">Global Collaboration</h2>
+                        <h2 className="text-3xl font-black mb-12">And a few others.</h2>
                         <div className="flex flex-wrap justify-center gap-x-20 gap-y-10 opacity-30 grayscale hover:grayscale-0 transition-all duration-700">
                              {/* Small Logo Grid placeholder text for "Elite Teams" */}
                              {['Foundation', 'Venture', 'Protocol', 'Infrastructure', 'Security'].map(label => (

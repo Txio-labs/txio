@@ -7,6 +7,20 @@ import { apiService, CommandExecutionResponse } from '@/services/api';
 
 const POLL_INTERVAL_MS = 500;
 
+const TERMINAL_HEIGHT_STORAGE_KEY = 'txio_terminal_height';
+const DEFAULT_TERMINAL_HEIGHT = 256;
+const MIN_TERMINAL_HEIGHT = 120;
+const MAX_TERMINAL_HEIGHT_INSET = 120; // px of viewport to leave above the terminal
+
+const getInitialTerminalHeight = (): number => {
+    if (typeof window === 'undefined') return DEFAULT_TERMINAL_HEIGHT;
+    const stored = window.localStorage.getItem(TERMINAL_HEIGHT_STORAGE_KEY);
+    if (!stored) return DEFAULT_TERMINAL_HEIGHT;
+    const parsed = Number.parseInt(stored, 10);
+    if (!Number.isFinite(parsed) || parsed < MIN_TERMINAL_HEIGHT) return DEFAULT_TERMINAL_HEIGHT;
+    return parsed;
+};
+
 export const TerminalPanel: React.FC = () => {
     const { activityLogs, isTerminalOpen } = useAppStore();
     const [input, setInput] = useState('');
@@ -15,10 +29,46 @@ export const TerminalPanel: React.FC = () => {
     const [pendingExecutionId, setPendingExecutionId] = useState<string | null>(null);
     const [isCancelling, setIsCancelling] = useState(false);
     const [showErrorsOnly, setShowErrorsOnly] = useState(false);
+    const [terminalHeight, setTerminalHeight] = useState<number>(getInitialTerminalHeight);
+    const [isDragging, setIsDragging] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const executionIdRef = useRef<string | null>(null);
     const isMountedRef = useRef(true);
+    const dragStartRef = useRef<{ startY: number; startHeight: number } | null>(null);
+
+    const handleResizeStart = (e: React.PointerEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragStartRef.current = { startY: e.clientY, startHeight: terminalHeight };
+        setIsDragging(true);
+        e.currentTarget.setPointerCapture(e.pointerId);
+    };
+
+    const handleResizeMove = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (!dragStartRef.current) return;
+        const delta = dragStartRef.current.startY - e.clientY;
+        const maxHeight = Math.max(MIN_TERMINAL_HEIGHT, window.innerHeight - MAX_TERMINAL_HEIGHT_INSET);
+        const next = Math.max(
+            MIN_TERMINAL_HEIGHT,
+            Math.min(dragStartRef.current.startHeight + delta, maxHeight),
+        );
+        setTerminalHeight(next);
+    };
+
+    const handleResizeEnd = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (!dragStartRef.current) return;
+        dragStartRef.current = null;
+        setIsDragging(false);
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+            e.currentTarget.releasePointerCapture(e.pointerId);
+        }
+        try {
+            window.localStorage.setItem(TERMINAL_HEIGHT_STORAGE_KEY, String(terminalHeight));
+        } catch {
+            // ignore quota errors
+        }
+    };
 
     const focusInput = () => {
         if (!isExecuting) {
@@ -370,28 +420,52 @@ export const TerminalPanel: React.FC = () => {
     return (
         <AnimatePresence>
             {isTerminalOpen && (
-                <motion.div 
+                <motion.div
                     initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 256, opacity: 1 }}
+                    animate={{ height: terminalHeight, opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                    transition={
+                        isDragging
+                            ? { type: 'tween', duration: 0 }
+                            : { type: 'spring', damping: 25, stiffness: 200 }
+                    }
                     onClick={focusInput}
-                    className="bg-near-black border-t border-white/10 flex flex-col font-mono text-xs shadow-2xl relative z-40 overflow-hidden"
+                    className="bg-near-black border-t border-white/[0.06] flex flex-col font-mono text-xs shadow-2xl relative z-40 overflow-hidden"
                 >
+                    {/* Resize handle */}
+                    <div
+                        onPointerDown={handleResizeStart}
+                        onPointerMove={handleResizeMove}
+                        onPointerUp={handleResizeEnd}
+                        onPointerCancel={handleResizeEnd}
+                        onClick={(e) => e.stopPropagation()}
+                        role="separator"
+                        aria-orientation="horizontal"
+                        aria-label="Resize terminal"
+                        className={`shrink-0 h-1.5 cursor-row-resize flex items-center justify-center group transition-colors ${
+                            isDragging ? 'bg-electric-violet/40' : 'hover:bg-electric-violet/20'
+                        }`}
+                    >
+                        <div
+                            className={`h-0.5 rounded-full transition-all duration-200 ${
+                                isDragging
+                                    ? 'w-20 bg-electric-violet'
+                                    : 'w-10 bg-white/[0.08] group-hover:w-16 group-hover:bg-electric-violet/60'
+                            }`}
+                        />
+                    </div>
+
                     {/* Terminal Header */}
-                    <div className="flex items-center justify-between px-4 py-2 border-b border-white/5 bg-near-black/50 select-none">
-                        <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2 text-slate-400">
-                                <Terminal size={14} className="text-electric-violet" />
-                                <span className="font-bold uppercase tracking-widest text-[10px]">txio-terminal</span>
+                    <div className="flex items-center justify-between px-3 py-1.5 border-b border-white/[0.06] bg-dark-indigo-glow select-none">
+                        <div className="flex items-center gap-2.5 font-sans">
+                            <div className="flex items-center gap-1.5 text-slate-300">
+                                <Terminal size={12} className="text-electric-violet" />
+                                <span className="text-[11px] font-medium tracking-tight">Terminal</span>
                             </div>
-                            <div className="h-3 w-px bg-white/10"></div>
-                            <div className="flex items-center gap-2 text-slate-600">
-                                <Command size={12} />
-                                <span>bash</span>
-                            </div>
-                            <div className="h-3 w-px bg-white/10"></div>
-                            <div className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest ${
+                            <div className="h-3 w-px bg-white/[0.08]"></div>
+                            <span className="text-[11px] text-slate-500 font-mono">bash</span>
+                            <div className="h-3 w-px bg-white/[0.08]"></div>
+                            <div className={`flex items-center gap-1.5 text-[11px] font-medium ${
                                 isCancelling
                                     ? 'text-amber-300'
                                     : isExecuting
@@ -414,30 +488,30 @@ export const TerminalPanel: React.FC = () => {
                                 </span>
                             </div>
                         </div>
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1">
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setShowErrorsOnly((current) => !current);
                                 }}
-                                className={`transition-colors ${
+                                className={`p-1.5 rounded-md transition-colors ${
                                     showErrorsOnly
-                                        ? 'text-electric-violet'
-                                        : 'text-slate-500 hover:text-white'
+                                        ? 'text-electric-violet bg-electric-violet/[0.08]'
+                                        : 'text-slate-500 hover:text-slate-200 hover:bg-white/[0.05]'
                                 }`}
                                 title={showErrorsOnly ? 'Show all logs' : 'Show only errors'}
                             >
-                                <Filter size={14} />
+                                <Filter size={13} />
                             </button>
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     clearLogs();
                                 }}
-                                className="text-slate-500 hover:text-white transition-colors"
+                                className="p-1.5 rounded-md text-slate-500 hover:text-slate-200 hover:bg-white/[0.05] transition-colors"
                                 title="Clear console"
                             >
-                                <Trash2 size={14} />
+                                <Trash2 size={13} />
                             </button>
                             {isExecuting && (
                                 <button
@@ -446,20 +520,21 @@ export const TerminalPanel: React.FC = () => {
                                         void cancelExecution();
                                     }}
                                     disabled={isCancelling}
-                                    className="text-amber-400 hover:text-amber-300 transition-colors"
+                                    className="p-1.5 rounded-md text-amber-400 hover:text-amber-300 hover:bg-amber-400/10 transition-colors"
                                     title={`Cancel ${pendingCommand || 'command'}`}
                                 >
-                                    <Square size={12} fill="currentColor" />
+                                    <Square size={11} fill="currentColor" />
                                 </button>
                             )}
-                            <button 
+                            <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     appStore.toggleTerminal();
                                 }}
-                                className="text-slate-500 hover:text-white transition-colors"
+                                className="p-1.5 rounded-md text-slate-500 hover:text-slate-200 hover:bg-white/[0.05] transition-colors"
+                                aria-label="Close terminal"
                             >
-                                <X size={14} />
+                                <X size={13} />
                             </button>
                         </div>
                     </div>
@@ -469,14 +544,9 @@ export const TerminalPanel: React.FC = () => {
                         ref={scrollRef}
                         className="flex-1 overflow-y-auto p-4 space-y-1.5 custom-scrollbar bg-near-black"
                     >
-                        {visibleLogs.map((log) => (
-                            <motion.div 
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                key={log.id} 
-                                className="flex gap-3 group"
-                            >
-                                <span className="text-slate-600 shrink-0">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
+                        {visibleLogs.map((log) => {
+                            const isMultiline = log.action.includes('\n');
+                            const typeBadge = (
                                 <span className={`shrink-0 px-1.5 rounded-[2px] font-bold text-[9px] uppercase ${
                                     log.type === 'request' ? 'text-emerald-400 bg-emerald-400/5' :
                                     log.type === 'team' ? 'text-blue-400 bg-blue-400/5' :
@@ -485,14 +555,50 @@ export const TerminalPanel: React.FC = () => {
                                 }`}>
                                     {log.type}
                                 </span>
-                                <span className="text-slate-300">
-                                    <span className="text-slate-500 font-bold">{log.userName}</span>
-                                    <span className="mx-2 text-slate-600">→</span>
-                                    <span className="text-white/90 whitespace-pre-wrap break-words">{log.action}</span>
-                                    {log.target && <span className="ml-2 text-electric-violet/60 italic">({log.target})</span>}
-                                </span>
-                            </motion.div>
-                        ))}
+                            );
+                            const timestamp = (
+                                <span className="text-slate-600 shrink-0">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
+                            );
+
+                            if (isMultiline) {
+                                return (
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        key={log.id}
+                                        className="flex flex-col gap-1 group"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            {timestamp}
+                                            {typeBadge}
+                                            <span className="text-slate-500 font-bold">{log.userName}</span>
+                                            {log.target && <span className="text-electric-violet/60 italic text-[10px]">({log.target})</span>}
+                                        </div>
+                                        <pre className="text-white/90 whitespace-pre-wrap break-words ml-4 border-l border-white/5 pl-3">
+                                            {log.action}
+                                        </pre>
+                                    </motion.div>
+                                );
+                            }
+
+                            return (
+                                <motion.div
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    key={log.id}
+                                    className="flex gap-3 group"
+                                >
+                                    {timestamp}
+                                    {typeBadge}
+                                    <span className="text-slate-300">
+                                        <span className="text-slate-500 font-bold">{log.userName}</span>
+                                        <span className="mx-2 text-slate-600">→</span>
+                                        <span className="text-white/90 whitespace-pre-wrap break-words">{log.action}</span>
+                                        {log.target && <span className="ml-2 text-electric-violet/60 italic">({log.target})</span>}
+                                    </span>
+                                </motion.div>
+                            );
+                        })}
                         
                         {/* Prompt */}
                         <div className="flex items-center gap-2 pt-2">
@@ -516,7 +622,7 @@ export const TerminalPanel: React.FC = () => {
                     </div>
 
                     {/* Subtle bottom glow */}
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-electric-violet/20 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-electric-violet/30 to-transparent"></div>
                 </motion.div>
             )}
         </AnimatePresence>

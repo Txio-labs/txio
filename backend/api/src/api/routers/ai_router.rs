@@ -6,3 +6,8 @@ pub fn router(service: AiService) -> Router {
         .route("/chat", post(ai_handler::chat))
         .with_state(service)
 }
+
+pub fn router() -> Router {
+    Router::new()
+        .route("/health", post("Welcome to txio"))
+}

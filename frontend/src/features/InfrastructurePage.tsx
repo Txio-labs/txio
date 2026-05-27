@@ -76,10 +76,10 @@ export const InfrastructurePage: React.FC<
     }, [embedded]);
 
     const tiers = [
-        { name: 'Edge Nodes', desc: 'Global distributed network of high-frequency nodes for minimal latency.', icon: <Activity size={24} />, color: 'emerald' },
-        { name: 'Compute Grid', desc: 'Parallel execution engine designed for massive smart contract simulations.', icon: <Cpu size={24} />, color: 'electric-violet' },
-        { name: 'Vault Layer', desc: 'FIPS 140-2 Level 3 HSM-backed security for all sensitive workloads.', icon: <Shield size={24} />, color: 'sky' },
-        { name: 'Storage Fabric', desc: 'Decentralized data availability layer for persistent state tracking.', icon: <Database size={24} />, color: 'amber' }
+        { name: 'Edge nodes', desc: 'A distributed mesh of fullnodes close to wherever you are. Less hop, less wait.', icon: <Activity size={24} />, color: 'emerald' },
+        { name: 'Compute grid', desc: 'Parallel execution for the big simulations — burn-down tests, complex PTBs, you name it.', icon: <Cpu size={24} />, color: 'electric-violet' },
+        { name: 'Vault layer', desc: 'HSM-backed key storage (FIPS 140-2 Level 3). For when "in a .env file" isn\'t cutting it.', icon: <Shield size={24} />, color: 'sky' },
+        { name: 'Storage fabric', desc: 'Decentralized data availability for state you actually need to keep around.', icon: <Database size={24} />, color: 'amber' }
     ];
 
     return (
@@ -131,13 +131,11 @@ export const InfrastructurePage: React.FC<
                             className="space-y-8 infra-title"
                         >
                             <h1 className="text-6xl md:text-8xl font-black tracking-tight leading-[0.9]">
-                                High <br />
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-electric-violet">Performance</span> <br />
-                                Core.
+                                Fast where <br />
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-electric-violet">it counts.</span>
                             </h1>
                             <p className="text-xl text-slate-400 leading-relaxed">
-                                Our infrastructure is engineered for professional teams who require sub-millisecond reliability and enterprise-grade security. 
-                                We don't just provide access; we provide the backbone for your success.
+                                Sub-millisecond reads, key material that never leaves the HSM, and uptime you can actually run a business on. The backbone, not the bottleneck.
                             </p>
                         </motion.div>
 
@@ -169,9 +167,9 @@ export const InfrastructurePage: React.FC<
                     }`}>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
                             {[
-                                { label: 'Global Uptime', value: '99.999%', sub: '24/7 Monitoring' },
-                                { label: 'Network Latency', value: '< 20ms', sub: 'Global Average' },
-                                { label: 'Peak Capacity', value: '1.5M/s', sub: 'Requests Per Second' }
+                                { label: 'Uptime', value: '99.999%', sub: 'Monitored around the clock' },
+                                { label: 'Latency', value: '< 20ms', sub: 'Global average' },
+                                { label: 'Peak load', value: '1.5M/s', sub: 'Requests per second' }
                             ].map((stat, i) => (
                                 <div key={i} className="space-y-4 stat-item">
                                     <div className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-500">{stat.label}</div>

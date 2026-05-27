@@ -70,43 +70,48 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   };
 
   const TabButton = ({ id, icon: Icon, label }: { id: typeof activeTab, icon: any, label: string }) => (
-    <button 
+    <button
       onClick={() => setActiveTab(id)}
-      className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition-all relative ${
-        activeTab === id 
-        ? 'text-electric-violet' 
-        : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+      className={`flex-1 flex flex-col items-center justify-center py-2 gap-1 transition-colors relative ${
+        activeTab === id
+        ? 'text-electric-violet'
+        : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.03]'
       }`}
       title={label}
     >
-      <Icon size={16} strokeWidth={activeTab === id ? 2.5 : 2} />
+      <Icon size={15} strokeWidth={activeTab === id ? 2.25 : 1.75} />
+      <span className="text-[10px] font-medium">{label}</span>
       {activeTab === id && (
-        <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-electric-violet shadow-[0_0_8px_currentColor]"></span>
+        <span className="absolute bottom-0 left-0 right-0 h-px bg-electric-violet"></span>
       )}
     </button>
   );
 
   return (
-    <div className="w-80 bg-near-black border-l border-white/10 flex flex-col h-full font-sans shadow-2xl relative z-30">
+    <div className="w-80 bg-near-black border-l border-white/[0.06] flex flex-col h-full font-sans relative z-30">
       {/* Header */}
-      <div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-white/10 bg-near-black">
+      <div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-white/[0.06] bg-dark-indigo-glow">
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Inspector</span>
-          <div className={`px-1.5 py-0.5 rounded text-[9px] font-bold border uppercase tracking-wider ${
-            network === 'mainnet' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-            network === 'testnet' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-            'bg-blue-500/10 text-blue-400 border-blue-500/20'
+          <span className="text-[11px] font-semibold text-slate-300 tracking-tight">Inspector</span>
+          <div className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
+            network === 'mainnet' ? 'bg-emerald-500/[0.12] text-emerald-400' :
+            network === 'testnet' ? 'bg-amber-500/[0.12] text-amber-400' :
+            'bg-blue-500/[0.12] text-blue-400'
           }`}>
             {network}
           </div>
         </div>
-        <button onClick={onClose} className="p-1 text-slate-500 hover:text-white rounded hover:bg-white/10 transition-colors">
-          <X size={14} />
+        <button
+          onClick={onClose}
+          className="p-1 text-slate-500 hover:text-slate-200 rounded hover:bg-white/[0.05] transition-colors"
+          aria-label="Close inspector"
+        >
+          <X size={13} />
         </button>
       </div>
 
       {/* Navigation */}
-      <div className="shrink-0 flex border-b border-white/10 bg-near-black">
+      <div className="shrink-0 flex border-b border-white/[0.06] bg-near-black">
         <TabButton id="wallet" icon={Wallet} label="Wallet" />
         <TabButton id="objects" icon={Box} label="Objects" />
         <TabButton id="analysis" icon={BrainCircuit} label="Analysis" />

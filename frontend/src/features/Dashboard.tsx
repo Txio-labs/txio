@@ -133,14 +133,14 @@ export const Dashboard: React.FC = () => {
                             className="flex items-center gap-2 mb-4"
                         >
                             <div className="h-0.5 w-16 bg-gradient-to-r from-electric-violet to-transparent rounded-full"></div>
-                            <span className="text-[11px] font-bold uppercase tracking-[0.4em] text-electric-violet drop-shadow-[0_0_5px_rgba(123,63,242,0.5)]">System Active</span>
+                            <span className="text-[11px] font-bold uppercase tracking-[0.4em] text-electric-violet drop-shadow-[0_0_5px_rgba(123,63,242,0.5)]">All systems good</span>
                         </motion.div>
                         <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tighter leading-tight">
-                            The future of <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-soft-purple/50">Web3 Infrastructure.</span>
+                            Good to see <br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-soft-purple/50">you again.</span>
                         </h1>
                         <p className="text-slate-400 mt-6 max-w-xl text-base md:text-lg leading-relaxed font-medium">
-                            Experience a high-performance workspace designed for elite protocol engineers. Built for speed, precision, and security across all chains.
+                            Your workspace is right where you left it. Open a tab, run a request, build something good.
                         </p>
                     </div>
                     <div className="flex flex-col items-center gap-6 group">

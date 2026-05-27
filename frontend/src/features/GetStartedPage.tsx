@@ -33,7 +33,7 @@ export const GetStartedPage: React.FC = () => {
         } catch (error) {
             console.error(error);
             appStore.showToast(
-                'Signup failed. Please try again.',
+                "Signup didn't go through. Try again?",
                 'error'
             );
         } finally {
@@ -84,11 +84,11 @@ export const GetStartedPage: React.FC = () => {
 
                     <div className="space-y-6">
                         <h1 className="text-6xl font-bold tracking-tight text-white leading-[1.1]">
-                            The standard for <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet to-soft-purple">Protocol Engineering.</span>
+                            One signup. <br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet to-soft-purple">Every chain.</span>
                         </h1>
                         <p className="text-lg text-slate-400 max-w-md leading-relaxed">
-                            Join the elite circle of infrastructure builders. Scale your chain with txio's advanced toolkit.
+                            You're a few fields away from a working multi-chain workspace. No card, no upgrade pitch.
                         </p>
                     </div>
                 </div>
@@ -132,8 +132,8 @@ export const GetStartedPage: React.FC = () => {
                         <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-electric-violet/10 mb-6">
                             <Sparkles className="text-electric-violet" size={32} />
                         </div>
-                        <h2 className="text-3xl font-bold tracking-tight mb-2">Get Started</h2>
-                        <p className="text-sm text-slate-500">Create your txio account to begin building.</p>
+                        <h2 className="text-3xl font-bold tracking-tight mb-2">Let's get you set up</h2>
+                        <p className="text-sm text-slate-500">Takes about thirty seconds.</p>
                     </div>
 
                     <form onSubmit={handleSignup} className="space-y-4">

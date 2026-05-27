@@ -124,16 +124,16 @@ export const LandingPage: React.FC = () => {
                 >
                     <motion.div variants={itemVariants} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-md">
                         <Sparkles size={16} className="text-electric-violet" />
-                        <span className="text-[11px] font-bold uppercase tracking-widest text-slate-300">Universal Web3 Infrastructure</span>
+                        <span className="text-[11px] font-bold uppercase tracking-widest text-slate-300">One terminal. Every chain.</span>
                     </motion.div>
-                    
+
                     <motion.h1 variants={itemVariants} className="text-6xl md:text-8xl font-bold tracking-tighter leading-[0.9] mb-8">
-                        The Operating <br /> System for <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-soft-purple/50">Next-Gen Chains.</span>
+                        Stop juggling <br /> chains. <br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-soft-purple/50">Just ship.</span>
                     </motion.h1>
 
                     <motion.p variants={itemVariants} className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed">
-                        Execute, debug, and monitor smart contracts across all major ecosystems. Built for elite protocol engineers who demand speed and precision.
+                        Execute, debug, and trace smart contracts across every major chain — without keeping six tabs of docs open. One CLI, one dashboard, one workflow.
                     </motion.p>
 
                     <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-6">
@@ -142,7 +142,7 @@ export const LandingPage: React.FC = () => {
                             className="group relative px-10 py-5 bg-white text-near-black rounded-2xl font-bold text-lg hover:bg-electric-violet hover:text-white transition-all duration-500 hover:shadow-[0_0_50px_rgba(123,63,242,0.4)] active:scale-95"
                         >
                             <span className="flex items-center gap-3">
-                                Start Building Now
+                                Start Building
                                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                             </span>
                         </button>
@@ -251,18 +251,18 @@ export const LandingPage: React.FC = () => {
             {/* Features Grid */}
             <section id="features" className="py-32 px-6 md:px-12 max-w-7xl mx-auto relative">
                 <div className="text-center mb-24">
-                    <h2 className="text-sm font-bold text-electric-violet uppercase tracking-[0.4em] mb-4">Engineering First</h2>
-                    <h3 className="text-4xl md:text-5xl font-bold tracking-tight">Built for elite protocol teams.</h3>
+                    <h2 className="text-sm font-bold text-electric-violet uppercase tracking-[0.4em] mb-4">Made for engineers</h2>
+                    <h3 className="text-4xl md:text-5xl font-bold tracking-tight">What you actually need.</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {[
-                        { title: 'Multi-Chain Engine', desc: 'Interact with any JSON-RPC compatible blockchain through a unified interface.', icon: Globe },
-                        { title: 'TX Visualizer', desc: 'Compose and simulate complex transaction blocks with real-time dependency tracking.', icon: Layers },
-                        { title: 'Secure Workspace', desc: 'Enterprise-grade environment management for sensitive API keys and secrets.', icon: Shield },
-                        { title: 'Live Performance', desc: 'High-frequency data streaming for sub-millisecond network latency tracking.', icon: Zap },
-                        { title: 'AI-Powered Flow', desc: 'Intelligent error explanation and automated smart contract auditing.', icon: Cpu },
-                        { title: 'Dev-First CLI', desc: 'Integrated terminal experience that bridges the gap between web and shell.', icon: Terminal }
+                        { title: 'Every chain, one interface', desc: 'Hit any JSON-RPC chain from one place. No SDK roulette, no copy-pasting between tabs.', icon: Globe },
+                        { title: 'Transactions, visualized', desc: 'Compose transactions and watch dependencies resolve before you sign. Simulate first, send second.', icon: Layers },
+                        { title: 'Secrets stay secret', desc: 'API keys and signing keys live in a vault — not your dotfiles, not your git history.', icon: Shield },
+                        { title: 'Real-time everything', desc: 'Sub-millisecond latency tracking, streamed live. Watch the network breathe.', icon: Zap },
+                        { title: 'AI that actually helps', desc: 'Plain-English error explanations and contract audits. The kind you wish Stack Overflow gave you.', icon: Cpu },
+                        { title: 'A terminal that talks back', desc: 'Web and shell, same workflow. Run a command, see the result in either place.', icon: Terminal }
                     ].map((feature, i) => (
                         <motion.div 
                             key={i}
@@ -288,7 +288,7 @@ export const LandingPage: React.FC = () => {
                             <span className="text-xl font-bold tracking-tighter">txio</span>
                         </div>
                         <p className="text-slate-500 text-sm leading-relaxed">
-                            Empowering the next generation of blockchain infrastructure engineers.
+                            Tools for the people building the chains.
                         </p>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-16">

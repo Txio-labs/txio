@@ -1,129 +1,160 @@
+# txio Frontend
 
-# txio
+The web app. An API client and visual transaction builder for Sui — Postman's familiar shape, with Web3 wired in. Move calls, PTBs, name resolution, all of it.
 
-txio is a professional-grade API client and visual transaction builder tailored specifically for the Sui blockchain. It combines the familiarity of Web2 API tools (like Postman) with Web3-specific features for Move smart contract development.
+---
 
-## 1. Core Navigation & Layout
+## 1. Layout & navigation
 
 ### Header
-- **Sidebar Toggle**: Collapses/expands the left navigation sidebar.
-- **Network Switcher**: Located in the top right. Allows switching between `Mainnet`, `Testnet`, and `Devnet`. It simulates a connection handshake (Syncing -> Handshake -> Registry Update) and displays real-time health status (Green/Orange/Red) based on simulated RPC latency.
-- **Active Wallet**: Displays the currently active keypair alias.
-- **User Profile**: Access to account settings, API keys, and logout functionality.
+- **Sidebar toggle** — collapse or expand the left nav.
+- **Network switcher** (top right) — flip between Mainnet, Testnet, and Devnet. Runs a handshake (Syncing → Handshake → Registry Update) and shows health as a colored dot based on simulated RPC latency.
+- **Active wallet** — current keypair alias, right there in the chrome.
+- **User profile** — settings, API keys, log out.
 
-### Tabs System
-The application uses a robust tab system similar to modern IDEs.
-- **Dynamic Tabs**: Open multiple Request Builders, PTB Builders, or Tool pages simultaneously.
-- **Tab Management**: 
-  - **Context Menu (Three Dots)**: Located at the end of the tab bar.
-  - **Save Active Tab**: Persists the current tab state.
-  - **Clear All Open Tabs**: Closes all active workspaces.
-  - **Saved Tabs**: Quick access to restore previously saved work.
-  - **Recently Closed**: Restore accidentally closed tabs.
+### Tabs
 
-## 2. Sidebar Modules
+Works like an IDE.
 
-The sidebar offers distinct modes for organizing your workflow:
+- Open as many Request Builders, PTB Builders, or tool pages as you want — side by side.
+- The three-dot menu at the end of the tab bar gives you:
+  - **Save active tab** — persists the current state.
+  - **Clear all open tabs** — closes everything in one shot.
+  - **Saved tabs** — restore your saved work.
+  - **Recently closed** — undo for tabs.
 
-### 📁 Collections
-- **Tree View**: Organizes requests into Collections and Folders.
-- **Management**: 
-  - Create new collections via the "Plus" button.
-  - Expand/Collapse nodes.
-  - **Run Collection**: Execute all requests in a collection sequentially (see Collection Runner).
-- **Shared Collections**: Visual indicator for team-shared resources.
+---
 
-### 🕒 History
-- **Time-Grouped Log**: Automatically groups executed requests into "Recent", "Today", "Yesterday", and "Older".
-- **Filtering**:
-  - **Text Search**: Filter by request name or method.
-  - **Type Filter**: Toggle between `ALL`, `RPC`, `TRANSACTION` (PTB), and `ERROR`.
-- **Status Indicators**: Color-coded dots (Green for 200 OK, Red for Errors).
-- **Replay**: Clicking a history item opens it in a new tab for replay/modification.
+## 2. Sidebar modules
 
-### 📦 Environments (Variables)
-- **Global Variables**: Define key-value pairs (e.g., `PACKAGE_ID`, `ADMIN_CAP`) reusable across the app.
-- **Syntax**: Access variables in any input field using double curly braces: `{{VARIABLE_NAME}}`.
-- **Security**: Toggle visibility of sensitive values.
+### Collections
+Tree view of requests, grouped into collections and folders.
 
-## 3. Request Builders
+- Hit the **+** to create a new collection.
+- Expand/collapse nodes as you'd expect.
+- **Run collection** kicks off every request in order — see the Collection Runner.
+- Shared collections get a visual marker.
 
-### New Request Page
-- **Selection Hub**: Choose between JSON-RPC and Transaction Builder when opening a new tab.
+### History
+Auto-grouped by time: Recent, Today, Yesterday, Older.
 
-### JSON-RPC Builder
-- **Method Selection**: Autocomplete dropdown for common Sui RPC methods.
-- **Parameters**: JSON array input with validation.
-- **Execution**: Simulates a network call, updating the History and Activity Log.
+- **Search** by name or method.
+- **Filter** by type — All, RPC, Transaction (PTB), Error.
+- Color-coded status dots: green for 200 OK, red for failures.
+- Click an entry to replay it in a new tab.
 
-### Transaction Builder (Move Calls)
-- **Configuration Form**:
-  - **Package/Module/Function**: Fields support variable interpolation.
-  - **Type Arguments**: Comma-separated list.
-  - **Arguments**: JSON array for function arguments.
-  - **Gas Budget**: Configurable MIST amount.
-- **Simulation**: "Simulate" button performs a dry-run.
+### Environments
+Key-value pairs you can reach from any input field via `{{VARIABLE_NAME}}`.
 
-### Code Snippet Generator
-- **Real-time Translation**: Automatically converts the visual configuration in the Builder tab into a CLI command.
-- **Formats**: Generates `curl` commands for RPC requests and `sui client call` commands for Transactions.
-- **Variable Resolution**: Automatically resolves `{{ENV_VARS}}` to their actual values.
+- Define things like `PACKAGE_ID` or `ADMIN_CAP` once, use them everywhere.
+- Hide sensitive values when needed.
 
-## 4. Response Panel
-Displays the result of the last execution.
-- **Views**: Toggle between Pretty Print (syntax highlighted JSON) and Raw text.
-- **Metadata Tab**: Shows Gas Breakdown, Finality status, and Transaction Digest.
-- **Events Tab**: Dedicated view for parsed events.
+---
 
-## 5. Visual PTB Builder
-A node-based editor for Programmable Transaction Blocks.
-- **Canvas**: Infinite pannable canvas with dot grid.
-- **Nodes**:
-  - **Object Node**: Represents input coins or objects.
-  - **SplitCoins Node**: Visualizes splitting input logic.
-  - **Transfer Node**: Represents sending assets to an address.
-- **Interaction**: Drag nodes to rearrange the txio.
+## 3. Request builders
 
-## 6. Collection Runner
-Execute a sequence of requests automatically.
-- **Batch Execution**: Run all requests in a collection in order.
-- **Progress Tracking**: real-time progress bar and status completion.
-- **Status Reporting**: Visual pass/fail indicators and timing metrics for each request.
-- **Control**: Start, Pause, and Reset execution.
+### New request
 
-## 7. Inspector Panel (Right Sidebar)
-A multi-functional utility panel that overlays the workspace.
+A selection hub when you open a fresh tab. Pick JSON-RPC or Transaction Builder.
 
-### 👛 Wallet
-- **Active Signer**: Shows current balance, address, and alias.
-- **Actions**: Copy Address, View on Explorer, Refresh Balance.
-- **Keypair Store**: Manage imported local keypairs.
+### JSON-RPC builder
+- Autocomplete for common Sui RPC methods.
+- JSON array params, validated.
+- "Execute" runs the call and updates History and the Activity Log.
 
-### 🧊 Objects (Registry)
-- **Object Scanner**: Fetches owned objects for the active wallet.
-- **Inspector**: Clicking an object reveals its raw JSON structure.
+### Transaction builder (Move calls)
+- **Package / Module / Function** — all support `{{variable}}` interpolation.
+- **Type arguments** — comma-separated.
+- **Arguments** — JSON array.
+- **Gas budget** — in MIST.
+- **Simulate** runs a dry-run before you commit.
 
-### 📝 Activity & Discuss
-- **Audit Log**: Chronological feed of user actions.
-- **Team Chat**: Context-aware comments linked to specific request tabs.
+### Code snippet generator
+Translates whatever you build in the GUI into a CLI command in real time.
+
+- Generates `curl` for RPC calls and `sui client call` for transactions.
+- Resolves `{{ENV_VARS}}` to their real values in the output.
+
+---
+
+## 4. Response panel
+
+Whatever the last call returned.
+
+- Toggle between pretty-printed JSON and raw text.
+- **Metadata** tab — gas breakdown, finality, transaction digest.
+- **Events** tab — parsed events, separated out.
+
+---
+
+## 5. Visual PTB builder
+
+A node-based editor for Programmable Transaction Blocks. Infinite canvas, dot grid, panning.
+
+Nodes:
+- **Object** — input coins or objects.
+- **SplitCoins** — visualize the split logic.
+- **Transfer** — send assets to an address.
+
+Drag to rearrange. Connect to wire up the flow.
+
+---
+
+## 6. Collection runner
+
+Run every request in a collection, in order.
+
+- Live progress bar and status as it runs.
+- Pass/fail per request, with timing.
+- Start, pause, reset.
+
+---
+
+## 7. Inspector (right sidebar)
+
+A floating utility panel over the workspace.
+
+### Wallet
+- Active signer with balance, address, alias.
+- Copy address, view on explorer, refresh balance.
+- Manage imported keypairs.
+
+### Objects
+- Scan owned objects for the active wallet.
+- Click any object to see its raw JSON.
+
+### Activity & discuss
+- Audit log of every action you took.
+- Team chat threaded to specific tabs.
+
+---
 
 ## 8. AI Console
-- **Integration**: Powered by Google Gemini (`gemini-3-pro-preview`).
-- **Natural Language Control**: Chat with the AI to ask questions about Sui.
-- **Function Calling**: The AI can programmatically create new tabs:
-  - `create_rpc_request`: Opens a new RPC tab with method and params pre-filled.
-  - `create_ptb`: Opens a new Transaction Builder.
+
+Powered by Google Gemini (`gemini-3-pro-preview`).
+
+Ask in plain English. The AI can also create tabs for you via function calls:
+- `create_rpc_request` — opens an RPC tab with method and params pre-filled.
+- `create_ptb` — opens a Transaction Builder.
+
+---
 
 ## 9. Recipes
-- **Library**: Access common transaction templates (e.g. Mint NFT, Split Coins, Stake SUI).
-- **One-Click Load**: Quickly instantiate complex transaction patterns.
+
+Templates for common transactions — mint an NFT, split coins, stake SUI. One click to load.
+
+---
 
 ## 10. Dashboard
-The default landing page when no tabs are open.
-- **RPC Health**: Real-time latency charts for RPC endpoints.
-- **Quick Actions**: Shortcuts to create requests or load recipes.
-- **Recent Activity**: Summary of the latest local executions.
+
+What you see when no tabs are open.
+
+- RPC health — live latency charts per endpoint.
+- Quick actions — shortcuts to new requests or recipes.
+- Recent activity — your latest local runs.
+
+---
 
 ## License
 
-This project is open-source and licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+MIT. See [LICENSE](LICENSE).

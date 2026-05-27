@@ -60,12 +60,12 @@ export const EcosystemPage: React.FC<
     }, [embedded]);
 
     const chains = [
-        { name: 'Sui', desc: 'Object-centric L1 for mass adoption.', color: '#38bdf8', tps: '297k', latency: '390ms', status: 'Optimal' },
-        { name: 'Solana', desc: 'High-performance blockchain with parallel execution.', color: '#14f195', tps: '65k', latency: '400ms', status: 'Optimal' },
-        { name: 'Ethereum', desc: 'The foundation of decentralized finance.', color: '#6366f1', tps: '15', latency: '12s', status: 'Congested' },
-        { name: 'Aptos', desc: 'The safe and scalable Move-based L1.', color: '#2dd4bf', tps: '160k', latency: '450ms', status: 'Optimal' },
-        { name: 'Starknet', desc: 'Validity-Rollup scaling for Ethereum.', color: '#ef4444', tps: '1.2k', latency: '1.5s', status: 'Optimal' },
-        { name: 'Arbitrum', desc: 'Optimistic Rollup scaling solution.', color: '#2b58de', tps: '4.5k', latency: '2s', status: 'Optimal' }
+        { name: 'Sui', desc: 'Object-centric L1. Move-native. Fast.', color: '#38bdf8', tps: '297k', latency: '390ms', status: 'Optimal' },
+        { name: 'Solana', desc: 'Parallel execution. Sub-second confirmations.', color: '#14f195', tps: '65k', latency: '400ms', status: 'Optimal' },
+        { name: 'Ethereum', desc: 'Where most of DeFi still lives. Slower, but it works.', color: '#6366f1', tps: '15', latency: '12s', status: 'Congested' },
+        { name: 'Aptos', desc: 'Move-based L1, designed to be upgradeable.', color: '#2dd4bf', tps: '160k', latency: '450ms', status: 'Optimal' },
+        { name: 'Starknet', desc: 'Ethereum L2 with ZK proofs instead of optimistic challenges.', color: '#ef4444', tps: '1.2k', latency: '1.5s', status: 'Optimal' },
+        { name: 'Arbitrum', desc: 'Optimistic rollup. EVM-compatible. Most apps run unchanged.', color: '#2b58de', tps: '4.5k', latency: '2s', status: 'Optimal' }
     ];
 
     const partners = [
@@ -133,19 +133,18 @@ export const EcosystemPage: React.FC<
                     >
                         <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/10 backdrop-blur-md">
                             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Network Status: Operational</span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">All systems operational</span>
                         </div>
-                        
+
                         <h1 className="text-6xl md:text-8xl font-black tracking-tight leading-[0.9] text-white">
-                            Global Chain <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet via-soft-purple to-indigo-400">Infrastructure.</span>
+                            The chains, <br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet via-soft-purple to-indigo-400">all in one place.</span>
                         </h1>
-                        
+
                         <p className={`text-lg md:text-xl max-w-3xl mx-auto leading-relaxed ${
                             theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
                         }`}>
-                            The most advanced integration layer for decentralized networks. 
-                            Build, test, and scale across any protocol through a single, unified development environment.
+                            Build, test, and scale across every major protocol from one environment. Same workflow, every chain.
                         </p>
 
                         <div className="flex items-center justify-center gap-4 pt-4">
@@ -156,7 +155,7 @@ export const EcosystemPage: React.FC<
                                     </div>
                                 ))}
                             </div>
-                            <span className="text-xs font-bold text-slate-500">Trusted by 50+ Global Teams</span>
+                            <span className="text-xs font-bold text-slate-500">50+ teams already shipping on it</span>
                         </div>
                     </motion.div>
                 </div>
@@ -166,8 +165,8 @@ export const EcosystemPage: React.FC<
             <section className="py-24 px-6 md:px-12 max-w-7xl mx-auto">
                 <div className="flex items-end justify-between mb-16 px-4">
                     <div className="space-y-2">
-                        <h2 className="text-3xl font-black tracking-tight">Active Integrations</h2>
-                        <p className="text-slate-500 font-bold text-sm">Real-time connectivity with the world's leading protocols.</p>
+                        <h2 className="text-3xl font-black tracking-tight">Live integrations</h2>
+                        <p className="text-slate-500 font-bold text-sm">Real connections to real chains. Status updates live.</p>
                     </div>
                     <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.02] border border-white/5 text-[10px] font-black uppercase tracking-widest text-slate-500">
                         <div className="w-1.5 h-1.5 rounded-full bg-electric-violet" />
@@ -232,11 +231,11 @@ export const EcosystemPage: React.FC<
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
                     <div className="space-y-10">
                         <div className="space-y-4">
-                            <h2 className="text-5xl font-black tracking-tighter leading-tight">Strategic <br /> Alliance.</h2>
+                            <h2 className="text-5xl font-black tracking-tighter leading-tight">Who we <br /> work with.</h2>
                             <p className={`text-lg leading-relaxed max-w-md ${
                                 theme === 'dark' ? 'text-slate-400 font-medium' : 'text-slate-500'
                             }`}>
-                                We collaborate with core developers and foundations to provide deep, reliable integrations for high-performance builders.
+                                We talk to the core devs and foundations directly. That's how the integrations stay deep instead of skin-deep.
                             </p>
                         </div>
                         
@@ -299,18 +298,18 @@ export const EcosystemPage: React.FC<
                     
                     <div className="relative z-10 space-y-12">
                         <h3 className="text-4xl md:text-7xl font-black tracking-tighter leading-tight">
-                            Build the next <br /> generation of Web3.
+                            Go build <br /> something good.
                         </h3>
                         <div className="flex flex-col md:flex-row justify-center gap-6 items-center">
                             <button className="w-full md:w-auto px-10 py-5 bg-white text-near-black rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all active:scale-95 shadow-2xl">
                                 Request Access
                             </button>
                             <button className="w-full md:w-auto px-10 py-5 bg-near-black/20 text-white border border-white/20 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all">
-                                Documentation
+                                Read the docs
                             </button>
                         </div>
                         <div className="pt-8 text-[10px] font-black uppercase tracking-[0.5em] text-white/40">
-                            txio infrastructure network • v2.4.0
+                            txio • v2.4.0
                         </div>
                     </div>
                 </motion.div>
@@ -323,7 +322,7 @@ export const EcosystemPage: React.FC<
                             <span className="text-xl font-black tracking-tighter">txio</span>
                         </div>
                         <p className="text-slate-500 text-sm leading-relaxed font-medium">
-                            Universal infrastructure for the next generation of blockchain engineers.
+                            Tools for the people building the chains.
                         </p>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-16">

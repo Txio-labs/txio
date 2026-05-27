@@ -36,65 +36,65 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
   };
 
   return (
-    <div className="px-4 py-5 flex flex-col justify-center border-b border-white/5 shrink-0 relative z-30 bg-near-black/50 backdrop-blur-md">
-      <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 px-1">Workspace</div>
-      
-      <button 
-        onClick={onToggleDropdown} 
-        className="group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[1.15rem] border border-white/8 bg-white/[0.02] px-3 py-3 text-left transition-all hover:border-electric-violet/20 hover:bg-white/[0.035] active:scale-[0.98]"
+    <div className="px-3 py-3 flex flex-col justify-center border-b border-white/[0.06] shrink-0 relative z-30 bg-near-black">
+      <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1.5 px-1">Workspace</div>
+
+      <button
+        onClick={onToggleDropdown}
+        className="group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] px-2.5 py-2 text-left transition-colors hover:border-electric-violet/30 hover:bg-white/[0.04]"
       >
-        <div className="flex min-w-0 items-start gap-3">
-          <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-electric-violet shadow-[0_0_8px_rgba(123,63,242,0.6)]" />
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-electric-violet shadow-[0_0_6px_rgba(123,63,242,0.6)]" />
 
           <div className="min-w-0 flex-1">
             <div
               title={currentWorkspace.name}
-              className="truncate text-sm font-bold tracking-tight text-white transition-colors group-hover:text-electric-violet"
+              className="truncate text-sm font-semibold tracking-tight text-white transition-colors group-hover:text-electric-violet"
             >
               {currentWorkspace.name}
             </div>
 
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.22em] ${
+            <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px]">
+              <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
                 currentWorkspace.type === 'Personal'
-                  ? 'border-white/10 bg-white/[0.03] text-slate-400'
-                  : 'border-electric-violet/30 bg-electric-violet/10 text-electric-violet'
+                  ? 'bg-white/[0.04] text-slate-400'
+                  : 'bg-electric-violet/[0.12] text-electric-violet'
               }`}>
                 {currentWorkspace.type}
               </span>
 
-              <span className="truncate text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+              <span className="truncate text-[11px] text-slate-500">
                 {workspaceCountLabel}
               </span>
             </div>
           </div>
         </div>
 
-        <ChevronDown size={14} className={`mt-0.5 shrink-0 text-slate-500 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown size={14} className={`shrink-0 text-slate-500 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isDropdownOpen && (
-        <div className="absolute top-[calc(100%-8px)] left-3 right-3 bg-[#0a0a0c] border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 backdrop-blur-xl">
-          <div className="p-2 max-h-64 overflow-y-auto custom-scrollbar space-y-1">
+        <div className="absolute top-[calc(100%-4px)] left-3 right-3 bg-[#0a0a0c] border border-white/[0.09] rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="p-1.5 max-h-64 overflow-y-auto custom-scrollbar space-y-0.5">
             {workspaces.map(ws => (
               <button
                 key={ws.id}
                 onClick={() => { onSwitchWorkspace(ws); onToggleDropdown(); }}
-                className={`grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all ${
-                  ws.id === currentWorkspace.id 
-                  ? 'bg-electric-violet/10 text-white' 
-                  : 'text-slate-400 hover:bg-white/[0.05] hover:text-white'
+                className={`grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors ${
+                  ws.id === currentWorkspace.id
+                  ? 'bg-electric-violet/[0.1] text-white'
+                  : 'text-slate-400 hover:bg-white/[0.04] hover:text-white'
                 }`}
               >
                 <div className="min-w-0">
-                  <div className="truncate text-xs font-bold">
+                  <div className="truncate text-sm font-medium">
                     {ws.name}
                   </div>
-                  <div className="mt-1">
-                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.22em] ${
+                  <div className="mt-0.5">
+                    <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
                       ws.type === 'Personal'
-                        ? 'border-white/10 text-slate-500'
-                        : 'border-electric-violet/30 bg-electric-violet/10 text-electric-violet'
+                        ? 'bg-white/[0.04] text-slate-500'
+                        : 'bg-electric-violet/[0.12] text-electric-violet'
                     }`}>
                       {ws.type}
                     </span>
@@ -105,14 +105,14 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
               </button>
             ))}
           </div>
-          
-          <div className="p-2 bg-white/[0.02] border-t border-white/5">
+
+          <div className="p-1.5 bg-white/[0.02] border-t border-white/[0.06]">
             {isCreatingWorkspace ? (
-              <div className="px-1 flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <input
                   autoFocus
-                  className="flex-1 bg-black border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:border-electric-violet/50 outline-none placeholder:text-slate-600 transition-all"
-                  placeholder="Workspace Name..."
+                  className="flex-1 bg-black border border-white/[0.09] rounded-lg px-2.5 py-1.5 text-sm text-white focus:border-electric-violet/50 outline-none placeholder:text-slate-600 transition-colors"
+                  placeholder="Workspace name…"
                   value={newWsName}
                   onChange={(e) => setNewWsName(e.target.value)}
                   onKeyDown={(e) => {
@@ -120,27 +120,21 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
                     if (e.key === 'Escape') setIsCreatingWorkspace(false);
                   }}
                 />
-                <button 
-                  onClick={handleCreateWorkspace} 
-                  className="p-2 bg-electric-violet hover:bg-soft-purple text-white rounded-xl transition-colors shadow-lg shadow-electric-violet/20"
+                <button
+                  onClick={handleCreateWorkspace}
+                  className="p-1.5 bg-electric-violet hover:bg-soft-purple text-white rounded-lg transition-colors"
+                  aria-label="Create workspace"
                 >
                   <Check size={14} />
                 </button>
               </div>
             ) : (
-              <button 
+              <button
                 onClick={() => setIsCreatingWorkspace(true)}
-                className="w-full flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-400 transition-all hover:bg-white/[0.05] hover:text-white"
+                className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm font-medium text-slate-400 transition-colors hover:bg-white/[0.04] hover:text-white"
               >
-                <span className="flex min-w-0 items-center gap-2">
-                  <Plus size={14} className="shrink-0 text-electric-violet" /> 
-                  <span className="truncate whitespace-nowrap">
-                    Create Workspace
-                  </span>
-                </span>
-                <span className="shrink-0 rounded-full border border-white/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.22em] text-slate-500">
-                  New
-                </span>
+                <Plus size={14} className="shrink-0 text-electric-violet" />
+                <span className="truncate">Create workspace</span>
               </button>
             )}
           </div>

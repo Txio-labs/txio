@@ -1248,7 +1248,7 @@ export const appStore = {
             | 'error' = 'system'
     ) {
         const log: ActivityLog = {
-            id: 'log-' + Date.now(),
+            id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
             type,
             userName:
                 state.user?.name || 'System',

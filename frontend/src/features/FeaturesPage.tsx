@@ -60,22 +60,22 @@ export const FeaturesPage: React.FC<
 
     const mainFeatures = [
         {
-            title: "Universal RPC Builder",
-            desc: "Construct and execute JSON-RPC requests across any supported chain with intelligent autocomplete and real-time schema validation.",
+            title: "RPC Builder",
+            desc: "Write and run JSON-RPC calls on any chain we support. Autocomplete catches the method names, schema validation catches the rest before you hit send.",
             icon: Terminal,
             color: "text-electric-violet",
             bg: "bg-electric-violet/10"
         },
         {
-            title: "Dry-Run Simulation",
-            desc: "Predict gas costs, state changes, and transaction failures before broadcasting to the live network with our proprietary simulation engine.",
+            title: "Dry-run first",
+            desc: "See gas, state changes, and where the transaction would blow up — without spending a cent on the live network.",
             icon: Cpu,
             color: "text-emerald-400",
             bg: "bg-emerald-400/10"
         },
         {
-            title: "Hot-Connection Layer",
-            desc: "Maintain persistent WebSockets to global fullnodes for zero-latency event monitoring and instant block confirmation feedback.",
+            title: "Always-on connections",
+            desc: "Persistent WebSockets to fullnodes around the world. Events stream in, blocks confirm without you refreshing anything.",
             icon: Zap,
             color: "text-amber-400",
             bg: "bg-amber-400/10"
@@ -83,12 +83,12 @@ export const FeaturesPage: React.FC<
     ];
 
     const gridFeatures = [
-        { title: "Object Explorer", desc: "Live inspection of blockchain state and ownership.", icon: Database },
-        { title: "Privacy Proxy", desc: "IP masking and request anonymization for RPC providers.", icon: Lock },
-        { title: "Atomic Batching", desc: "Compose multiple operations into a single transaction.", icon: Layers },
-        { title: "Team Sync", desc: "Collaborate on shared workspaces and request collections.", icon: Share2 },
-        { title: "Real-time Metrics", desc: "Monitor node health and transaction throughput live.", icon: Activity },
-        { title: "Multi-Chain IDE", desc: "Switch between Sui, Solana, and EVM instantly.", icon: Globe }
+        { title: "Object Explorer", desc: "Inspect on-chain state and ownership as it changes.", icon: Database },
+        { title: "Privacy Proxy", desc: "IP masking for the RPC providers that don't need to know who you are.", icon: Lock },
+        { title: "Atomic Batching", desc: "Compose multiple operations into one transaction.", icon: Layers },
+        { title: "Team Sync", desc: "Shared workspaces and collections — your team works on one source of truth.", icon: Share2 },
+        { title: "Live Metrics", desc: "Node health and throughput, updating in real time.", icon: Activity },
+        { title: "Multi-Chain IDE", desc: "Sui, Solana, EVM — one click between them.", icon: Globe }
     ];
 
     return (
@@ -132,16 +132,16 @@ export const FeaturesPage: React.FC<
                         className="space-y-6"
                     >
                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.03] border border-white/10 backdrop-blur-md">
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-electric-violet">Powering Infrastructure</span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-electric-violet">Built for shipping</span>
                             <div className="w-1 h-1 rounded-full bg-slate-700" />
                             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">v2.4.0</span>
                         </div>
                         <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.85] text-white">
-                            Engineered for <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet via-soft-purple to-indigo-400 italic">Precision.</span>
+                            Tools that <br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet via-soft-purple to-indigo-400 italic">don't get in the way.</span>
                         </h1>
                         <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
-                            A unified workspace built specifically for protocol engineers, DevOps, and infrastructure builders.
+                            One workspace for protocol engineers, DevOps, and the infra folks who keep it all running.
                         </p>
                     </motion.div>
                 </div>
@@ -180,8 +180,8 @@ export const FeaturesPage: React.FC<
             <section className="py-32 px-6 bg-[#08080a]">
                 <div className="max-w-7xl mx-auto space-y-20">
                     <div className="text-center space-y-4">
-                        <h2 className="text-4xl md:text-6xl font-black tracking-tighter">Everything you need.</h2>
-                        <p className="text-slate-500 font-bold">The complete toolchain for modern decentralized infrastructure.</p>
+                        <h2 className="text-4xl md:text-6xl font-black tracking-tighter">Everything in one place.</h2>
+                        <p className="text-slate-500 font-bold">No tab juggling. No half-broken tooling. Just the toolchain.</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-16">
@@ -210,13 +210,13 @@ export const FeaturesPage: React.FC<
             <section className="py-40 px-6 max-w-7xl mx-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
                     <div className="space-y-10">
-                        <h2 className="text-5xl font-black tracking-tighter leading-tight">Advanced <br /> Workspaces.</h2>
+                        <h2 className="text-5xl font-black tracking-tighter leading-tight">Workspaces that <br /> get out of the way.</h2>
                         <div className="space-y-6">
                             {[
-                                "Native Move support for Sui and Aptos environments.",
-                                "PDA and Instruction inspection for Solana devs.",
-                                "Custom trace and debug support for EVM chains.",
-                                "Institutional-grade secret management."
+                                "Native Move support for Sui and Aptos.",
+                                "PDA and instruction inspection for Solana.",
+                                "Trace and debug on every EVM chain.",
+                                "Secrets in a vault — not your dotfiles."
                             ].map(t => (
                                 <div key={t} className="flex items-center gap-4 group">
                                     <div className="p-1 rounded-full bg-emerald-500/20 text-emerald-400 group-hover:scale-110 transition-transform">
@@ -258,7 +258,7 @@ export const FeaturesPage: React.FC<
             <footer className="py-32 px-6 border-t border-white/5 text-center space-y-12">
                 <div className="max-w-4xl mx-auto space-y-6">
                     <img src={logoDark.src} alt="txio" className="h-10 w-auto mx-auto" />
-                    <h3 className="text-3xl font-black tracking-tighter">Ready to scale your infrastructure?</h3>
+                    <h3 className="text-3xl font-black tracking-tighter">Ready to ship?</h3>
                     <div className="flex justify-center gap-4">
                         <button onClick={() => navigateTo('app')} className="px-10 py-4 bg-electric-violet text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-soft-purple transition-all shadow-2xl active:scale-95">
                             {embedded ? 'New Request' : 'Get Started Free'}
