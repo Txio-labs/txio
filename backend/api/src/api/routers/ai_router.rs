@@ -7,7 +7,3 @@ pub fn router(service: AiService) -> Router {
         .with_state(service)
 }
 
-pub fn router() -> Router {
-    Router::new()
-        .route("/health", post("Welcome to txio"))
-}
