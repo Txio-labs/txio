@@ -64,8 +64,6 @@ impl UserRepository {
     }
 
     pub async fn update(&self, user: &User) -> Result<User, AppError> {
-        println!("Updating user: {:?}", user);
-
         let object_id = user
             .id
             .clone()
