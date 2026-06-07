@@ -12,7 +12,7 @@ pub enum Network {
 
 #[derive(Parser)]
 #[command(name = "txio")]
-#[command(version = "1.0")]
+#[command(version = env!("CARGO_PKG_VERSION"))]
 #[command(about = "txio: The Universal Multi-Chain Blockchain Terminal", long_about = None)]
 pub struct Cli {
     #[command(subcommand)]
