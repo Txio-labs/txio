@@ -1,10 +1,11 @@
 use crate::api::handlers::auth_handler;
 use crate::services::auth_service::AuthService;
-use axum::{Router, routing::post};
+use axum::{Json, Router, routing::{get, post}};
+use serde_json::json;
 
 pub fn router(service: AuthService) -> Router {
     Router::new()
-        .route("/health", post("Welcome to txio"))
+        .route("/health", get(|| async { Json(json!({ "status": "ok" })) }))
         .route("/register", post(auth_handler::register))
         .route("/login", post(auth_handler::login))
         .route("/request-otp", post(auth_handler::request_otp))
