@@ -203,6 +203,11 @@ pub struct OAuthCallbackQuery {
 
 pub async fn google_login() -> Result<axum::response::Redirect, AppError> {
     let client_id = std::env::var("GOOGLE_CLIENT_ID").unwrap_or_default();
+    if client_id.trim().is_empty() {
+        return Err(AppError::BadRequest(
+            "Google OAuth is not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.".into(),
+        ));
+    }
     let redirect_uri = std::env::var("GOOGLE_REDIRECT_URL")
         .unwrap_or_else(|_| "http://localhost:8000/api/v1/auth/google/callback".to_string());
 
@@ -219,6 +224,11 @@ pub async fn google_callback(
 ) -> Result<axum::response::Redirect, AppError> {
     let client_id = std::env::var("GOOGLE_CLIENT_ID").unwrap_or_default();
     let client_secret = std::env::var("GOOGLE_CLIENT_SECRET").unwrap_or_default();
+    if client_id.trim().is_empty() || client_secret.trim().is_empty() {
+        return Err(AppError::BadRequest(
+            "Google OAuth is not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.".into(),
+        ));
+    }
     let redirect_uri = std::env::var("GOOGLE_REDIRECT_URL")
         .unwrap_or_else(|_| "http://localhost:8000/api/v1/auth/google/callback".to_string());
     let frontend_url =
