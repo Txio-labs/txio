@@ -17,7 +17,7 @@ pub enum AppError {
     #[error("Not found: {0}")]
     NotFound(String),
     
-    #[error("Unauthorized")]
+    #[error("Unauthorized: {0}")]
     Unauthorized(String),
     
     #[error("Validation error: {0}")]
