@@ -29,4 +29,4 @@ yarn-error.log*
 
 # Rust
 **/*.rs.bk
-Cargo.lock (shared)
+# Cargo.lock is intentionally committed (the workspace ships binaries)
