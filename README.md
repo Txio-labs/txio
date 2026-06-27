@@ -6,7 +6,7 @@
   <p align="center">
     <strong>One terminal. Every chain.</strong>
     <br />
-    A multi-chain developer toolkit for Sui, Ethereum, Solana, Aptos, and Soroban.
+    A unified, multi-chain developer toolkit for Sui, Ethereum, Solana, Aptos, and Soroban.
   </p>
   <p align="center">
     <a href="https://crates.io/crates/txio"><img src="https://img.shields.io/crates/v/txio.svg?style=flat-square" alt="Crates.io"></a>
@@ -18,40 +18,50 @@
 
 ## Overview
 
-**txio** is a unified CLI and web dashboard for interacting with multiple blockchains — Sui, Ethereum, Solana, Aptos, and Soroban — through a single, consistent interface.
+**txio** is a unified CLI and web dashboard designed to streamline interactions across multiple blockchains—including Sui, Ethereum, Solana, Aptos, and Soroban—through a single, consistent interface.
 
-No more juggling four CLIs, six RPC endpoints, and three address formats. txio normalizes commands and flags across chains, resolves human-readable names (`.sui`, `.eth`), and surfaces everything through formatted terminal output or a web dashboard.
+Stop juggling multiple CLIs, dozens of RPC endpoints, and varying address formats. **txio** normalizes commands and flags across chains, natively resolves human-readable names (`.sui`, `.eth`), and surfaces data beautifully through either your terminal or a local web dashboard.
+
+---
+
+## Key Features
+
+*   **Unified Interface Across 5 Chains** – Sui, Ethereum, Solana, Aptos, and Soroban share the exact same command structure and flags.
+*   **Instant Network Switching** – Pass `--network testnet` (or `mainnet`, `devnet`) directly to any command with zero configuration changes.
+*   **Native Name Resolution** – Handlers like `.sui` and `.eth` resolve automatically behind the scenes before requests are dispatched.
+*   **Human-Readable Terminal Output** – Clean, formatted tables by default. Want raw data? Just append the `--pretty` flag for JSON.
+*   **One-Command Local Stack** – Spin up the caching API, frontend dashboard, and database instantly via Docker.
 
 ---
 
 ## Repository Structure
 
-| Path | Description | Stack |
+| Path | Description | Tech Stack |
 | :--- | :--- | :--- |
 | [`/cli`](./cli) | Primary terminal interface | Rust, Clap |
-| [`/backend`](./backend) | Caching API and request routing | Rust, Axum |
-| [`/frontend`](./frontend) | Web dashboard | Next.js, React, Tailwind |
-| [`/desktop`](./desktop) | Desktop wrapper *(in development)* | Electron |
+| [`/backend`](./backend) | Caching API and intelligent request routing | Rust, Axum |
+| [`/frontend`](./frontend) | Interactive web dashboard | Next.js, React, Tailwind |
+| [`/desktop`](./desktop) | Desktop wrapper *(In Development)* | Electron |
 
 ---
 
 ## Prerequisites
 
-- **Rust** (stable toolchain)
-- **Node.js** 20+
-- **Docker** (for the full stack)
+Ensure you have the following installed locally:
+*   **Rust** (Stable toolchain)
+*   **Node.js** (v20+)
+*   **Docker** & **Docker Compose**
 
 ---
 
 ## Getting Started
 
-### Clone and install
+### 1. Clone and Install
 
 ```bash
-git clone https://github.com/Kingvic300/Flow.git
-cd Flow
+git clone [https://github.com/Kingvic300/txio.git](https://github.com/Kingvic300/txio.git)
+cd txio
 npm install
-```
 
 ### Start the full stack
 
@@ -67,8 +77,14 @@ The frontend is available on its default port; the API runs behind it.
 
 ```bash
 cd cli
-cargo run -- login                           # Authenticate once
-cargo run -- sui balance aliphatic.sui       # Resolve .sui names automatically
+
+# Authenticate your terminal
+cargo run -- login                           
+
+# Resolve .sui names automatically
+cargo run -- sui balance aliphatic.sui       
+
+# Query different networks on the fly
 cargo run -- --network testnet eth balance 0x...
 ```
 
@@ -88,7 +104,15 @@ Run `txio --help` to see all available commands and flags.
 
 ## Contributing
 
-New chain integrations follow a straightforward pattern: implement the `ChainAdapter` trait, add a single file under `cli/src/chains/`, and register it in the factory. Full details are in [CONTRIBUTING.md](./CONTRIBUTING.md).
+We welcome contributions! Adding a new chain integration is highly modular:
+
+Implement the `ChainAdapter` trait.
+
+Add a single file under `cli/src/chains/`.
+
+Register it in the factory.
+
+For comprehensive architectural details, please read CONTRIBUTING.md.
 
 ---
 
