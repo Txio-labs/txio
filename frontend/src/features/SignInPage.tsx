@@ -232,7 +232,7 @@ export const SignInPage: React.FC = () => {
                         <h1 className="text-6xl font-bold tracking-tight text-white leading-[1.1]">
                             Welcome back. <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet to-soft-purple">
-                                Let's get to it.
+                                Let&apos;s get to it.
                             </span>
                         </h1>
 
@@ -308,7 +308,7 @@ export const SignInPage: React.FC = () => {
                         </h2>
 
                         <p className="text-sm text-slate-500">
-                            Email and password. That's all we need.
+                            Email and password. That&apos;s all we need.
                         </p>
                     </div>
 
@@ -527,7 +527,7 @@ export const SignInPage: React.FC = () => {
                             }}
                             className="text-sm font-medium text-slate-500 hover:text-white transition-colors"
                         >
-                            Don't have an account?{' '}
+                            Don&apos;t have an account?{' '}
                             <span className="text-electric-violet font-bold">
                                 Get Started
                             </span>

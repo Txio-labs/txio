@@ -23,7 +23,7 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
   const { network } = useAppStore();
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [rawJson, setRawJson] = useState<string | null>(null);
-  const [resolution, setResolution] = useState<NsResolutionState>({ status: 'idle', name: '' });
+  const [resolutionResult, setResolutionResult] = useState<NsResolutionState>({ status: 'idle', name: '' });
 
   const displayJson =
     rawJson !== null
@@ -85,7 +85,7 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
     }
 
     lastAutofilledMethod.current = method;
-    applyParamsTemplate(method);
+    queueMicrotask(() => applyParamsTemplate(method));
   }, [request.rpcParams.method, request.rpcParams.params, applyParamsTemplate]);
 
   // First-param name detection: only when method is in the address-first set
@@ -103,12 +103,10 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
   const lastResolved = useRef<string | null>(null);
   useEffect(() => {
     if (!candidateName) {
-      setResolution({ status: 'idle', name: '' });
       lastResolved.current = null;
       return;
     }
 
-    setResolution({ status: 'resolving', name: candidateName });
     const handle = window.setTimeout(async () => {
       const requested = candidateName;
       try {
@@ -116,18 +114,27 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
         // Drop if another resolve started in the meantime
         if (requested !== candidateName) return;
         lastResolved.current = requested;
-        setResolution({ status: 'resolved', name: requested, address });
+        setResolutionResult({ status: 'resolved', name: requested, address });
       } catch (err) {
         if (requested !== candidateName) return;
         const message = err instanceof SuiRpcError || err instanceof Error
           ? err.message
           : 'Resolution failed.';
-        setResolution({ status: 'error', name: requested, error: message });
+        setResolutionResult({ status: 'error', name: requested, error: message });
       }
     }, RESOLVE_DEBOUNCE_MS);
 
     return () => window.clearTimeout(handle);
   }, [candidateName, network]);
+
+  // Derive the displayed resolution state from the latest async outcome:
+  // 'idle' with no candidate, 'resolving' while the debounced lookup for the
+  // current candidate hasn't completed yet, otherwise the stored outcome.
+  const resolution = useMemo<NsResolutionState>(() => {
+    if (!candidateName) return { status: 'idle', name: '' };
+    if (resolutionResult.name === candidateName) return resolutionResult;
+    return { status: 'resolving', name: candidateName };
+  }, [candidateName, resolutionResult]);
 
   const applyResolution = useCallback(() => {
     if (resolution.status !== 'resolved' || !resolution.address) return;

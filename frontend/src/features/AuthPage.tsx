@@ -55,7 +55,7 @@ export const AuthPage: React.FC = () => {
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet to-soft-purple">Every chain.</span>
                             </h1>
                             <p className="text-lg text-slate-400 leading-relaxed">
-                                Thousands of devs already build, debug, and ship on txio. You're a signup away from joining them.
+                                Thousands of devs already build, debug, and ship on txio. You&apos;re a signup away from joining them.
                             </p>
                         </motion.div>
                     </div>
