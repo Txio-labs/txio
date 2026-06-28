@@ -184,6 +184,14 @@ export function WalletManagerProvider({
         useRef(false);
     const { network } =
         useAppStore();
+    // Stamped explicitly at the moment a connect/restore call resolves
+    // (event-handler / promise-callback context), never read during render,
+    // so that `connectedAt` never has to call Date.now() while computing
+    // the memoized wallet snapshots below.
+    const [suiConnectedAt, setSuiConnectedAt] =
+        useState(0);
+    const [evmConnectedAt, setEvmConnectedAt] =
+        useState(0);
 
     const suiWallets = useWallets();
     const suiWalletState =
@@ -232,32 +240,32 @@ export function WalletManagerProvider({
     }, []);
 
     const refreshStellarAvailability =
-        useCallback(async () => {
-            try {
-                const availability =
-                    await detectStellarWallets();
-                setStellarAvailability(
-                    availability
-                );
-            } catch {
-                setStellarAvailability({
-                    lobstr: false,
-                    freighter: false,
-                    albedo: false,
-                    xbull: false,
-                    rabet: false,
-                    hana: false
+        useCallback(() => {
+            detectStellarWallets()
+                .then((availability) => {
+                    setStellarAvailability(
+                        availability
+                    );
+                })
+                .catch(() => {
+                    setStellarAvailability({
+                        lobstr: false,
+                        freighter: false,
+                        albedo: false,
+                        xbull: false,
+                        rabet: false,
+                        hana: false
+                    });
                 });
-            }
         }, []);
 
     useEffect(() => {
-        void refreshStellarAvailability();
+        refreshStellarAvailability();
     }, [refreshStellarAvailability]);
 
     useEffect(() => {
         if (isModalOpen) {
-            void refreshStellarAvailability();
+            refreshStellarAvailability();
         }
     }, [
         isModalOpen,
@@ -301,11 +309,12 @@ export function WalletManagerProvider({
                 connectorName:
                     suiWalletState.currentWallet
                         .name,
-                connectedAt: Date.now()
+                connectedAt: suiConnectedAt
             };
         }, [
             currentSuiAccount,
             network,
+            suiConnectedAt,
             suiWalletState
         ]);
 
@@ -350,9 +359,9 @@ export function WalletManagerProvider({
                 },
                 connectorName:
                     evmAccount.connector.name,
-                connectedAt: Date.now()
+                connectedAt: evmConnectedAt
             };
-        }, [evmAccount]);
+        }, [evmAccount, evmConnectedAt]);
 
     const currentWallet = useMemo(() => {
         const connectedWallets = [
@@ -438,45 +447,51 @@ export function WalletManagerProvider({
             evmAccount.isReconnecting ||
             suiWalletState.isConnecting
         ) {
-            setStatus('connecting');
+            queueMicrotask(() => {
+                setStatus('connecting');
+            });
             return;
         }
 
         if (currentWallet) {
-            setStatus('connected');
-            setError(null);
-            setPreferredWalletId(
-                currentWallet.id
-            );
-            persistActiveWalletSnapshot(
-                {
-                    walletId:
-                        currentWallet.id,
-                    family:
-                        currentWallet.family,
-                    address:
-                        currentWallet.address,
-                    chainId:
-                        currentWallet.chain.id,
-                    connectedAt:
-                        currentWallet.connectedAt
-                }
-            );
+            queueMicrotask(() => {
+                setStatus('connected');
+                setError(null);
+                setPreferredWalletId(
+                    currentWallet.id
+                );
+                persistActiveWalletSnapshot(
+                    {
+                        walletId:
+                            currentWallet.id,
+                        family:
+                            currentWallet.family,
+                        address:
+                            currentWallet.address,
+                        chainId:
+                            currentWallet.chain.id,
+                        connectedAt:
+                            currentWallet.connectedAt
+                    }
+                );
+            });
             return;
         }
 
         if (
             restoreAttemptedRef.current
         ) {
-            setStatus((current) =>
-                current ===
-                    'rejected' ||
-                current ===
-                    'unsupported-chain' ||
-                current === 'error'
-                    ? current
-                    : 'disconnected'
-            );
+            queueMicrotask(() => {
+                setStatus((current) =>
+                    current ===
+                        'rejected' ||
+                    current ===
+                        'unsupported-chain' ||
+                    current === 'error'
+                        ? current
+                        : 'disconnected'
+                );
+            });
         }
     }, [
         currentWallet,
@@ -547,10 +562,12 @@ export function WalletManagerProvider({
                 return;
             }
 
-            setStatus('connecting');
-            setPendingWalletId(
-                snapshot.walletId
-            );
+            queueMicrotask(() => {
+                setStatus('connecting');
+                setPendingWalletId(
+                    snapshot.walletId
+                );
+            });
 
             void connectSuiAsync({
                 wallet
@@ -558,6 +575,9 @@ export function WalletManagerProvider({
                 .then(() => {
                     setPreferredWalletId(
                         snapshot.walletId
+                    );
+                    setSuiConnectedAt(
+                        Date.now()
                     );
                 })
                 .catch(() => {
@@ -592,10 +612,12 @@ export function WalletManagerProvider({
                       )
                     : evmConnectors;
 
-            setStatus('connecting');
-            setPendingWalletId(
-                snapshot.walletId
-            );
+            queueMicrotask(() => {
+                setStatus('connecting');
+                setPendingWalletId(
+                    snapshot.walletId
+                );
+            });
 
             void reconnectEvmAsync({
                 connectors
@@ -603,6 +625,9 @@ export function WalletManagerProvider({
                 .then(() => {
                     setPreferredWalletId(
                         snapshot.walletId
+                    );
+                    setEvmConnectedAt(
+                        Date.now()
                     );
                 })
                 .catch(() => {
@@ -619,10 +644,12 @@ export function WalletManagerProvider({
 
         restoreAttemptedRef.current =
             true;
-        setStatus('connecting');
-        setPendingWalletId(
-            snapshot.walletId
-        );
+        queueMicrotask(() => {
+            setStatus('connecting');
+            setPendingWalletId(
+                snapshot.walletId
+            );
+        });
 
         void restoreStellarWallet(
             snapshot.walletId
@@ -728,6 +755,9 @@ export function WalletManagerProvider({
                         chainId:
                             DEFAULT_EVM_CHAIN_ID
                     });
+                    setEvmConnectedAt(
+                        Date.now()
+                    );
                 } else if (
                     descriptor.chainFamily ===
                     'sui'
@@ -761,6 +791,9 @@ export function WalletManagerProvider({
                     await connectSuiAsync({
                         wallet
                     });
+                    setSuiConnectedAt(
+                        Date.now()
+                    );
                 } else {
                     await disconnectFamiliesExcept(
                         'stellar'

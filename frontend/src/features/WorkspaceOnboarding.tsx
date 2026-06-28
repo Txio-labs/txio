@@ -121,7 +121,7 @@ export const WorkspaceOnboarding: React.FC<
                         </h1>
 
                         <p className="mt-5 max-w-2xl text-base leading-8 text-slate-400">
-                            Your account's good to go. Workspaces are where your collections, requests, and history live. You can have more than one later.
+                            Your account&apos;s good to go. Workspaces are where your collections, requests, and history live. You can have more than one later.
                         </p>
 
                         <div className="mt-8 grid gap-4 md:grid-cols-3">
@@ -213,7 +213,7 @@ export const WorkspaceOnboarding: React.FC<
                                         Create Workspace
                                     </div>
                                     <h2 className="mt-3 text-2xl font-black text-white">
-                                        Name it and you're in.
+                                        Name it and you&apos;re in.
                                     </h2>
                                     <p className="mt-2 text-sm leading-7 text-slate-400">
                                         Once you create it, the IDE opens with your workspace already wired up.

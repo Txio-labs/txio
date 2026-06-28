@@ -88,7 +88,7 @@ export const GetStartedPage: React.FC = () => {
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet to-soft-purple">Every chain.</span>
                         </h1>
                         <p className="text-lg text-slate-400 max-w-md leading-relaxed">
-                            You're a few fields away from a working multi-chain workspace. No card, no upgrade pitch.
+                            You&apos;re a few fields away from a working multi-chain workspace. No card, no upgrade pitch.
                         </p>
                     </div>
                 </div>
@@ -132,7 +132,7 @@ export const GetStartedPage: React.FC = () => {
                         <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-electric-violet/10 mb-6">
                             <Sparkles className="text-electric-violet" size={32} />
                         </div>
-                        <h2 className="text-3xl font-bold tracking-tight mb-2">Let's get you set up</h2>
+                        <h2 className="text-3xl font-bold tracking-tight mb-2">Let&apos;s get you set up</h2>
                         <p className="text-sm text-slate-500">Takes about thirty seconds.</p>
                     </div>
 

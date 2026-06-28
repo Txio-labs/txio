@@ -65,6 +65,7 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
     readOnly = false
 }) => {
     const [value, setValue] = useState(initialValue);
+    const [prevInitialValue, setPrevInitialValue] = useState(initialValue);
     const [error, setError] = useState<ParseError | null>(null);
     const [copied, setCopied] = useState(false);
     const [caret, setCaret] = useState({ line: 1, column: 1 });
@@ -77,9 +78,10 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
     const preRef = useRef<HTMLPreElement>(null);
     const lineGutterRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
+    if (initialValue !== prevInitialValue) {
+        setPrevInitialValue(initialValue);
         setValue(initialValue);
-    }, [initialValue]);
+    }
 
     const validate = useCallback(
         (text: string): ParseError | null => {

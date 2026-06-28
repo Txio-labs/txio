@@ -27,6 +27,7 @@
     "appId": "com.kingvic.txio",
     "productName": "txio",
     "asar": true,
+    "publish": null,
     "files": [
       "src/**/*",
       "dist/**/*",

@@ -3,6 +3,12 @@ import { motion } from 'framer-motion';
 import { createAvatar } from '@dicebear/core';
 import { notionists, bottts, identicon } from '@dicebear/collection';
 
+const avatarStyles = {
+  user: notionists,
+  bot: bottts,
+  team: identicon
+};
+
 interface AvatarProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   type?: 'user' | 'bot' | 'team';
@@ -32,12 +38,6 @@ export const Avatar: React.FC<AvatarProps> = ({
     online: 'bg-emerald-500',
     offline: 'bg-slate-600',
     busy: 'bg-red-500'
-  };
-
-  const avatarStyles = {
-    user: notionists,
-    bot: bottts,
-    team: identicon
   };
 
   const avatarSvg = useMemo(() => {
