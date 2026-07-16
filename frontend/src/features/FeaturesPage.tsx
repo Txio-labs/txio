@@ -138,7 +138,7 @@ export const FeaturesPage: React.FC<
                         </div>
                         <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.85] text-white">
                             Tools that <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet via-soft-purple to-indigo-400 italic">don't get in the way.</span>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet via-soft-purple to-indigo-400 italic">don&apos;t get in the way.</span>
                         </h1>
                         <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
                             One workspace for protocol engineers, DevOps, and the infra folks who keep it all running.

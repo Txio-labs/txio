@@ -140,7 +140,7 @@ export const PartnersPage: React.FC<
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet via-soft-purple to-indigo-400">together.</span>
                         </h1>
                         <p className="text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed font-medium">
-                            We work alongside the foundations, labs, and protocols already doing the heavy lifting — so you don't have to integrate them yourself.
+                            We work alongside the foundations, labs, and protocols already doing the heavy lifting — so you don&apos;t have to integrate them yourself.
                         </p>
                     </motion.div>
 

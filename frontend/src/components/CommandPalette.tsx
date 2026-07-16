@@ -29,31 +29,31 @@ export const CommandPalette: React.FC = () => {
         }
     }, [isCommandPaletteOpen]);
 
-    // Recursive helper to flatten collections
-    const flattenCollections = (nodes: CollectionNode[], items: CommandItem[] = []) => {
-        nodes.forEach(node => {
-            if (node.workspaceId === currentWorkspaceId || !node.workspaceId) {
-                if (node.type === 'request' && node.requestData) {
-                    items.push({
-                        id: node.id,
-                        title: node.name,
-                        subtitle: node.requestData.type === RequestType.RPC 
-                            ? `RPC: ${node.requestData.rpcParams.method}` 
-                            : `TX: ${node.requestData.moveParams.module}::${node.requestData.moveParams.function}`,
-                        icon: node.requestData.type === RequestType.RPC ? <Terminal size={14} /> : <Layers size={14} />,
-                        action: () => appStore.openTab(node.requestData?.type === RequestType.RPC ? 'rpc' : 'ptb', node.requestData),
-                        keywords: [node.name, 'request', 'collection']
-                    });
-                }
-                if (node.children) {
-                    flattenCollections(node.children, items);
-                }
-            }
-        });
-        return items;
-    };
-
     const commands = useMemo(() => {
+        // Recursive helper to flatten collections
+        const flattenCollections = (nodes: CollectionNode[], items: CommandItem[] = []) => {
+            nodes.forEach(node => {
+                if (node.workspaceId === currentWorkspaceId || !node.workspaceId) {
+                    if (node.type === 'request' && node.requestData) {
+                        items.push({
+                            id: node.id,
+                            title: node.name,
+                            subtitle: node.requestData.type === RequestType.RPC
+                                ? `RPC: ${node.requestData.rpcParams.method}`
+                                : `TX: ${node.requestData.moveParams.module}::${node.requestData.moveParams.function}`,
+                            icon: node.requestData.type === RequestType.RPC ? <Terminal size={14} /> : <Layers size={14} />,
+                            action: () => appStore.openTab(node.requestData?.type === RequestType.RPC ? 'rpc' : 'ptb', node.requestData),
+                            keywords: [node.name, 'request', 'collection']
+                        });
+                    }
+                    if (node.children) {
+                        flattenCollections(node.children, items);
+                    }
+                }
+            });
+            return items;
+        };
+
         const items: CommandItem[] = [];
 
         // 1. Global Actions

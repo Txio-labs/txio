@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Play, Pause, RotateCcw, CheckCircle2, XCircle, Clock, AlertTriangle, FileText, ArrowRight } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { CollectionNode } from '../types';
@@ -44,19 +44,17 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
     };
 
     const targetCollection = collectionId ? findCollection(workspaceCollections, collectionId) : null;
-    const [runList, setRunList] = useState<any[]>([]);
+    // Default to first collection if none specified
+    const runSource = targetCollection || (!collectionId && workspaceCollections.length > 0 ? workspaceCollections[0] : null);
 
-    // Initialize run list when collection changes
-    useEffect(() => {
-        if (targetCollection) {
-            setRunList(getRequests(targetCollection));
-        } else if (!collectionId && workspaceCollections.length > 0) {
-             // Default to first collection if none specified
-             setRunList(getRequests(workspaceCollections[0]));
-        } else {
-            setRunList([]);
-        }
-    }, [collectionId, workspaceCollections, targetCollection]);
+    const [runList, setRunList] = useState<any[]>(runSource ? getRequests(runSource) : []);
+    const [prevRunSource, setPrevRunSource] = useState(runSource);
+
+    // Re-initialize the run list whenever the targeted collection changes
+    if (runSource !== prevRunSource) {
+        setPrevRunSource(runSource);
+        setRunList(runSource ? getRequests(runSource) : []);
+    }
 
     const handleRun = () => {
         setIsRunning(true);
@@ -179,7 +177,7 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                     </table>
                      {runList.length === 0 && (
                         <div className="p-8 text-center text-slate-500 text-sm italic">
-                            Empty collection. Add requests to "{collectionName}" to see them here.
+                            Empty collection. Add requests to &quot;{collectionName}&quot; to see them here.
                         </div>
                     )}
                 </div>
