@@ -1,12 +1,13 @@
 use crate::chains::factory::ChainFactory;
 use crate::chains::traits::ChainAdapter;
+use crate::cli::format::format_units_fixed;
 use crate::cli::parser::{ChainCommand, Cli, Commands, ConfigAction, DbAction};
 use crate::utils;
 use anyhow::{Result, anyhow};
 use colored::*;
 use futures::stream::StreamExt;
-use mongodb::bson::doc;
 use mongodb::bson::Document;
+use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
 use mongodb::options::FindOptions;
 use serde_json::Value;
@@ -63,49 +64,67 @@ impl CommandHandler {
                 let chain = utils::get_current_chain().unwrap_or_else(|| "sui".to_string());
                 let logged_in = utils::get_token().is_some();
                 println!("{}", "─── txio Status ───".bold().cyan());
-                println!("  {} Default chain:  {}", "»".dimmed(), chain.green().bold());
-                println!("  {} Network:        {}", "»".dimmed(), format!("{:?}", cli.network).yellow());
-                println!("  {} Authenticated:  {}", "»".dimmed(),
-                    if logged_in { "Yes".green().bold() } else { "No".red().bold() }
+                println!(
+                    "  {} Default chain:  {}",
+                    "»".dimmed(),
+                    chain.green().bold()
                 );
-                if let Ok(adapter) = ChainFactory::get_adapter(&chain, cli.rpc_url.clone(), cli.network.clone()) {
+                println!(
+                    "  {} Network:        {}",
+                    "»".dimmed(),
+                    format!("{:?}", cli.network).yellow()
+                );
+                println!(
+                    "  {} Authenticated:  {}",
+                    "»".dimmed(),
+                    if logged_in {
+                        "Yes".green().bold()
+                    } else {
+                        "No".red().bold()
+                    }
+                );
+                if let Ok(adapter) =
+                    ChainFactory::get_adapter(&chain, cli.rpc_url.clone(), cli.network.clone())
+                {
                     let rpc = cli.rpc_url.as_deref().unwrap_or(adapter.default_rpc());
                     let healthy = adapter.get_gas_price().await.is_ok();
                     println!("  {} RPC endpoint:   {}", "»".dimmed(), rpc.dimmed());
-                    println!("  {} RPC health:     {}", "»".dimmed(),
-                        if healthy { "✔ OK".green().bold() } else { "✖ Unreachable".red().bold() }
+                    println!(
+                        "  {} RPC health:     {}",
+                        "»".dimmed(),
+                        if healthy {
+                            "✔ OK".green().bold()
+                        } else {
+                            "✖ Unreachable".red().bold()
+                        }
                     );
                 }
             }
-            Commands::Config { action } => {
-                match action {
-                    ConfigAction::List => {
-                        let entries = utils::list_config()?;
-                        if entries.is_empty() {
-                            println!("{}", "No configuration entries set.".dimmed());
-                        } else {
-                            println!("{}", "CLI Configuration:".bold().cyan());
-                            for (k, v) in entries {
-                                println!("  {} = {}", k.yellow(), v.green());
-                            }
+            Commands::Config { action } => match action {
+                ConfigAction::List => {
+                    let entries = utils::list_config()?;
+                    if entries.is_empty() {
+                        println!("{}", "No configuration entries set.".dimmed());
+                    } else {
+                        println!("{}", "CLI Configuration:".bold().cyan());
+                        for (k, v) in entries {
+                            println!("  {} = {}", k.yellow(), v.green());
                         }
-                    }
-                    ConfigAction::Get { key } => {
-                        match utils::get_config(&key)? {
-                            Some(v) => println!("{} = {}", key.yellow(), v.green()),
-                            None => println!("{} Key '{}' not found.", "✖".red(), key),
-                        }
-                    }
-                    ConfigAction::Set { key, value } => {
-                        utils::save_config(&key, &value)?;
-                        println!("{} Set {} = {}", "✔".green(), key.yellow(), value.green());
-                    }
-                    ConfigAction::Unset { key } => {
-                        utils::remove_config(&key)?;
-                        println!("{} Removed key '{}'.", "✔".green(), key.yellow());
                     }
                 }
-            }
+                ConfigAction::Get { key } => match utils::get_config(&key)? {
+                    Some(v) => println!("{} = {}", key.yellow(), v.green()),
+                    None => println!("{} Key '{}' not found.", "✖".red(), key),
+                },
+                ConfigAction::Set { key, value } => {
+                    utils::save_config(&key, &value)?;
+                    println!("{} Set {} = {}", "✔".green(), key.yellow(), value.green());
+                }
+                ConfigAction::Unset { key } => {
+                    utils::remove_config(&key)?;
+                    println!("{} Removed key '{}'.", "✔".green(), key.yellow());
+                }
+            },
             Commands::Sui { command } => {
                 let adapter =
                     ChainFactory::get_adapter("sui", cli.rpc_url.clone(), cli.network.clone())?;
@@ -183,7 +202,10 @@ impl CommandHandler {
             }
             DbAction::DeleteUser { email } => {
                 let confirmed = Confirm::new()
-                    .with_prompt(format!("Delete user '{}'? This cannot be undone", email.red()))
+                    .with_prompt(format!(
+                        "Delete user '{}'? This cannot be undone",
+                        email.red()
+                    ))
                     .default(false)
                     .interact()?;
 
@@ -197,7 +219,9 @@ impl CommandHandler {
                     Ok(user) => {
                         if let Some(id) = user.id {
                             match user_repo.delete_by_id(&id.to_hex()).await {
-                                Ok(_) => println!("{} User '{}' deleted.", "✔".green(), email.bold()),
+                                Ok(_) => {
+                                    println!("{} User '{}' deleted.", "✔".green(), email.bold())
+                                }
                                 Err(e) => println!("{} Delete failed: {}", "✖".red(), e),
                             }
                         } else {
@@ -220,8 +244,16 @@ impl CommandHandler {
                     .unwrap_or(0);
 
                 println!("{}", "─── Database Stats ───".bold().cyan());
-                println!("  {} Registered users: {}", "»".dimmed(), user_count.to_string().green().bold());
-                println!("  {} Total RPC logs:   {}", "»".dimmed(), log_count.to_string().yellow().bold());
+                println!(
+                    "  {} Registered users: {}",
+                    "»".dimmed(),
+                    user_count.to_string().green().bold()
+                );
+                println!(
+                    "  {} Total RPC logs:   {}",
+                    "»".dimmed(),
+                    log_count.to_string().yellow().bold()
+                );
             }
             DbAction::ListLogs { limit } => {
                 let opts = FindOptions::builder()
@@ -249,7 +281,11 @@ impl CommandHandler {
                         "  [{}] {} {}",
                         status,
                         method.cyan(),
-                        if !err.is_empty() { format!("— {}", err) } else { String::new() }
+                        if !err.is_empty() {
+                            format!("— {}", err)
+                        } else {
+                            String::new()
+                        }
                     );
                 }
 
@@ -428,8 +464,8 @@ impl CommandHandler {
                                     .unwrap_or("Unknown");
 
                                 let display_balance = if coin_type == "0x2::sui::SUI" {
-                                    if let Ok(b) = balance.parse::<f64>() {
-                                        format!("{:.4} SUI", b / 1_000_000_000.0)
+                                    if let Ok(b) = balance.parse::<u128>() {
+                                        format!("{} SUI", format_units_fixed(b, 9, 4))
                                     } else {
                                         balance.to_string()
                                     }
@@ -470,12 +506,8 @@ impl CommandHandler {
                     if let Some(hex_str) = result.as_str() {
                         let clean_hex = hex_str.trim_start_matches("0x");
                         if let Ok(wei) = u128::from_str_radix(clean_hex, 16) {
-                            let eth = wei as f64 / 1_000_000_000_000_000_000.0;
-                            println!(
-                                "{} {:.4} ETH",
-                                "Balance:".bold().cyan(),
-                                eth.to_string().green().bold()
-                            );
+                            let eth = format_units_fixed(wei, 18, 4);
+                            println!("{} {} ETH", "Balance:".bold().cyan(), eth.green().bold());
                         } else {
                             println!("{} {}", "Balance (Wei Hex):".bold().cyan(), hex_str.green());
                         }
@@ -484,12 +516,8 @@ impl CommandHandler {
                     }
                 } else if chain_name == "Solana" {
                     if let Some(val) = result.get("value").and_then(|v| v.as_u64()) {
-                        let sol = val as f64 / 1_000_000_000.0;
-                        println!(
-                            "{} {:.4} SOL",
-                            "Balance:".bold().cyan(),
-                            sol.to_string().green().bold()
-                        );
+                        let sol = format_units_fixed(val as u128, 9, 4);
+                        println!("{} {} SOL", "Balance:".bold().cyan(), sol.green().bold());
                     } else {
                         Self::print_value(&result, pretty)?;
                     }
@@ -505,12 +533,12 @@ impl CommandHandler {
                                         if let Some(val_str) =
                                             coin.get("value").and_then(|v| v.as_str())
                                         {
-                                            if let Ok(val) = val_str.parse::<f64>() {
-                                                let apt = val / 100_000_000.0;
+                                            if let Ok(val) = val_str.parse::<u128>() {
+                                                let apt = format_units_fixed(val, 8, 4);
                                                 println!(
-                                                    "{} {:.4} APT",
+                                                    "{} {} APT",
                                                     "Balance:".bold().cyan(),
-                                                    apt.to_string().green().bold()
+                                                    apt.green().bold()
                                                 );
                                                 found = true;
                                                 break;
@@ -574,21 +602,22 @@ impl CommandHandler {
                         .and_then(|s| s.parse::<u64>().ok())
                         .or_else(|| result.as_u64())
                         .unwrap_or(0);
+                    let sui_gas = format_units_fixed(mist as u128, 9, 9);
                     println!(
-                        "{} {} MIST  ({:.9} SUI per gas unit)",
+                        "{} {} MIST  ({} SUI per gas unit)",
                         "Reference Gas Price:".bold().cyan(),
                         mist.to_string().green().bold(),
-                        mist as f64 / 1_000_000_000.0
+                        sui_gas
                     );
                 } else if chain == "Ethereum" {
                     if let Some(hex) = result.as_str() {
                         let clean = hex.trim_start_matches("0x");
                         if let Ok(wei) = u128::from_str_radix(clean, 16) {
-                            let gwei = wei as f64 / 1_000_000_000.0;
+                            let gwei = format_units_fixed(wei, 9, 4);
                             println!(
-                                "{} {:.4} Gwei  ({} wei)",
+                                "{} {} Gwei  ({} wei)",
                                 "Gas Price:".bold().cyan(),
-                                gwei.to_string().green().bold(),
+                                gwei.green().bold(),
                                 wei.to_string().yellow()
                             );
                         } else {
