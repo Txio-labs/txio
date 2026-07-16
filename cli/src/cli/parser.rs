@@ -33,6 +33,11 @@ pub struct Cli {
     /// Select the network to use
     #[arg(short, long, global = true, value_enum, default_value_t = Network::Mainnet)]
     pub network: Network,
+
+    /// Load environment overrides from an explicit file (opt-in; no upward search).
+    /// Without this flag, a `./.env` in the current directory is NOT loaded.
+    #[arg(long, global = true, value_name = "PATH")]
+    pub env_file: Option<std::path::PathBuf>,
 }
 
 #[derive(Subcommand)]
