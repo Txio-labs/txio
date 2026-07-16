@@ -16,21 +16,23 @@
 
 ---
 
-## Overview
+## The Problem
 
-**txio** is a unified CLI and web dashboard designed to streamline interactions across multiple blockchains—including Sui, Ethereum, Solana, Aptos, and Soroban—through a single, consistent interface.
+Every chain ships its own CLI, and none of them agree on anything. `sui client`, `solana`, `aptos`, `soroban`, plus whatever you've bolted together for Ethereum — each with its own install step, its own flag names, its own config file, and its own idea of what a "network" argument should look like. Switch from Sui devnet to Ethereum mainnet mid-session and you're not passing a different flag, you're opening a different terminal.
 
-Stop juggling multiple CLIs, dozens of RPC endpoints, and varying address formats. **txio** normalizes commands and flags across chains, natively resolves human-readable names (`.sui`, `.eth`), and surfaces data beautifully through either your terminal or a local web dashboard.
+And none of them speak human. Checking a balance means resolving `.sui` or `.eth` yourself, then pasting the raw address back in. Do that across five ecosystems, and a two-second task — "what's in this wallet?" — turns into a scavenger hunt.
 
 ---
 
-## Key Features
+## The Solution
 
-*   **Unified Interface Across 5 Chains** – Sui, Ethereum, Solana, Aptos, and Soroban share the exact same command structure and flags.
-*   **Instant Network Switching** – Pass `--network testnet` (or `mainnet`, `devnet`) directly to any command with zero configuration changes.
-*   **Native Name Resolution** – Handlers like `.sui` and `.eth` resolve automatically behind the scenes before requests are dispatched.
-*   **Human-Readable Terminal Output** – Clean, formatted tables by default. Want raw data? Just append the `--pretty` flag for JSON.
-*   **One-Command Local Stack** – Spin up the caching API, frontend dashboard, and database instantly via Docker.
+**txio** puts Sui, Ethereum, Solana, Aptos, and Soroban behind one interface. Learn it once, use it everywhere.
+
+*   **One interface, five chains** – Sui, Ethereum, Solana, Aptos, and Soroban all use the same commands and flags.
+*   **Instant network switching** – Pass `--network testnet` (or `mainnet`, `devnet`) to any command. No config file to edit.
+*   **Names just work** – `.sui`, `.eth`, and friends resolve automatically before the request goes out. You never touch a raw address.
+*   **Readable by default** – Clean, formatted tables in your terminal. Need raw data? Add `--pretty` for JSON.
+*   **One command, full stack** – `docker-compose up` boots the API, dashboard, and database together.
 
 ---
 
@@ -47,8 +49,8 @@ Stop juggling multiple CLIs, dozens of RPC endpoints, and varying address format
 
 ## Prerequisites
 
-Ensure you have the following installed locally:
-*   **Rust** (Stable toolchain)
+You'll need:
+*   **Rust** (stable toolchain)
 *   **Node.js** (v20+)
 *   **Docker** & **Docker Compose**
 
@@ -59,9 +61,10 @@ Ensure you have the following installed locally:
 ### 1. Clone and Install
 
 ```bash
-git clone [https://github.com/Kingvic300/txio.git](https://github.com/Kingvic300/txio.git)
+git clone https://github.com/Txio-labs/txio.git
 cd txio
 npm install
+```
 
 ### Start the full stack
 
@@ -71,7 +74,7 @@ Boots the backend, frontend, and database in one command:
 docker-compose up -d
 ```
 
-The frontend is available on its default port; the API runs behind it.
+The frontend comes up on its default port, with the API running behind it.
 
 ### Run the CLI
 
@@ -92,27 +95,9 @@ Run `txio --help` to see all available commands and flags.
 
 ---
 
-## Features
-
-- **Unified interface across five chains** — Sui, Ethereum, Solana, Aptos, and Soroban share the same command structure and flags.
-- **Network switching** — Pass `--network testnet` (or `mainnet`, `devnet`) to any command. No config changes required.
-- **Name resolution** — `.sui`, `.eth`, and equivalent name services are resolved automatically before requests are sent.
-- **Readable output by default** — Responses are formatted for the terminal. Use `--pretty` to get raw JSON.
-- **One-command stack** — `docker-compose up` starts everything: API, frontend, and database.
-
----
-
 ## Contributing
 
-We welcome contributions! Adding a new chain integration is highly modular:
-
-Implement the `ChainAdapter` trait.
-
-Add a single file under `cli/src/chains/`.
-
-Register it in the factory.
-
-For comprehensive architectural details, please read CONTRIBUTING.md.
+Adding a new chain is deliberately simple: implement the `ChainAdapter` trait, drop a single file under `cli/src/chains/`, and register it in the factory. That's it. Full details live in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ---
 
