@@ -24,6 +24,25 @@ use txio_api::utils::config::Config;
 use dialoguer::{Confirm, Input, Password};
 use std::str::FromStr;
 
+fn truncate_utf8_for_display(input: &str, prefix_len: usize, suffix_len: usize) -> String {
+    let char_count = input.chars().count();
+    if char_count <= prefix_len + suffix_len {
+        return input.to_string();
+    }
+
+    let prefix: String = input.chars().take(prefix_len).collect();
+    let suffix: String = input
+        .chars()
+        .rev()
+        .take(suffix_len)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect();
+
+    format!("{prefix}...{suffix}")
+}
+
 pub struct CommandHandler;
 
 fn resolve_audit_user_id(session_user_id: Option<ObjectId>) -> Option<ObjectId> {
@@ -493,13 +512,9 @@ impl CommandHandler {
                                     if parts.len() >= 3 {
                                         format!("{}::{}", parts[1].blue(), parts[2].cyan())
                                     } else {
-                                        format!(
-                                            "{}...{}",
-                                            &coin_type[..10],
-                                            &coin_type[coin_type.len() - 10..]
-                                        )
-                                        .cyan()
-                                        .to_string()
+                                        truncate_utf8_for_display(coin_type, 10, 10)
+                                            .cyan()
+                                            .to_string()
                                     }
                                 } else {
                                     coin_type.cyan().to_string()
@@ -673,5 +688,25 @@ impl CommandHandler {
             println!("{}", serde_json::to_string(value)?);
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::truncate_utf8_for_display;
+
+    #[test]
+    fn truncates_multi_byte_utf8_input_without_panicking() {
+        let input = "0x2::🍕::coin::very_long_type_name";
+        let output = truncate_utf8_for_display(input, 10, 10);
+
+        assert!(output.contains("..."));
+        assert!(output.chars().count() < input.chars().count());
+    }
+
+    #[test]
+    fn leaves_short_strings_unchanged() {
+        let input = "0x2::sui::SUI";
+        assert_eq!(truncate_utf8_for_display(input, 10, 10), input);
     }
 }
