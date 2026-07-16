@@ -16,19 +16,21 @@
 
 ---
 
-## Overview
+## The Problem
 
-**txio** is a unified CLI and web dashboard designed to streamline interactions across multiple blockchains—including Sui, Ethereum, Solana, Aptos, and Soroban—through a single, consistent interface.
+Building or operating across more than one chain means living with a different CLI for each of them. `sui client`, `solana`, `aptos`, `soroban`, plus whatever you've cobbled together for Ethereum — each with its own install step, its own flag names, its own config file, and its own idea of what a "network" argument looks like. Switching from Sui devnet to Ethereum mainnet mid-session means switching tools entirely, not just an argument.
 
-Stop juggling multiple CLIs, dozens of RPC endpoints, and varying address formats. **txio** normalizes commands and flags across chains, natively resolves human-readable names (`.sui`, `.eth`), and surfaces data beautifully through either your terminal or a local web dashboard.
+On top of that, none of them speak human-readable names. Checking a balance means resolving `.sui` or `.eth` yourself first, then pasting the raw address back in. Multiply that friction across five ecosystems and a routine task — "what's in this wallet?" — turns into a scavenger hunt through five different toolchains.
 
 ---
 
-## Key Features
+## The Solution
+
+**txio** is a unified CLI and web dashboard that puts Sui, Ethereum, Solana, Aptos, and Soroban behind one consistent interface.
 
 *   **Unified Interface Across 5 Chains** – Sui, Ethereum, Solana, Aptos, and Soroban share the exact same command structure and flags.
 *   **Instant Network Switching** – Pass `--network testnet` (or `mainnet`, `devnet`) directly to any command with zero configuration changes.
-*   **Native Name Resolution** – Handlers like `.sui` and `.eth` resolve automatically behind the scenes before requests are dispatched.
+*   **Native Name Resolution** – `.sui`, `.eth`, and equivalent name services resolve automatically before requests are dispatched — no raw addresses to paste in by hand.
 *   **Human-Readable Terminal Output** – Clean, formatted tables by default. Want raw data? Just append the `--pretty` flag for JSON.
 *   **One-Command Local Stack** – Spin up the caching API, frontend dashboard, and database instantly via Docker.
 
@@ -59,9 +61,10 @@ Ensure you have the following installed locally:
 ### 1. Clone and Install
 
 ```bash
-git clone [https://github.com/Kingvic300/txio.git](https://github.com/Kingvic300/txio.git)
+git clone https://github.com/Txio-labs/txio.git
 cd txio
 npm install
+```
 
 ### Start the full stack
 
@@ -89,16 +92,6 @@ cargo run -- --network testnet eth balance 0x...
 ```
 
 Run `txio --help` to see all available commands and flags.
-
----
-
-## Features
-
-- **Unified interface across five chains** — Sui, Ethereum, Solana, Aptos, and Soroban share the same command structure and flags.
-- **Network switching** — Pass `--network testnet` (or `mainnet`, `devnet`) to any command. No config changes required.
-- **Name resolution** — `.sui`, `.eth`, and equivalent name services are resolved automatically before requests are sent.
-- **Readable output by default** — Responses are formatted for the terminal. Use `--pretty` to get raw JSON.
-- **One-command stack** — `docker-compose up` starts everything: API, frontend, and database.
 
 ---
 
