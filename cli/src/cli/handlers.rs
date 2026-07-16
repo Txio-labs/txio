@@ -17,6 +17,7 @@ use txio_api::dtos::response::AuthResponse;
 use txio_api::infra::db::{describe_connection_error, establish_connection};
 use txio_api::model::rpc::RpcLog;
 use txio_api::repositories::rpc_repository::RpcRepository;
+use txio_api::repositories::user_repository::UserRepository;
 use txio_api::utils::auth_jwt::JwtHelper;
 use txio_api::utils::config::Config;
 
