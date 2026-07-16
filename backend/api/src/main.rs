@@ -5,7 +5,7 @@ use tower_http::cors::{Any, CorsLayer};
 
 use ::txio_api::{
     api,
-    infra::db::{describe_connection_error, establish_connection},
+    infra::db::{describe_connection_error, establish_connection, extract_mongo_host},
     model, repositories, services, utils,
     utils::config::Config,
 };
@@ -33,14 +33,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // 3. Connect to Database
-    tracing::info!("Connecting to MongoDB at {}...", config.mongo_uri);
+    let mongo_host = extract_mongo_host(&config.mongo_uri).unwrap_or("unknown host");
+    tracing::info!("Connecting to MongoDB at {}...", mongo_host);
     let db_client = establish_connection(&config.mongo_uri).await.map_err(|e| {
         let message = describe_connection_error(&config.mongo_uri, &e);
         tracing::error!(error = %message, "Failed to connect to MongoDB");
         Box::new(std::io::Error::other(message)) as Box<dyn std::error::Error>
     })?;
 
-    tracing::info!("Connected to MongoDB at {}", config.mongo_uri);
+    tracing::info!("Connected to MongoDB at {}", mongo_host);
 
     // 4. Initialize Repositories
 
