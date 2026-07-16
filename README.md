@@ -71,8 +71,17 @@ npm install
 Boots the backend, frontend, and database in one command:
 
 ```bash
+cp .env.example backend/api/.env
+# Edit backend/api/.env and set at minimum:
+#   MONGO_INITDB_ROOT_USERNAME, MONGO_INITDB_ROOT_PASSWORD
+#   JWT_SECRET (>=32 chars), BREVO_API_KEY, GROQ_API_KEYS
 docker-compose up -d
 ```
+
+The full stack runs MongoDB with `--auth` enabled and credentials from
+`backend/api/.env`. The `mongodb://...` connection string is built from those
+same variables inside `docker-compose.yml`, so the username and password only
+need to be set in one place.
 
 The frontend comes up on its default port, with the API running behind it.
 
