@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Wallet, Box, X, BrainCircuit, MessageSquare } from 'lucide-react';
 import { Network, ActivityLog, Comment } from '../../types';
 import { getOwnedObjects } from '../../services/suiService';
@@ -10,6 +10,8 @@ import {
   DiscussTab,
 } from './Tabs';
 
+type RightPanelTab = 'wallet' | 'objects' | 'analysis' | 'discuss';
+
 interface RightPanelProps {
   network: Network;
   activityLogs: ActivityLog[];
@@ -19,6 +21,36 @@ interface RightPanelProps {
   onClose: () => void;
 }
 
+const TabButton = ({
+  id,
+  icon: Icon,
+  label,
+  isActive,
+  onSelect,
+}: {
+  id: RightPanelTab;
+  icon: any;
+  label: string;
+  isActive: boolean;
+  onSelect: (id: RightPanelTab) => void;
+}) => (
+  <button
+    onClick={() => onSelect(id)}
+    className={`flex-1 flex flex-col items-center justify-center py-2 gap-1 transition-colors relative ${
+      isActive
+      ? 'text-electric-violet'
+      : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.03]'
+    }`}
+    title={label}
+  >
+    <Icon size={15} strokeWidth={isActive ? 2.25 : 1.75} />
+    <span className="text-[10px] font-medium">{label}</span>
+    {isActive && (
+      <span className="absolute bottom-0 left-0 right-0 h-px bg-electric-violet"></span>
+    )}
+  </button>
+);
+
 export const RightPanel: React.FC<RightPanelProps> = ({
   network,
   activityLogs,
@@ -26,7 +58,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   onPostComment,
   onClose
 }) => {
-  const [activeTab, setActiveTab] = useState<'wallet' | 'objects' | 'analysis' | 'discuss'>('wallet');
+  const [activeTab, setActiveTab] = useState<RightPanelTab>('wallet');
   const [objects, setObjects] = useState<any[]>([]);
   const [loadingObjects, setLoadingObjects] = useState(false);
   const [commentInput, setCommentInput] = useState('');
@@ -38,7 +70,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  const fetchObjects = async () => {
+  const fetchObjects = useCallback(async () => {
     if (!connectedAddress) return;
     setLoadingObjects(true);
     try {
@@ -53,13 +85,15 @@ export const RightPanel: React.FC<RightPanelProps> = ({
     } finally {
       setLoadingObjects(false);
     }
-  };
+  }, [connectedAddress, network]);
 
   useEffect(() => {
     if (activeTab === 'objects' && connectedAddress) {
-      fetchObjects();
+      queueMicrotask(() => {
+        fetchObjects();
+      });
     }
-  }, [activeTab, connectedAddress, network]);
+  }, [activeTab, connectedAddress, fetchObjects]);
 
   const submitComment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,24 +102,6 @@ export const RightPanel: React.FC<RightPanelProps> = ({
       setCommentInput('');
     }
   };
-
-  const TabButton = ({ id, icon: Icon, label }: { id: typeof activeTab, icon: any, label: string }) => (
-    <button
-      onClick={() => setActiveTab(id)}
-      className={`flex-1 flex flex-col items-center justify-center py-2 gap-1 transition-colors relative ${
-        activeTab === id
-        ? 'text-electric-violet'
-        : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.03]'
-      }`}
-      title={label}
-    >
-      <Icon size={15} strokeWidth={activeTab === id ? 2.25 : 1.75} />
-      <span className="text-[10px] font-medium">{label}</span>
-      {activeTab === id && (
-        <span className="absolute bottom-0 left-0 right-0 h-px bg-electric-violet"></span>
-      )}
-    </button>
-  );
 
   return (
     <div className="w-80 bg-near-black border-l border-white/[0.06] flex flex-col h-full font-sans relative z-30">
@@ -112,10 +128,10 @@ export const RightPanel: React.FC<RightPanelProps> = ({
 
       {/* Navigation */}
       <div className="shrink-0 flex border-b border-white/[0.06] bg-near-black">
-        <TabButton id="wallet" icon={Wallet} label="Wallet" />
-        <TabButton id="objects" icon={Box} label="Objects" />
-        <TabButton id="analysis" icon={BrainCircuit} label="Analysis" />
-        <TabButton id="discuss" icon={MessageSquare} label="Discuss" />
+        <TabButton id="wallet" icon={Wallet} label="Wallet" isActive={activeTab === 'wallet'} onSelect={setActiveTab} />
+        <TabButton id="objects" icon={Box} label="Objects" isActive={activeTab === 'objects'} onSelect={setActiveTab} />
+        <TabButton id="analysis" icon={BrainCircuit} label="Analysis" isActive={activeTab === 'analysis'} onSelect={setActiveTab} />
+        <TabButton id="discuss" icon={MessageSquare} label="Discuss" isActive={activeTab === 'discuss'} onSelect={setActiveTab} />
       </div>
 
       <div className="flex-1 flex flex-col min-h-0 relative">

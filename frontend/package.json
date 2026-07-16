@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@dicebear/collection": "^9.3.0",
@@ -36,6 +36,8 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.5.0",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.6",
     "postcss": "^8.5.14",
     "tailwindcss": "^4.3.0",
     "typescript": "5.8.3"

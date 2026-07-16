@@ -79,7 +79,7 @@ export const DocsPage: React.FC<
                         <div className="space-y-6">
                             <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white">Introduction.</h1>
                             <p className="text-lg text-slate-400 leading-relaxed max-w-3xl">
-                                txio is one workspace for every chain you build on. It sits between you and raw JSON-RPC — handling the boring parts (names, gas, schemas) so you can focus on what you're actually shipping.
+                                txio is one workspace for every chain you build on. It sits between you and raw JSON-RPC — handling the boring parts (names, gas, schemas) so you can focus on what you&apos;re actually shipping.
                             </p>
                         </div>
 
@@ -89,13 +89,13 @@ export const DocsPage: React.FC<
                                 <div className="space-y-4">
                                     <h4 className="font-bold text-electric-violet">Every chain, first-class</h4>
                                     <p className="text-sm text-slate-500 leading-relaxed">
-                                        Most IDEs pick a chain and stop there. txio doesn't. Sui's object model, Solana's accounts, Ethereum's storage slots — same workflow, same shortcuts, same muscle memory.
+                                        Most IDEs pick a chain and stop there. txio doesn&apos;t. Sui&apos;s object model, Solana&apos;s accounts, Ethereum&apos;s storage slots — same workflow, same shortcuts, same muscle memory.
                                     </p>
                                 </div>
                                 <div className="space-y-4">
-                                    <h4 className="font-bold text-emerald-400">Multi-chain isn't optional</h4>
+                                    <h4 className="font-bold text-emerald-400">Multi-chain isn&apos;t optional</h4>
                                     <p className="text-sm text-slate-500 leading-relaxed">
-                                        Real apps span chains now. We built the adapter layer once so you don't have to keep reinventing it per project.
+                                        Real apps span chains now. We built the adapter layer once so you don&apos;t have to keep reinventing it per project.
                                     </p>
                                 </div>
                             </div>
@@ -282,7 +282,7 @@ export const DocsPage: React.FC<
                                         <div className="flex-1 space-y-6">
                                             <h3 className="text-xl font-bold text-white">Hot connections</h3>
                                             <p className="text-slate-500 text-sm leading-relaxed">
-                                                Most clients open a fresh HTTP connection per request and pay the handshake cost every time. We don't. Long-lived multiplexed streams stay open to nodes around the world, so requests start moving the moment you hit send.
+                                                Most clients open a fresh HTTP connection per request and pay the handshake cost every time. We don&apos;t. Long-lived multiplexed streams stay open to nodes around the world, so requests start moving the moment you hit send.
                                             </p>
                                             <ul className="space-y-3">
                                                 {['Multiplexed RPC Streams', 'Intelligent Request Routing', 'Automated Latency Rebalancing', 'Failover redundancy'].map(item => (
@@ -347,14 +347,14 @@ export const DocsPage: React.FC<
                             <div className="space-y-6">
                                 <h4 className="text-xs font-black uppercase tracking-[0.3em] text-slate-600 px-2">Example PTB Script</h4>
                                 <div className="p-8 rounded-[2.5rem] bg-black border border-white/5 font-mono text-sm leading-loose">
-                                    <div className="text-slate-500">// 1. Split gas coin for specific amounts</div>
+                                    <div className="text-slate-500">{/* 1. Split gas coin for specific amounts */}</div>
                                     <div className="text-white">const [coin1, coin2] = txb.splitCoins(txb.gas, [1000, 2000]);</div>
-                                    <div className="text-slate-500 mt-4">// 2. Execute Move call with split coins</div>
+                                    <div className="text-slate-500 mt-4">{/* 2. Execute Move call with split coins */}</div>
                                     <div className="text-white italic">txb.moveCall(&#123;</div>
-                                    <div className="text-white pl-6">target: <span className="text-emerald-400">'0x2::token::transfer'</span>,</div>
+                                    <div className="text-white pl-6">target: <span className="text-emerald-400">&apos;0x2::token::transfer&apos;</span>,</div>
                                     <div className="text-white pl-6">arguments: [coin1, recipient_address]</div>
                                     <div className="text-white italic">&#125;);</div>
-                                    <div className="text-slate-500 mt-4">// 3. Preview state changes</div>
+                                    <div className="text-slate-500 mt-4">{/* 3. Preview state changes */}</div>
                                     <div className="text-soft-purple italic">await txb.simulate(&#123; provider &#125;);</div>
                                 </div>
                             </div>
@@ -401,7 +401,7 @@ export const DocsPage: React.FC<
                         <div className="space-y-12">
                             <h2 className="text-3xl font-black text-white border-l-4 border-electric-violet pl-6 uppercase">It actually knows the chain</h2>
                             <p className="text-slate-500 text-sm leading-relaxed max-w-3xl">
-                                The builder isn't just Postman with a different skin. When you point it at an endpoint, it crawls the available methods, parameter shapes, and docs — and feeds that back into autocomplete.
+                                The builder isn&apos;t just Postman with a different skin. When you point it at an endpoint, it crawls the available methods, parameter shapes, and docs — and feeds that back into autocomplete.
                             </p>
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -478,7 +478,7 @@ export const DocsPage: React.FC<
                                     using the <span className="text-electric-violet">{"{{VAR}}"}</span> syntax.
                                 </p>
                                 <div className="p-5 rounded-2xl bg-black border border-white/5 font-mono text-[10px] text-slate-400">
-                                    "params": ["{"{{SUI_COIN_ID}}"}"]
+                                    &quot;params&quot;: [&quot;{"{{SUI_COIN_ID}}"}&quot;]
                                 </div>
                             </div>
                         </div>
@@ -502,7 +502,7 @@ export const DocsPage: React.FC<
                                     <div className="space-y-4">
                                         <div className="font-bold text-white text-sm">Natural Language Controls</div>
                                         <p className="text-xs text-slate-500 leading-relaxed">
-                                            Ask "What's the balance of this address?" and txio will programmatically generate 
+                                            Ask &quot;What&apos;s the balance of this address?&quot; and txio will programmatically generate
                                             the correct RPC tab with pre-filled parameters.
                                         </p>
                                     </div>
@@ -540,7 +540,7 @@ export const DocsPage: React.FC<
                                         </h3>
                                         <p className="text-slate-500 text-sm leading-relaxed">
                                             All local workspace files, including environment variables, historical requests, and custom collection 
-                                            metadata, are encrypted using a unique master key derived from your hardware's secure element.
+                                            metadata, are encrypted using a unique master key derived from your hardware&apos;s secure element.
                                         </p>
                                     </div>
                                     <div className="space-y-6">
@@ -565,7 +565,7 @@ export const DocsPage: React.FC<
                                     <h3 className="text-2xl font-black text-white">Local-First Storage</h3>
                                     <p className="text-slate-500 text-sm leading-relaxed">
                                         Sensitive data like private keys or API secrets are NEVER stored in the cloud. They reside 
-                                        strictly within your local environment's secure store, integrated with system-level keychains 
+                                        strictly within your local environment&apos;s secure store, integrated with system-level keychains
                                         (macOS Keychain, Windows Credential Manager, Linux Secret Service).
                                     </p>
                                     <div className="flex gap-4">
@@ -604,13 +604,13 @@ export const DocsPage: React.FC<
                             <div className="space-y-6">
                                 <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-600 px-2">Example: Executing a Terminal Command</div>
                                 <div className="p-8 rounded-[2.5rem] bg-black border border-white/5 font-mono text-sm leading-loose">
-                                    <div className="text-emerald-400 italic">import &#123; txio &#125; from '@txio/sdk-core';</div>
-                                    <div className="mt-4 text-slate-500">// Initialize client with your secure workspace key</div>
+                                    <div className="text-emerald-400 italic">import &#123; txio &#125; from &apos;@txio/sdk-core&apos;;</div>
+                                    <div className="mt-4 text-slate-500">{/* Initialize client with your secure workspace key */}</div>
                                     <div className="text-white">const client = txio.init(&#123; apiKey: process.env.TXIO_KEY &#125;);</div>
-                                    <div className="mt-4 text-slate-500">// Programmatically execute a deployment</div>
+                                    <div className="mt-4 text-slate-500">{/* Programmatically execute a deployment */}</div>
                                     <div className="text-white italic">const result = await client.terminal.execute(&#123;</div>
-                                    <div className="text-white pl-6">command: <span className="text-amber-400">'txio deploy --move ./package'</span>,</div>
-                                    <div className="text-white pl-6">network: <span className="text-amber-400">'mainnet'</span></div>
+                                    <div className="text-white pl-6">command: <span className="text-amber-400">&apos;txio deploy --move ./package&apos;</span>,</div>
+                                    <div className="text-white pl-6">network: <span className="text-amber-400">&apos;mainnet&apos;</span></div>
                                     <div className="text-white italic">&#125;);</div>
                                     <div className="mt-4 text-soft-purple italic">console.log(`Deployment Hash: $&#123;result.digest&#125;`);</div>
                                 </div>
@@ -707,7 +707,7 @@ export const DocsPage: React.FC<
                             <div className="space-y-6">
                                 <h3 className="text-2xl font-black text-white italic">Intelligent Node Routing</h3>
                                 <p className="text-slate-500 text-sm leading-relaxed">
-                                    txio doesn't just connect to a single endpoint. Our router maintains a global map of node health, 
+                                    txio doesn&apos;t just connect to a single endpoint. Our router maintains a global map of node health,
                                     latency, and sync status. Every request you send is automatically routed to the healthiest, 
                                     lowest-latency endpoint available in our verified pool.
                                 </p>
@@ -789,7 +789,7 @@ export const DocsPage: React.FC<
                         <div className="space-y-12">
                             <h2 className="text-3xl font-black text-white border-l-4 border-white pl-6 uppercase">Buffer Configuration</h2>
                             <p className="text-slate-500 text-sm leading-relaxed max-w-3xl">
-                                Strictness is per-environment. Run loose in dev, lock it down in prod — the buffer will outright block anything that doesn't clear your safety threshold.
+                                Strictness is per-environment. Run loose in dev, lock it down in prod — the buffer will outright block anything that doesn&apos;t clear your safety threshold.
                             </p>
                             <div className="p-8 rounded-[2.5rem] bg-black border border-white/5 font-mono text-sm leading-loose">
                                 <div className="text-slate-500"># txio security policy config</div>
@@ -807,7 +807,7 @@ export const DocsPage: React.FC<
                             <div className="w-24 h-24 rounded-full bg-electric-violet/10 flex items-center justify-center text-electric-violet mx-auto md:mx-0 animate-pulse"><Layers size={48} /></div>
                             <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white uppercase italic">Cloud Sync.</h1>
                             <p className="text-lg text-slate-400 leading-relaxed max-w-2xl">
-                                Your workspace, everywhere you log in. Encrypted before it leaves your machine — we can't read it, and that's the point.
+                                Your workspace, everywhere you log in. Encrypted before it leaves your machine — we can&apos;t read it, and that&apos;s the point.
                             </p>
                         </div>
 
@@ -873,7 +873,7 @@ export const DocsPage: React.FC<
                                     <div className="w-10 h-10 rounded-xl bg-sky-400/10 flex items-center justify-center text-sky-400"><Globe size={20} /></div>
                                     <h4 className="font-bold text-white text-sm">GitHub Actions CI</h4>
                                     <p className="text-[11px] text-slate-600 leading-relaxed">
-                                        Tests run on every PR. New chain adapters can't break the existing ones — the suite catches it before merge.
+                                        Tests run on every PR. New chain adapters can&apos;t break the existing ones — the suite catches it before merge.
                                     </p>
                                 </div>
                                 <div className="p-8 rounded-[2.5rem] bg-white/[0.01] border border-white/5 space-y-4">
@@ -893,18 +893,18 @@ export const DocsPage: React.FC<
                         <div className="space-y-6">
                             <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white">Extending.</h1>
                             <p className="text-lg text-slate-400 leading-relaxed max-w-3xl">
-                                Need a chain we don't support? Add it. It's one file and a trait impl.
+                                Need a chain we don&apos;t support? Add it. It&apos;s one file and a trait impl.
                             </p>
                         </div>
 
                         <div className="space-y-12">
                             <h2 className="text-2xl font-black text-white italic">Writing a chain adapter</h2>
                             <p className="text-slate-500 text-sm leading-relaxed">
-                                Implement the <code className="text-electric-violet">ChainAdapter</code> trait, register it, you're done. The CLI, history, and IDE pick it up automatically — you don't have to touch any of them.
+                                Implement the <code className="text-electric-violet">ChainAdapter</code> trait, register it, you&apos;re done. The CLI, history, and IDE pick it up automatically — you don&apos;t have to touch any of them.
                             </p>
                             <div className="p-8 rounded-[2.5rem] bg-black border border-white/5 font-mono text-sm leading-relaxed">
                                 <div className="text-white">pub trait <span className="text-emerald-400">ChainAdapter</span> &#123;</div>
-                                <div className="pl-6 text-slate-500">/// Call a JSON-RPC method</div>
+                                <div className="pl-6 text-slate-500">{/* Call a JSON-RPC method */}</div>
                                 <div className="pl-6 text-white italic">async fn call_rpc(&amp;self, method: &amp;str, params: Value) -&gt; Result&lt;Value&gt;;</div>
                                 <div className="text-white">&#125;</div>
                             </div>
@@ -917,7 +917,7 @@ export const DocsPage: React.FC<
                         <div className="space-y-6">
                             <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white">Roadmap.</h1>
                             <p className="text-lg text-slate-400 leading-relaxed max-w-3xl">
-                                What's coming. No promises on the dates, but the work is real.
+                                What&apos;s coming. No promises on the dates, but the work is real.
                             </p>
                         </div>
 

@@ -226,7 +226,7 @@ export const OTPPage: React.FC = () => {
                                             animate={{ y: 0, opacity: 1 }}
                                             className="flex items-center gap-2"
                                         >
-                                            You're in.
+                                            You&apos;re in.
                                         </motion.div>
                                     ) : (
                                         <motion.div 
@@ -246,7 +246,7 @@ export const OTPPage: React.FC = () => {
                                 <p className={`text-sm font-medium ${
                                     theme === 'dark' ? 'text-slate-500' : 'text-slate-400'
                                 }`}>
-                                    Code didn't show up?
+                                    Code didn&apos;t show up?
                                 </p>
                                 <button 
                                     type="button"

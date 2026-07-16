@@ -69,11 +69,11 @@ export const Playground: React.FC = () => {
                             <div className="space-y-4 relative z-10">
                                 <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Active Script</div>
                                 <div className="font-mono text-sm leading-relaxed">
-                                    <div className="text-slate-500">// 1. Fetching total supply of SUI</div>
+                                    <div className="text-slate-500">{/* 1. Fetching total supply of SUI */}</div>
                                     <div className="text-white">const <span className="text-emerald-400">supply</span> = await sui.getTotalSupply();</div>
-                                    <div className="mt-4 text-slate-500">// 2. Querying recent move calls</div>
+                                    <div className="mt-4 text-slate-500">{/* 2. Querying recent move calls */}</div>
                                     <div className="text-white">const <span className="text-sky-400">events</span> = await sui.queryEvents(&#123; limit: 10 &#125;);</div>
-                                    <div className="mt-4 text-slate-500">// 3. Output to playground terminal</div>
+                                    <div className="mt-4 text-slate-500">{/* 3. Output to playground terminal */}</div>
                                     <div className="text-soft-purple">console.log(`Current Supply: $&#123;supply&#125;`);</div>
                                 </div>
                             </div>

@@ -15,11 +15,13 @@ interface TabProps {
 export const Tab: React.FC<TabProps> = ({ title, isActive, onSelect, onClose, onRename, icon }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editValue, setEditValue] = useState(title);
+    const [prevTitle, setPrevTitle] = useState(title);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
+    if (title !== prevTitle) {
+        setPrevTitle(title);
         setEditValue(title);
-    }, [title]);
+    }
 
     useEffect(() => {
         if (isEditing && inputRef.current) {

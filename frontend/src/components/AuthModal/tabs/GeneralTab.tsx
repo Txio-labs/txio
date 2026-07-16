@@ -61,12 +61,14 @@ export const GeneralTab: React.FC<TabProps & { onLogout: () => void }> = ({ user
     const [editName, setEditName] = useState(user?.name || '');
     const [saved, setSaved] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [prevUserName, setPrevUserName] = useState(user?.name);
 
-    useEffect(() => {
+    if (user?.name !== prevUserName) {
+        setPrevUserName(user?.name);
         setEditName(user?.name || '');
         setSaved(false);
         setError(null);
-    }, [user?.name]);
+    }
 
     useEffect(() => {
         if (!saved) return;

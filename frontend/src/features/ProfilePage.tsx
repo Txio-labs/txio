@@ -153,12 +153,14 @@ function useProfileForm(user: UserProfile) {
     const initial = useMemo<ProfileFormValues>(() => ({ name: user.name }), [user.name]);
     const [values, setValues] = useState<ProfileFormValues>(initial);
     const [errors, setErrors] = useState<Partial<Record<keyof ProfileFormValues, string>>>({});
+    const [prevInitial, setPrevInitial] = useState(initial);
 
     // Resync when the source user changes externally (e.g. via /signin or another tab).
-    useEffect(() => {
+    if (initial !== prevInitial) {
+        setPrevInitial(initial);
         setValues(initial);
         setErrors({});
-    }, [initial]);
+    }
 
     const setField = useCallback(<K extends keyof ProfileFormValues>(key: K, value: ProfileFormValues[K]) => {
         setValues((v) => ({ ...v, [key]: value }));
@@ -313,10 +315,20 @@ interface ProfilePageContentProps {
 const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCount }) => {
     const { values, errors, isDirty, setField, validate } = useProfileForm(user);
     const save = useSaveStatus();
-    const avatarUpload = useImageUpload('avatarUrl', MAX_AVATAR_BYTES);
-    const bannerUpload = useImageUpload('bannerUrl', MAX_BANNER_BYTES);
+    const {
+        inputRef: avatarInputRef,
+        trigger: avatarTrigger,
+        onChange: avatarOnChange,
+        isUploading: avatarIsUploading,
+    } = useImageUpload('avatarUrl', MAX_AVATAR_BYTES);
+    const {
+        inputRef: bannerInputRef,
+        trigger: bannerTrigger,
+        onChange: bannerOnChange,
+        isUploading: bannerIsUploading,
+    } = useImageUpload('bannerUrl', MAX_BANNER_BYTES);
 
-    const timezone = useMemo(getBrowserTimezone, []);
+    const timezone = useMemo(() => getBrowserTimezone(), []);
 
     const handleSave = useCallback(async () => {
         if (!isDirty || save.status === 'saving') return;
@@ -381,16 +393,16 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
                                 </div>
                                 <input
                                     type="file"
-                                    ref={avatarUpload.inputRef}
+                                    ref={avatarInputRef}
                                     className="hidden"
                                     accept="image/*"
-                                    onChange={avatarUpload.onChange}
+                                    onChange={avatarOnChange}
                                 />
                                 <button
-                                    onClick={avatarUpload.trigger}
-                                    disabled={avatarUpload.isUploading}
+                                    onClick={avatarTrigger}
+                                    disabled={avatarIsUploading}
                                     className="absolute inset-0.5 flex items-center justify-center bg-near-black/70 backdrop-blur-sm text-white opacity-0 group-hover/avatar:opacity-100 focus-visible:opacity-100 disabled:opacity-60 rounded-xl transition-opacity"
-                                    aria-label={avatarUpload.isUploading ? 'Uploading avatar' : 'Change avatar'}
+                                    aria-label={avatarIsUploading ? 'Uploading avatar' : 'Change avatar'}
                                 >
                                     <Camera size={18} />
                                 </button>
@@ -406,16 +418,16 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
                         {/* Banner upload trigger — discreet corner action */}
                         <input
                             type="file"
-                            ref={bannerUpload.inputRef}
+                            ref={bannerInputRef}
                             className="hidden"
                             accept="image/*"
-                            onChange={bannerUpload.onChange}
+                            onChange={bannerOnChange}
                         />
                         <button
-                            onClick={bannerUpload.trigger}
-                            disabled={bannerUpload.isUploading}
+                            onClick={bannerTrigger}
+                            disabled={bannerIsUploading}
                             className="absolute top-2 right-2 p-1.5 rounded-md text-slate-500 hover:text-slate-200 hover:bg-white/[0.06] disabled:opacity-40 transition-colors"
-                            title={bannerUpload.isUploading ? 'Uploading…' : 'Customize background'}
+                            title={bannerIsUploading ? 'Uploading…' : 'Customize background'}
                             aria-label="Customize background"
                         >
                             <ImageIcon size={13} />
@@ -529,7 +541,7 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
                                     ))}
                                 </div>
                                 <div className="px-5 py-2 border-t border-white/[0.06] text-[11px] text-slate-600">
-                                    Demo data — session tracking isn't wired up yet.
+                                    Demo data — session tracking isn&apos;t wired up yet.
                                 </div>
                             </div>
                         </Section>
