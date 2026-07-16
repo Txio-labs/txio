@@ -29,7 +29,8 @@
     "asar": true,
     "publish": null,
     "files": [
-      "src/**/*",
+      "src/index.js",
+      "src/assets/**",
       "dist/**/*",
       "build/**/*",
       "package.json",
