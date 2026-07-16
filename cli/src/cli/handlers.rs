@@ -17,7 +17,6 @@ use txio_api::dtos::response::AuthResponse;
 use txio_api::infra::db::{describe_connection_error, establish_connection};
 use txio_api::model::rpc::RpcLog;
 use txio_api::repositories::rpc_repository::RpcRepository;
-use txio_api::repositories::user_repository::UserRepository;
 use txio_api::utils::auth_jwt::JwtHelper;
 use txio_api::utils::config::Config;
 
@@ -25,6 +24,26 @@ use dialoguer::{Confirm, Input, Password};
 use std::str::FromStr;
 
 pub struct CommandHandler;
+
+fn resolve_audit_user_id(session_user_id: Option<ObjectId>) -> Option<ObjectId> {
+    session_user_id
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn uses_authenticated_session_identity_for_audit_logs() {
+        let session_user_id = Some(ObjectId::new());
+        assert_eq!(resolve_audit_user_id(session_user_id), session_user_id);
+    }
+
+    #[test]
+    fn returns_none_without_an_authenticated_session() {
+        assert!(resolve_audit_user_id(None).is_none());
+    }
+}
 
 impl CommandHandler {
     pub async fn handle(cli: Cli) -> Result<()> {
@@ -128,7 +147,7 @@ impl CommandHandler {
             Commands::Sui { command } => {
                 let adapter =
                     ChainFactory::get_adapter("sui", cli.rpc_url.clone(), cli.network.clone())?;
-                Self::handle_chain_command(adapter, command, cli.pretty, cli.email).await?;
+                Self::handle_chain_command(adapter, command, cli.pretty).await?;
             }
             Commands::Ethereum { command } => {
                 let adapter = ChainFactory::get_adapter(
@@ -136,22 +155,22 @@ impl CommandHandler {
                     cli.rpc_url.clone(),
                     cli.network.clone(),
                 )?;
-                Self::handle_chain_command(adapter, command, cli.pretty, cli.email).await?;
+                Self::handle_chain_command(adapter, command, cli.pretty).await?;
             }
             Commands::Solana { command } => {
                 let adapter =
                     ChainFactory::get_adapter("solana", cli.rpc_url.clone(), cli.network.clone())?;
-                Self::handle_chain_command(adapter, command, cli.pretty, cli.email).await?;
+                Self::handle_chain_command(adapter, command, cli.pretty).await?;
             }
             Commands::Aptos { command } => {
                 let adapter =
                     ChainFactory::get_adapter("aptos", cli.rpc_url.clone(), cli.network.clone())?;
-                Self::handle_chain_command(adapter, command, cli.pretty, cli.email).await?;
+                Self::handle_chain_command(adapter, command, cli.pretty).await?;
             }
             Commands::Soroban { command } => {
                 let adapter =
                     ChainFactory::get_adapter("soroban", cli.rpc_url.clone(), cli.network.clone())?;
-                Self::handle_chain_command(adapter, command, cli.pretty, cli.email).await?;
+                Self::handle_chain_command(adapter, command, cli.pretty).await?;
             }
             Commands::Db { action } => {
                 Self::handle_db_command(action).await?;
@@ -352,7 +371,6 @@ impl CommandHandler {
         adapter: Arc<dyn ChainAdapter>,
         command: ChainCommand,
         pretty: bool,
-        email: Option<String>,
     ) -> Result<()> {
         match command {
             ChainCommand::Call { method, params } => {
@@ -375,12 +393,7 @@ impl CommandHandler {
 
                 if let Ok(config) = Config::from_env() {
                     if let Ok(client) = establish_connection(&config.mongo_uri).await {
-                        if let Some(user_email) = email {
-                            let user_repo = UserRepository::new(&client);
-                            if let Ok(user) = user_repo.find_by_email(&user_email).await {
-                                user_id_to_log = user.id;
-                            }
-                        } else if let Some(token) = utils::get_token() {
+                        if let Some(token) = utils::get_token() {
                             let jwt_helper = JwtHelper::new(config.jwt_secret);
                             if let Ok(claims) = jwt_helper.verify_token(&token) {
                                 if let Ok(oid) = ObjectId::from_str(&claims.sub) {
@@ -389,6 +402,7 @@ impl CommandHandler {
                             }
                         }
 
+                        let user_id_to_log = resolve_audit_user_id(user_id_to_log);
                         if let Some(user_id) = user_id_to_log {
                             let rpc_repo = RpcRepository::new(&client);
                             let log = RpcLog::new(

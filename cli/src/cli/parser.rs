@@ -33,10 +33,6 @@ pub struct Cli {
     /// Select the network to use
     #[arg(short, long, global = true, value_enum, default_value_t = Network::Mainnet)]
     pub network: Network,
-
-    /// User email for account-linked requests
-    #[arg(short, long, global = true, env = "txio_EMAIL")]
-    pub email: Option<String>,
 }
 
 #[derive(Subcommand)]
