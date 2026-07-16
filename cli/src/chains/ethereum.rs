@@ -1,4 +1,5 @@
 use crate::chains::traits::ChainAdapter;
+use crate::chains::validation::{validate_ethereum_address};
 use crate::cli::parser::Network;
 use async_trait::async_trait;
 use serde_json::{json, Value};
@@ -75,6 +76,7 @@ impl ChainAdapter for EthereumAdapter {
     }
 
     async fn get_balance(&self, address: &str) -> Result<Value> {
+        let address = validate_ethereum_address(address)?;
         let params = json!([address, "latest"]);
         self.call_rpc("eth_getBalance", params).await
     }
@@ -96,6 +98,7 @@ impl ChainAdapter for EthereumAdapter {
     }
 
     async fn get_account(&self, address: &str) -> Result<Value> {
+        let address = validate_ethereum_address(address)?;
         let balance = self.call_rpc("eth_getBalance", json!([address, "latest"])).await?;
         let nonce = self.call_rpc("eth_getTransactionCount", json!([address, "latest"])).await?;
         let code = self.call_rpc("eth_getCode", json!([address, "latest"])).await?;
@@ -109,6 +112,7 @@ impl ChainAdapter for EthereumAdapter {
     }
 
     async fn get_history(&self, address: &str, limit: u32) -> Result<Value> {
+        let address = validate_ethereum_address(address)?;
         let block_hex = self.call_rpc("eth_blockNumber", json!([])).await?;
         let latest = u64::from_str_radix(
             block_hex.as_str().unwrap_or("0x0").trim_start_matches("0x"),
