@@ -132,7 +132,7 @@ export const MoveBuilder: React.FC = () => {
                                 </div>
                                 <div className="p-6 rounded-2xl bg-black/40 border border-white/5 font-mono text-sm text-slate-500">
                                     <div>let <span className="text-white">token</span> = coin::mint_balance(amount, treasury_cap);</div>
-                                    <div className="mt-1 text-slate-600">// Validate treasury ownership...</div>
+                                    <div className="mt-1 text-slate-600">{/* Validate treasury ownership... */}</div>
                                 </div>
                             </div>
                         </motion.div>

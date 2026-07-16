@@ -4,26 +4,34 @@ import { Settings, Server, Layout, Shield, Monitor, Globe, ChevronRight } from '
 import { useAppStore, appStore } from '@/lib/store';
 import { Network } from '../types';
 
+type SettingsSection = 'general' | 'network' | 'appearance';
+
+const MenuLink = ({
+  id,
+  label,
+  icon: Icon,
+  isActive,
+  onSelect,
+}: { id: SettingsSection, label: string, icon: any, isActive: boolean, onSelect: (id: SettingsSection) => void }) => (
+  <button
+    onClick={() => onSelect(id)}
+    className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+      isActive
+      ? 'bg-slate-800 text-white'
+      : 'text-slate-400 hover:text-slate-200 hover:bg-white/5/50'
+    }`}
+  >
+    <div className="flex items-center gap-3">
+      <Icon size={18} className={isActive ? 'text-electric-violet' : 'text-slate-500'} />
+      {label}
+    </div>
+    {isActive && <ChevronRight size={14} className="text-slate-500" />}
+  </button>
+);
+
 export const SettingsPage: React.FC = () => {
   const { settings } = useAppStore();
-  const [activeSection, setActiveSection] = useState<'general' | 'network' | 'appearance'>('general');
-
-  const MenuLink = ({ id, label, icon: Icon }: { id: typeof activeSection, label: string, icon: any }) => (
-    <button 
-      onClick={() => setActiveSection(id)}
-      className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-        activeSection === id 
-        ? 'bg-slate-800 text-white' 
-        : 'text-slate-400 hover:text-slate-200 hover:bg-white/5/50'
-      }`}
-    >
-      <div className="flex items-center gap-3">
-        <Icon size={18} className={activeSection === id ? 'text-electric-violet' : 'text-slate-500'} />
-        {label}
-      </div>
-      {activeSection === id && <ChevronRight size={14} className="text-slate-500" />}
-    </button>
-  );
+  const [activeSection, setActiveSection] = useState<SettingsSection>('general');
 
   return (
     <div className="h-full bg-near-black flex flex-col md:flex-row overflow-hidden">
@@ -33,9 +41,9 @@ export const SettingsPage: React.FC = () => {
             <Settings size={24} className="text-slate-400" /> Settings
         </h1>
         <div className="space-y-1">
-          <MenuLink id="general" label="General" icon={Monitor} />
-          <MenuLink id="network" label="Network & RPC" icon={Server} />
-          <MenuLink id="appearance" label="Appearance" icon={Layout} />
+          <MenuLink id="general" label="General" icon={Monitor} isActive={activeSection === 'general'} onSelect={setActiveSection} />
+          <MenuLink id="network" label="Network & RPC" icon={Server} isActive={activeSection === 'network'} onSelect={setActiveSection} />
+          <MenuLink id="appearance" label="Appearance" icon={Layout} isActive={activeSection === 'appearance'} onSelect={setActiveSection} />
         </div>
       </div>
 

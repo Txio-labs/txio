@@ -235,7 +235,7 @@ export const EcosystemPage: React.FC<
                             <p className={`text-lg leading-relaxed max-w-md ${
                                 theme === 'dark' ? 'text-slate-400 font-medium' : 'text-slate-500'
                             }`}>
-                                We talk to the core devs and foundations directly. That's how the integrations stay deep instead of skin-deep.
+                                We talk to the core devs and foundations directly. That&apos;s how the integrations stay deep instead of skin-deep.
                             </p>
                         </div>
                         
