@@ -1,5 +1,5 @@
 # Build stage
-FROM rust:1.88-slim-bookworm AS builder
+FROM rust:1.88.0-slim-bookworm AS builder
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
