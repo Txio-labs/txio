@@ -1,5 +1,6 @@
 pub mod traits;
 pub mod factory;
+pub mod validation;
 pub mod sui;
 pub mod ethereum;
 pub mod solana;

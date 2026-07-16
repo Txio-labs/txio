@@ -1,4 +1,5 @@
 use crate::chains::traits::ChainAdapter;
+use crate::chains::validation::validate_sui_address;
 use crate::cli::parser::Network;
 use async_trait::async_trait;
 use serde_json::{json, Value};
@@ -123,6 +124,7 @@ impl ChainAdapter for SuiAdapter {
     }
 
     async fn get_balance(&self, address: &str) -> Result<Value> {
+        let address = validate_sui_address(address)?;
         let params = json!([address]);
         self.call_rpc("suix_getAllBalances", params).await
     }
@@ -165,6 +167,7 @@ impl ChainAdapter for SuiAdapter {
     }
 
     async fn get_history(&self, address: &str, limit: u32) -> Result<Value> {
+        let address = validate_sui_address(address)?;
         let params = json!([
             {
                 "filter": { "FromAddress": address },

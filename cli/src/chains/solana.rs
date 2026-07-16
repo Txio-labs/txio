@@ -1,4 +1,5 @@
 use crate::chains::traits::ChainAdapter;
+use crate::chains::validation::validate_solana_address;
 use crate::cli::parser::Network;
 use async_trait::async_trait;
 use serde_json::{json, Value};
@@ -61,6 +62,7 @@ impl ChainAdapter for SolanaAdapter {
     }
 
     async fn get_balance(&self, address: &str) -> Result<Value> {
+        let address = validate_solana_address(address)?;
         let params = json!([address]);
         self.call_rpc("getBalance", params).await
     }
@@ -96,6 +98,7 @@ impl ChainAdapter for SolanaAdapter {
     }
 
     async fn get_account(&self, address: &str) -> Result<Value> {
+        let address = validate_solana_address(address)?;
         self.call_rpc("getAccountInfo", json!([
             address,
             { "encoding": "jsonParsed" }
@@ -103,6 +106,7 @@ impl ChainAdapter for SolanaAdapter {
     }
 
     async fn get_history(&self, address: &str, limit: u32) -> Result<Value> {
+        let address = validate_solana_address(address)?;
         self.call_rpc("getSignaturesForAddress", json!([
             address,
             { "limit": limit }
