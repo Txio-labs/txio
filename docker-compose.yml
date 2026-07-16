@@ -2,8 +2,18 @@ services:
   mongodb:
     image: mongo:7.0
     container_name: txio-db
-    ports:
-      - "27017:27017"
+    # Root credentials are read from backend/api/.env (see MONGO_INITDB_ROOT_USERNAME /
+    # MONGO_INITDB_ROOT_PASSWORD). The API service uses the same .env to build its
+    # MONGO_URI. --auth enforces authentication on every connection.
+    env_file:
+      - ./backend/api/.env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    command: mongod --auth
+    # Port mapping intentionally omitted: only the api service needs to reach Mongo,
+    # and the default compose network already allows that. Publishing 27017 to the
+    # host would expose the database to anything that can connect to the host.
     volumes:
       - mongodb_data:/data/db
 
@@ -12,13 +22,13 @@ services:
       context: .
       dockerfile: ./Dockerfile
     container_name: txio-api
-    # Secrets (JWT_SECRET, BREVO_API_KEY, GROQ_API_KEYS, ...) come from this
-    # untracked file. Copy .env.example to backend/api/.env and fill it in.
+    # Secrets (JWT_SECRET, BREVO_API_KEY, GROQ_API_KEYS, MONGO_INITDB_ROOT_*, ...) come
+    # from this untracked file. Copy .env.example to backend/api/.env and fill it in.
     # The API fails fast if JWT_SECRET is missing or <32 chars (see config.rs).
     env_file:
       - ./backend/api/.env
     environment:
-      MONGO_URI: mongodb://mongodb:27017/txio
+      MONGO_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/txio
       RUST_LOG: info
       PORT: 8000
     ports:
