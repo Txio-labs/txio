@@ -18,21 +18,21 @@
 
 ## The Problem
 
-Building or operating across more than one chain means living with a different CLI for each of them. `sui client`, `solana`, `aptos`, `soroban`, plus whatever you've cobbled together for Ethereum — each with its own install step, its own flag names, its own config file, and its own idea of what a "network" argument looks like. Switching from Sui devnet to Ethereum mainnet mid-session means switching tools entirely, not just an argument.
+Every chain ships its own CLI, and none of them agree on anything. `sui client`, `solana`, `aptos`, `soroban`, plus whatever you've bolted together for Ethereum — each with its own install step, its own flag names, its own config file, and its own idea of what a "network" argument should look like. Switch from Sui devnet to Ethereum mainnet mid-session and you're not passing a different flag, you're opening a different terminal.
 
-On top of that, none of them speak human-readable names. Checking a balance means resolving `.sui` or `.eth` yourself first, then pasting the raw address back in. Multiply that friction across five ecosystems and a routine task — "what's in this wallet?" — turns into a scavenger hunt through five different toolchains.
+And none of them speak human. Checking a balance means resolving `.sui` or `.eth` yourself, then pasting the raw address back in. Do that across five ecosystems, and a two-second task — "what's in this wallet?" — turns into a scavenger hunt.
 
 ---
 
 ## The Solution
 
-**txio** is a unified CLI and web dashboard that puts Sui, Ethereum, Solana, Aptos, and Soroban behind one consistent interface.
+**txio** puts Sui, Ethereum, Solana, Aptos, and Soroban behind one interface. Learn it once, use it everywhere.
 
-*   **Unified Interface Across 5 Chains** – Sui, Ethereum, Solana, Aptos, and Soroban share the exact same command structure and flags.
-*   **Instant Network Switching** – Pass `--network testnet` (or `mainnet`, `devnet`) directly to any command with zero configuration changes.
-*   **Native Name Resolution** – `.sui`, `.eth`, and equivalent name services resolve automatically before requests are dispatched — no raw addresses to paste in by hand.
-*   **Human-Readable Terminal Output** – Clean, formatted tables by default. Want raw data? Just append the `--pretty` flag for JSON.
-*   **One-Command Local Stack** – Spin up the caching API, frontend dashboard, and database instantly via Docker.
+*   **One interface, five chains** – Sui, Ethereum, Solana, Aptos, and Soroban all use the same commands and flags.
+*   **Instant network switching** – Pass `--network testnet` (or `mainnet`, `devnet`) to any command. No config file to edit.
+*   **Names just work** – `.sui`, `.eth`, and friends resolve automatically before the request goes out. You never touch a raw address.
+*   **Readable by default** – Clean, formatted tables in your terminal. Need raw data? Add `--pretty` for JSON.
+*   **One command, full stack** – `docker-compose up` boots the API, dashboard, and database together.
 
 ---
 
@@ -49,8 +49,8 @@ On top of that, none of them speak human-readable names. Checking a balance mean
 
 ## Prerequisites
 
-Ensure you have the following installed locally:
-*   **Rust** (Stable toolchain)
+You'll need:
+*   **Rust** (stable toolchain)
 *   **Node.js** (v20+)
 *   **Docker** & **Docker Compose**
 
@@ -74,7 +74,7 @@ Boots the backend, frontend, and database in one command:
 docker-compose up -d
 ```
 
-The frontend is available on its default port; the API runs behind it.
+The frontend comes up on its default port, with the API running behind it.
 
 ### Run the CLI
 
@@ -97,15 +97,7 @@ Run `txio --help` to see all available commands and flags.
 
 ## Contributing
 
-We welcome contributions! Adding a new chain integration is highly modular:
-
-Implement the `ChainAdapter` trait.
-
-Add a single file under `cli/src/chains/`.
-
-Register it in the factory.
-
-For comprehensive architectural details, please read CONTRIBUTING.md.
+Adding a new chain is deliberately simple: implement the `ChainAdapter` trait, drop a single file under `cli/src/chains/`, and register it in the factory. That's it. Full details live in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ---
 
