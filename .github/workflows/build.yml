@@ -6,9 +6,15 @@ on:
       - "v*"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build-windows:
     runs-on: windows-latest
+    permissions:
+      contents: read
+      actions: write
 
     steps:
       - uses: actions/checkout@v4
