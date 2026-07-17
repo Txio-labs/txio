@@ -67,7 +67,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 6. Initialize Services (Dependency Injection)
     let auth_service = services::auth_service::AuthService::new(
         user_repo.clone(),
-        rpc_repo,
+        rpc_repo.clone(),
         jwt_helper,
         otp_service,
         email_service,
@@ -83,6 +83,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let workspace_service =
         services::workspace_service::WorkspaceService::new(workspace_repo, collection_repo);
+
+    let admin_service = services::admin_service::AdminService::new(
+        user_repo.clone(),
+        rpc_repo.clone(),
+        config.admin_emails.clone(),
+    );
 
     let terminal_service = services::terminal_service::TerminalService::new();
     let ai_service = services::ai_service::AiService::from_env();
@@ -140,6 +146,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nest(
             "/api/v1/terminal",
             api::routers::terminal_router::router(terminal_service),
+        )
+        .nest(
+            "/api/v1/admin",
+            api::routers::admin_router::router(admin_service),
         )
         .layer(cors);
 

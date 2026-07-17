@@ -1,4 +1,5 @@
 use crate::dtos::{
+    admin_dtos::RpcLogRequest,
     request::{
         LoginRequest, OTPRequest, RegisterUserRequest, ResetPasswordWithOTPRequest,
         SwitchNetworkRequest, UpdateEmailRequest, UpdatePasswordRequest, VerifyOTPRequest,
@@ -173,6 +174,27 @@ pub async fn reset_password_with_otp(
         .await?;
 
     Ok(Json(json!({ "message": "Password reset successfully" })))
+}
+
+pub async fn log_rpc_call(
+    State(service): State<AuthService>,
+    claims: crate::utils::auth_jwt::Claims,
+    Json(payload): Json<RpcLogRequest>,
+) -> Result<Json<Value>, AppError> {
+    use mongodb::bson::oid::ObjectId;
+    use std::str::FromStr;
+    use validator::Validate;
+
+    payload
+        .validate()
+        .map_err(|e| AppError::ValidationError(e.to_string()))?;
+
+    let user_id = ObjectId::from_str(&claims.sub)
+        .map_err(|_| AppError::InternalError("Invalid user ID in token".into()))?;
+
+    service.log_rpc_call(user_id, payload).await?;
+
+    Ok(Json(json!({ "message": "RPC call logged" })))
 }
 
 pub async fn switch_network(

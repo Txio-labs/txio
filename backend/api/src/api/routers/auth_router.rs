@@ -21,6 +21,7 @@ pub fn router(service: AuthService) -> Router {
             post(auth_handler::reset_password_with_otp),
         )
         .route("/switch-network", post(auth_handler::switch_network))
+        .route("/rpc-log", post(auth_handler::log_rpc_call))
         .route("/logout", post(auth_handler::logout))
         .route(
             "/google/login",

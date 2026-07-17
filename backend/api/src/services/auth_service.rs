@@ -1,3 +1,4 @@
+use crate::dtos::admin_dtos::RpcLogRequest;
 use crate::dtos::request::{LoginRequest, RegisterUserRequest};
 use crate::dtos::response::{AuthResponse, UserResponse};
 use crate::model::rpc::RpcLog;
@@ -195,6 +196,15 @@ impl AuthService {
         self.repo.update(&user).await?;
 
         Ok(())
+    }
+
+    pub async fn log_rpc_call(
+        &self,
+        user_id: mongodb::bson::oid::ObjectId,
+        req: RpcLogRequest,
+    ) -> Result<(), AppError> {
+        let log = RpcLog::new(user_id, req.method, req.params, req.success, req.error);
+        self.rpc_repo.save(&log).await
     }
 
     pub async fn get_rpc_history(&self, email: &str) -> Result<Vec<RpcLog>, AppError> {
