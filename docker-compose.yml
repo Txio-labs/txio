@@ -64,11 +64,11 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
     container_name: txio-frontend
     ports:
       - "5173:80"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
     depends_on:
       api:
         condition: service_healthy
