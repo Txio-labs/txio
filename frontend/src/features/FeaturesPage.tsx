@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { 
     Zap, Shield, Globe, Cpu, Layers, Terminal, 
     Database, Activity, Lock, ArrowRight, CheckCircle2,
@@ -18,6 +19,7 @@ export const FeaturesPage: React.FC<
 > = ({ embedded = false }) => {
     const { theme } = useAppStore();
     const logo = theme === 'dark' ? logoDark : logoLight;
+    const router = useRouter();
 
     const navigateTo = (
         target:
@@ -43,7 +45,17 @@ export const FeaturesPage: React.FC<
             return;
         }
 
-        appStore.setViewMode(target);
+        const modeToPath: Record<string, string> = {
+            landing: '/',
+            ecosystem: '/ecosystem',
+            docs: '/docs',
+            app: '/signup'
+        };
+
+        const path = modeToPath[target];
+        if (path) {
+            router.push(path);
+        }
     };
 
     React.useEffect(() => {
