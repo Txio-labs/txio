@@ -79,9 +79,9 @@ docker-compose up -d
 ```
 
 The full stack runs MongoDB with `--auth` enabled and credentials from
-`backend/api/.env`. The `mongodb://...` connection string is built from those
-same variables inside `docker-compose.yml`, so the username and password only
-need to be set in one place.
+`backend/api/.env`. Both `mongod` (read as MONGO_INITDB_ROOT_USERNAME /
+MONGO_INITDB_ROOT_PASSWORD) and the API (read as MONGO_URI) load the same
+file, so the username and password only need to be set in one place.
 
 The frontend comes up on its default port, with the API running behind it.
 

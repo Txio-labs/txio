@@ -2,18 +2,17 @@ services:
   mongodb:
     image: mongo:7.0
     container_name: txio-db
-    # Root credentials are read from backend/api/.env (see MONGO_INITDB_ROOT_USERNAME /
-    # MONGO_INITDB_ROOT_PASSWORD). The API service uses the same .env to build its
-    # MONGO_URI. --auth enforces authentication on every connection.
+    # Root credentials (MONGO_INITDB_ROOT_USERNAME / MONGO_INITDB_ROOT_PASSWORD) are
+    # injected into the container by env_file below; mongod --auth reads them at
+    # startup. Do NOT redeclare them in an environment: block using ${VAR} -- Compose
+    # resolves that from the shell / project-root .env, not from env_file, and an
+    # explicit environment: key would overwrite the real value with an empty string.
     env_file:
       - ./backend/api/.env
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     command: mongod --auth
     # Port mapping intentionally omitted: only the api service needs to reach Mongo,
     # and the default compose network already allows that. Publishing 27017 to the
-    # host would expose the database to anything that can connect to the host.
+    # host would expose the database to anything that can connect to it.
     volumes:
       - mongodb_data:/data/db
 
@@ -22,13 +21,15 @@ services:
       context: .
       dockerfile: ./Dockerfile
     container_name: txio-api
-    # Secrets (JWT_SECRET, BREVO_API_KEY, GROQ_API_KEYS, MONGO_INITDB_ROOT_*, ...) come
-    # from this untracked file. Copy .env.example to backend/api/.env and fill it in.
+    # Secrets (JWT_SECRET, BREVO_API_KEY, GROQ_API_KEYS, MONGO_URI, ...) come from
+    # this untracked file. Copy .env.example to backend/api/.env and fill it in.
+    # MONGO_URI is read from the same file at runtime (see config.rs), so
+    # contributors set the credentialed MongoDB URI once and both mongo --auth
+    # (via MONGO_INITDB_ROOT_*) and the API (via MONGO_URI) read that one file.
     # The API fails fast if JWT_SECRET is missing or <32 chars (see config.rs).
     env_file:
       - ./backend/api/.env
     environment:
-      MONGO_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/txio
       RUST_LOG: info
       PORT: 8000
     ports:
