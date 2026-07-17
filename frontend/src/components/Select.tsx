@@ -148,7 +148,7 @@ export const Select: React.FC<SelectProps> = ({
       )}
       
       {/* Backdrop for mobile/safety to close on click outside if pure CSS */}
-      {isOpen && <div className="fixed inset-0 z-[10] cursor-default" onClick={() => setIsOpen(false)}></div>}
+      {isOpen && <button className="fixed inset-0 z-[10] cursor-default" onClick={() => setIsOpen(false)} tabIndex={-1} aria-hidden="true"></button>}
     </div>
   );
 };

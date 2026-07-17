@@ -43,7 +43,7 @@ export const LandingPage: React.FC = () => {
         <div className="min-h-screen bg-near-black text-white font-sans selection:bg-electric-violet/30 overflow-x-hidden">
             {/* Navigation */}
             <nav className="fixed top-0 left-0 right-0 h-20 border-b border-white/5 bg-near-black/50 backdrop-blur-xl z-50 px-6 md:px-12 flex items-center justify-between">
-                <div 
+                <button 
                     className="flex items-center gap-3 cursor-pointer group"
                     onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                 >
@@ -52,7 +52,7 @@ export const LandingPage: React.FC = () => {
                         <img src={logo.src} alt="txio" className="h-8 w-auto relative z-10 transition-transform group-hover:scale-110" />
                     </div>
                     <span className="text-xl font-bold tracking-tighter">txio</span>
-                </div>
+                </button>
                 
                 <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-400">
                     <button 
@@ -295,11 +295,11 @@ export const LandingPage: React.FC = () => {
                         <div className="space-y-4">
                             <div className="text-[11px] font-bold uppercase tracking-widest text-slate-200">Platform</div>
                             <ul className="space-y-3 text-sm text-slate-500">
-                                <li><span onClick={() => appStore.setViewMode('app')} className="hover:text-white transition-colors cursor-pointer">Workspace</span></li>
-                                <li><span onClick={() => appStore.setViewMode('integrations')} className="hover:text-white transition-colors cursor-pointer">Integrations</span></li>
-                                <li><span onClick={() => appStore.setViewMode('infrastructure')} className="hover:text-white transition-colors cursor-pointer">Infrastructure</span></li>
-                                <li><span onClick={() => appStore.setViewMode('partners')} className="hover:text-white transition-colors cursor-pointer">Partners</span></li>
-                                <li><span onClick={() => appStore.setViewMode('docs')} className="hover:text-white transition-colors cursor-pointer">Documentation</span></li>
+                                <li><button onClick={() => appStore.setViewMode('app')} className="hover:text-white transition-colors cursor-pointer">Workspace</button></li>
+                                <li><button onClick={() => appStore.setViewMode('integrations')} className="hover:text-white transition-colors cursor-pointer">Integrations</button></li>
+                                <li><button onClick={() => appStore.setViewMode('infrastructure')} className="hover:text-white transition-colors cursor-pointer">Infrastructure</button></li>
+                                <li><button onClick={() => appStore.setViewMode('partners')} className="hover:text-white transition-colors cursor-pointer">Partners</button></li>
+                                <li><button onClick={() => appStore.setViewMode('docs')} className="hover:text-white transition-colors cursor-pointer">Documentation</button></li>
                             </ul>
                         </div>
                         <div className="space-y-4">
