@@ -27,6 +27,8 @@ dotenvy = { workspace = true }
 validator = { workspace = true }
 bcrypt = { workspace = true }
 tower-http = { workspace = true }
+tower = { workspace = true }
+tower_governor = { workspace = true }
 brevo = { workspace = true }
 clap = { workspace = true }
 regex = { workspace = true }
