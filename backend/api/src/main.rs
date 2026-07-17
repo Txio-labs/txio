@@ -1,7 +1,13 @@
-use axum::{Router, http::HeaderValue, routing::get};
+use axum::{
+    BoxError, Router, error_handling::HandleErrorLayer, http::HeaderValue, http::StatusCode,
+    routing::get,
+};
 use dotenvy::{dotenv, from_path_override};
-use std::{net::SocketAddr, path::PathBuf};
+use std::{net::SocketAddr, path::PathBuf, sync::Arc, time::Duration};
+use tower::ServiceBuilder;
+use tower_governor::{GovernorLayer, governor::GovernorConfigBuilder};
 use tower_http::cors::{Any, CorsLayer};
+use tower_http::limit::RequestBodyLimitLayer;
 
 use ::txio_api::{
     api,
@@ -9,6 +15,28 @@ use ::txio_api::{
     model, repositories, services, utils,
     utils::config::Config,
 };
+
+/// Caps a single request body across every route. None of the current
+/// endpoints accept file uploads; this is a blanket safety net against a
+/// single oversized POST pressuring memory.
+const MAX_REQUEST_BODY_BYTES: usize = 1024 * 1024; // 1 MiB
+
+/// Bounds how long any single request may run. Set above the longest
+/// legitimate outbound call the API makes on a request's behalf (AI/email/
+/// Sui/OAuth calls all use a 30s reqwest timeout) so it never races a
+/// well-behaved upstream timeout.
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(35);
+
+async fn handle_middleware_error(err: BoxError) -> (StatusCode, String) {
+    if err.is::<tower::timeout::error::Elapsed>() {
+        (StatusCode::REQUEST_TIMEOUT, "Request timed out".to_string())
+    } else {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Unhandled internal error: {err}"),
+        )
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -127,6 +155,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "Configured CORS for frontend access"
     );
 
+    // Global, per-peer-IP rate limit: a coarse, app-wide mitigation shared by
+    // every route. Endpoint-specific throttling (OTP send, AI proxy) is
+    // handled separately. Uses the default PeerIpKeyExtractor, which keys on
+    // the direct TCP peer address -- correct for this app's current
+    // deployment (the API is reached directly, not behind a reverse proxy
+    // per docker-compose.yml). If that changes, swap in tower_governor's
+    // SmartIpKeyExtractor and only trust forwarding headers from a known
+    // proxy.
+    let governor_conf = Arc::new(
+        GovernorConfigBuilder::default()
+            .per_millisecond(200) // ~5 req/s sustained per peer IP
+            .burst_size(30) // headroom for a page load firing several requests at once
+            .finish()
+            .expect("valid governor rate-limit configuration"),
+    );
+
+    // tower_governor retains rate-limit state per key forever unless pruned;
+    // without this the map of seen IPs would grow without bound.
+    let governor_limiter = governor_conf.limiter().clone();
+    std::thread::spawn(move || {
+        loop {
+            std::thread::sleep(Duration::from_secs(60));
+            governor_limiter.retain_recent();
+        }
+    });
+
     // 7. Build Router
     let app = Router::new()
         .route("/health", get(|| async { "txio Backend Operational" }))
@@ -151,6 +205,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/api/v1/admin",
             api::routers::admin_router::router(admin_service),
         )
+        .layer(
+            ServiceBuilder::new()
+                .layer(HandleErrorLayer::new(handle_middleware_error))
+                .timeout(REQUEST_TIMEOUT),
+        )
+        .layer(RequestBodyLimitLayer::new(MAX_REQUEST_BODY_BYTES))
+        .layer(GovernorLayer {
+            config: governor_conf,
+        })
         .layer(cors);
 
     // 8. Run Server
@@ -171,7 +234,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )) as Box<dyn std::error::Error>
     })?;
     tracing::info!("Server listening on {}", addr);
-    axum::serve(listener, app).await?;
+    // GovernorLayer's default key extractor reads the peer address from
+    // ConnectInfo, which only axum::serve populates via this constructor.
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await?;
 
     Ok(())
 }
