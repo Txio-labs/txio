@@ -76,5 +76,20 @@ impl UserRepository {
         Ok(user.clone())
     }
 
+    pub async fn count_documents(&self) -> Result<u64, AppError> {
+        let count = self.collection.count_documents(None, None).await?;
+        Ok(count)
+    }
 
-}       
+    /// Lists every registered user's email only — never returns password hashes.
+    pub async fn list_all_emails(&self) -> Result<Vec<String>, AppError> {
+        let mut cursor = self.collection.find(None, None).await?;
+        let mut emails = Vec::new();
+        while cursor.advance().await? {
+            let user = cursor.deserialize_current()?;
+            emails.push(user.email);
+        }
+        Ok(emails)
+    }
+}
+
