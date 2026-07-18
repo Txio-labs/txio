@@ -59,14 +59,29 @@ export const SignInPage: React.FC = () => {
                 appStore.setViewMode('app');
 
                 try {
+                    const profilePromise =
+                        apiService.getProfile();
+                    const workspacesPromise =
+                        apiService.getWorkspaces();
+
+                    void workspacesPromise.catch(
+                        () => undefined
+                    );
+
                     // Fetch authenticated user
-                    const user = await apiService.getProfile();
+                    const user = await profilePromise;
 
                     // Save user
                     appStore.updateUser(user);
 
                     try {
-                        await appStore.fetchWorkspaces();
+                        const workspaces =
+                            await workspacesPromise;
+
+                        await appStore.fetchWorkspaces(
+                            undefined,
+                            workspaces
+                        );
                     } catch (workspaceError) {
                         console.error(
                             'Workspace fetch failed:',
