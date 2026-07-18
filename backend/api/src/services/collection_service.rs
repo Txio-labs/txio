@@ -7,6 +7,8 @@ use crate::services::sui_service::SuiService;
 use crate::utils::error::AppError;
 use mongodb::bson::oid::ObjectId;
 use serde_json::Value;
+use url::Url;
+use std::net::IpAddr;
 
 #[derive(Clone)]
 pub struct CollectionService {
@@ -47,6 +49,28 @@ impl CollectionService {
             ));
         }
 
+        Ok(())
+    }
+    
+    fn validate_url(&self, url_str: &str) -> Result<(), AppError> {
+        // Parse URL
+        let url = Url::parse(url_str).map_err(|e| AppError::BadRequest(format!("Invalid RPC URL: {}", e)))?;
+        // Only allow HTTPS scheme
+        if url.scheme() != "https" {
+            return Err(AppError::BadRequest("Only HTTPS RPC URLs are allowed".into()));
+        }
+        // Disallow localhost and loopback IPs
+        if let Some(host) = url.host_str() {
+            if host == "localhost" {
+                return Err(AppError::BadRequest("Localhost URLs are not allowed".into()));
+            }
+            // If host is an IP address, check for private ranges
+            if let Ok(ip) = host.parse::<IpAddr>() {
+                if ip.is_loopback() || ip.is_private() || ip.is_link_local() {
+                    return Err(AppError::BadRequest("Private or link‑local IP addresses are not allowed".into()));
+                }
+            }
+        }
         Ok(())
     }
 
@@ -246,7 +270,7 @@ impl CollectionService {
             };
             network_enum.url().to_string()
         };
-
+        self.validate_url(&final_url)?;
         // 1. Resolve Parameters (SuiNS)
         let suins_regex = regex::Regex::new(r"([a-zA-Z0-9-]+\.sui)").unwrap();
         let mut final_params = req.params.clone();
