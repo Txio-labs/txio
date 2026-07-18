@@ -20,6 +20,7 @@ interface SignTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (signerAddress: string) => void;
+  onExecute?: () => void;
   onRequestConnect: () => void;
   wallet: ConnectedWallet | null;
   request: RequestItem | null;
@@ -29,6 +30,7 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
   isOpen,
   onClose,
   onConfirm,
+  onExecute,
   onRequestConnect,
   wallet,
   request
@@ -44,15 +46,21 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
     }
   };
 
+  const handleExecute = () => {
+    if (canSign && onExecute) {
+      onExecute();
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-near-black/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-dark-indigo-glow border border-white/10 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
         <div className="p-4 border-b border-white/5 flex justify-between items-center bg-near-black">
           <div>
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <Shield size={18} className="text-electric-violet" /> Review Simulation
+              <Shield size={18} className="text-electric-violet" /> Review Transaction
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">Review details before running a wallet-address simulation.</p>
+            <p className="text-xs text-slate-400 mt-0.5">Review details before simulation or on-chain execution.</p>
           </div>
           <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors">
             <X size={20} />
@@ -91,7 +99,9 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
                          <div>
                              <h4 className="text-xs font-bold text-amber-500">Security Note</h4>
                              <p className="text-[10px] text-amber-500/80 mt-1">
-                                 This flow does not sign or broadcast on-chain. It runs a dev-inspect simulation and never handles private keys.
+                                 {onExecute
+                                     ? 'Simulation runs a dev-inspect without signing. Sign & Execute will broadcast a real on-chain transaction using your wallet.'
+                                     : 'This flow does not sign or broadcast on-chain. It runs a dev-inspect simulation and never handles private keys.'}
                              </p>
                          </div>
                      </div>
@@ -145,12 +155,30 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
              <button onClick={onClose} className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white transition-colors">
                  Cancel
              </button>
-             <button 
-                onClick={canSign ? handleConfirm : onRequestConnect}
-                className="px-6 py-2 bg-electric-violet hover:bg-electric-violet disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded shadow-lg shadow-sui-900/20 flex items-center gap-2 transition-all"
-             >
-                 {canSign ? 'Run Simulation' : wallet ? 'Connect Sui Wallet' : 'Connect Wallet'} <ArrowRight size={14} />
-             </button>
+             {onExecute ? (
+                 <>
+                     <button
+                        onClick={handleConfirm}
+                        disabled={!canSign}
+                        className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded flex items-center gap-2 transition-all"
+                     >
+                         Simulate
+                     </button>
+                     <button
+                        onClick={canSign ? handleExecute : onRequestConnect}
+                        className="px-6 py-2 bg-electric-violet hover:bg-electric-violet disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded shadow-lg shadow-sui-900/20 flex items-center gap-2 transition-all"
+                     >
+                         {canSign ? 'Sign & Execute' : wallet ? 'Connect Sui Wallet' : 'Connect Wallet'} <ArrowRight size={14} />
+                     </button>
+                 </>
+             ) : (
+                 <button
+                    onClick={canSign ? handleConfirm : onRequestConnect}
+                    className="px-6 py-2 bg-electric-violet hover:bg-electric-violet disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded shadow-lg shadow-sui-900/20 flex items-center gap-2 transition-all"
+                 >
+                     {canSign ? 'Run Simulation' : wallet ? 'Connect Sui Wallet' : 'Connect Wallet'} <ArrowRight size={14} />
+                 </button>
+             )}
         </div>
       </div>
     </div>
