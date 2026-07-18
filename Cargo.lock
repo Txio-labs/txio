@@ -3539,10 +3539,7 @@ dependencies = [
  "tower_governor",
  "tracing",
  "tracing-subscriber",
-<<<<<<< HEAD
  "url",
-=======
->>>>>>> 69c65fd (feat: implement OAuth state parameter handling to prevent CSRF attacks)
  "urlencoding",
  "uuid",
  "validator",
