@@ -1,4 +1,5 @@
 use crate::dtos::{
+    admin_dtos::RpcLogRequest,
     request::{
         LoginRequest, OTPRequest, RegisterUserRequest, ResetPasswordWithOTPRequest,
         SwitchNetworkRequest, UpdateEmailRequest, UpdatePasswordRequest, VerifyOTPRequest,
@@ -95,20 +96,16 @@ pub async fn logout() -> Result<Json<Value>, AppError> {
 
 pub async fn get_user_profile(
     State(service): State<AuthService>,
-    Json(payload): Json<OTPRequest>,
+    claims: crate::utils::auth_jwt::Claims,
 ) -> Result<Json<Value>, AppError> {
-    use validator::Validate;
-    payload
-        .validate()
-        .map_err(|e| AppError::ValidationError(e.to_string()))?;
-
-    let user = service.get_user_profile_by_email(&payload.email).await?;
+    let user = service.get_user_profile_by_email(&claims.email).await?;
 
     Ok(Json(json!({ "user": user })))
 }
 
 pub async fn update_user_email(
     State(service): State<AuthService>,
+    claims: crate::utils::auth_jwt::Claims,
     Json(payload): Json<UpdateEmailRequest>,
 ) -> Result<Json<Value>, AppError> {
     use validator::Validate;
@@ -117,7 +114,7 @@ pub async fn update_user_email(
         .map_err(|e| AppError::ValidationError(e.to_string()))?;
 
     let user = service
-        .update_user_email_by_email(&payload.old_email, &payload.new_email)
+        .update_user_email_by_email(&claims.email, &payload.new_email)
         .await?;
 
     Ok(Json(json!({ "user": user })))
@@ -125,6 +122,7 @@ pub async fn update_user_email(
 
 pub async fn update_user_password(
     State(service): State<AuthService>,
+    claims: crate::utils::auth_jwt::Claims,
     Json(payload): Json<UpdatePasswordRequest>,
 ) -> Result<Json<Value>, AppError> {
     use validator::Validate;
@@ -133,7 +131,7 @@ pub async fn update_user_password(
         .map_err(|e| AppError::ValidationError(e.to_string()))?;
 
     let user = service
-        .update_user_password_by_email(&payload.email, &payload.new_password)
+        .update_user_password_by_email(&claims.email, &payload.new_password)
         .await?;
 
     Ok(Json(json!({ "user": user })))
@@ -141,14 +139,9 @@ pub async fn update_user_password(
 
 pub async fn delete_user(
     State(service): State<AuthService>,
-    Json(payload): Json<OTPRequest>,
+    claims: crate::utils::auth_jwt::Claims,
 ) -> Result<Json<Value>, AppError> {
-    use validator::Validate;
-    payload
-        .validate()
-        .map_err(|e| AppError::ValidationError(e.to_string()))?;
-
-    let user = service.delete_user_by_email(&payload.email).await?;
+    let user = service.delete_user_by_email(&claims.email).await?;
 
     Ok(Json(json!({ "user": user })))
 }
@@ -183,6 +176,27 @@ pub async fn reset_password_with_otp(
         .await?;
 
     Ok(Json(json!({ "message": "Password reset successfully" })))
+}
+
+pub async fn log_rpc_call(
+    State(service): State<AuthService>,
+    claims: crate::utils::auth_jwt::Claims,
+    Json(payload): Json<RpcLogRequest>,
+) -> Result<Json<Value>, AppError> {
+    use mongodb::bson::oid::ObjectId;
+    use std::str::FromStr;
+    use validator::Validate;
+
+    payload
+        .validate()
+        .map_err(|e| AppError::ValidationError(e.to_string()))?;
+
+    let user_id = ObjectId::from_str(&claims.sub)
+        .map_err(|_| AppError::InternalError("Invalid user ID in token".into()))?;
+
+    service.log_rpc_call(user_id, payload).await?;
+
+    Ok(Json(json!({ "message": "RPC call logged" })))
 }
 
 pub async fn switch_network(
@@ -376,13 +390,4 @@ pub async fn google_callback(
     );
 
     Ok(axum::response::Redirect::temporary(&redirect_to))
-}
-
-fn constant_time_eq(a: &str, b: &str) -> bool {
-    a.len() == b.len()
-        && a.as_bytes()
-            .iter()
-            .zip(b.as_bytes().iter())
-            .fold(0u8, |acc, (x, y)| acc | (x ^ y))
-            == 0
 }

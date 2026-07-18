@@ -40,6 +40,30 @@ export function RedirectManager() {
         appStore.initialize().then(() => setInitialized(true));
     }, []);
 
+    // Sync viewMode from pathname when pathname changes (public routes & workspace)
+    useEffect(() => {
+        if (!initialized) return;
+
+        const pathToMode: Record<string, string> = {
+            '/': 'landing',
+            '/docs': 'docs',
+            '/ecosystem': 'ecosystem',
+            '/signin': 'signin',
+            '/signup': 'signup',
+            '/features': 'features',
+            '/otp': 'otp',
+            '/integrations': 'integrations',
+            '/infrastructure': 'infrastructure',
+            '/partners': 'partners',
+            '/workspace': 'app'
+        };
+
+        const expectedMode = pathToMode[pathname];
+        if (expectedMode && viewMode !== expectedMode) {
+            appStore.setViewMode(expectedMode as any);
+        }
+    }, [pathname, initialized, viewMode]);
+
     useEffect(() => {
         const token = searchParams.get('token');
         if (!token) return;
@@ -126,6 +150,12 @@ export function RedirectManager() {
             if (pathname !== targetPath) {
                 router.replace(targetPath);
             }
+            return;
+        }
+
+        // If not authenticated and trying to access workspace, redirect to landing
+        if (pathname === '/workspace') {
+            router.replace('/');
             return;
         }
 

@@ -329,6 +329,83 @@ const resolveWorkspaceSelection = (
     return workspaces[0]?.id || '';
 };
 
+const hydrateWorkspaceState = async (
+    workspaces: Workspace[],
+    preferredWorkspaceId?: string
+) => {
+    const nextWorkspaceId =
+        resolveWorkspaceSelection(
+            workspaces,
+            preferredWorkspaceId
+        );
+    const currentSession =
+        state.currentWorkspaceId
+            ? {
+                  tabs: state.tabs,
+                  activeTabId:
+                      state.activeTabId
+              }
+            : null;
+    const updatedSessions =
+        currentSession
+            ? {
+                  ...state.workspaceSessions,
+                  [state.currentWorkspaceId]:
+                      currentSession
+              }
+            : state.workspaceSessions;
+    const nextSession =
+        nextWorkspaceId
+            ? updatedSessions[
+                  nextWorkspaceId
+              ] || {
+                  tabs: [],
+                  activeTabId: null
+              }
+            : {
+                  tabs: [],
+                  activeTabId: null
+              };
+
+    persistCurrentWorkspaceId(
+        nextWorkspaceId
+    );
+
+    state = {
+        ...state,
+        workspaces,
+        currentWorkspaceId:
+            nextWorkspaceId,
+        workspaceSessions:
+            updatedSessions,
+        tabs: nextSession.tabs,
+        activeTabId:
+            nextSession.activeTabId,
+        collections: nextWorkspaceId
+            ? state.collections
+            : [],
+        isLoadingWorkspaces: false,
+        hasHydratedWorkspaces: true
+    };
+
+    emit();
+
+    if (nextWorkspaceId) {
+        await appStore.fetchCollections(
+            nextWorkspaceId
+        );
+    } else {
+        state = {
+            ...state,
+            collections: []
+        };
+
+        emit();
+    }
+
+    return workspaces;
+};
+
 const decodeStoredTokenClaims = (
     token: string
 ) => {
@@ -982,7 +1059,10 @@ export const appStore = {
     },
 
     async fetchWorkspaces(
-        preferredWorkspaceId?: string
+        preferredWorkspaceId?: string,
+        prefetchedWorkspaces?:
+            | Workspace[]
+            | null
     ) {
         if (!state.user) {
             persistCurrentWorkspaceId('');
@@ -1011,78 +1091,13 @@ export const appStore = {
 
         try {
             const workspaces =
-                await apiService.getWorkspaces();
-            const nextWorkspaceId =
-                resolveWorkspaceSelection(
-                    workspaces,
-                    preferredWorkspaceId
-                );
-            const currentSession =
-                state.currentWorkspaceId
-                    ? {
-                          tabs: state.tabs,
-                          activeTabId:
-                              state.activeTabId
-                      }
-                    : null;
-            const updatedSessions =
-                currentSession
-                    ? {
-                          ...state.workspaceSessions,
-                          [state.currentWorkspaceId]:
-                              currentSession
-                      }
-                    : state.workspaceSessions;
-            const nextSession =
-                nextWorkspaceId
-                    ? updatedSessions[
-                          nextWorkspaceId
-                      ] || {
-                          tabs: [],
-                          activeTabId: null
-                      }
-                    : {
-                          tabs: [],
-                          activeTabId: null
-                      };
+                prefetchedWorkspaces ??
+                (await apiService.getWorkspaces());
 
-            persistCurrentWorkspaceId(
-                nextWorkspaceId
-            );
-
-            state = {
-                ...state,
+            return await hydrateWorkspaceState(
                 workspaces,
-                currentWorkspaceId:
-                    nextWorkspaceId,
-                workspaceSessions:
-                    updatedSessions,
-                tabs: nextSession.tabs,
-                activeTabId:
-                    nextSession.activeTabId,
-                collections: nextWorkspaceId
-                    ? state.collections
-                    : [],
-                isLoadingWorkspaces: false,
-                hasHydratedWorkspaces: true
-            };
-
-            emit();
-
-            if (nextWorkspaceId) {
-                await appStore.fetchCollections(
-                    nextWorkspaceId
-                );
-            } else {
-                state = {
-                    ...state,
-                    collections: []
-                };
-
-                emit();
-            }
-
-            return workspaces;
+                preferredWorkspaceId
+            );
         } catch (error) {
             state = {
                 ...state,
@@ -1645,8 +1660,17 @@ export const appStore = {
             emit();
 
             try {
+                const profilePromise =
+                    apiService.getProfile();
+                const workspacesPromise =
+                    apiService.getWorkspaces();
+
+                void workspacesPromise.catch(
+                    () => undefined
+                );
+
                 const user =
-                    await apiService.getProfile();
+                    await profilePromise;
 
                 const hydratedUser =
                     applyUserProfileOverrides(
@@ -1666,7 +1690,13 @@ export const appStore = {
                 emit();
 
                 try {
-                    await appStore.fetchWorkspaces();
+                    const workspaces =
+                        await workspacesPromise;
+
+                    await appStore.fetchWorkspaces(
+                        undefined,
+                        workspaces
+                    );
                 } catch (workspaceError) {
                     console.error(
                         'Failed to restore workspaces during refresh:',
@@ -1723,7 +1753,13 @@ export const appStore = {
                     hydratedRestoredUser
                 ) {
                     try {
-                        await appStore.fetchWorkspaces();
+                        const workspaces =
+                            await workspacesPromise;
+
+                        await appStore.fetchWorkspaces(
+                            undefined,
+                            workspaces
+                        );
                     } catch (workspaceError) {
                         console.error(
                             'Failed to restore workspaces after profile fallback:',

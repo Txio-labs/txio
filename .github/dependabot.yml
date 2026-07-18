@@ -1,54 +1,13 @@
 version: 2
 
+# GitHub Actions are pinned to full commit SHAs to prevent supply chain attacks.
+# Dependabot will open PRs to update these SHAs when new versions are released.
 updates:
-  # ── Rust workspace ──────────────────────────────────────────────
-  - package-ecosystem: "cargo"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "rust"
-    commit-message:
-      prefix: "deps"
-
-  # ── Frontend (Next.js) ──────────────────────────────────────────
-  - package-ecosystem: "npm"
-    directory: "/frontend"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "javascript"
-    commit-message:
-      prefix: "deps"
-
-  # ── Desktop (Electron) ─────────────────────────────────────────
-  - package-ecosystem: "npm"
-    directory: "/desktop"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "javascript"
-    commit-message:
-      prefix: "deps"
-
-  # ── GitHub Actions ──────────────────────────────────────────────
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "ci"
-    commit-message:
-      prefix: "ci"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

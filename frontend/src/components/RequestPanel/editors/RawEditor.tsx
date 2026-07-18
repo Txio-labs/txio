@@ -123,7 +123,7 @@ export const RawEditor: React.FC<RawEditorProps> = ({
       <div className="flex-1 flex flex-col min-w-0 p-6">
         {/* Read-Only Envelope Preview */}
         {request.type === RequestType.RPC && (
-          <div className="mb-4 bg-[#0c0c0e] p-4 rounded-xl border border-white/10 opacity-75 shrink-0 group">
+          <div className="mb-4 bg-[#003152] p-4 rounded-xl border border-white/10 opacity-75 shrink-0 group">
             <div className="flex justify-between items-center mb-2">
               <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Full Request Preview</div>
               <div className="text-[9px] text-slate-600">ReadOnly</div>

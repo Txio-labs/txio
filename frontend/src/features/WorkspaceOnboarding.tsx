@@ -92,7 +92,7 @@ export const WorkspaceOnboarding: React.FC<
     return (
         <div className="min-h-screen bg-near-black text-white selection:bg-electric-violet/30">
             <div className="relative min-h-screen overflow-hidden">
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(123,63,242,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(123,63,242,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-20" />
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(173,223,241,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(173,223,241,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-20" />
                 <div className="absolute -left-24 top-16 h-72 w-72 rounded-full bg-electric-violet/18 blur-[120px]" />
                 <div className="absolute bottom-0 right-0 h-[28rem] w-[28rem] rounded-full bg-soft-purple/14 blur-[140px]" />
 
@@ -206,7 +206,7 @@ export const WorkspaceOnboarding: React.FC<
                         }}
                         className="w-full max-w-xl lg:max-w-lg"
                     >
-                        <div className="rounded-[2.2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,26,0.96)_0%,rgba(9,9,13,0.98)_100%)] p-6 shadow-[0_45px_100px_-65px_rgba(123,63,242,0.75)] md:p-7">
+                        <div className="rounded-[2.2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(0,49,82,0.96)_0%,rgba(0,27,46,0.98)_100%)] p-6 shadow-[0_45px_100px_-65px_rgba(173,223,241,0.75)] md:p-7">
                             <div className="flex items-start justify-between gap-4">
                                 <div>
                                     <div className="text-[10px] font-black uppercase tracking-[0.32em] text-slate-500">
@@ -305,7 +305,7 @@ export const WorkspaceOnboarding: React.FC<
                                                     }
                                                     className={`rounded-[1.45rem] border p-4 text-left transition-all ${
                                                         isActive
-                                                            ? 'border-electric-violet/30 bg-electric-violet/10 shadow-[0_20px_45px_-28px_rgba(123,63,242,0.6)]'
+                                                            ? 'border-electric-violet/30 bg-electric-violet/10 shadow-[0_20px_45px_-28px_rgba(173,223,241,0.6)]'
                                                             : 'border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05]'
                                                     }`}
                                                 >
@@ -363,7 +363,7 @@ export const WorkspaceOnboarding: React.FC<
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="flex w-full items-center justify-center gap-2 rounded-[1.35rem] bg-electric-violet px-5 py-4 text-sm font-black uppercase tracking-[0.2em] text-white shadow-[0_25px_55px_-28px_rgba(123,63,242,0.85)] transition-all hover:bg-soft-purple disabled:cursor-not-allowed disabled:opacity-60"
+                                    className="flex w-full items-center justify-center gap-2 rounded-[1.35rem] bg-electric-violet px-5 py-4 text-sm font-black uppercase tracking-[0.2em] text-white shadow-[0_25px_55px_-28px_rgba(173,223,241,0.85)] transition-all hover:bg-soft-purple disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                     {isSubmitting ? (
                                         <div className="h-5 w-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />

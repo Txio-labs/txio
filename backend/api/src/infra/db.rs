@@ -44,7 +44,7 @@ fn is_dns_resolution_error(error: &Error) -> bool {
         || message.contains("_mongodb._tcp")
 }
 
-fn extract_mongo_host(uri: &str) -> Option<&str> {
+pub fn extract_mongo_host(uri: &str) -> Option<&str> {
     let (_, remainder) = uri.split_once("://")?;
     let without_credentials = remainder
         .rsplit_once('@')
@@ -56,4 +56,48 @@ fn extract_mongo_host(uri: &str) -> Option<&str> {
         .unwrap_or(without_credentials);
 
     authority.split(',').next()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::extract_mongo_host;
+
+    #[test]
+    fn strips_credentials_from_srv_uri() {
+        let host = extract_mongo_host("mongodb+srv://user:pass@cluster.example/db");
+
+        assert_eq!(host, Some("cluster.example"));
+        let host = host.expect("host should be extracted");
+        assert!(!host.contains("user"));
+        assert!(!host.contains("pass"));
+    }
+
+    #[test]
+    fn never_returns_userinfo() {
+        let cases: [(&str, &[&str]); 3] = [
+            (
+                "mongodb+srv://user:pass@cluster.example/db",
+                &["user", "pass"],
+            ),
+            (
+                "mongodb://admin:s3cret@localhost:27017/txio",
+                &["admin", "s3cret"],
+            ),
+            (
+                "mongodb://alice:hunter2@db1.example,db2.example/txio",
+                &["alice", "hunter2"],
+            ),
+        ];
+
+        for (uri, credentials) in cases {
+            let host = extract_mongo_host(uri).expect("host should be extracted");
+            assert!(!host.contains('@'), "host `{host}` must not contain `@`");
+            for credential in credentials {
+                assert!(
+                    !host.contains(credential),
+                    "host `{host}` must not contain credential `{credential}`"
+                );
+            }
+        }
+    }
 }

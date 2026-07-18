@@ -55,7 +55,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           onChange={onTypeChange}
           options={[
             { label: 'JSON-RPC', value: RequestType.RPC, icon: <Terminal size={12} className="text-emerald-500" /> },
-            { label: 'TX BUILDER', value: RequestType.TRANSACTION, icon: <Layers size={12} className="text-violet-500" /> }
+            { label: 'TX BUILDER', value: RequestType.TRANSACTION, icon: <Layers size={12} className="text-amber-500" /> }
           ]}
           fullWidth
         />

@@ -3,7 +3,7 @@
 # repository-root Dockerfile instead.
 
 # Build stage
-FROM rust:1.85-slim AS builder
+FROM rust:1.88.0-slim-bookworm AS builder
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
@@ -20,8 +20,8 @@ COPY cli ./cli
 RUN cargo build --release --package txio-api --package txio
 
 # Runtime stage
-# We use the rust-slim image as the runtime to ensure 'cargo' is available for the TerminalService
-FROM rust:1.85-slim
+# Use a minimal base image for runtime to reduce attack surface
+FROM debian:bookworm-slim
 
 WORKDIR /app
 

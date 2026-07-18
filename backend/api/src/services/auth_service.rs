@@ -1,3 +1,4 @@
+use crate::dtos::admin_dtos::RpcLogRequest;
 use crate::dtos::request::{LoginRequest, RegisterUserRequest};
 use crate::dtos::response::{AuthResponse, UserResponse};
 use crate::model::rpc::RpcLog;
@@ -89,21 +90,28 @@ impl AuthService {
     }
 
     pub async fn login_user(&self, req: LoginRequest) -> Result<AuthResponse, AppError> {
-        // ... (existing code)
-        // Verify user exists
-        let user = self
-            .repo
-            .find_by_email(&req.email)
-            .await
-            .map_err(|_| AppError::Unauthorized("Invalid credentials".into()))?;
+        // Dummy hash for timing-safe comparison when user is not found.
+        // This ensures both "user not found" and "wrong password" paths take comparable time,
+        // preventing timing side-channel attacks for user enumeration.
+        // Hash of a random string, cost factor matches DEFAULT_COST (12).
+        const DUMMY_HASH: &str = "$2b$12$K4IzU6d5TqmqRKFLJZdqOeVLqZJ3mJHvJZdqOeVLqZJ3mJHvJZdq.";
 
-        // Verify password
-        let is_valid = bcrypt::verify(req.password.as_bytes(), &user.password_hash)
-            .map_err(|_| AppError::InternalError("Failed to verify password".into()))?;
+        let user_result = self.repo.find_by_email(&req.email).await;
 
-        if !is_valid {
+        let (hash_to_verify, user_found) = match &user_result {
+            Ok(user) => (user.password_hash.as_str(), true),
+            Err(_) => (DUMMY_HASH, false),
+        };
+
+        // Always perform bcrypt verification to ensure constant-time behavior
+        let is_valid = bcrypt::verify(req.password.as_bytes(), hash_to_verify).unwrap_or(false);
+
+        // Return error if user wasn't found or password was invalid
+        if !user_found || !is_valid {
             return Err(AppError::Unauthorized("Invalid credentials".into()));
         }
+
+        let user = user_result.unwrap();
 
         let token = self.jwt_helper.generate_token(
             &user.id.map(|id| id.to_string()).unwrap_or_default(),
@@ -188,6 +196,15 @@ impl AuthService {
         self.repo.update(&user).await?;
 
         Ok(())
+    }
+
+    pub async fn log_rpc_call(
+        &self,
+        user_id: mongodb::bson::oid::ObjectId,
+        req: RpcLogRequest,
+    ) -> Result<(), AppError> {
+        let log = RpcLog::new(user_id, req.method, req.params, req.success, req.error);
+        self.rpc_repo.save(&log).await
     }
 
     pub async fn get_rpc_history(&self, email: &str) -> Result<Vec<RpcLog>, AppError> {

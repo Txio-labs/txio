@@ -44,7 +44,7 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
         className="group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] px-2.5 py-2 text-left transition-colors hover:border-electric-violet/30 hover:bg-white/[0.04]"
       >
         <div className="flex min-w-0 items-center gap-2.5">
-          <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-electric-violet shadow-[0_0_6px_rgba(123,63,242,0.6)]" />
+          <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-electric-violet shadow-[0_0_6px_rgba(173,223,241,0.6)]" />
 
           <div className="min-w-0 flex-1">
             <div
@@ -74,7 +74,7 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
       </button>
 
       {isDropdownOpen && (
-        <div className="absolute top-[calc(100%-4px)] left-3 right-3 bg-[#0a0a0c] border border-white/[0.09] rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute top-[calc(100%-4px)] left-3 right-3 bg-[#003152] border border-white/[0.09] rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="p-1.5 max-h-64 overflow-y-auto custom-scrollbar space-y-0.5">
             {workspaces.map(ws => (
               <button
