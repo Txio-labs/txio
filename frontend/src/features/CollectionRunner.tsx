@@ -1,18 +1,60 @@
 
-import React, { useState, useMemo } from 'react';
-import { Play, Pause, RotateCcw, CheckCircle2, XCircle, Clock, AlertTriangle, FileText, ArrowRight } from 'lucide-react';
+import React, { useState, useMemo, useRef } from 'react';
+import { Play, Pause, RotateCcw, CheckCircle2, XCircle, Clock, AlertTriangle, FileText, ArrowRight, Square } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
-import { CollectionNode } from '../types';
+import { CollectionNode, RequestItem, RequestType } from '../types';
+import { executeSuiRpc, simulateMoveCall, SuiRpcError } from '../services/suiService';
+
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000000000000000000000000000';
+
+const resolveVariables = (raw: string, vars: { key: string; value: string }[]): string =>
+    vars.reduce((str, v) => str.replaceAll(`{{${v.key}}}`, v.value), raw);
+
+const resolveRequestVars = (request: RequestItem, vars: { key: string; value: string }[]): RequestItem => {
+    if (!vars.length) return request;
+    try {
+        if (request.type === RequestType.RPC) {
+            const raw = JSON.stringify(request.rpcParams.params);
+            const resolved = resolveVariables(raw, vars);
+            return {
+                ...request,
+                rpcParams: {
+                    ...request.rpcParams,
+                    method: resolveVariables(request.rpcParams.method, vars),
+                    params: JSON.parse(resolved),
+                },
+            };
+        }
+        const mp = request.moveParams;
+        return {
+            ...request,
+            moveParams: {
+                ...mp,
+                packageId: resolveVariables(mp.packageId, vars),
+                module: resolveVariables(mp.module, vars),
+                function: resolveVariables(mp.function, vars),
+                typeArguments: mp.typeArguments.map((t: string) => resolveVariables(t, vars)),
+                arguments: mp.arguments.map((a) => ({
+                    ...a,
+                    value: resolveVariables(String(a.value), vars),
+                })),
+            },
+        };
+    } catch {
+        return request;
+    }
+};
 
 interface CollectionRunnerProps {
     collectionId?: string;
 }
 
 export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId }) => {
-    const { collections, currentWorkspaceId } = useAppStore();
+    const { collections, currentWorkspaceId, network, envVariables } = useAppStore();
     const [isRunning, setIsRunning] = useState(false);
     const [progress, setProgress] = useState(0);
     const [currentReqIndex, setCurrentReqIndex] = useState(-1);
+    const abortRef = useRef(false);
     
     // Filter collections by current workspace
     const workspaceCollections = useMemo(() => {
@@ -56,33 +98,84 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
         setRunList(runSource ? getRequests(runSource) : []);
     }
 
-    const handleRun = () => {
+    const handleRun = async () => {
+        abortRef.current = false;
         setIsRunning(true);
         setProgress(0);
         setCurrentReqIndex(0);
-        
-        let idx = 0;
-        const interval = setInterval(() => {
-            // Update current item to success
-            setRunList(prev => prev.map((req, i) => {
-                if (i === idx) return { ...req, status: 'success', duration: Math.floor(Math.random() * 200) + 50 };
-                return req;
-            }));
-            
-            idx++;
-            setCurrentReqIndex(idx);
-            setProgress((idx / runList.length) * 100);
 
-            if (idx >= runList.length) {
-                clearInterval(interval);
-                setIsRunning(false);
-                setCurrentReqIndex(-1);
+        // Snapshot the run list at start so mutations don't shift indices
+        const snapshot = [...runList];
+
+        for (let idx = 0; idx < snapshot.length; idx++) {
+            if (abortRef.current) break;
+
+            setCurrentReqIndex(idx);
+
+            const req = snapshot[idx] as RequestItem;
+            const resolved = resolveRequestVars(req, envVariables);
+            const startTime = performance.now();
+
+            try {
+                if (resolved.type === RequestType.TRANSACTION) {
+                    const { packageId, module, function: func, typeArguments, arguments: args } = resolved.moveParams;
+                    const { status, duration } = await simulateMoveCall(
+                        network,
+                        ZERO_ADDRESS,
+                        packageId,
+                        module,
+                        func,
+                        typeArguments,
+                        args,
+                    );
+                    setRunList((prev) =>
+                        prev.map((r, i) => (i === idx ? { ...r, status: 'success' as const, duration, httpStatus: status } : r)),
+                    );
+                } else {
+                    const { result, status, duration } = await executeSuiRpc(
+                        network,
+                        resolved.rpcParams.method,
+                        resolved.rpcParams.params,
+                    );
+                    setRunList((prev) =>
+                        prev.map((r, i) =>
+                            i === idx ? { ...r, status: 'success' as const, duration, httpStatus: status, response: result } : r,
+                        ),
+                    );
+                }
+            } catch (error) {
+                const duration = Math.round(performance.now() - startTime);
+                const rpcError = error instanceof SuiRpcError ? error : null;
+                const errorMessage = error instanceof Error && error.message.trim() ? error.message : 'Request failed';
+                setRunList((prev) =>
+                    prev.map((r, i) =>
+                        i === idx
+                            ? {
+                                  ...r,
+                                  status: 'error' as const,
+                                  duration,
+                                  httpStatus: rpcError?.status ?? 0,
+                                  errorMessage,
+                              }
+                            : r,
+                    ),
+                );
             }
-        }, 800); // Simulate execution time
+
+            setProgress(((idx + 1) / snapshot.length) * 100);
+        }
+
+        setIsRunning(false);
+        setCurrentReqIndex(-1);
     };
-    
+
+    const handleStop = () => {
+        abortRef.current = true;
+    };
+
     const handleReset = () => {
-        setRunList(prev => prev.map(r => ({ ...r, status: 'pending', duration: 0 })));
+        abortRef.current = true;
+        setRunList((prev) => prev.map((r) => ({ ...r, status: 'pending', duration: 0 })));
         setProgress(0);
         setCurrentReqIndex(-1);
     };
@@ -105,6 +198,11 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                         <p className="text-xs text-slate-400">Executing sequence: <span className="text-white font-bold">{collectionName}</span></p>
                     </div>
                     <div className="flex gap-3">
+                        {isRunning && (
+                            <button onClick={handleStop} className="px-4 py-2 bg-red-900/30 hover:bg-red-900/50 text-red-400 text-xs font-bold rounded flex items-center gap-2 transition-colors border border-red-900/30">
+                                <Square size={14}/> Stop
+                            </button>
+                        )}
                         <button onClick={handleReset} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded flex items-center gap-2 transition-colors">
                             <RotateCcw size={14}/> Reset
                         </button>
@@ -129,7 +227,12 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                     </div>
                 </div>
                 <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                    <span>{runList.filter(r => r.status === 'success').length} / {runList.length} Completed</span>
+                    <span>
+                        {runList.filter(r => r.status === 'success').length} / {runList.length} Completed
+                        {runList.some(r => r.status === 'error') && (
+                            <span className="text-red-400 ml-2">· {runList.filter(r => r.status === 'error').length} Failed</span>
+                        )}
+                    </span>
                     <span>{Math.round(progress)}%</span>
                 </div>
             </div>
@@ -156,9 +259,13 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                                     </td>
                                     <td className="px-6 py-4 font-mono text-xs text-slate-500">{req.rpcParams?.method || req.txType || 'Transaction'}</td>
                                     <td className="px-6 py-4">
-                                        {req.status === 'success' ? (
+                                        {req.status === 'error' ? (
+                                            <span className="inline-flex items-center gap-1.5 text-red-400 text-xs font-bold bg-red-900/10 px-2 py-1 rounded border border-red-900/20" title={req.errorMessage}>
+                                                <XCircle size={14}/> {req.httpStatus || 'ERR'}
+                                            </span>
+                                        ) : req.status === 'success' ? (
                                             <span className="inline-flex items-center gap-1.5 text-emerald-400 text-xs font-bold bg-emerald-900/10 px-2 py-1 rounded border border-emerald-900/20">
-                                                <CheckCircle2 size={14}/> 200 OK
+                                                <CheckCircle2 size={14}/> {req.httpStatus || 200} OK
                                             </span>
                                         ) : i === currentReqIndex ? (
                                             <span className="inline-flex items-center gap-1.5 text-amber-400 text-xs font-bold bg-amber-900/10 px-2 py-1 rounded border border-amber-900/20">
