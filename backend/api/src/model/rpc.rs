@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
-use mongodb::bson::oid::ObjectId;
 use chrono::{DateTime, Utc};
+use mongodb::bson::oid::ObjectId;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -16,7 +16,13 @@ pub struct RpcLog {
 }
 
 impl RpcLog {
-    pub fn new(user_id: ObjectId, method: String, params: Value, success: bool, error: Option<String>) -> Self {
+    pub fn new(
+        user_id: ObjectId,
+        method: String,
+        params: Value,
+        success: bool,
+        error: Option<String>,
+    ) -> Self {
         Self {
             id: None,
             user_id,

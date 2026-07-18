@@ -48,7 +48,7 @@ impl SuiService {
     ) -> Result<Value, AppError> {
         self.call_rpc_direct(
             user.network.url(),
-            user.id.clone().unwrap_or_else(ObjectId::new),
+            user.id.unwrap_or_default(),
             method,
             params,
         )

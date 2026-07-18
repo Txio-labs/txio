@@ -1,7 +1,7 @@
-use std::fs;
-use std::path::PathBuf;
 use anyhow::Result;
 use serde_json;
+use std::fs;
+use std::path::PathBuf;
 
 pub fn get_config_dir() -> PathBuf {
     let mut path = dirs_next::home_dir().unwrap_or_else(|| PathBuf::from("."));
@@ -56,7 +56,10 @@ pub fn save_config(key: &str, value: &str) -> Result<()> {
     } else {
         serde_json::Map::new()
     };
-    map.insert(key.to_string(), serde_json::Value::String(value.to_string()));
+    map.insert(
+        key.to_string(),
+        serde_json::Value::String(value.to_string()),
+    );
     fs::write(path, serde_json::to_string_pretty(&map)?)?;
     Ok(())
 }

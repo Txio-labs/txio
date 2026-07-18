@@ -101,6 +101,14 @@ impl CommandExecutionRecord {
     }
 }
 
+impl Default for TerminalService {
+    fn default() -> Self {
+        Self {
+            executions: Arc::new(RwLock::new(HashMap::new())),
+        }
+    }
+}
+
 impl TerminalService {
     pub fn new() -> Self {
         Self {

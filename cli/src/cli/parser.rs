@@ -1,4 +1,3 @@
-
 use clap::{Parser, Subcommand, ValueEnum};
 
 #[derive(Clone, Debug, ValueEnum, Default, PartialEq)]
@@ -41,9 +40,7 @@ pub enum Commands {
     Chains,
 
     /// Switch the default chain
-    Switch {
-        chain: String,
-    },
+    Switch { chain: String },
 
     /// Login to your txio account
     Login,
@@ -73,9 +70,7 @@ pub enum Commands {
     },
 
     /// Generate shell completion scripts
-    Completion {
-        shell: clap_complete::Shell,
-    },
+    Completion { shell: clap_complete::Shell },
 
     /// Launch interactive console
     Console,
@@ -130,19 +125,13 @@ pub enum ChainCommand {
         params: Option<String>,
     },
     /// Check balance for an address
-    Balance {
-        address: String,
-    },
+    Balance { address: String },
     /// Fetch a transaction by hash or digest
     #[command(alias = "hash")]
-    Tx {
-        hash: String,
-    },
+    Tx { hash: String },
     /// Inspect an object or account by ID
     #[command(alias = "account")]
-    Object {
-        id: String,
-    },
+    Object { id: String },
     /// Get recent transaction history for an address
     History {
         address: String,
@@ -191,9 +180,7 @@ pub enum DbAction {
     /// List all registered users
     ListUsers,
     /// Delete a user by email (admin only)
-    DeleteUser {
-        email: String,
-    },
+    DeleteUser { email: String },
     /// Show database statistics (users, RPC call count)
     Stats,
     /// List recent RPC call logs

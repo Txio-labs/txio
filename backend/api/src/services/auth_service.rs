@@ -80,6 +80,7 @@ impl AuthService {
         let token = self.jwt_helper.generate_token(
             &saved_user.id.map(|id| id.to_string()).unwrap_or_default(),
             &saved_user.email,
+            saved_user.token_version,
         )?;
 
         Ok(AuthResponse {
@@ -108,6 +109,7 @@ impl AuthService {
         let token = self.jwt_helper.generate_token(
             &user.id.map(|id| id.to_string()).unwrap_or_default(),
             &user.email,
+            user.token_version,
         )?;
 
         Ok(AuthResponse {
@@ -159,6 +161,11 @@ impl AuthService {
 
         user.password_hash = password_hash;
 
+        // Bump token version to revoke all existing sessions
+        if let Some(ref user_id) = user.id {
+            self.repo.bump_token_version(user_id).await?;
+        }
+
         let updated_user = self.repo.update(&user).await?;
 
         Ok(Self::to_user_response(&updated_user))
@@ -185,6 +192,12 @@ impl AuthService {
 
         // 4. Update user
         user.password_hash = password_hash;
+
+        // 5. Bump token version to revoke all existing sessions
+        if let Some(ref user_id) = user.id {
+            self.repo.bump_token_version(user_id).await?;
+        }
+
         self.repo.update(&user).await?;
 
         Ok(())
@@ -233,11 +246,21 @@ impl AuthService {
         let token = self.jwt_helper.generate_token(
             &user.id.map(|id| id.to_string()).unwrap_or_default(),
             &user.email,
+            user.token_version,
         )?;
 
         Ok(AuthResponse {
             token,
             user: Self::to_user_response(&user),
         })
+    }
+
+    pub async fn logout(&self, user_id: &str) -> Result<(), AppError> {
+        let object_id = mongodb::bson::oid::ObjectId::parse_str(user_id)
+            .map_err(|_| AppError::BadRequest("Invalid user ID".into()))?;
+
+        self.repo.bump_token_version(&object_id).await?;
+
+        Ok(())
     }
 }

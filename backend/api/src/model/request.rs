@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
-use mongodb::bson::oid::ObjectId;
 use chrono::{DateTime, Utc};
+use mongodb::bson::oid::ObjectId;
+use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 #[derive(Debug, Serialize, Deserialize, Validate, Clone)]
@@ -18,7 +18,7 @@ pub struct SavedRequest {
     pub method: String,
 
     pub params: serde_json::Value,
-    
+
     pub network: Option<String>,
     pub rpc_url: Option<String>,
 

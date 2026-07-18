@@ -320,10 +320,10 @@ fn resolve_api_keys() -> Vec<String> {
         })
         .unwrap_or_default();
 
-    if api_keys.is_empty() {
-        if let Some(api_key) = resolve_env_value("GROQ_API_KEY") {
-            api_keys.push(api_key);
-        }
+    if api_keys.is_empty()
+        && let Some(api_key) = resolve_env_value("GROQ_API_KEY")
+    {
+        api_keys.push(api_key);
     }
 
     api_keys

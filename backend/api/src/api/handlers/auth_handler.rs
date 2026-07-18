@@ -79,7 +79,12 @@ pub async fn profile(
     Ok(Json(user))
 }
 
-pub async fn logout() -> Result<Json<Value>, AppError> {
+pub async fn logout(
+    State(service): State<AuthService>,
+    claims: crate::utils::auth_jwt::Claims,
+) -> Result<Json<Value>, AppError> {
+    service.logout(&claims.sub).await?;
+
     Ok(Json(json!({ "message": "Logged out successfully" })))
 }
 

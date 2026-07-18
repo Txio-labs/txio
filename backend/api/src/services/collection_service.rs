@@ -59,8 +59,7 @@ impl CollectionService {
         name: String,
         description: Option<String>,
     ) -> Result<Collection, AppError> {
-        self.ensure_workspace_owner(workspace_id.clone(), user_id.clone())
-            .await?;
+        self.ensure_workspace_owner(workspace_id, user_id).await?;
 
         let new_collection = Collection::new(user_id, Some(workspace_id), name, description);
         self.collection_repo.save(&new_collection).await
@@ -72,8 +71,7 @@ impl CollectionService {
         workspace_id: Option<ObjectId>,
     ) -> Result<Vec<Collection>, AppError> {
         if let Some(workspace_id) = workspace_id {
-            self.ensure_workspace_owner(workspace_id.clone(), user_id.clone())
-                .await?;
+            self.ensure_workspace_owner(workspace_id, user_id).await?;
 
             return self
                 .collection_repo
@@ -128,6 +126,7 @@ impl CollectionService {
 
     // --- Requests ---
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn add_request(
         &self,
         user_id: ObjectId,
@@ -165,6 +164,7 @@ impl CollectionService {
             .await
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn update_request(
         &self,
         request_id: ObjectId,
@@ -252,46 +252,44 @@ impl CollectionService {
         let mut final_params = req.params.clone();
         if let Some(arr) = final_params.as_array_mut() {
             for v in arr.iter_mut() {
-                if let Some(s) = v.as_str() {
-                    if suins_regex.is_match(s) {
-                        let mut new_string = s.to_string();
-                        let mut replacements = Vec::new();
-                        for cap in suins_regex.captures_iter(s) {
-                            if let Some(m) = cap.get(0) {
-                                replacements.push(m.as_str().to_string());
+                if let Some(s) = v.as_str().filter(|s| suins_regex.is_match(s)) {
+                    let mut new_string = s.to_string();
+                    let mut replacements = Vec::new();
+                    for cap in suins_regex.captures_iter(s) {
+                        if let Some(m) = cap.get(0) {
+                            replacements.push(m.as_str().to_string());
+                        }
+                    }
+
+                    for name in replacements {
+                        match self
+                            .sui_service
+                            .resolve_name_service_address(&final_url, &name)
+                            .await
+                        {
+                            Ok(addr) => {
+                                new_string = new_string.replace(&name, &addr);
+                            }
+                            Err(e) => {
+                                // Synthesis: Return resolution error as JSON-RPC error
+                                let err_val = self.sui_service.error_response(
+                                    -32002,
+                                    &format!("SuiNS Resolution Error for '{}': {}", name, e),
+                                );
+
+                                // Update history before early return
+                                let mut updated_req = req.clone();
+                                updated_req.last_response = Some(err_val.clone());
+                                updated_req.last_executed_at = Some(chrono::Utc::now());
+                                self.request_repo.update(&updated_req).await?;
+
+                                return Ok((updated_req, err_val));
                             }
                         }
+                    }
 
-                        for name in replacements {
-                            match self
-                                .sui_service
-                                .resolve_name_service_address(&final_url, &name)
-                                .await
-                            {
-                                Ok(addr) => {
-                                    new_string = new_string.replace(&name, &addr);
-                                }
-                                Err(e) => {
-                                    // Synthesis: Return resolution error as JSON-RPC error
-                                    let err_val = self.sui_service.error_response(
-                                        -32002,
-                                        &format!("SuiNS Resolution Error for '{}': {}", name, e),
-                                    );
-
-                                    // Update history before early return
-                                    let mut updated_req = req.clone();
-                                    updated_req.last_response = Some(err_val.clone());
-                                    updated_req.last_executed_at = Some(chrono::Utc::now());
-                                    self.request_repo.update(&updated_req).await?;
-
-                                    return Ok((updated_req, err_val));
-                                }
-                            }
-                        }
-
-                        if new_string != *s {
-                            *v = Value::String(new_string);
-                        }
+                    if new_string != *s {
+                        *v = Value::String(new_string);
                     }
                 }
             }

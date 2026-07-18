@@ -1,4 +1,4 @@
-use axum::{Router, http::HeaderValue, routing::get};
+use axum::{Router, extract::Extension, http::HeaderValue, routing::get};
 use dotenvy::{dotenv, from_path_override};
 use std::{net::SocketAddr, path::PathBuf};
 use tower_http::cors::{Any, CorsLayer};
@@ -140,6 +140,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/api/v1/terminal",
             api::routers::terminal_router::router(terminal_service),
         )
+        .layer(Extension(db_client.clone()))
         .layer(cors);
 
     // 8. Run Server

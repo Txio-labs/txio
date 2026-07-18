@@ -1,9 +1,9 @@
 use crate::chains::traits::ChainAdapter;
 use crate::cli::parser::Network;
-use async_trait::async_trait;
-use serde_json::{json, Value};
 use anyhow::{Result, anyhow};
+use async_trait::async_trait;
 use reqwest::Client;
+use serde_json::{Value, json};
 
 pub struct AptosAdapter {
     client: Client,
@@ -86,7 +86,10 @@ impl ChainAdapter for AptosAdapter {
     }
 
     async fn get_history(&self, address: &str, limit: u32) -> Result<Value> {
-        let url = format!("{}/accounts/{}/transactions?limit={}", self.rpc_url, address, limit);
+        let url = format!(
+            "{}/accounts/{}/transactions?limit={}",
+            self.rpc_url, address, limit
+        );
         Ok(self.client.get(&url).send().await?.json().await?)
     }
 }

@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
-use mongodb::bson::oid::ObjectId;
 use chrono::{DateTime, Utc};
+use mongodb::bson::oid::ObjectId;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct User {
@@ -11,6 +11,8 @@ pub struct User {
     pub tier: PlanTier,
     #[serde(default)]
     pub network: SuiNetwork,
+    #[serde(default)]
+    pub token_version: u32,
     pub created_at: DateTime<Utc>,
 }
 
@@ -47,6 +49,7 @@ impl User {
             password_hash,
             tier: PlanTier::Free,
             network: SuiNetwork::Mainnet,
+            token_version: 0,
             created_at: Utc::now(),
         }
     }

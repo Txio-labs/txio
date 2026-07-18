@@ -9,7 +9,11 @@ pub fn print_logo() {
    |_|   |_|\___/ \_/\_/  
     "#;
     println!("{}", logo.cyan().bold());
-    println!("{} v{}\n", "Universal Multi-Chain Terminal".dimmed(), env!("CARGO_PKG_VERSION"));
+    println!(
+        "{} v{}\n",
+        "Universal Multi-Chain Terminal".dimmed(),
+        env!("CARGO_PKG_VERSION")
+    );
 }
 
 pub fn print_success(msg: &str) {
