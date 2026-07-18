@@ -51,7 +51,6 @@ impl CollectionService {
 
         Ok(())
     }
-    
     fn validate_url(url_str: &str) -> Result<(), AppError> {
         // Parse URL
         let url = Url::parse(url_str).map_err(|e| AppError::BadRequest(format!("Invalid RPC URL: {e}")))?;
@@ -73,7 +72,9 @@ impl CollectionService {
                     }
                 };
                 if is_disallowed {
-                    return Err(AppError::BadRequest("Private or link‑local IP addresses are not allowed".into()));
+                    return Err(AppError::BadRequest(
+                        "Private or link-local IP addresses are not allowed".into(),
+                    ));
                 }
             }
         }
