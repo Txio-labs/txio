@@ -3,17 +3,20 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAppStore, appStore } from '@/lib/store';
 import { useWallet } from '@/wallet';
+import { useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 import { RequestPanel } from '../components/RequestPanel/RequestPanel';
-import { RequestItem, RequestType } from '../types';
+import { RequestItem, RequestType, Network } from '../types';
 import {
     executeSuiRpc,
     looksLikeSuiNs,
     resolveSuiAddress,
     simulateMoveCall,
+    signAndExecuteMoveCall,
     SuiRpcError,
 } from '../services/suiService';
 import { ADDRESS_FIRST_PARAM_METHODS } from '@/lib/constants';
 import { SignTransactionModal } from '../components/SignTransactionModal';
+import { NetworkSwitcherModal } from '../components/NetworkSwitcherModal';
 import {
     ensureTerminalOpen,
     logCommandToTerminal
@@ -82,11 +85,15 @@ export const RPCBuilder: React.FC = () => {
         envVariables,
     } = useAppStore();
     const { currentWallet, openModal } = useWallet();
+    const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
     const activeTab = tabs.find(t => t.id === activeTabId);
     const connectedAddress = currentWallet?.family === 'sui' ? currentWallet.address : null;
 
     const [isLoading, setIsLoading] = useState(false);
     const [isSignModalOpen, setIsSignModalOpen] = useState(false);
+    const [isNetworkSwitchOpen, setIsNetworkSwitchOpen] = useState(false);
+    const [isExecuteMode, setIsExecuteMode] = useState(false);
+    const [pendingNetwork, setPendingNetwork] = useState<Network | null>(null);
 
     const request = activeTab?.data as RequestItem;
 
@@ -258,6 +265,106 @@ export const RPCBuilder: React.FC = () => {
         void executeCall(signer);
     };
 
+    const handleExecuteTransaction = async () => {
+        if (!request || !connectedAddress) return;
+
+        // Check if trying to execute on mainnet - show network switch confirmation
+        if (network === 'mainnet') {
+            setPendingNetwork(network);
+            setIsNetworkSwitchOpen(true);
+            return;
+        }
+
+        await executeRealTransaction();
+    };
+
+    const executeRealTransaction = async () => {
+        if (!request || !connectedAddress) return;
+
+        setIsLoading(true);
+        setIsNetworkSwitchOpen(false);
+
+        const resolved = resolveRequestVars(request, envVariables);
+
+        const commandLine =
+            resolved.type === RequestType.TRANSACTION
+                ? `txio sui execute ${resolved.moveParams.packageId}::${resolved.moveParams.module}::${resolved.moveParams.function}`
+                : `txio sui call --method ${resolved.rpcParams.method}${
+                      resolved.rpcParams.params?.length
+                          ? ` --params ${JSON.stringify(resolved.rpcParams.params)}`
+                          : ''
+                  }`;
+
+        ensureTerminalOpen();
+
+        try {
+            let res;
+
+            if (resolved.type === RequestType.TRANSACTION) {
+                const {
+                    packageId,
+                    module,
+                    function: func,
+                    typeArguments,
+                    arguments: args
+                } = resolved.moveParams;
+
+                res = await signAndExecuteMoveCall(
+                    network,
+                    connectedAddress,
+                    packageId,
+                    module,
+                    func,
+                    typeArguments,
+                    args,
+                    signAndExecuteTransaction
+                );
+            } else {
+                throw new Error('Execute mode is only supported for Move calls, not raw RPC requests.');
+            }
+
+            const { result, duration, status } = res;
+
+            appStore.addToHistory(request, status, duration);
+
+            logCommandToTerminal({
+                command: commandLine,
+                network,
+                body: result,
+                status,
+                duration,
+                successLabel: 'executed',
+                isExecution: true
+            });
+        } catch (error) {
+            const rpcError =
+                error instanceof SuiRpcError
+                    ? error
+                    : null;
+            const message =
+                error instanceof Error &&
+                error.message.trim()
+                    ? error.message
+                    : 'Transaction execution failed.';
+
+            appStore.addToHistory(
+                request,
+                rpcError?.status ?? 500,
+                rpcError?.duration ?? 0
+            );
+
+            logCommandToTerminal({
+                command: commandLine,
+                network,
+                error: message,
+                status: rpcError?.status ?? 500,
+                duration: rpcError?.duration
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     if (!request) return null;
 
     return (
@@ -283,9 +390,18 @@ export const RPCBuilder: React.FC = () => {
                 isOpen={isSignModalOpen}
                 onClose={() => setIsSignModalOpen(false)}
                 onConfirm={handleReviewSimulation}
+                onExecute={handleExecuteTransaction}
                 wallet={currentWallet}
                 onRequestConnect={openModal}
                 request={request}
+            />
+
+            <NetworkSwitcherModal
+                isOpen={isNetworkSwitchOpen}
+                onClose={() => setIsNetworkSwitchOpen(false)}
+                onConfirm={executeRealTransaction}
+                from={network}
+                to={pendingNetwork || network}
             />
         </motion.div>
     );
