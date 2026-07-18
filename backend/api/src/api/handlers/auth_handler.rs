@@ -131,7 +131,7 @@ pub async fn update_user_password(
         .map_err(|e| AppError::ValidationError(e.to_string()))?;
 
     let user = service
-        .update_user_password_by_email(&claims.email, &payload.new_password)
+        .update_user_password_by_email(&claims.email, &payload.current_password, &payload.new_password)
         .await?;
 
     Ok(Json(json!({ "user": user })))
