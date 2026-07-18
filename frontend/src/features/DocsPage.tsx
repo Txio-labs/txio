@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { 
     Book, Code2, Cpu, Globe, Layers, Shield, Terminal, Zap, ChevronRight, Search, 
     Menu, X, Moon, Sun, ArrowLeft, ExternalLink, MessageSquare, BookOpen, Settings,
@@ -20,6 +21,7 @@ export const DocsPage: React.FC<
     const [activePage, setActivePage] = useState('introduction');
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const scrollRef = React.useRef<HTMLElement>(null);
+    const router = useRouter();
 
     const navigateTo = (
         target:
@@ -36,7 +38,15 @@ export const DocsPage: React.FC<
             return;
         }
 
-        appStore.setViewMode(target);
+        const modeToPath: Record<string, string> = {
+            landing: '/',
+            signup: '/signup'
+        };
+
+        const path = modeToPath[target];
+        if (path) {
+            router.push(path);
+        }
     };
 
     React.useEffect(() => {

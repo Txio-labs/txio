@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Cpu, Zap, Shield, Database, Layout, Server, Activity } from 'lucide-react';
 import { appStore, useAppStore } from '@/lib/store';
 import gsap from 'gsap';
@@ -12,6 +13,7 @@ export const InfrastructurePage: React.FC<
     InfrastructurePageProps
 > = ({ embedded = false }) => {
     const { theme } = useAppStore();
+    const router = useRouter();
 
     const navigateTo = (
         target:
@@ -30,7 +32,15 @@ export const InfrastructurePage: React.FC<
             return;
         }
 
-        appStore.setViewMode(target);
+        const modeToPath: Record<string, string> = {
+            ecosystem: '/ecosystem',
+            app: '/signup'
+        };
+
+        const path = modeToPath[target];
+        if (path) {
+            router.push(path);
+        }
     };
 
     React.useEffect(() => {

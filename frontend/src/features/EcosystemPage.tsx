@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { 
     Globe, Layers, Zap, Shield, Cpu, Code2, ArrowLeft, ExternalLink, 
     Blocks, Network, Cpu as Chip, Database
@@ -17,6 +18,7 @@ export const EcosystemPage: React.FC<
 > = ({ embedded = false }) => {
     const { theme } = useAppStore();
     const logo = theme === 'dark' ? logoDark : logoLight;
+    const router = useRouter();
 
     const navigateTo = (
         target:
@@ -44,7 +46,19 @@ export const EcosystemPage: React.FC<
             return;
         }
 
-        appStore.setViewMode(target);
+        const modeToPath: Record<string, string> = {
+            landing: '/',
+            integrations: '/integrations',
+            infrastructure: '/infrastructure',
+            partners: '/partners',
+            signup: '/signup',
+            docs: '/docs'
+        };
+
+        const path = modeToPath[target];
+        if (path) {
+            router.push(path);
+        }
     };
 
     React.useEffect(() => {
@@ -329,16 +343,16 @@ export const EcosystemPage: React.FC<
                         <div className="space-y-4">
                             <div className="text-[11px] font-black uppercase tracking-widest text-slate-200">Ecosystem</div>
                             <ul className="space-y-3 text-sm text-slate-500 font-bold">
-                                <li><span onClick={() => appStore.setViewMode('integrations')} className="hover:text-white transition-colors cursor-pointer">Integrations</span></li>
-                                <li><span onClick={() => appStore.setViewMode('infrastructure')} className="hover:text-white transition-colors cursor-pointer">Infrastructure</span></li>
-                                <li><span onClick={() => appStore.setViewMode('partners')} className="hover:text-white transition-colors cursor-pointer">Partners</span></li>
+                                <li><span onClick={() => navigateTo('integrations')} className="hover:text-white transition-colors cursor-pointer">Integrations</span></li>
+                                <li><span onClick={() => navigateTo('infrastructure')} className="hover:text-white transition-colors cursor-pointer">Infrastructure</span></li>
+                                <li><span onClick={() => navigateTo('partners')} className="hover:text-white transition-colors cursor-pointer">Partners</span></li>
                             </ul>
                         </div>
                         <div className="space-y-4">
                             <div className="text-[11px] font-black uppercase tracking-widest text-slate-200">Resources</div>
                             <ul className="space-y-3 text-sm text-slate-500 font-bold">
-                                <li><span onClick={() => appStore.setViewMode('docs')} className="hover:text-white transition-colors cursor-pointer">Documentation</span></li>
-                                <li><span onClick={() => appStore.setViewMode('signup')} className="hover:text-white transition-colors cursor-pointer">Launch App</span></li>
+                                <li><span onClick={() => navigateTo('docs')} className="hover:text-white transition-colors cursor-pointer">Documentation</span></li>
+                                <li><span onClick={() => navigateTo('signup')} className="hover:text-white transition-colors cursor-pointer">Launch App</span></li>
                             </ul>
                         </div>
                     </div>
