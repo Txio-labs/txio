@@ -28,5 +28,10 @@ validator = { workspace = true }
 bcrypt = { workspace = true }
 tower-http = { workspace = true }
 brevo = { workspace = true }
+brevo = { workspace = true }
+brevo = { workspace = true }
+brevo = { workspace = true }
+brevo = { workspace = true }
+brevo = { workspace = true }
 clap = { workspace = true }
 regex = { workspace = true }
