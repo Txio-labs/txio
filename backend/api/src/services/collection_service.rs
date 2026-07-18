@@ -66,7 +66,13 @@ impl CollectionService {
             }
             // If host is an IP address, check for private ranges
             if let Ok(ip) = host.parse::<IpAddr>() {
-                if ip.is_loopback() || ip.is_private() || ip.is_link_local() {
+                let is_disallowed = match ip {
+                    IpAddr::V4(v4) => v4.is_loopback() || v4.is_private() || v4.is_link_local(),
+                    IpAddr::V6(v6) => {
+                        v6.is_loopback() || v6.is_unique_local() || v6.is_unicast_link_local()
+                    }
+                };
+                if is_disallowed {
                     return Err(AppError::BadRequest("Private or link‑local IP addresses are not allowed".into()));
                 }
             }
