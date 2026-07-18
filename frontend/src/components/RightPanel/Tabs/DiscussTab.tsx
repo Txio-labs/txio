@@ -39,7 +39,7 @@ export const DiscussTab: React.FC<DiscussTabProps> = ({
                   <span className="text-xs font-bold text-slate-300">{c.userName}</span>
                   <span className="text-[10px] text-slate-600">{new Date(c.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                 </div>
-                <div className="text-xs text-slate-400 bg-[#0c0c0e] p-2 rounded-lg rounded-tl-none border border-white/10">
+                <div className="text-xs text-slate-400 bg-[#003152] p-2 rounded-lg rounded-tl-none border border-white/10">
                   {c.content}
                 </div>
               </div>

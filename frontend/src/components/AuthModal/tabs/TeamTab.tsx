@@ -19,7 +19,7 @@ export const TeamTab: React.FC<TeamTabProps> = ({
 }) => {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-      <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(145deg,rgba(123,63,242,0.14)_0%,rgba(10,10,14,0.96)_42%,rgba(6,6,8,1)_100%)] p-6">
+      <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(145deg,rgba(173,223,241,0.14)_0%,rgba(0,49,82,0.96)_42%,rgba(0,27,46,1)_100%)] p-6">
         <div className="absolute -right-10 top-0 h-32 w-32 rounded-full bg-soft-purple/15 blur-3xl" />
 
         <div className="relative flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -43,7 +43,7 @@ export const TeamTab: React.FC<TeamTabProps> = ({
             onClick={() =>
               appStore.showToast('Invite flow not implemented yet', 'info')
             }
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-electric-violet px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white shadow-[0_18px_35px_-20px_rgba(123,63,242,0.8)] transition-colors hover:bg-soft-purple"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-electric-violet px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white shadow-[0_18px_35px_-20px_rgba(173,223,241,0.8)] transition-colors hover:bg-soft-purple"
           >
             <Plus size={14} />
             Invite Member
@@ -53,7 +53,7 @@ export const TeamTab: React.FC<TeamTabProps> = ({
 
       {teamMembers.length === 0 ? (
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_320px]">
-          <div className="rounded-[1.75rem] border border-white/10 bg-[#0b0b10]/85 p-6">
+          <div className="rounded-[1.75rem] border border-white/10 bg-[#003152]/85 p-6">
             <div className="rounded-[1.5rem] border border-dashed border-white/10 bg-white/[0.02] p-8 text-center">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-electric-violet/10 text-electric-violet">
                 <Users size={28} />
@@ -70,7 +70,7 @@ export const TeamTab: React.FC<TeamTabProps> = ({
           </div>
 
           <div className="space-y-4">
-            <div className="rounded-[1.75rem] border border-white/10 bg-[#0b0b10]/85 p-5">
+            <div className="rounded-[1.75rem] border border-white/10 bg-[#003152]/85 p-5">
               <div className="flex items-start gap-3">
                 <div className="rounded-2xl bg-electric-violet/10 p-3 text-electric-violet">
                   <Shield size={18} />
@@ -87,7 +87,7 @@ export const TeamTab: React.FC<TeamTabProps> = ({
               </div>
             </div>
 
-            <div className="rounded-[1.75rem] border border-white/10 bg-[#0b0b10]/85 p-5">
+            <div className="rounded-[1.75rem] border border-white/10 bg-[#003152]/85 p-5">
               <div className="flex items-start gap-3">
                 <div className="rounded-2xl bg-soft-purple/10 p-3 text-soft-purple">
                   <Sparkles size={18} />
@@ -110,7 +110,7 @@ export const TeamTab: React.FC<TeamTabProps> = ({
           {teamMembers.map((member) => (
             <div
               key={member.id}
-              className="rounded-[1.75rem] border border-white/10 bg-[#0b0b10]/85 p-5"
+              className="rounded-[1.75rem] border border-white/10 bg-[#003152]/85 p-5"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3 min-w-0">
