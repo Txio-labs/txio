@@ -80,7 +80,7 @@ export const HistoryFeature: React.FC = () => {
                 : item.txType;
             return (
                 <div className="text-xs font-mono mt-1 flex items-center gap-2 overflow-hidden text-slate-500">
-                     <span className="text-violet-400 font-bold shrink-0">{target}</span>
+                     <span className="text-amber-400 font-bold shrink-0">{target}</span>
                 </div>
             );
         }
@@ -191,7 +191,7 @@ export const HistoryFeature: React.FC = () => {
                                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase border ${
                                         item.type === RequestType.RPC 
                                         ? 'bg-blue-900/20 text-blue-400 border-blue-900/50' 
-                                        : 'bg-violet-900/20 text-violet-400 border-violet-900/50'
+                                        : 'bg-amber-900/20 text-amber-400 border-amber-900/50'
                                     }`}>
                                         {item.type === RequestType.RPC ? <Terminal size={10} /> : <Layers size={10} />}
                                         {item.type === RequestType.RPC ? 'JSON-RPC' : 'Transaction'}

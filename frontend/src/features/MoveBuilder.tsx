@@ -18,9 +18,9 @@ export const MoveBuilder: React.FC = () => {
     ];
 
     return (
-        <div className="h-full flex bg-[#050505] text-slate-300 font-sans overflow-hidden">
+        <div className="h-full flex bg-[#001B2E] text-slate-300 font-sans overflow-hidden">
             {/* Module Sidebar */}
-            <aside className="w-64 border-r border-white/5 flex flex-col bg-[#0a0a0c]">
+            <aside className="w-64 border-r border-white/5 flex flex-col bg-[#003152]">
                 <div className="p-6 space-y-6 flex-1 overflow-y-auto custom-scrollbar">
                     <div className="space-y-4">
                         <div className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600 px-2">Contract Templates</div>
@@ -91,7 +91,7 @@ export const MoveBuilder: React.FC = () => {
                         <motion.div 
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="p-8 rounded-[2.5rem] bg-[#0c0c0e] border border-white/10 shadow-2xl relative group"
+                            className="p-8 rounded-[2.5rem] bg-[#003152] border border-white/10 shadow-2xl relative group"
                         >
                             <div className="absolute top-0 right-0 p-6 text-slate-800"><Code2 size={64} /></div>
                             <div className="space-y-6 relative z-10">
@@ -123,7 +123,7 @@ export const MoveBuilder: React.FC = () => {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: 0.1 }}
-                            className="p-8 rounded-[2.5rem] bg-[#0c0c0e] border border-white/10 shadow-2xl relative"
+                            className="p-8 rounded-[2.5rem] bg-[#003152] border border-white/10 shadow-2xl relative"
                         >
                             <div className="space-y-6">
                                 <div className="flex items-center gap-3">
@@ -141,7 +141,7 @@ export const MoveBuilder: React.FC = () => {
             </main>
 
             {/* Inspector */}
-            <aside className="w-80 border-l border-white/5 bg-[#0a0a0c] p-6 space-y-8">
+            <aside className="w-80 border-l border-white/5 bg-[#003152] p-6 space-y-8">
                 <div className="space-y-4">
                     <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Properties</h3>
                     <div className="space-y-4">

@@ -73,7 +73,7 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
                   node.isExpanded ? <ChevronDown size={10} className="text-slate-500 group-hover:text-slate-400" /> : <ChevronRight size={10} className="text-slate-500 group-hover:text-slate-400" />
                 ) : <div className="w-1 h-1 rounded-full bg-slate-700" />
               ) : (
-                <div className={`w-1.5 h-1.5 rounded-full ${node.name.includes('RPC') ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.4)]' : 'bg-violet-500 shadow-[0_0_5px_rgba(139,92,246,0.4)]'}`} />
+                <div className={`w-1.5 h-1.5 rounded-full ${node.name.includes('RPC') ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.4)]' : 'bg-amber-500 shadow-[0_0_5px_rgba(245,158,11,0.4)]'}`} />
               )}
             </div>
 

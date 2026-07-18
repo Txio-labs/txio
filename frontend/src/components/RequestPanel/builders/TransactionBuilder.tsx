@@ -53,7 +53,7 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
       <div className="bg-near-black/40 backdrop-blur-sm p-6 rounded-2xl border border-white/10 shadow-xl">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-1.5 h-6 bg-violet-500 rounded-full"></div>
+            <div className="w-1.5 h-6 bg-sky-500 rounded-full"></div>
             <h3 className="text-xs font-bold text-slate-200 uppercase tracking-[0.2em]">
               Smart Contract Configuration
             </h3>
@@ -71,7 +71,7 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
               Contract ID
             </label>
             <VariableInput 
-              className="w-full bg-near-black border border-white/10 rounded-xl px-4 py-3 text-xs font-mono focus:border-violet-500 outline-none"
+              className="w-full bg-near-black border border-white/10 rounded-xl px-4 py-3 text-xs font-mono focus:border-sky-500 outline-none"
               value={request.moveParams.packageId}
               onChange={(v) => updateMoveParam('packageId', v)}
               placeholder="0x..."
@@ -86,7 +86,7 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
                 Module
               </label>
               <VariableInput 
-                className="w-full bg-near-black border border-white/10 rounded-xl px-4 py-3 text-xs font-mono focus:border-violet-500 outline-none"
+                className="w-full bg-near-black border border-white/10 rounded-xl px-4 py-3 text-xs font-mono focus:border-sky-500 outline-none"
                 value={request.moveParams.module}
                 onChange={(v) => updateMoveParam('module', v)}
                 placeholder="module_name"
@@ -99,7 +99,7 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
                 Function
               </label>
               <VariableInput 
-                className="w-full bg-near-black border border-white/10 rounded-xl px-4 py-3 text-xs font-mono focus:border-violet-500 outline-none"
+                className="w-full bg-near-black border border-white/10 rounded-xl px-4 py-3 text-xs font-mono focus:border-sky-500 outline-none"
                 value={request.moveParams.function}
                 onChange={(v) => updateMoveParam('function', v)}
                 placeholder="function_name"
@@ -114,7 +114,7 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
               Type Arguments
             </label>
             <input 
-              className="w-full bg-near-black border border-white/10 rounded-xl px-4 py-3 text-xs font-mono text-slate-200 focus:border-violet-500 outline-none"
+              className="w-full bg-near-black border border-white/10 rounded-xl px-4 py-3 text-xs font-mono text-slate-200 focus:border-sky-500 outline-none"
               value={request.moveParams.typeArguments.join(', ')}
               onChange={(e) => updateMoveParam('typeArguments', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
               placeholder="0x2::sui::SUI, 0x..."
@@ -130,7 +130,7 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
               <button 
                 onClick={addMoveArg}
                 disabled={isReadOnly}
-                className="text-xs flex items-center gap-1 text-violet-400 hover:text-violet-300 disabled:opacity-50"
+                className="text-xs flex items-center gap-1 text-sky-400 hover:text-sky-300 disabled:opacity-50"
               >
                 <Plus size={12} /> Add Argument
               </button>
@@ -151,7 +151,7 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
                   </div>
                   <div className="flex-1">
                     <VariableInput 
-                      className="w-full bg-near-black border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-white focus:border-violet-500 outline-none"
+                      className="w-full bg-near-black border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-white focus:border-sky-500 outline-none"
                       value={arg.value}
                       onChange={(v) => updateMoveArg(idx, { value: v })}
                       placeholder={arg.type === 'object' ? 'Object ID' : 'Value'}

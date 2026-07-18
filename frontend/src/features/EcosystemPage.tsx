@@ -91,7 +91,7 @@ export const EcosystemPage: React.FC<
 
     return (
         <div className={`${embedded ? 'h-full overflow-y-auto custom-scrollbar' : 'min-h-screen'} font-sans selection:bg-electric-violet/30 ${
-            theme === 'dark' ? 'bg-[#050505] text-white' : 'bg-slate-50 text-slate-900'
+            theme === 'dark' ? 'bg-[#001B2E] text-white' : 'bg-slate-50 text-slate-900'
         }`}>
             {/* Nav */}
             <nav className={`${embedded ? 'sticky top-0' : 'fixed top-0 left-0 right-0'} h-20 border-b z-50 px-6 md:px-12 flex items-center justify-between backdrop-blur-xl ${
@@ -126,7 +126,7 @@ export const EcosystemPage: React.FC<
                         onClick={() =>
                             navigateTo('signup')
                         }
-                        className="px-6 py-2.5 bg-electric-violet text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-soft-purple transition-all shadow-[0_10px_20px_-5px_rgba(123,63,242,0.4)] active:scale-95"
+                        className="px-6 py-2.5 bg-electric-violet text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-soft-purple transition-all shadow-[0_10px_20px_-5px_rgba(173,223,241,0.4)] active:scale-95"
                     >
                         {embedded ? 'New Request' : 'Launch'}
                     </button>
@@ -152,7 +152,7 @@ export const EcosystemPage: React.FC<
 
                         <h1 className="text-6xl md:text-8xl font-black tracking-tight leading-[0.9] text-white">
                             The chains, <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet via-soft-purple to-indigo-400">all in one place.</span>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet via-soft-purple to-sky-400">all in one place.</span>
                         </h1>
 
                         <p className={`text-lg md:text-xl max-w-3xl mx-auto leading-relaxed ${
@@ -164,7 +164,7 @@ export const EcosystemPage: React.FC<
                         <div className="flex items-center justify-center gap-4 pt-4">
                             <div className="flex -space-x-3">
                                 {[1,2,3,4].map(i => (
-                                    <div key={i} className="w-10 h-10 rounded-full border-2 border-[#050505] bg-slate-800 flex items-center justify-center text-[10px] font-bold">
+                                    <div key={i} className="w-10 h-10 rounded-full border-2 border-[#001B2E] bg-slate-800 flex items-center justify-center text-[10px] font-bold">
                                         {i === 4 ? '+50' : <div className="w-6 h-6 rounded-full bg-gradient-to-br from-slate-600 to-slate-800" />}
                                     </div>
                                 ))}
@@ -198,7 +198,7 @@ export const EcosystemPage: React.FC<
                             className={`p-1 rounded-[2.5rem] bg-gradient-to-br from-white/10 to-transparent hover:from-electric-violet/20 transition-all group`}
                         >
                             <div className={`p-8 rounded-[2.3rem] h-full flex flex-col ${
-                                theme === 'dark' ? 'bg-[#0a0a0c]' : 'bg-white'
+                                theme === 'dark' ? 'bg-[#003152]' : 'bg-white'
                             }`}>
                                 <div className="flex justify-between items-start mb-8">
                                     <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-2xl transition-transform group-hover:scale-110 duration-500" style={{ backgroundColor: `${chain.color}15`, color: chain.color }}>
@@ -273,7 +273,7 @@ export const EcosystemPage: React.FC<
                     <div className="relative">
                         <div className="absolute inset-0 bg-electric-violet/20 blur-[120px] rounded-full animate-pulse" />
                         <div className={`relative p-8 md:p-16 rounded-[4rem] border backdrop-blur-3xl aspect-square flex items-center justify-center overflow-hidden ${
-                            theme === 'dark' ? 'bg-[#0a0a0c]/80 border-white/10' : 'bg-white/80 border-slate-200 shadow-2xl'
+                            theme === 'dark' ? 'bg-[#003152]/80 border-white/10' : 'bg-white/80 border-slate-200 shadow-2xl'
                         }`}>
                             {/* Abstract Connection Visualization */}
                             <div className="relative w-full h-full flex items-center justify-center">
@@ -282,16 +282,16 @@ export const EcosystemPage: React.FC<
                                 <motion.div 
                                     animate={{ scale: [1, 1.1, 1] }}
                                     transition={{ duration: 4, repeat: Infinity }}
-                                    className="w-32 h-32 rounded-[2.5rem] bg-electric-violet shadow-[0_0_50px_rgba(123,63,242,0.4)] flex items-center justify-center z-10"
+                                    className="w-32 h-32 rounded-[2.5rem] bg-electric-violet shadow-[0_0_50px_rgba(173,223,241,0.4)] flex items-center justify-center z-10"
                                 >
                                     <img src={logoDark.src} alt="txio" className="h-10 w-auto mx-auto" />
                                 </motion.div>
                                 
                                 {/* Orbiting Icons */}
-                                <div className="absolute top-10 left-1/2 -translate-x-1/2 w-12 h-12 rounded-2xl bg-[#050505] border border-white/10 flex items-center justify-center"><Network size={20} className="text-emerald-400" /></div>
-                                <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-12 h-12 rounded-2xl bg-[#050505] border border-white/10 flex items-center justify-center"><Cpu size={20} className="text-sky-400" /></div>
-                                <div className="absolute left-10 top-1/2 -translate-y-1/2 w-12 h-12 rounded-2xl bg-[#050505] border border-white/10 flex items-center justify-center"><Database size={20} className="text-amber-400" /></div>
-                                <div className="absolute right-10 top-1/2 -translate-y-1/2 w-12 h-12 rounded-2xl bg-[#050505] border border-white/10 flex items-center justify-center"><Zap size={20} className="text-indigo-400" /></div>
+                                <div className="absolute top-10 left-1/2 -translate-x-1/2 w-12 h-12 rounded-2xl bg-[#001B2E] border border-white/10 flex items-center justify-center"><Network size={20} className="text-emerald-400" /></div>
+                                <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-12 h-12 rounded-2xl bg-[#001B2E] border border-white/10 flex items-center justify-center"><Cpu size={20} className="text-sky-400" /></div>
+                                <div className="absolute left-10 top-1/2 -translate-y-1/2 w-12 h-12 rounded-2xl bg-[#001B2E] border border-white/10 flex items-center justify-center"><Database size={20} className="text-amber-400" /></div>
+                                <div className="absolute right-10 top-1/2 -translate-y-1/2 w-12 h-12 rounded-2xl bg-[#001B2E] border border-white/10 flex items-center justify-center"><Zap size={20} className="text-sky-400" /></div>
                             </div>
                         </div>
                     </div>

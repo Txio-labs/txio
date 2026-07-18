@@ -287,7 +287,7 @@ export const DocsPage: React.FC<
                         <div className="space-y-12">
                             <h2 className="text-3xl font-black text-white border-l-4 border-electric-violet pl-6 uppercase">The Core Engine</h2>
                             <div className="p-1 rounded-[3rem] bg-gradient-to-br from-white/10 to-transparent">
-                                <div className="p-12 rounded-[2.9rem] bg-[#050505] space-y-10">
+                                <div className="p-12 rounded-[2.9rem] bg-[#001B2E] space-y-10">
                                     <div className="flex flex-col md:flex-row gap-12 items-center">
                                         <div className="flex-1 space-y-6">
                                             <h3 className="text-xl font-bold text-white">Hot connections</h3>
@@ -569,7 +569,7 @@ export const DocsPage: React.FC<
 
                         <div className="space-y-12">
                             <h2 className="text-3xl font-black text-white border-l-4 border-amber-400 pl-6 uppercase">Key Management</h2>
-                            <div className="p-12 rounded-[3rem] bg-[#0c0c0e] border border-white/10 space-y-8 relative overflow-hidden">
+                            <div className="p-12 rounded-[3rem] bg-[#003152] border border-white/10 space-y-8 relative overflow-hidden">
                                 <div className="absolute top-0 right-0 p-20 opacity-5 scale-150 text-amber-400"><Database size={240} /></div>
                                 <div className="relative z-10 max-w-2xl space-y-6">
                                     <h3 className="text-2xl font-black text-white">Local-First Storage</h3>
@@ -959,7 +959,7 @@ export const DocsPage: React.FC<
 
     return (
         <div className={`${embedded ? 'h-full' : 'min-h-screen'} font-sans selection:bg-electric-violet/30 overflow-hidden ${
-            theme === 'dark' ? 'bg-[#050505] text-white' : 'bg-slate-50 text-slate-900'
+            theme === 'dark' ? 'bg-[#001B2E] text-white' : 'bg-slate-50 text-slate-900'
         }`}>
             {/* Nav */}
             <nav className={`${embedded ? 'sticky top-0' : 'fixed top-0 left-0 right-0'} h-16 border-b z-50 px-6 flex items-center justify-between backdrop-blur-xl ${
@@ -1015,7 +1015,7 @@ export const DocsPage: React.FC<
                 <aside className={`w-72 flex flex-col border-r h-full overflow-hidden transition-all duration-300 ${
                     sidebarOpen ? 'translate-x-0' : '-translate-x-full'
                 } ${
-                    theme === 'dark' ? 'bg-[#0a0a0c] border-white/5' : 'bg-white border-slate-100'
+                    theme === 'dark' ? 'bg-[#003152] border-white/5' : 'bg-white border-slate-100'
                 }`}>
                     <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
                         {/* Getting Started */}
@@ -1071,7 +1071,7 @@ export const DocsPage: React.FC<
                 </aside>
 
                 {/* Content Area */}
-                <main ref={scrollRef} className="flex-1 overflow-y-auto bg-[#050505] relative custom-scrollbar">
+                <main ref={scrollRef} className="flex-1 overflow-y-auto bg-[#001B2E] relative custom-scrollbar">
                     {/* Ambient Glow */}
                     <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-electric-violet/5 blur-[120px] pointer-events-none rounded-full" />
                     

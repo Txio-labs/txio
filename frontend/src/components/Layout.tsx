@@ -112,7 +112,7 @@ export const Layout: React.FC<LayoutProps> = ({
             <CommandPalette />
 
             {/* Top Energy Line */}
-            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500 z-50 shadow-[0_0_15px_rgba(14,165,233,0.6)]"></div>
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-cyan-400 via-blue-500 to-sky-500 z-50 shadow-[0_0_15px_rgba(14,165,233,0.6)]"></div>
 
             {/* Notification Toasts */}
             <div className="fixed top-16 right-6 z-[120] flex flex-col gap-3 pointer-events-none">
@@ -178,7 +178,7 @@ export const Layout: React.FC<LayoutProps> = ({
                         </button>
 
                         {isNetworkMenuOpen && (
-                            <div className="absolute top-full right-0 mt-2 w-48 bg-[#0c0c0e] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
+                            <div className="absolute top-full right-0 mt-2 w-48 bg-[#003152] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
                                 <div className="p-1">
                                     {(['mainnet', 'testnet', 'devnet'] as Network[]).map((net) => (
                                         <button

@@ -102,7 +102,7 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
                         <label className="text-xs font-bold text-slate-400 uppercase mb-3 block">Transaction Summary</label>
                         <div className="bg-near-black border border-white/5 rounded-lg overflow-hidden">
                             <div className="p-3 border-b border-white/5 bg-dark-indigo-glow/50 flex items-center gap-2">
-                                <FileText size={14} className="text-violet-400"/>
+                                <FileText size={14} className="text-sky-400"/>
                                 <span className="text-xs font-bold text-white">{request.txType || 'MoveCall'}</span>
                             </div>
                             <div className="p-3 space-y-2">
