@@ -1,4 +1,4 @@
-use mongodb::{Client, Collection};
+use mongodb::{Collection, Database};
 use crate::model::otp::OTP;
 use crate::utils::error::AppError;
 use mongodb::bson::doc;
@@ -9,8 +9,8 @@ pub struct OTPRepository {
 }
 
 impl OTPRepository {
-    pub fn new(db: &Client) -> Self {
-        let collection = db.database("txio_db").collection("otps");
+    pub fn new(db: &Database) -> Self {
+        let collection = db.collection("otps");
         Self { collection }
     }
 

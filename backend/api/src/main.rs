@@ -71,15 +71,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     tracing::info!("Connected to MongoDB at {}", mongo_host);
 
+    let db = db_client.default_database().unwrap_or_else(|| {
+        tracing::warn!("MONGO_URI did not include a default database; falling back to txio_db");
+        db_client.database("txio_db")
+    });
+
     // 4. Initialize Repositories
 
-    let user_repo = repositories::user_repository::UserRepository::new(&db_client);
-    let otp_repo = repositories::otp_repository::OTPRepository::new(&db_client);
-    let rpc_repo = repositories::rpc_repository::RpcRepository::new(&db_client);
+    let user_repo = repositories::user_repository::UserRepository::new(&db);
+    let otp_repo = repositories::otp_repository::OTPRepository::new(&db);
+    let rpc_repo = repositories::rpc_repository::RpcRepository::new(&db);
     let collection_repo =
-        repositories::collection_repository::CollectionRepository::new(&db_client);
-    let request_repo = repositories::request_repository::RequestRepository::new(&db_client);
-    let workspace_repo = repositories::workspace_repository::WorkspaceRepository::new(&db_client);
+        repositories::collection_repository::CollectionRepository::new(&db);
+    let request_repo = repositories::request_repository::RequestRepository::new(&db);
+    let workspace_repo = repositories::workspace_repository::WorkspaceRepository::new(&db);
 
     // 5. Initialize JWT Helper
     let jwt_helper = utils::auth_jwt::JwtHelper::new(config.jwt_secret);
