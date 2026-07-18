@@ -46,7 +46,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read
-      actions: write
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
