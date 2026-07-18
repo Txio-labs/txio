@@ -41,18 +41,15 @@ pub struct ResetPasswordWithOTPRequest {
     pub new_password: String,
 }
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Validate, Serialize, Deserialize)]
 pub struct UpdateEmailRequest {
-    #[validate(email)]
-    pub old_email: String,
     #[validate(email)]
     pub new_email: String,
 }
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Validate, Serialize, Deserialize)]
 pub struct UpdatePasswordRequest {
-    #[validate(email)]
-    pub email: String,
+    pub current_password: String,
     #[validate(length(min = 8))]
     pub new_password: String,
 }

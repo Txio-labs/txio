@@ -86,20 +86,16 @@ pub async fn logout() -> Result<Json<Value>, AppError> {
 
 pub async fn get_user_profile(
     State(service): State<AuthService>,
-    Json(payload): Json<OTPRequest>,
+    claims: crate::utils::auth_jwt::Claims,
 ) -> Result<Json<Value>, AppError> {
-    use validator::Validate;
-    payload
-        .validate()
-        .map_err(|e| AppError::ValidationError(e.to_string()))?;
-
-    let user = service.get_user_profile_by_email(&payload.email).await?;
+    let user = service.get_user_profile_by_email(&claims.email).await?;
 
     Ok(Json(json!({ "user": user })))
 }
 
 pub async fn update_user_email(
     State(service): State<AuthService>,
+    claims: crate::utils::auth_jwt::Claims,
     Json(payload): Json<UpdateEmailRequest>,
 ) -> Result<Json<Value>, AppError> {
     use validator::Validate;
@@ -108,7 +104,7 @@ pub async fn update_user_email(
         .map_err(|e| AppError::ValidationError(e.to_string()))?;
 
     let user = service
-        .update_user_email_by_email(&payload.old_email, &payload.new_email)
+        .update_user_email_by_email(&claims.email, &payload.new_email)
         .await?;
 
     Ok(Json(json!({ "user": user })))
@@ -116,6 +112,7 @@ pub async fn update_user_email(
 
 pub async fn update_user_password(
     State(service): State<AuthService>,
+    claims: crate::utils::auth_jwt::Claims,
     Json(payload): Json<UpdatePasswordRequest>,
 ) -> Result<Json<Value>, AppError> {
     use validator::Validate;
@@ -124,7 +121,7 @@ pub async fn update_user_password(
         .map_err(|e| AppError::ValidationError(e.to_string()))?;
 
     let user = service
-        .update_user_password_by_email(&payload.email, &payload.new_password)
+        .update_user_password_by_email(&claims.email, &payload.new_password)
         .await?;
 
     Ok(Json(json!({ "user": user })))
@@ -132,14 +129,9 @@ pub async fn update_user_password(
 
 pub async fn delete_user(
     State(service): State<AuthService>,
-    Json(payload): Json<OTPRequest>,
+    claims: crate::utils::auth_jwt::Claims,
 ) -> Result<Json<Value>, AppError> {
-    use validator::Validate;
-    payload
-        .validate()
-        .map_err(|e| AppError::ValidationError(e.to_string()))?;
-
-    let user = service.delete_user_by_email(&payload.email).await?;
+    let user = service.delete_user_by_email(&claims.email).await?;
 
     Ok(Json(json!({ "user": user })))
 }
@@ -298,8 +290,6 @@ pub async fn google_callback(
 
     let auth_res = service.oauth_login_or_register(email.to_string()).await?;
 
-    // Pass the JWT back to the frontend as a query param so the SPA can
-    // pick it up, store it, and route the user into the app.
     let redirect_to = format!(
         "{}/?token={}",
         frontend_url.trim_end_matches('/'),
