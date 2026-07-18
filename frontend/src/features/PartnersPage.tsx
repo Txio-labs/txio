@@ -96,7 +96,7 @@ export const PartnersPage: React.FC<
 
     return (
         <div className={`${embedded ? 'h-full overflow-y-auto custom-scrollbar' : 'min-h-screen'} font-sans selection:bg-electric-violet/30 ${
-            theme === 'dark' ? 'bg-[#050505] text-white' : 'bg-slate-50 text-slate-900'
+            theme === 'dark' ? 'bg-[#001B2E] text-white' : 'bg-slate-50 text-slate-900'
         }`}>
             {/* Nav */}
             <nav className={`${embedded ? 'sticky top-0' : 'fixed top-0 left-0 right-0'} h-20 border-b z-50 px-6 md:px-12 flex items-center justify-between backdrop-blur-xl ${
@@ -126,7 +126,7 @@ export const PartnersPage: React.FC<
                     onClick={() =>
                         navigateTo('app')
                     }
-                    className="px-6 py-2.5 bg-electric-violet text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-soft-purple transition-all shadow-[0_10px_20px_-5px_rgba(123,63,242,0.4)] active:scale-95"
+                    className="px-6 py-2.5 bg-electric-violet text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-soft-purple transition-all shadow-[0_10px_20px_-5px_rgba(173,223,241,0.4)] active:scale-95"
                 >
                     {embedded
                         ? 'New Request'
@@ -147,7 +147,7 @@ export const PartnersPage: React.FC<
                         </div>
                         <h1 className="text-6xl md:text-8xl font-black tracking-tight leading-tight">
                             Stronger <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet via-soft-purple to-indigo-400">together.</span>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet via-soft-purple to-sky-400">together.</span>
                         </h1>
                         <p className="text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed font-medium">
                             We work alongside the foundations, labs, and protocols already doing the heavy lifting — so you don&apos;t have to integrate them yourself.
@@ -163,7 +163,7 @@ export const PartnersPage: React.FC<
                                 transition={{ delay: i * 0.1 }}
                                 whileHover={{ y: -10 }}
                                 className={`p-12 rounded-[4rem] border group transition-all partner-card ${
-                                    theme === 'dark' ? 'bg-[#0a0a0c] border-white/5 hover:border-electric-violet/30' : 'bg-white border-slate-200 shadow-lg'
+                                    theme === 'dark' ? 'bg-[#003152] border-white/5 hover:border-electric-violet/30' : 'bg-white border-slate-200 shadow-lg'
                                 }`}
                             >
                                 <div className="mb-10 text-electric-violet group-hover:scale-110 transition-transform duration-500">{p.logo}</div>

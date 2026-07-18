@@ -19,7 +19,7 @@ const TxioLogo = () => {
     <img
       src={logo.src}
       alt="txio"
-      className="w-6 h-6 object-contain drop-shadow-[0_0_6px_rgba(123,63,242,0.35)]"
+      className="w-6 h-6 object-contain drop-shadow-[0_0_6px_rgba(173,223,241,0.35)]"
     />
   );
 };
@@ -51,7 +51,7 @@ const NavItem: React.FC<NavItemProps> = ({
         {isActive && (
           <motion.div
             layoutId="nav-pill"
-            className="absolute left-0 w-[2px] h-6 bg-electric-violet rounded-r-full shadow-[0_0_10px_rgba(123,63,242,0.6)]"
+            className="absolute left-0 w-[2px] h-6 bg-electric-violet rounded-r-full shadow-[0_0_10px_rgba(173,223,241,0.6)]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
