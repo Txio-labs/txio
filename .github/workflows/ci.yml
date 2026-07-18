@@ -67,8 +67,14 @@ jobs:
       - name: Install dependencies
         run: npm install
         
-      - name: Build All (Frontend & Desktop)
-        run: npm run build
+      - name: Build frontend
+        run: npm run build --workspace frontend
+
+      - name: Prepare desktop assets
+        run: node scripts/copy-frontend-out.mjs
+
+      - name: Build desktop app
+        run: npm run build --workspace desktop -- --publish=never
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
@@ -76,9 +82,5 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: txio-dist-${{ matrix.os }}
-          path: |
-            desktop/dist/*.exe
-            desktop/dist/*.dmg
-            desktop/dist/*.AppImage
-            frontend/out/
+          path: desktop/dist/
           retention-days: 7

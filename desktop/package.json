@@ -27,7 +27,10 @@
     "appId": "com.kingvic.txio",
     "productName": "txio",
     "asar": true,
-    "publish": null,
+    "publish": {
+      "provider": "github",
+      "releaseType": "release"
+    },
     "files": [
       "src/index.js",
       "src/assets/**",
