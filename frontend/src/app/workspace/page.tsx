@@ -123,7 +123,7 @@ export default function WorkspacePage() {
             >
                 {isBootstrappingWorkspace ? (
                     <div className="min-h-screen bg-near-black text-white flex items-center justify-center px-6">
-                        <div className="w-full max-w-md rounded-[2rem] border border-white/10 bg-white/[0.035] p-8 text-center shadow-[0_30px_80px_-55px_rgba(123,63,242,0.65)]">
+                        <div className="w-full max-w-md rounded-[2rem] border border-white/10 bg-white/[0.035] p-8 text-center shadow-[0_30px_80px_-55px_rgba(173,223,241,0.65)]">
                             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-electric-violet/10 text-electric-violet">
                                 <div className="h-6 w-6 rounded-full border-2 border-electric-violet/30 border-t-electric-violet animate-spin" />
                             </div>

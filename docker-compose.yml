@@ -1,42 +1,82 @@
 services:
   mongodb:
-    image: mongo:latest
+    image: mongo:7.0
     container_name: txio-db
-    ports:
-      - "27017:27017"
+    # Root credentials (MONGO_INITDB_ROOT_USERNAME / MONGO_INITDB_ROOT_PASSWORD) are
+    # injected into the container by env_file below; mongod --auth reads them at
+    # startup. Do NOT redeclare them in an environment: block using ${VAR} -- Compose
+    # resolves that from the shell / project-root .env, not from env_file, and an
+    # explicit environment: key would overwrite the real value with an empty string.
+    env_file:
+      - ./backend/api/.env
+    command: mongod --auth
+    # Port mapping intentionally omitted: only the api service needs to reach Mongo,
+    # and the default compose network already allows that. Publishing 27017 to the
+    # host would expose the database to anything that can connect to it.
     volumes:
       - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
 
   api:
     build:
       context: .
       dockerfile: ./Dockerfile
     container_name: txio-api
-    # Secrets (JWT_SECRET, BREVO_API_KEY, GROQ_API_KEYS, ...) come from this
-    # untracked file. Copy .env.example to backend/api/.env and fill it in.
+    # Secrets (JWT_SECRET, BREVO_API_KEY, GROQ_API_KEYS, MONGO_URI, ...) come from
+    # this untracked file. Copy .env.example to backend/api/.env and fill it in.
+    # MONGO_URI is read from the same file at runtime (see config.rs), so
+    # contributors set the credentialed MongoDB URI once and both mongo --auth
+    # (via MONGO_INITDB_ROOT_*) and the API (via MONGO_URI) read that one file.
     # The API fails fast if JWT_SECRET is missing or <32 chars (see config.rs).
     env_file:
       - ./backend/api/.env
     environment:
-      MONGO_URI: mongodb://mongodb:27017/txio
       RUST_LOG: info
       PORT: 8000
     ports:
       - "8000:8000"
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1G
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
     container_name: txio-frontend
     ports:
       - "5173:80"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
 
 volumes:
   mongodb_data:

@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { 
     Zap, Shield, Globe, Cpu, Layers, Terminal, 
     Database, Activity, Lock, ArrowRight, CheckCircle2,
@@ -18,6 +19,7 @@ export const FeaturesPage: React.FC<
 > = ({ embedded = false }) => {
     const { theme } = useAppStore();
     const logo = theme === 'dark' ? logoDark : logoLight;
+    const router = useRouter();
 
     const navigateTo = (
         target:
@@ -43,7 +45,17 @@ export const FeaturesPage: React.FC<
             return;
         }
 
-        appStore.setViewMode(target);
+        const modeToPath: Record<string, string> = {
+            landing: '/',
+            ecosystem: '/ecosystem',
+            docs: '/docs',
+            app: '/signup'
+        };
+
+        const path = modeToPath[target];
+        if (path) {
+            router.push(path);
+        }
     };
 
     React.useEffect(() => {
@@ -93,7 +105,7 @@ export const FeaturesPage: React.FC<
 
     return (
         <div className={`${embedded ? 'h-full overflow-y-auto custom-scrollbar' : 'min-h-screen'} font-sans selection:bg-electric-violet/30 overflow-x-hidden ${
-            theme === 'dark' ? 'bg-[#050505] text-white' : 'bg-slate-50 text-slate-900'
+            theme === 'dark' ? 'bg-[#001B2E] text-white' : 'bg-slate-50 text-slate-900'
         }`}>
             {/* Nav */}
             <nav className={`${embedded ? 'sticky top-0' : 'fixed top-0 left-0 right-0'} h-20 border-b z-50 px-6 md:px-12 flex items-center justify-between backdrop-blur-xl ${
@@ -138,7 +150,7 @@ export const FeaturesPage: React.FC<
                         </div>
                         <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.85] text-white">
                             Tools that <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet via-soft-purple to-indigo-400 italic">don&apos;t get in the way.</span>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet via-soft-purple to-sky-400 italic">don&apos;t get in the way.</span>
                         </h1>
                         <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
                             One workspace for protocol engineers, DevOps, and the infra folks who keep it all running.
@@ -158,7 +170,7 @@ export const FeaturesPage: React.FC<
                             transition={{ delay: i * 0.1 }}
                             className="p-1 rounded-[3rem] bg-gradient-to-br from-white/10 to-transparent hover:from-electric-violet/20 transition-all group"
                         >
-                            <div className="p-10 rounded-[2.8rem] bg-[#0a0a0c] h-full flex flex-col space-y-8">
+                            <div className="p-10 rounded-[2.8rem] bg-[#003152] h-full flex flex-col space-y-8">
                                 <div className={`w-16 h-16 rounded-2xl ${f.bg} flex items-center justify-center ${f.color} shadow-2xl`}>
                                     <f.icon size={32} />
                                 </div>
@@ -177,7 +189,7 @@ export const FeaturesPage: React.FC<
             </section>
 
             {/* Features Grid */}
-            <section className="py-32 px-6 bg-[#08080a]">
+            <section className="py-32 px-6 bg-[#001B2E]">
                 <div className="max-w-7xl mx-auto space-y-20">
                     <div className="text-center space-y-4">
                         <h2 className="text-4xl md:text-6xl font-black tracking-tighter">Everything in one place.</h2>
@@ -233,7 +245,7 @@ export const FeaturesPage: React.FC<
 
                     <div className="relative">
                         <div className="absolute inset-0 bg-electric-violet/20 blur-[100px] rounded-full animate-pulse" />
-                        <div className="relative p-10 rounded-[4rem] bg-[#0c0c0e] border border-white/10 shadow-2xl overflow-hidden">
+                        <div className="relative p-10 rounded-[4rem] bg-[#003152] border border-white/10 shadow-2xl overflow-hidden">
                             <div className="space-y-6">
                                 <div className="flex items-center gap-2 border-b border-white/5 pb-4">
                                     <div className="w-3 h-3 rounded-full bg-red-500" />

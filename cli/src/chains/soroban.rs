@@ -1,4 +1,5 @@
 use crate::chains::traits::ChainAdapter;
+use crate::chains::validation::{build_url_with_query, build_url, validate_soroban_address};
 use crate::cli::parser::Network;
 use async_trait::async_trait;
 use serde_json::{json, Value};
@@ -75,9 +76,10 @@ impl ChainAdapter for SorobanAdapter {
     }
 
     async fn get_balance(&self, address: &str) -> Result<Value> {
+        let address = validate_soroban_address(address)?;
         let horizon = self.horizon_url();
-        let url = format!("{}/accounts/{}", horizon, address);
-        Ok(self.client.get(&url).send().await?.json().await?)
+        let url = build_url(&horizon, &["accounts", &address])?;
+        Ok(self.client.get(url).send().await?.json().await?)
     }
 
     async fn get_transaction(&self, hash: &str) -> Result<Value> {
@@ -100,14 +102,20 @@ impl ChainAdapter for SorobanAdapter {
     }
 
     async fn get_account(&self, address: &str) -> Result<Value> {
+        let address = validate_soroban_address(address)?;
         let horizon = self.horizon_url();
-        let url = format!("{}/accounts/{}", horizon, address);
-        Ok(self.client.get(&url).send().await?.json().await?)
+        let url = build_url(&horizon, &["accounts", &address])?;
+        Ok(self.client.get(url).send().await?.json().await?)
     }
 
     async fn get_history(&self, address: &str, limit: u32) -> Result<Value> {
+        let address = validate_soroban_address(address)?;
         let horizon = self.horizon_url();
-        let url = format!("{}/accounts/{}/transactions?limit={}&order=desc", horizon, address, limit);
-        Ok(self.client.get(&url).send().await?.json().await?)
+        let url = build_url_with_query(
+            &horizon,
+            &["accounts", &address, "transactions"],
+            &[("limit", limit.to_string()), ("order", "desc".to_string())],
+        )?;
+        Ok(self.client.get(url).send().await?.json().await?)
     }
 }

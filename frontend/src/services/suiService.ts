@@ -316,3 +316,67 @@ export const getBalance = async (network: Network, owner: string) => {
         '0x2::sui::SUI'
     ]);
 };
+
+export const signAndExecuteMoveCall = async (
+  network: Network,
+  sender: string,
+  packageId: string,
+  module: string,
+  func: string,
+  typeArgs: string[],
+  args: BuilderArg[],
+  signAndExecuteTransaction: (transactionBlock: any) => Promise<any>
+) => {
+    // Convert BuilderArgs to raw arguments for the transaction
+    const rawArgs = args.map(arg => {
+        if (arg.type === 'u64' || arg.type === 'u128' || arg.type === 'u256') {
+            return arg.value; // Passed as string to avoid precision loss
+        }
+        if (arg.type === 'u8' || arg.type === 'u16' || arg.type === 'u32') {
+            return parseInt(arg.value);
+        }
+        if (arg.type === 'bool') {
+            return arg.value === 'true';
+        }
+        // Address, String, Object ID, etc.
+        return arg.value;
+    });
+
+    const resolvedSender = await resolveSuiAddress(network, sender);
+
+    // Import TransactionBlock dynamically to avoid circular dependencies
+    const { TransactionBlock } = await import('@mysten/sui');
+
+    const txb = new TransactionBlock();
+    txb.moveCall({
+        target: `${packageId}::${module}::${func}`,
+        typeArguments: typeArgs,
+        arguments: rawArgs.map(arg => txb.pure(arg))
+    });
+
+    try {
+        const result = await signAndExecuteTransaction(txb);
+        return {
+            result: {
+                digest: result.digest,
+                transaction: result.transaction,
+                effects: result.effects,
+                confirmed: true,
+                executed: true
+            },
+            duration: 0,
+            status: 200
+        };
+    } catch (error: any) {
+        throw new SuiRpcError(
+            error instanceof Error && error.message.trim()
+                ? error.message
+                : 'Transaction signing or execution failed.',
+            {
+                status: 500,
+                endpoint: getActiveSuiRpcUrl(network),
+                duration: 0,
+            }
+        );
+    }
+};

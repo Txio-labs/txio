@@ -24,7 +24,4 @@ clap_complete = { workspace = true }
 colored = { workspace = true }
 indicatif = { workspace = true }
 dirs-next = { workspace = true }
-mongodb = { workspace = true }
 dialoguer = { workspace = true }
-futures = { workspace = true }
-futures-util = "0.3"

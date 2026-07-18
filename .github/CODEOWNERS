@@ -1,0 +1,4 @@
+# Protect sensitive backend, workflow, and deployment paths
+backend/ @txio-maintainers
+.github/ @txio-maintainers
+Dockerfile* @txio-maintainers

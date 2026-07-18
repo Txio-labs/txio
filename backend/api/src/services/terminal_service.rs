@@ -210,11 +210,11 @@ impl TerminalService {
         let cmd = &parts[0];
         let args = &parts[1..];
 
-        if cmd != "txio" && cmd != "cargo" {
+        if cmd != "txio" {
             return FinalizedExecution {
                 state: CommandExecutionState::Error,
                 output: Some(format!(
-                    "bash: command not found: {}. Only 'txio' and 'cargo' are authorized.",
+                    "bash: command not found: {}. Only 'txio' is authorized.",
                     cmd
                 )),
                 stdout: None,
