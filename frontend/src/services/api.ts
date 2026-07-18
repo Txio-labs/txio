@@ -436,6 +436,30 @@ class ApiService {
               )
             : null;
 
+    private isDevelopment =
+        typeof window !== 'undefined' &&
+        process.env.NODE_ENV === 'development';
+
+    private logApiCall(
+        method: string,
+        path: string,
+        status?: number,
+        error?: unknown
+    ): void {
+        const timestamp = new Date().toISOString();
+        const logEntry = `[${timestamp}] ${method} ${path}`;
+
+        if (status !== undefined) {
+            if (status >= 200 && status < 300) {
+                if (this.isDevelopment) {
+                    console.log(`✓ ${logEntry} ${status}`);
+                }
+            } else if (status >= 400) {
+                console.warn(`✗ ${logEntry} ${status}`, error);
+            }
+        }
+    }
+
     setToken(token: string | null) {
         this.token = token;
 
@@ -484,6 +508,9 @@ class ApiService {
         }
 
         let response: Response;
+        const method =
+            (options.method ||
+                'GET').toUpperCase();
 
         try {
             response = await fetch(
@@ -493,7 +520,11 @@ class ApiService {
                     headers
                 }
             );
+            
+            this.logApiCall(method, path, response.status);
         } catch (error) {
+            this.logApiCall(method, path, undefined, error);
+            
             if (
                 error instanceof Error &&
                 error.name === 'AbortError'
