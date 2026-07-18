@@ -46,6 +46,24 @@ const workspace = {
     activeEnvId: ''
 };
 
+const createDeferred = <T>() => {
+    let resolve!: (value: T) => void;
+    let reject!: (reason?: unknown) => void;
+
+    const promise = new Promise<T>(
+        (res, rej) => {
+            resolve = res;
+            reject = rej;
+        }
+    );
+
+    return {
+        promise,
+        resolve,
+        reject
+    };
+};
+
 const loadStore = async () => {
     vi.resetModules();
 
@@ -136,6 +154,35 @@ describe('appStore auth and session state', () => {
                 'txio_current_workspace'
             )
         ).toBe('workspace-1');
+    });
+
+    it('hydrates prefetched workspaces without refetching them', async () => {
+        const { appStore, apiService } =
+            await loadStore();
+
+        appStore.updateUser(user);
+        apiService.getCollections.mockResolvedValue(
+            []
+        );
+
+        await appStore.fetchWorkspaces(
+            undefined,
+            [workspace]
+        );
+
+        expect(
+            apiService.getWorkspaces
+        ).not.toHaveBeenCalled();
+        expect(
+            apiService.getCollections
+        ).toHaveBeenCalledWith('workspace-1');
+        expect(
+            appStore.getSnapshot()
+        ).toMatchObject({
+            workspaces: [workspace],
+            currentWorkspaceId: 'workspace-1',
+            hasHydratedWorkspaces: true
+        });
     });
 
     it('clears persisted identity and workspace state on logout', async () => {
@@ -254,6 +301,68 @@ describe('appStore auth and session state', () => {
                 'txio_current_workspace'
             )
         ).toBeNull();
+    });
+
+    it('starts profile and workspace loading in parallel during initialization', async () => {
+        localStorage.setItem(
+            'txio_token',
+            'cached-token'
+        );
+        localStorage.setItem(
+            'txio_user',
+            JSON.stringify(user)
+        );
+
+        const { appStore, apiService } =
+            await loadStore();
+        const profileDeferred =
+            createDeferred<typeof user>();
+        const workspacesDeferred =
+            createDeferred<typeof workspace[]>();
+
+        apiService.getProfile.mockReturnValue(
+            profileDeferred.promise
+        );
+        apiService.getWorkspaces.mockReturnValue(
+            workspacesDeferred.promise
+        );
+        apiService.getCollections.mockResolvedValue(
+            []
+        );
+
+        const initializePromise =
+            appStore.initialize();
+
+        await Promise.resolve();
+
+        expect(
+            apiService.getProfile
+        ).toHaveBeenCalledTimes(1);
+        expect(
+            apiService.getWorkspaces
+        ).toHaveBeenCalledTimes(1);
+        expect(
+            apiService.getCollections
+        ).not.toHaveBeenCalled();
+
+        workspacesDeferred.resolve([
+            workspace
+        ]);
+        profileDeferred.resolve(user);
+
+        await initializePromise;
+
+        expect(
+            apiService.getCollections
+        ).toHaveBeenCalledWith('workspace-1');
+        expect(
+            appStore.getSnapshot()
+        ).toMatchObject({
+            user,
+            workspaces: [workspace],
+            currentWorkspaceId: 'workspace-1',
+            hasHydratedWorkspaces: true
+        });
     });
 
     it('keeps a cached user when profile refresh fails without an auth error', async () => {
