@@ -1,4 +1,4 @@
-use mongodb::{Client, Collection};
+use mongodb::{Collection, Database};
 use crate::model::user::User;
 use crate::utils::error::AppError;
 use mongodb::bson::doc;
@@ -11,8 +11,8 @@ pub struct UserRepository {
 }
 
 impl UserRepository {
-    pub fn new(db: &Client) -> Self {
-        let collection = db.database("txio_db").collection("users");
+    pub fn new(db: &Database) -> Self {
+        let collection = db.collection("users");
         Self { collection }
     }
 

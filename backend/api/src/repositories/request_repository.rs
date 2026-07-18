@@ -1,4 +1,4 @@
-use mongodb::{Client, Collection};
+use mongodb::{Collection, Database};
 use mongodb::bson::{doc, oid::ObjectId};
 use crate::model::request::SavedRequest;
 use crate::utils::error::AppError;
@@ -9,8 +9,8 @@ pub struct RequestRepository {
 }
 
 impl RequestRepository {
-    pub fn new(db: &Client) -> Self {
-        let collection = db.database("txio_db").collection("saved_requests");
+    pub fn new(db: &Database) -> Self {
+        let collection = db.collection("saved_requests");
         Self { collection }
     }
 

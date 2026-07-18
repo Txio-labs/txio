@@ -1,4 +1,4 @@
-use mongodb::{Client, Collection as MongoCollection};
+use mongodb::{Collection as MongoCollection, Database};
 use mongodb::bson::{doc, oid::ObjectId};
 use crate::model::collection::Collection;
 use crate::utils::error::AppError;
@@ -8,8 +8,8 @@ pub struct CollectionRepository {
 }
 
 impl CollectionRepository {
-    pub fn new(db: &Client) -> Self {
-        let collection = db.database("txio_db").collection("collections");
+    pub fn new(db: &Database) -> Self {
+        let collection = db.collection("collections");
         Self { collection }
     }
 
