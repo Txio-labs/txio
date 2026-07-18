@@ -36,7 +36,17 @@ impl OTPRepository {
 
         Ok(otp)
     }
-    
+
+    pub async fn update_failed_attempts(&self, email: &str, failed_attempts: i32) -> Result<(), AppError> {
+        self.collection
+            .update_one(
+                doc! { "email": email },
+                doc! { "$set": { "failed_attempts": failed_attempts } },
+                None,
+            )
+            .await?;
+        Ok(())
+    }
 
     pub async fn delete_by_email(&self, email: &str) -> Result<(), AppError> {
         self.collection
