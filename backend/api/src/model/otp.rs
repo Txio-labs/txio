@@ -8,6 +8,8 @@ pub struct OTP {
     pub id: Option<ObjectId>,
     pub email: String,
     pub otp: String,
+    #[serde(default)]
+    pub failed_attempts: i32,
     pub created_at: DateTime<Utc>,
 }
 
@@ -17,6 +19,7 @@ impl OTP {
             id: None,
             email,
             otp,
+            failed_attempts: 0,
             created_at: Utc::now(),
         }
     }
