@@ -228,8 +228,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Box::new(std::io::Error::new(
             e.kind(),
             format!(
-                "Failed to bind API server to {}. Set PORT to override the default bind port. {}",
-                addr, e
+                "Failed to bind API server to {addr}. Set PORT to override the default bind port. {e}"
             ),
         )) as Box<dyn std::error::Error>
     })?;

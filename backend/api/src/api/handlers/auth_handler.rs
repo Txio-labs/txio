@@ -226,8 +226,7 @@ pub async fn google_login() -> Result<axum::response::Redirect, AppError> {
         .unwrap_or_else(|_| "http://localhost:8000/api/v1/auth/google/callback".to_string());
 
     let url = format!(
-        "https://accounts.google.com/o/oauth2/v2/auth?client_id={}&redirect_uri={}&response_type=code&scope=email profile",
-        client_id, redirect_uri
+        "https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&scope=email profile"
     );
     Ok(axum::response::Redirect::temporary(&url))
 }

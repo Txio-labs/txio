@@ -6,4 +6,3 @@ pub fn router(service: AiService) -> Router {
         .route("/chat", post(ai_handler::chat))
         .with_state(service)
 }
-

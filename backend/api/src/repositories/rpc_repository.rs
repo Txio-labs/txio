@@ -1,6 +1,6 @@
-use mongodb::{Client, Collection};
 use crate::model::rpc::RpcLog;
 use crate::utils::error::AppError;
+use mongodb::{Client, Collection};
 
 #[derive(Clone)]
 pub struct RpcRepository {
@@ -18,7 +18,10 @@ impl RpcRepository {
         Ok(())
     }
 
-    pub async fn find_by_user_id(&self, user_id: mongodb::bson::oid::ObjectId) -> Result<Vec<RpcLog>, AppError> {
+    pub async fn find_by_user_id(
+        &self,
+        user_id: mongodb::bson::oid::ObjectId,
+    ) -> Result<Vec<RpcLog>, AppError> {
         let filter = mongodb::bson::doc! { "user_id": user_id };
         let mut cursor = self.collection.find(filter, None).await?;
 

@@ -48,7 +48,7 @@ impl SuiService {
     ) -> Result<Value, AppError> {
         self.call_rpc_direct(
             user.network.url(),
-            user.id.clone().unwrap_or_else(ObjectId::new),
+            user.id.unwrap_or_default(),
             method,
             params,
         )
@@ -86,7 +86,7 @@ impl SuiService {
                             (!has_error, val, rpc_error_msg)
                         }
                         Err(e) => {
-                            let msg = format!("Failed to parse JSON response: {}", e);
+                            let msg = format!("Failed to parse JSON response: {e}");
                             (
                                 false,
                                 serde_json::json!({
@@ -112,7 +112,7 @@ impl SuiService {
                 }
             }
             Err(e) => {
-                let msg = format!("Network Error: {}", e);
+                let msg = format!("Network Error: {e}");
                 (
                     false,
                     serde_json::json!({
@@ -135,7 +135,7 @@ impl SuiService {
         );
 
         if let Err(e) = self.rpc_repo.save(&log).await {
-            eprintln!("Failed to save RPC log: {}", e);
+            eprintln!("Failed to save RPC log: {e}");
         }
 
         // Return the full JSON object (either from Node or Synthesized)
@@ -175,7 +175,7 @@ impl SuiService {
             .json(&request_body)
             .send()
             .await
-            .map_err(|e| AppError::ExternalService(format!("Network Error: {}", e)))?;
+            .map_err(|e| AppError::ExternalService(format!("Network Error: {e}")))?;
 
         if !response.status().is_success() {
             return Err(AppError::ExternalService(format!(
@@ -187,12 +187,11 @@ impl SuiService {
         let rpc_resp = response
             .json::<JsonRpcResponse>()
             .await
-            .map_err(|e| AppError::InternalError(format!("Failed to parse JSON: {}", e)))?;
+            .map_err(|e| AppError::InternalError(format!("Failed to parse JSON: {e}")))?;
 
         if let Some(err) = rpc_resp.error {
             return Err(AppError::ExternalService(format!(
-                "Resolution Error: {}",
-                err
+                "Resolution Error: {err}"
             )));
         }
 
@@ -202,8 +201,7 @@ impl SuiService {
                 "Unexpected result type for address resolution".into(),
             )),
             None => Err(AppError::NotFound(format!(
-                "Could not resolve name: {}",
-                name
+                "Could not resolve name: {name}"
             ))),
         }
     }

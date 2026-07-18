@@ -22,8 +22,8 @@ impl EmailService {
     pub async fn send_otp_email(&self, email: &str, otp: &str) -> Result<(), AppError> {
         // Brevo only sends from verified senders, so the from-address must be
         // configurable per deployment instead of a hardcoded domain.
-        let from_email = std::env::var("EMAIL_FROM")
-            .unwrap_or_else(|_| "no-reply@txio-backend.com".to_string());
+        let from_email =
+            std::env::var("EMAIL_FROM").unwrap_or_else(|_| "no-reply@txio-backend.com".to_string());
         let from_name =
             std::env::var("EMAIL_FROM_NAME").unwrap_or_else(|_| "txio Team".to_string());
 
@@ -42,13 +42,12 @@ impl EmailService {
             .json(&body)
             .send()
             .await
-            .map_err(|e| AppError::ExternalService(format!("Failed to send email: {}", e)))?;
+            .map_err(|e| AppError::ExternalService(format!("Failed to send email: {e}")))?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
             return Err(AppError::ExternalService(format!(
-                "Brevo API error: {}",
-                error_text
+                "Brevo API error: {error_text}"
             )));
         }
 

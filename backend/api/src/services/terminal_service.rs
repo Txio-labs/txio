@@ -101,6 +101,12 @@ impl CommandExecutionRecord {
     }
 }
 
+impl Default for TerminalService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TerminalService {
     pub fn new() -> Self {
         Self {
@@ -214,8 +220,7 @@ impl TerminalService {
             return FinalizedExecution {
                 state: CommandExecutionState::Error,
                 output: Some(format!(
-                    "bash: command not found: {}. Only 'txio' is authorized.",
-                    cmd
+                    "bash: command not found: {cmd}. Only 'txio' is authorized."
                 )),
                 stdout: None,
                 stderr: None,
@@ -233,7 +238,7 @@ impl TerminalService {
             Err(error) => {
                 return FinalizedExecution {
                     state: CommandExecutionState::Error,
-                    output: Some(format!("Execution failed: {}", error)),
+                    output: Some(format!("Execution failed: {error}")),
                     stdout: None,
                     stderr: None,
                     exit_code: None,
@@ -286,7 +291,7 @@ impl TerminalService {
                 }
                 Err(error) => FinalizedExecution {
                     state: CommandExecutionState::Error,
-                    output: Some(format!("Execution failed: {}", error)),
+                    output: Some(format!("Execution failed: {error}")),
                     stdout: non_empty(stdout),
                     stderr: non_empty(stderr),
                     exit_code: None,
@@ -363,7 +368,7 @@ where
 
             match reader.read_to_end(&mut buffer).await {
                 Ok(_) => String::from_utf8_lossy(&buffer).to_string(),
-                Err(error) => format!("Failed to read process output: {}", error),
+                Err(error) => format!("Failed to read process output: {error}"),
             }
         })
     })
@@ -373,7 +378,7 @@ async fn join_output(handle: Option<JoinHandle<String>>) -> String {
     match handle {
         Some(handle) => handle
             .await
-            .unwrap_or_else(|error| format!("Failed to join process output task: {}", error)),
+            .unwrap_or_else(|error| format!("Failed to join process output task: {error}")),
         None => String::new(),
     }
 }

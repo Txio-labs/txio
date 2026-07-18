@@ -1,9 +1,8 @@
-use mongodb::{Client, Collection};
 use crate::model::user::User;
 use crate::utils::error::AppError;
 use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
-
+use mongodb::{Client, Collection};
 
 #[derive(Clone)]
 pub struct UserRepository {
@@ -17,15 +16,13 @@ impl UserRepository {
     }
 
     pub async fn save(&self, user: &User) -> Result<User, AppError> {
-        let result = self.collection
-            .insert_one(user, None)
-            .await?;
-        
+        let result = self.collection.insert_one(user, None).await?;
+
         let mut user_with_id = user.clone();
         if let Some(inserted_id) = result.inserted_id.as_object_id() {
-             user_with_id.id = Some(inserted_id);
+            user_with_id.id = Some(inserted_id);
         }
-        
+
         Ok(user_with_id)
     }
 
@@ -48,7 +45,6 @@ impl UserRepository {
 
         Ok(user)
     }
-    
 
     pub async fn delete_by_id(&self, id: &str) -> Result<User, AppError> {
         let object_id = ObjectId::parse_str(id)
@@ -66,7 +62,6 @@ impl UserRepository {
     pub async fn update(&self, user: &User) -> Result<User, AppError> {
         let object_id = user
             .id
-            .clone()
             .ok_or_else(|| AppError::BadRequest("User ID is missing".into()))?;
 
         self.collection
@@ -92,4 +87,3 @@ impl UserRepository {
         Ok(emails)
     }
 }
-

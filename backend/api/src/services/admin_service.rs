@@ -12,7 +12,11 @@ pub struct AdminService {
 }
 
 impl AdminService {
-    pub fn new(user_repo: UserRepository, rpc_repo: RpcRepository, admin_emails: Vec<String>) -> Self {
+    pub fn new(
+        user_repo: UserRepository,
+        rpc_repo: RpcRepository,
+        admin_emails: Vec<String>,
+    ) -> Self {
         Self {
             user_repo,
             rpc_repo,
@@ -64,7 +68,11 @@ impl AdminService {
         })
     }
 
-    pub async fn list_logs(&self, claims: &Claims, limit: i64) -> Result<Vec<AdminLogEntry>, AppError> {
+    pub async fn list_logs(
+        &self,
+        claims: &Claims,
+        limit: i64,
+    ) -> Result<Vec<AdminLogEntry>, AppError> {
         self.require_admin(claims)?;
 
         let logs = self.rpc_repo.find_recent(limit).await?;

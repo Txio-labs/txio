@@ -65,7 +65,7 @@ impl CommandHandler {
                         chain.bold().cyan()
                     );
                 } else {
-                    let msg = format!("Unknown chain '{}'", chain);
+                    let msg = format!("Unknown chain '{chain}'");
                     let suggestion = ChainFactory::suggest_chain(&chain);
                     if let Some(s) = suggestion {
                         println!("{} {} \n\nDid you mean:\n  {}", "✖".red(), msg, s.green());
@@ -208,13 +208,13 @@ impl CommandHandler {
         match action {
             DbAction::ListUsers => {
                 let response = client
-                    .get(format!("{}/api/v1/admin/users", api))
+                    .get(format!("{api}/api/v1/admin/users"))
                     .bearer_auth(&token)
                     .send()
                     .await?;
 
                 if let Some(body) = Self::handle_admin_error(response.status()) {
-                    println!("{}", body);
+                    println!("{body}");
                     return Ok(());
                 }
 
@@ -243,14 +243,14 @@ impl CommandHandler {
                 }
 
                 let response = client
-                    .post(format!("{}/api/v1/admin/users/delete", api))
+                    .post(format!("{api}/api/v1/admin/users/delete"))
                     .bearer_auth(&token)
                     .json(&serde_json::json!({ "email": email }))
                     .send()
                     .await?;
 
                 if let Some(body) = Self::handle_admin_error(response.status()) {
-                    println!("{}", body);
+                    println!("{body}");
                     return Ok(());
                 }
 
@@ -258,13 +258,13 @@ impl CommandHandler {
             }
             DbAction::Stats => {
                 let response = client
-                    .get(format!("{}/api/v1/admin/stats", api))
+                    .get(format!("{api}/api/v1/admin/stats"))
                     .bearer_auth(&token)
                     .send()
                     .await?;
 
                 if let Some(body) = Self::handle_admin_error(response.status()) {
-                    println!("{}", body);
+                    println!("{body}");
                     return Ok(());
                 }
 
@@ -283,14 +283,14 @@ impl CommandHandler {
             }
             DbAction::ListLogs { limit } => {
                 let response = client
-                    .get(format!("{}/api/v1/admin/logs", api))
+                    .get(format!("{api}/api/v1/admin/logs"))
                     .query(&[("limit", limit.to_string())])
                     .bearer_auth(&token)
                     .send()
                     .await?;
 
                 if let Some(body) = Self::handle_admin_error(response.status()) {
-                    println!("{}", body);
+                    println!("{body}");
                     return Ok(());
                 }
 
@@ -333,9 +333,7 @@ impl CommandHandler {
                 "✖".red(),
                 "txio login".cyan()
             )),
-            reqwest::StatusCode::FORBIDDEN => {
-                Some(format!("{} Admin access required.", "✖".red()))
-            }
+            reqwest::StatusCode::FORBIDDEN => Some(format!("{} Admin access required.", "✖".red())),
             status if status.is_success() => None,
             status => Some(format!("{} Request failed ({}).", "✖".red(), status)),
         }
@@ -362,7 +360,7 @@ impl CommandHandler {
             std::env::var("API_URL").unwrap_or_else(|_| "http://localhost:8000".to_string());
 
         let response = client
-            .post(format!("{}/api/v1/auth/login", api_url))
+            .post(format!("{api_url}/api/v1/auth/login"))
             .json(&login_request)
             .send()
             .await?;
@@ -400,7 +398,7 @@ impl CommandHandler {
         match command {
             ChainCommand::Call { method, params } => {
                 let params_val: Value = if let Some(p) = params {
-                    serde_json::from_str(&p).map_err(|e| anyhow!("Invalid JSON params: {}", e))?
+                    serde_json::from_str(&p).map_err(|e| anyhow!("Invalid JSON params: {e}"))?
                 } else {
                     Value::Array(vec![])
                 };

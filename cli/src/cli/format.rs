@@ -26,7 +26,7 @@ pub fn format_units(value: u128, decimals: u32) -> String {
     let frac_str = format!("{:0width$}", frac, width = decimals as usize);
     let frac_trimmed = frac_str.trim_end_matches('0');
 
-    format!("{}.{}", whole, frac_trimmed)
+    format!("{whole}.{frac_trimmed}")
 }
 
 /// Format `value` base units as a fixed-precision decimal string rounded to

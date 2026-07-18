@@ -1,7 +1,7 @@
-use mongodb::{Client, Collection as MongoCollection};
-use mongodb::bson::{doc, oid::ObjectId};
 use crate::model::collection::Collection;
 use crate::utils::error::AppError;
+use mongodb::bson::{doc, oid::ObjectId};
+use mongodb::{Client, Collection as MongoCollection};
 #[derive(Clone)]
 pub struct CollectionRepository {
     collection: MongoCollection<Collection>,
@@ -23,13 +23,13 @@ impl CollectionRepository {
     pub async fn find_all_by_user(&self, user_id: ObjectId) -> Result<Vec<Collection>, AppError> {
         let filter = doc! { "user_id": user_id };
         let mut cursor = self.collection.find(filter, None).await?;
-        
+
         let mut collections = Vec::new();
         while cursor.advance().await? {
-            let c: Collection = cursor.deserialize_current().map_err(|e| AppError::Database(e))?;
+            let c: Collection = cursor.deserialize_current().map_err(AppError::Database)?;
             collections.push(c);
         }
-        
+
         Ok(collections)
     }
 
@@ -46,9 +46,7 @@ impl CollectionRepository {
 
         let mut collections = Vec::new();
         while cursor.advance().await? {
-            let c: Collection = cursor
-                .deserialize_current()
-                .map_err(AppError::Database)?;
+            let c: Collection = cursor.deserialize_current().map_err(AppError::Database)?;
             collections.push(c);
         }
 
@@ -58,23 +56,29 @@ impl CollectionRepository {
     pub async fn find_by_id(&self, id: ObjectId) -> Result<Collection, AppError> {
         let filter = doc! { "_id": id };
         let result = self.collection.find_one(filter, None).await?;
-        result.ok_or_else(|| AppError::NotFound(format!("Collection not found with id: {}", id)))
+        result.ok_or_else(|| AppError::NotFound(format!("Collection not found with id: {id}")))
     }
 
     pub async fn update(&self, collection: &Collection) -> Result<Collection, AppError> {
-        let id = collection.id.ok_or(AppError::InternalError("Cannot update collection without ID".into()))?;
+        let id = collection.id.ok_or(AppError::InternalError(
+            "Cannot update collection without ID".into(),
+        ))?;
         let filter = doc! { "_id": id };
-        
-        self.collection.replace_one(filter, collection, None).await?;
+
+        self.collection
+            .replace_one(filter, collection, None)
+            .await?;
         Ok(collection.clone())
     }
 
     pub async fn delete(&self, id: ObjectId) -> Result<(), AppError> {
         let filter = doc! { "_id": id };
         let result = self.collection.delete_one(filter, None).await?;
-        
+
         if result.deleted_count == 0 {
-            return Err(AppError::NotFound(format!("Collection not found for deletion: {}", id)));
+            return Err(AppError::NotFound(format!(
+                "Collection not found for deletion: {id}"
+            )));
         }
         Ok(())
     }

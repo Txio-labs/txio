@@ -1,6 +1,9 @@
 use crate::api::handlers::auth_handler;
 use crate::services::auth_service::AuthService;
-use axum::{Json, Router, routing::{get, post}};
+use axum::{
+    Json, Router,
+    routing::{get, post},
+};
 use serde_json::json;
 
 pub fn router(service: AuthService) -> Router {
