@@ -507,7 +507,7 @@ export const DocsPage: React.FC<
                         <div className="p-12 rounded-[4rem] bg-electric-violet/5 border border-electric-violet/10 space-y-10 relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-12 opacity-10 text-electric-violet animate-pulse"><Sparkles size={200} /></div>
                             <div className="relative z-10 space-y-8">
-                                <h3 className="text-2xl font-black text-white italic">Powered by Gemini</h3>
+                                <h3 className="text-2xl font-black text-white italic">Powered by Groq</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div className="space-y-4">
                                         <div className="font-bold text-white text-sm">Natural Language Controls</div>
