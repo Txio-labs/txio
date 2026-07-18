@@ -45,10 +45,11 @@ export const LoginSignupForm: React.FC<LoginSignupFormProps> = ({
       <form onSubmit={handleSubmit} className="space-y-4">
         {mode === 'signup' && (
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-500 uppercase">Full Name</label>
+            <label htmlFor="fullName" className="text-xs font-bold text-slate-500 uppercase">Full Name</label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
               <input 
+                id="fullName"
                 type="text" 
                 required 
                 className="w-full bg-near-black border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-sm text-white focus:border-electric-violet focus:ring-1 focus:ring-electric-violet/50 outline-none transition-all" 
@@ -61,10 +62,11 @@ export const LoginSignupForm: React.FC<LoginSignupFormProps> = ({
         )}
         
         <div className="space-y-1">
-          <label className="text-xs font-bold text-slate-500 uppercase">Email Address</label>
+          <label htmlFor="email" className="text-xs font-bold text-slate-500 uppercase">Email Address</label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
             <input 
+              id="email"
               type="email" 
               required 
               className="w-full bg-near-black border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-sm text-white focus:border-electric-violet focus:ring-1 focus:ring-electric-violet/50 outline-none transition-all" 
@@ -76,10 +78,11 @@ export const LoginSignupForm: React.FC<LoginSignupFormProps> = ({
         </div>
         
         <div className="space-y-1">
-          <label className="text-xs font-bold text-slate-500 uppercase">Password</label>
+          <label htmlFor="password" className="text-xs font-bold text-slate-500 uppercase">Password</label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
             <input 
+              id="password"
               type="password" 
               required 
               className="w-full bg-near-black border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-sm text-white focus:border-electric-violet focus:ring-1 focus:ring-electric-violet/50 outline-none transition-all" 
