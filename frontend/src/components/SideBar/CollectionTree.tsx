@@ -5,14 +5,53 @@ import { appStore } from '@/lib/store';
 
 interface CollectionTreeProps {
   collections: CollectionNode[];
+  filterQuery?: string;
   activeTabId: string | null;
   onToggleExpand: (nodeId: string) => void;
   onSelectCollectionRequest: (node: CollectionNode) => void;
   onCreateCollection: (name: string) => void;
 }
 
+const nodeMatchesQuery = (node: CollectionNode, query: string) => {
+  const searchableValues = [
+    node.name,
+    node.requestData?.name,
+    node.requestData?.rpcParams?.method
+  ];
+
+  return searchableValues.some((value) =>
+    value?.toLowerCase().includes(query)
+  );
+};
+
+export const filterCollectionTree = (
+  nodes: CollectionNode[],
+  filterQuery: string
+): CollectionNode[] => {
+  const query = filterQuery.trim().toLowerCase();
+
+  if (!query) {
+    return nodes;
+  }
+
+  return nodes.flatMap((node) => {
+    const selfMatches = nodeMatchesQuery(node, query);
+    const filteredChildren = filterCollectionTree(node.children ?? [], query);
+
+    if (!selfMatches && filteredChildren.length === 0) {
+      return [];
+    }
+
+    return [{
+      ...node,
+      children: selfMatches ? node.children : filteredChildren
+    }];
+  });
+};
+
 export const CollectionTree: React.FC<CollectionTreeProps> = ({
   collections,
+  filterQuery = '',
   activeTabId,
   onToggleExpand,
   onSelectCollectionRequest,
@@ -21,6 +60,8 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
   const [isAddingCollection, setIsAddingCollection] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState('');
   const createInputRef = useRef<HTMLInputElement>(null);
+  const isFiltering = filterQuery.trim().length > 0;
+  const visibleCollections = filterCollectionTree(collections, filterQuery);
 
   useEffect(() => {
     if (isAddingCollection && createInputRef.current) {
@@ -106,7 +147,7 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
             )}
           </div>
 
-          {node.isExpanded && node.children && (
+          {(isFiltering || node.isExpanded) && node.children && (
             <div className="relative animate-in slide-in-from-left-1 duration-200">
               {renderTree(node.children, depth + 1)}
             </div>
@@ -136,7 +177,13 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
       )}
       
       <div className="pl-1 space-y-0.5">
-        {renderTree(collections)}
+        {visibleCollections.length > 0 ? (
+          renderTree(visibleCollections)
+        ) : isFiltering ? (
+          <p className="px-3 py-6 text-center text-[11px] text-slate-600">
+            No collections or requests match &ldquo;{filterQuery.trim()}&rdquo;.
+          </p>
+        ) : null}
       </div>
     </div>
   );
