@@ -1,6 +1,6 @@
 # txio
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
 <div align="center">
   <img src="assets/txio.png" alt="txio" width="100%">
@@ -8,7 +8,7 @@
   <p align="center">
     <strong>One terminal. Every chain.</strong>
     <br />
-    A unified, multi-chain developer toolkit for Sui, Ethereum, Solana, Aptos, and Soroban.
+    A unified terminal interface for Sui, Ethereum, Solana, Aptos, and Soroban.
   </p>
   <p align="center">
     <a href="https://crates.io/crates/txio"><img src="https://img.shields.io/crates/v/txio.svg?style=flat-square" alt="Crates.io"></a>
@@ -18,49 +18,75 @@
 
 ---
 
-## The Problem
+## What is txio?
 
-Every chain ships its own CLI, and none of them agree on anything. `sui client`, `solana`, `aptos`, `soroban`, plus whatever you've bolted together for Ethereum — each with its own install step, its own flag names, its own config file, and its own idea of what a "network" argument should look like. Switch from Sui devnet to Ethereum mainnet mid-session and you're not passing a different flag, you're opening a different terminal.
+`txio` replaces five separate chain CLIs with one clean, consistent tool.
+It wraps Sui, Ethereum, Solana, Aptos, and Soroban behind a single command set so
+developers can move between ecosystems without learning a new CLI for each one.
 
-And none of them speak human. Checking a balance means resolving `.sui` or `.eth` yourself, then pasting the raw address back in. Do that across five ecosystems, and a two-second task — "what's in this wallet?" — turns into a scavenger hunt.
+- Unified commands across chains
+- Shared flags and network switching
+- Human-readable names and output
+- Built for CLI-first and full-stack development
 
 ---
 
-## The Solution
+## Why it matters
 
-**txio** puts Sui, Ethereum, Solana, Aptos, and Soroban behind one interface. Learn it once, use it everywhere.
+Most chain tooling is fragmented:
 
-*   **One interface, five chains** – Sui, Ethereum, Solana, Aptos, and Soroban all use the same commands and flags.
-*   **Instant network switching** – Pass `--network testnet` (or `mainnet`, `devnet`) to any command. No config file to edit.
-*   **Names just work** – `.sui`, `.eth`, and friends resolve automatically before the request goes out. You never touch a raw address.
-*   **Readable by default** – Clean, formatted tables in your terminal. Need raw data? Add `--pretty` for JSON.
-*   **One command, full stack** – `docker-compose up` boots the API, dashboard, and database together.
+- Separate install flows for each chain CLI
+- Different flags for network selection
+- Chain-specific config files and runtime conventions
+- Raw addresses instead of readable names
+
+`txio` makes multi-chain work feel like one product instead of five.
+
+---
+
+## Key Benefits
+
+- **One interface, five chains** — identical UX for Sui, Ethereum, Solana, Aptos, and Soroban.
+- **Instant network switching** — `--network testnet`, `mainnet`, or `devnet` works everywhere.
+- **Name resolution built in** — `.sui`, `.eth`, and other namespaces resolve before request execution.
+- **Readable by default** — terminal-friendly output with optional raw JSON via `--pretty`.
+- **Full-stack launch** — `docker-compose up` starts the API, dashboard, and database together.
+
+---
+
+## Features
+
+- Unified chain commands and shared flags
+- Automatic namespace-based address resolution
+- Dynamic network selection with no config file edits
+- Authenticated CLI workflows through `login`
+- Clean CLI tables and JSON fallback with `--pretty`
+- Backend + frontend + database orchestration via Docker Compose
 
 ---
 
 ## Repository Structure
 
-| Path | Description | Tech Stack |
-| :--- | :--- | :--- |
-| [`/cli`](./cli) | Primary terminal interface | Rust, Clap |
-| [`/backend`](./backend) | Caching API and intelligent request routing | Rust, Axum |
-| [`/frontend`](./frontend) | Interactive web dashboard | Next.js, React, Tailwind |
-| [`/desktop`](./desktop) | Desktop wrapper *(In Development)* | Electron |
+| Path                      | Purpose                                     | Tech Stack               |
+| :------------------------ | :------------------------------------------ | :----------------------- |
+| [`/cli`](./cli)           | Terminal interface and chain adapters       | Rust, Clap               |
+| [`/backend`](./backend)   | API routing, caching, and chain aggregation | Rust, Axum               |
+| [`/frontend`](./frontend) | Web dashboard and docs                      | Next.js, React, Tailwind |
+| [`/desktop`](./desktop)   | Desktop wrapper _(In Development)_          | Electron                 |
 
 ---
 
 ## Prerequisites
 
-You'll need:
-*   **Rust** (stable toolchain)
-*   **Node.js** (v20+)
-*   **Docker** & **Docker Compose**
+- Rust (stable toolchain)
+- Node.js v20+
+- Docker & Docker Compose
 
 ---
 
 ## Getting Started
 
-### 1. Clone and Install
+### Clone and install
 
 ```bash
 git clone https://github.com/Txio-labs/txio.git
@@ -70,45 +96,44 @@ npm install
 
 ### Start the full stack
 
-Boots the backend, frontend, and database in one command:
-
 ```bash
 cp .env.example backend/api/.env
-# Edit backend/api/.env and set at minimum:
+# Update backend/api/.env with at minimum:
 #   MONGO_INITDB_ROOT_USERNAME, MONGO_INITDB_ROOT_PASSWORD
 #   JWT_SECRET (>=32 chars), BREVO_API_KEY, GROQ_API_KEYS
 docker-compose up -d
 ```
 
-The full stack runs MongoDB with `--auth` enabled and credentials from
-`backend/api/.env`. Both `mongod` (read as MONGO_INITDB_ROOT_USERNAME /
-MONGO_INITDB_ROOT_PASSWORD) and the API (read as MONGO_URI) load the same
-file, so the username and password only need to be set in one place.
-
-The frontend comes up on its default port, with the API running behind it.
+This brings up MongoDB with auth enabled, the backend API, and the frontend dashboard.
 
 ### Run the CLI
 
 ```bash
 cd cli
 
-# Authenticate your terminal
-cargo run -- login                           
+# Authenticate your terminal:
+cargo run -- login
 
-# Resolve .sui names automatically
-cargo run -- sui balance aliphatic.sui       
+# Resolve .sui names automatically:
+cargo run -- sui balance aliphatic.sui
 
-# Query different networks on the fly
+# Query another chain and network in one command:
 cargo run -- --network testnet eth balance 0x...
 ```
 
-Run `txio --help` to see all available commands and flags.
+Run `txio --help` to explore commands and flags.
 
 ---
 
 ## Contributing
 
-Adding a new chain is deliberately simple: implement the `ChainAdapter` trait, drop a single file under `cli/src/chains/`, and register it in the factory. That's it. Full details live in [CONTRIBUTING.md](./CONTRIBUTING.md).
+Adding a new chain is intentionally simple:
+
+1. Implement the `ChainAdapter` trait.
+2. Add a file under `cli/src/chains/`.
+3. Register it in the adapter factory.
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full workflow.
 
 ---
 
