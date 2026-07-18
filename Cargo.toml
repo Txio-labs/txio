@@ -11,8 +11,8 @@ edition = "2024"
 authors = ["txio Contributors"]
 license = "MIT"
 description = "A universal multi-chain blockchain gateway and CLI suite."
-repository = "https://github.com/Kingvic300/Flow"
-homepage = "https://github.com/Kingvic300/Flow"
+repository = "https://github.com/Kingvic300/txio"
+homepage = "https://github.com/Kingvic300/txio"
 
 [workspace.dependencies]
 axum = "0.7"

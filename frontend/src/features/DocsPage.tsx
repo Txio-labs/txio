@@ -158,7 +158,7 @@ export const DocsPage: React.FC<
                                 <h3 className="text-xl font-bold text-white">2. Launch (Docker)</h3>
                                 <p className="text-sm text-slate-500">Run the full backend and frontend stack locally.</p>
                                 <div className="p-6 rounded-2xl bg-black border border-white/5 font-mono text-sm text-slate-400 space-y-2">
-                                    <div>git clone https://github.com/Kingvic300/Flow.git</div>
+                                    <div>git clone https://github.com/Kingvic300/txio.git</div>
                                     <div className="text-electric-violet">docker-compose up -d</div>
                                 </div>
                             </div>
