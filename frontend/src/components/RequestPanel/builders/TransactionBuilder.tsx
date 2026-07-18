@@ -1,7 +1,7 @@
 import React from 'react';
 import { Plus, Trash2, Zap } from 'lucide-react';
 import { Select } from '../../Select';
-import { MoveCallParams, MoveParamType } from '../../../types';
+import { MoveCallParams, MoveParamType, Network } from '../../../types';
 import { MOVE_TYPES } from '@/lib/constants';
 import { VariableInput } from '../ai/VariableInput';
 
@@ -9,6 +9,7 @@ interface TransactionBuilderProps {
   request: any;
   activeAddress: string | null;
   envVars: any[];
+  network?: Network;
   isReadOnly?: boolean;
   onChange: (updatedReq: any) => void;
 }
@@ -17,6 +18,7 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
   request,
   activeAddress,
   envVars,
+  network,
   isReadOnly,
   onChange
 }) => {
@@ -77,6 +79,7 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
               placeholder="0x..."
               disabled={isReadOnly}
               envVars={envVars}
+              network={network}
             />
           </div>
           
@@ -92,6 +95,7 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
                 placeholder="module_name"
                 disabled={isReadOnly}
                 envVars={envVars}
+                network={network}
               />
             </div>
             <div className="space-y-2">
@@ -105,6 +109,7 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
                 placeholder="function_name"
                 disabled={isReadOnly}
                 envVars={envVars}
+                network={network}
               />
             </div>
           </div>
@@ -157,6 +162,7 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
                       placeholder={arg.type === 'object' ? 'Object ID' : 'Value'}
                       disabled={isReadOnly}
                       envVars={envVars}
+                      network={network}
                     />
                   </div>
                   <button 

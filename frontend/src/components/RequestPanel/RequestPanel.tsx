@@ -66,6 +66,7 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
                 request={request}
                 activeAddress={activeAddress}
                 envVars={envVars}
+                network={network}
                 isReadOnly={isReadOnly}
                 onChange={onChange}
               />

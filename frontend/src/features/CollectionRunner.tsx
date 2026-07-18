@@ -106,6 +106,9 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
 
         // Snapshot the run list at start so mutations don't shift indices
         const snapshot = [...runList];
+        const activeEnvVars = envVariables.filter(
+            v => v.enabled && (!v.network || v.network === 'all' || v.network === network)
+        );
 
         for (let idx = 0; idx < snapshot.length; idx++) {
             if (abortRef.current) break;
@@ -113,7 +116,7 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
             setCurrentReqIndex(idx);
 
             const req = snapshot[idx] as RequestItem;
-            const resolved = resolveRequestVars(req, envVariables);
+            const resolved = resolveRequestVars(req, activeEnvVars);
             const startTime = performance.now();
 
             try {
