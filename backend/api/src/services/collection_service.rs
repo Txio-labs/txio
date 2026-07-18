@@ -52,7 +52,7 @@ impl CollectionService {
         Ok(())
     }
     
-    fn validate_url(&self, url_str: &str) -> Result<(), AppError> {
+    fn validate_url(url_str: &str) -> Result<(), AppError> {
         // Parse URL
         let url = Url::parse(url_str).map_err(|e| AppError::BadRequest(format!("Invalid RPC URL: {}", e)))?;
         // Only allow HTTPS scheme
@@ -276,7 +276,7 @@ impl CollectionService {
             };
             network_enum.url().to_string()
         };
-        self.validate_url(&final_url)?;
+        Self::validate_url(&final_url)?;
         // 1. Resolve Parameters (SuiNS)
         let suins_regex = regex::Regex::new(r"([a-zA-Z0-9-]+\.sui)").unwrap();
         let mut final_params = req.params.clone();
@@ -341,3 +341,53 @@ impl CollectionService {
         Ok((req, result))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_validate_url_allowed() {
+        assert!(CollectionService::validate_url("https://api.mainnet.sui.io").is_ok());
+        assert!(CollectionService::validate_url("https://fullnode.devnet.sui.io:443/").is_ok());
+    }
+
+    #[test]
+    fn test_validate_url_blocked_http() {
+        assert!(CollectionService::validate_url("http://api.mainnet.sui.io").is_err());
+        assert!(CollectionService::validate_url("http://1.1.1.1").is_err());
+    }
+
+    #[test]
+    fn test_validate_url_blocked_localhost() {
+        assert!(CollectionService::validate_url("https://localhost").is_err());
+        assert!(CollectionService::validate_url("https://localhost:443").is_err());
+        assert!(CollectionService::validate_url("https://127.0.0.1").is_err());
+        assert!(CollectionService::validate_url("https://[::1]").is_err());
+    }
+
+    #[test]
+    fn test_validate_url_blocked_private_ip() {
+        // IPv4 private ranges
+        assert!(CollectionService::validate_url("https://10.0.0.1").is_err());
+        assert!(CollectionService::validate_url("https://172.16.0.1").is_err());
+        assert!(CollectionService::validate_url("https://192.168.1.1").is_err());
+        
+        // IPv6 unique local addresses (ULA)
+        assert!(CollectionService::validate_url("https://[fc00::1]").is_err());
+        assert!(CollectionService::validate_url("https://[fd00::1]").is_err());
+    }
+
+    #[test]
+    fn test_validate_url_blocked_link_local() {
+        assert!(CollectionService::validate_url("https://169.254.169.254").is_err());
+        assert!(CollectionService::validate_url("https://[fe80::1]").is_err());
+    }
+
+    #[test]
+    fn test_validate_url_invalid_urls() {
+        assert!(CollectionService::validate_url("not_a_url").is_err());
+        assert!(CollectionService::validate_url("https://").is_err());
+    }
+}
+
