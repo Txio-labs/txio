@@ -1,6 +1,9 @@
 use crate::api::handlers::auth_handler;
 use crate::services::auth_service::AuthService;
-use axum::{Json, Router, routing::{get, post}};
+use axum::{
+    Json, Router,
+    routing::{get, post},
+};
 use serde_json::json;
 use std::sync::Arc;
 use tower_governor::{GovernorLayer, governor::GovernorConfigBuilder};
@@ -20,19 +23,25 @@ pub fn router(service: AuthService) -> Router {
         .route("/login", post(auth_handler::login))
         .route(
             "/request-otp",
-            post(auth_handler::request_otp)
-                .layer(GovernorLayer { config: otp_send_rate_limiter.clone() }),
+            post(auth_handler::request_otp).layer(GovernorLayer {
+                config: otp_send_rate_limiter.clone(),
+            }),
         )
         .route("/verify-otp", post(auth_handler::verify_otp))
         .route("/profile", axum::routing::get(auth_handler::profile))
         .route("/get-user-profile", post(auth_handler::get_user_profile))
         .route("/update-email", post(auth_handler::update_user_email))
         .route("/update-password", post(auth_handler::update_user_password))
+        .route(
+            "/notification-preferences",
+            post(auth_handler::update_notification_preferences),
+        )
         .route("/delete-user", post(auth_handler::delete_user))
         .route(
             "/forgot-password",
-            post(auth_handler::forgot_password)
-                .layer(GovernorLayer { config: otp_send_rate_limiter.clone() }),
+            post(auth_handler::forgot_password).layer(GovernorLayer {
+                config: otp_send_rate_limiter.clone(),
+            }),
         )
         .route(
             "/reset-password",
