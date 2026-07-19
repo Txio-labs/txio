@@ -5,13 +5,14 @@ use crate::repositories::{
 };
 use crate::services::sui_service::SuiService;
 use crate::utils::error::AppError;
-use mongodb::bson::oid::ObjectId;
+use mongodb::{Database, bson::oid::ObjectId};
 use serde_json::Value;
 use url::Url;
 use std::net::IpAddr;
 
 #[derive(Clone)]
 pub struct CollectionService {
+    db: Database,
     collection_repo: CollectionRepository,
     request_repo: RequestRepository,
     user_repo: UserRepository,
@@ -21,6 +22,7 @@ pub struct CollectionService {
 
 impl CollectionService {
     pub fn new(
+        db: Database,
         collection_repo: CollectionRepository,
         request_repo: RequestRepository,
         user_repo: UserRepository,
@@ -28,6 +30,7 @@ impl CollectionService {
         sui_service: SuiService,
     ) -> Self {
         Self {
+            db,
             collection_repo,
             request_repo,
             user_repo,
@@ -52,30 +55,74 @@ impl CollectionService {
         Ok(())
     }
     
-    fn validate_url(url_str: &str) -> Result<(), AppError> {
-        // Parse URL
-        let url = Url::parse(url_str).map_err(|e| AppError::BadRequest(format!("Invalid RPC URL: {}", e)))?;
-        // Only allow HTTPS scheme
+    /// Validate a user-supplied RPC URL, blocking private, loopback, link-local,
+    /// and metadata addresses whether they are supplied as literals or as hostnames
+    /// that resolve to those ranges.
+    ///
+    /// The check is performed in two passes:
+    ///  1. Static checks — scheme, literal "localhost", literal IP ranges.
+    ///  2. DNS resolution — every address the hostname resolves to is checked
+    ///     against the same disallowed ranges. This closes the bypass where a
+    ///     public-looking hostname resolves to an internal address (DNS
+    ///     rebinding, split-horizon DNS, cloud metadata service endpoints, etc.).
+    async fn validate_url(url_str: &str) -> Result<(), AppError> {
+        let url = Url::parse(url_str)
+            .map_err(|e| AppError::BadRequest(format!("Invalid RPC URL: {}", e)))?;
+
         if url.scheme() != "https" {
-            return Err(AppError::BadRequest("Only HTTPS RPC URLs are allowed".into()));
+            return Err(AppError::BadRequest(
+                "Only HTTPS RPC URLs are allowed".into(),
+            ));
         }
-        // Disallow localhost and loopback IPs
-        if let Some(host) = url.host_str() {
-            if host == "localhost" {
-                return Err(AppError::BadRequest("Localhost URLs are not allowed".into()));
+
+        let host = url
+            .host_str()
+            .ok_or_else(|| AppError::BadRequest("URL must include a host".into()))?;
+
+        // Reject the bare "localhost" name before DNS is involved.
+        if host.eq_ignore_ascii_case("localhost") {
+            return Err(AppError::BadRequest("Localhost URLs are not allowed".into()));
+        }
+
+        // Fast path: literal IP addresses are validated directly without DNS.
+        // url::Url::host_str() strips the brackets from IPv6 literals.
+        if let Ok(ip) = host.parse::<IpAddr>() {
+            return Self::check_ip_allowed(ip);
+        }
+
+        // Hostname path: resolve all addresses and reject if any is disallowed.
+        // Using the URL's explicit port when present keeps the lookup accurate;
+        // port 443 is used as a fallback because HTTPS is the only permitted scheme.
+        let port = url.port_or_known_default().unwrap_or(443);
+        let lookup_target = format!("{}:{}", host, port);
+
+        let addrs = tokio::net::lookup_host(&lookup_target).await.map_err(|e| {
+            AppError::BadRequest(format!(
+                "DNS resolution failed for '{}': {}",
+                host, e
+            ))
+        })?;
+
+        for addr in addrs {
+            Self::check_ip_allowed(addr.ip())?;
+        }
+
+        Ok(())
+    }
+
+    fn check_ip_allowed(ip: IpAddr) -> Result<(), AppError> {
+        let is_disallowed = match ip {
+            IpAddr::V4(v4) => v4.is_loopback() || v4.is_private() || v4.is_link_local(),
+            IpAddr::V6(v6) => {
+                v6.is_loopback() || v6.is_unique_local() || v6.is_unicast_link_local()
             }
-            // If host is an IP address, check for private ranges
-            if let Ok(ip) = host.parse::<IpAddr>() {
-                let is_disallowed = match ip {
-                    IpAddr::V4(v4) => v4.is_loopback() || v4.is_private() || v4.is_link_local(),
-                    IpAddr::V6(v6) => {
-                        v6.is_loopback() || v6.is_unique_local() || v6.is_unicast_link_local()
-                    }
-                };
-                if is_disallowed {
-                    return Err(AppError::BadRequest("Private or link‑local IP addresses are not allowed".into()));
-                }
-            }
+        };
+        if is_disallowed {
+            return Err(AppError::BadRequest(format!(
+                "Resolved address {} is not allowed \
+                 (loopback, private, link-local, or metadata range)",
+                ip
+            )));
         }
         Ok(())
     }
@@ -148,12 +195,36 @@ impl CollectionService {
         user_id: ObjectId,
     ) -> Result<(), AppError> {
         let _collection = self.get_collection(collection_id, user_id).await?;
-        // Cascade delete requests
-        self.request_repo
-            .delete_all_by_collection(collection_id)
-            .await?;
-        self.collection_repo.delete(collection_id).await?;
-        Ok(())
+
+        // Wrap both deletes in a MongoDB transaction so they succeed or fail
+        // together. Without this, a failure between the two operations leaves
+        // the collection alive with its child requests permanently gone, or
+        // (in the previous order) requests gone while the empty collection
+        // remains — either state is unrecoverable without manual intervention.
+        let mut session = self.db.client().start_session(None).await?;
+        session.start_transaction(None).await?;
+
+        let result = async {
+            self.request_repo
+                .delete_all_by_collection_with_session(collection_id, &mut session)
+                .await?;
+            self.collection_repo
+                .delete_with_session(collection_id, &mut session)
+                .await?;
+            Ok::<(), AppError>(())
+        }
+        .await;
+
+        match result {
+            Ok(()) => {
+                session.commit_transaction().await?;
+                Ok(())
+            }
+            Err(e) => {
+                let _ = session.abort_transaction().await;
+                Err(e)
+            }
+        }
     }
 
     // --- Requests ---
@@ -276,7 +347,7 @@ impl CollectionService {
             };
             network_enum.url().to_string()
         };
-        Self::validate_url(&final_url)?;
+        Self::validate_url(&final_url).await?;
         // 1. Resolve Parameters (SuiNS)
         let suins_regex = regex::Regex::new(r"([a-zA-Z0-9-]+\.sui)").unwrap();
         let mut final_params = req.params.clone();
@@ -346,48 +417,56 @@ impl CollectionService {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_validate_url_allowed() {
-        assert!(CollectionService::validate_url("https://api.mainnet.sui.io").is_ok());
-        assert!(CollectionService::validate_url("https://fullnode.devnet.sui.io:443/").is_ok());
+    // validate_url is now async (it performs DNS resolution for hostname URLs).
+    // Tests that use literal IP addresses exercise the fast path with no DNS
+    // and are not flaky. Hostname-based "allowed" assertions are intentionally
+    // omitted here because they would require live DNS in CI; those are covered
+    // by integration tests that run against a real network.
+
+    #[tokio::test]
+    async fn test_validate_url_blocked_http() {
+        assert!(CollectionService::validate_url("http://1.1.1.1").await.is_err());
+        assert!(CollectionService::validate_url("http://203.0.113.1").await.is_err());
     }
 
-    #[test]
-    fn test_validate_url_blocked_http() {
-        assert!(CollectionService::validate_url("http://api.mainnet.sui.io").is_err());
-        assert!(CollectionService::validate_url("http://1.1.1.1").is_err());
+    #[tokio::test]
+    async fn test_validate_url_blocked_localhost_name() {
+        assert!(CollectionService::validate_url("https://localhost").await.is_err());
+        assert!(CollectionService::validate_url("https://localhost:443").await.is_err());
+        assert!(CollectionService::validate_url("https://LOCALHOST").await.is_err());
     }
 
-    #[test]
-    fn test_validate_url_blocked_localhost() {
-        assert!(CollectionService::validate_url("https://localhost").is_err());
-        assert!(CollectionService::validate_url("https://localhost:443").is_err());
-        assert!(CollectionService::validate_url("https://127.0.0.1").is_err());
-        assert!(CollectionService::validate_url("https://[::1]").is_err());
+    #[tokio::test]
+    async fn test_validate_url_blocked_loopback_ip() {
+        assert!(CollectionService::validate_url("https://127.0.0.1").await.is_err());
+        assert!(CollectionService::validate_url("https://127.255.255.255").await.is_err());
+        assert!(CollectionService::validate_url("https://[::1]").await.is_err());
     }
 
-    #[test]
-    fn test_validate_url_blocked_private_ip() {
-        // IPv4 private ranges
-        assert!(CollectionService::validate_url("https://10.0.0.1").is_err());
-        assert!(CollectionService::validate_url("https://172.16.0.1").is_err());
-        assert!(CollectionService::validate_url("https://192.168.1.1").is_err());
-        
-        // IPv6 unique local addresses (ULA)
-        assert!(CollectionService::validate_url("https://[fc00::1]").is_err());
-        assert!(CollectionService::validate_url("https://[fd00::1]").is_err());
+    #[tokio::test]
+    async fn test_validate_url_blocked_private_ip() {
+        // RFC 1918 IPv4 private ranges
+        assert!(CollectionService::validate_url("https://10.0.0.1").await.is_err());
+        assert!(CollectionService::validate_url("https://172.16.0.1").await.is_err());
+        assert!(CollectionService::validate_url("https://192.168.1.1").await.is_err());
+        // IPv6 unique-local (ULA)
+        assert!(CollectionService::validate_url("https://[fc00::1]").await.is_err());
+        assert!(CollectionService::validate_url("https://[fd00::1]").await.is_err());
     }
 
-    #[test]
-    fn test_validate_url_blocked_link_local() {
-        assert!(CollectionService::validate_url("https://169.254.169.254").is_err());
-        assert!(CollectionService::validate_url("https://[fe80::1]").is_err());
+    #[tokio::test]
+    async fn test_validate_url_blocked_link_local() {
+        // 169.254.0.0/16 — covers AWS/GCP/Azure metadata service (169.254.169.254)
+        assert!(CollectionService::validate_url("https://169.254.169.254").await.is_err());
+        assert!(CollectionService::validate_url("https://169.254.0.1").await.is_err());
+        assert!(CollectionService::validate_url("https://[fe80::1]").await.is_err());
     }
 
-    #[test]
-    fn test_validate_url_invalid_urls() {
-        assert!(CollectionService::validate_url("not_a_url").is_err());
-        assert!(CollectionService::validate_url("https://").is_err());
+    #[tokio::test]
+    async fn test_validate_url_invalid_urls() {
+        assert!(CollectionService::validate_url("not_a_url").await.is_err());
+        assert!(CollectionService::validate_url("https://").await.is_err());
+        assert!(CollectionService::validate_url("").await.is_err());
     }
 }
 

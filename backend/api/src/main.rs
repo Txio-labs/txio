@@ -110,6 +110,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let collection_service = services::collection_service::CollectionService::new(
+        db.clone(),
         collection_repo.clone(),
         request_repo,
         user_repo.clone(),
