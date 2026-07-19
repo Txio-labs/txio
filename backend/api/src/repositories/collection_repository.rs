@@ -2,8 +2,6 @@ use mongodb::{Collection as MongoCollection, Database};
 use mongodb::bson::{doc, oid::ObjectId};
 use crate::model::collection::Collection;
 use crate::utils::error::AppError;
-use mongodb::bson::{doc, oid::ObjectId};
-use mongodb::{Client, Collection as MongoCollection};
 #[derive(Clone)]
 pub struct CollectionRepository {
     collection: MongoCollection<Collection>,

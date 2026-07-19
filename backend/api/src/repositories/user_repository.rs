@@ -14,7 +14,7 @@ impl UserRepository {
         let collection = db.collection("users");
         let repo = Self { collection };
         // Ensure unique index on email (ignore errors for now)
-        let index_model = mongodb::options::IndexModel::builder()
+        let index_model = mongodb::IndexModel::builder()
             .keys(mongodb::bson::doc! { "email": 1 })
             .options(mongodb::options::IndexOptions::builder().unique(true).build())
             .build();
@@ -25,7 +25,7 @@ impl UserRepository {
 
     // Optional explicit async method to ensure indices (can be called in startup)
     pub async fn ensure_indices(&self) -> Result<(), AppError> {
-        let index_model = mongodb::options::IndexModel::builder()
+        let index_model = mongodb::IndexModel::builder()
             .keys(mongodb::bson::doc! { "email": 1 })
             .options(mongodb::options::IndexOptions::builder().unique(true).build())
             .build();

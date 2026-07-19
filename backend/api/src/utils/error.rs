@@ -49,6 +49,7 @@ impl IntoResponse for AppError {
             AppError::Config(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Configuration error"),
             AppError::NotFound(ref msg) => (StatusCode::NOT_FOUND, msg.as_str()),
             AppError::Unauthorized(ref msg) => (StatusCode::UNAUTHORIZED, msg.as_str()),
+            AppError::BadRequest(ref msg) => (StatusCode::BAD_REQUEST, msg.as_str()),
             AppError::Forbidden(ref msg) => (StatusCode::FORBIDDEN, msg.as_str()),
             AppError::ValidationError(ref msg) => (StatusCode::BAD_REQUEST, msg.as_str()),
             AppError::Conflict(ref msg) => (StatusCode::CONFLICT, msg.as_str()),

@@ -246,13 +246,8 @@ fn oauth_signing_key() -> Result<Vec<u8>, AppError> {
 fn generate_oauth_state() -> Result<String, AppError> {
     let nonce: Vec<u8> = (0..32).map(|_| rand::random::<u8>()).collect();
     let key = oauth_signing_key()?;
-<<<<<<< HEAD
-    let mut mac = HmacSha256::new_from_slice(&key)
-        .map_err(|_| AppError::InternalError("HMAC key error".into()))?;
-=======
     let mut mac =
         HmacSha256::new_from_slice(&key).map_err(|_| AppError::InternalError("HMAC key error".into()))?;
->>>>>>> 69c65fd (feat: implement OAuth state parameter handling to prevent CSRF attacks)
     mac.update(&nonce);
     let signature = mac.finalize().into_bytes();
     let mut payload = nonce;
@@ -269,12 +264,8 @@ fn verify_oauth_state(state: &str) -> Result<(), AppError> {
     }
     let (nonce, signature) = decoded.split_at(decoded.len() - 32);
     let key = oauth_signing_key()?;
-<<<<<<< HEAD
     let mut mac = HmacSha256::new_from_slice(&key)
         .map_err(|_| AppError::InternalError("HMAC key error".into()))?;
-=======
-    let mut mac =
-        HmacSha256::new_from_slice(&key).map_err(|_| AppError::InternalError("HMAC key error".into()))?;
     mac.update(nonce);
     mac.verify_slice(signature)
         .map_err(|_| AppError::BadRequest("Invalid or expired OAuth state parameter".into()))
@@ -441,17 +432,4 @@ pub async fn google_callback(
     );
 
     Ok(axum::response::Redirect::temporary(&redirect_to))
-<<<<<<< HEAD
 }
-=======
-}
-
-fn constant_time_eq(a: &str, b: &str) -> bool {
-    a.len() == b.len()
-        && a.as_bytes()
-            .iter()
-            .zip(b.as_bytes().iter())
-            .fold(0u8, |acc, (x, y)| acc | (x ^ y))
-            == 0
-}
->>>>>>> 69c65fd (feat: implement OAuth state parameter handling to prevent CSRF attacks)

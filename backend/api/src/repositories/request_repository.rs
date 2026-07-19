@@ -2,8 +2,6 @@ use mongodb::{Collection, Database};
 use mongodb::bson::{doc, oid::ObjectId};
 use crate::model::request::SavedRequest;
 use crate::utils::error::AppError;
-use mongodb::bson::{doc, oid::ObjectId};
-use mongodb::{Client, Collection};
 
 #[derive(Clone)]
 pub struct RequestRepository {
