@@ -47,7 +47,12 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
         );
       
       case 'hooks':
-        return <HooksEditor />;
+        return (
+          <HooksEditor
+            hooks={request.hooks || []}
+            onChange={(hooks) => onChange({ ...request, hooks })}
+          />
+        );
       
       case 'raw':
         return <RawEditor request={request} onChange={onChange} />;
