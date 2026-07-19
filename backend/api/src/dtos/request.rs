@@ -1,3 +1,4 @@
+use crate::model::user::NotificationPreferences;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -57,6 +58,11 @@ pub struct UpdatePasswordRequest {
 #[derive(Debug, Deserialize, Validate)]
 pub struct SwitchNetworkRequest {
     pub network: crate::model::user::SuiNetwork,
+}
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct UpdateNotificationPreferencesRequest {
+    pub notification_preferences: NotificationPreferences,
 }
 #[derive(Debug, Deserialize, Validate)]
 pub struct TerminalCommandRequest {

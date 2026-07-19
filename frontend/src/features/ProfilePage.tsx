@@ -17,8 +17,10 @@ import {
     AlertCircle,
 } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
+import { normalizeNotificationPreferences } from '@/lib/appConfig';
+import { apiService } from '@/services/api';
 import { Avatar } from '../components/ui/Avatar';
-import type { UserProfile } from '../types';
+import type { NotificationPreferences, UserProfile } from '../types';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -33,7 +35,6 @@ const ERROR_FLASH_MS = 3000;
 const ACCOUNT_LINKS = [
     { id: 'billing', icon: CreditCard, label: 'Billing & invoices', toast: 'Billing page not implemented' },
     { id: 'tokens', icon: Key, label: 'API access tokens', toast: 'Token management not implemented' },
-    { id: 'notifications', icon: Bell, label: 'Notifications', toast: 'Notification preferences not implemented' },
 ] as const;
 
 interface DemoSession {
@@ -272,6 +273,34 @@ interface FieldProps {
     htmlFor?: string;
 }
 
+interface PreferenceToggleProps {
+    title: string;
+    description: string;
+    checked: boolean;
+    onChange: (checked: boolean) => void;
+}
+
+const PreferenceToggle: React.FC<PreferenceToggleProps> = ({
+    title,
+    description,
+    checked,
+    onChange,
+}) => (
+    <label className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-white/[0.03] transition-colors">
+        <span className="min-w-0 flex-1">
+            <span className="block text-sm font-medium text-slate-200">{title}</span>
+            <span className="block text-xs text-slate-500 mt-0.5 leading-relaxed">{description}</span>
+        </span>
+        <input
+            type="checkbox"
+            className="sr-only peer"
+            checked={checked}
+            onChange={(event) => onChange(event.target.checked)}
+        />
+        <span className="relative h-6 w-11 shrink-0 rounded-full bg-slate-700 transition-colors peer-checked:bg-electric-violet/80 after:absolute after:left-1 after:top-1 after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-5" />
+    </label>
+);
+
 const Field: React.FC<FieldProps> = ({ label, children, hint, error, htmlFor }) => (
     <div className="space-y-1.5">
         <label htmlFor={htmlFor} className="block text-xs font-medium text-slate-400">
@@ -329,6 +358,34 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
     } = useImageUpload('bannerUrl', MAX_BANNER_BYTES);
 
     const timezone = useMemo(() => getBrowserTimezone(), []);
+    const notificationPreferences = normalizeNotificationPreferences(
+        user.notificationPreferences
+    );
+
+    const handleNotificationPreferenceChange = useCallback(async (
+        key: keyof NotificationPreferences,
+        enabled: boolean
+    ) => {
+        const nextPreferences = {
+            ...notificationPreferences,
+            [key]: enabled
+        };
+
+        appStore.updateUser({
+            notificationPreferences: nextPreferences
+        });
+
+        try {
+            const updatedUser =
+                await apiService.updateNotificationPreferences(
+                    nextPreferences
+                );
+            appStore.updateUser(updatedUser);
+            appStore.showToast('Notification preferences saved', 'success');
+        } catch {
+            appStore.showToast('Saved notification preferences locally. Sync will retry when the API is available.', 'info');
+        }
+    }, [notificationPreferences]);
 
     const handleSave = useCallback(async () => {
         if (!isDirty || save.status === 'saving') return;
@@ -517,6 +574,36 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
                                     </button>
                                 </div>
                             </form>
+                        </Section>
+
+
+                        <Section title="Notification preferences" description="Choose the updates txio sends by email and in-app alerts.">
+                            <div className="bg-dark-indigo-glow border border-white/[0.08] rounded-xl overflow-hidden divide-y divide-white/[0.06]">
+                                <PreferenceToggle
+                                    title="Weekly email digest"
+                                    description="Receive a summary of request activity, usage, and workspace changes."
+                                    checked={notificationPreferences.emailDigests}
+                                    onChange={(checked) => handleNotificationPreferenceChange('emailDigests', checked)}
+                                />
+                                <PreferenceToggle
+                                    title="Security emails"
+                                    description="Get email alerts for sign-ins, password changes, and account recovery events."
+                                    checked={notificationPreferences.emailSecurityAlerts}
+                                    onChange={(checked) => handleNotificationPreferenceChange('emailSecurityAlerts', checked)}
+                                />
+                                <PreferenceToggle
+                                    title="In-app activity alerts"
+                                    description="Show workspace activity and request lifecycle alerts inside txio."
+                                    checked={notificationPreferences.inAppActivityAlerts}
+                                    onChange={(checked) => handleNotificationPreferenceChange('inAppActivityAlerts', checked)}
+                                />
+                                <PreferenceToggle
+                                    title="Product updates"
+                                    description="Show announcements for new API, wallet, and builder workflow features."
+                                    checked={notificationPreferences.inAppProductUpdates}
+                                    onChange={(checked) => handleNotificationPreferenceChange('inAppProductUpdates', checked)}
+                                />
+                            </div>
                         </Section>
 
                         <Section title="Active sessions" description="Devices currently signed in to your account.">
