@@ -603,13 +603,24 @@ impl CommandHandler {
                 Self::print_value(&result, pretty)?;
             }
             ChainCommand::History { address, limit } => {
-                println!(
-                    "{} Fetching {} recent transactions for {} on {}...\n",
-                    "📜".bold(),
-                    limit,
-                    address.dimmed(),
-                    adapter.name().green()
-                );
+                let chain = adapter.name();
+                if chain == "Ethereum" {
+                    println!(
+                        "{} Fetching up to {} recent ERC-20 transfer logs for {} on {}...\n",
+                        "📜".bold(),
+                        limit,
+                        address.dimmed(),
+                        chain.green()
+                    );
+                } else {
+                    println!(
+                        "{} Fetching {} recent transactions for {} on {}...\n",
+                        "📜".bold(),
+                        limit,
+                        address.dimmed(),
+                        chain.green()
+                    );
+                }
                 let result = adapter.get_history(&address, limit).await?;
                 Self::print_value(&result, pretty)?;
             }
