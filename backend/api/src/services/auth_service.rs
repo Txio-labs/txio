@@ -69,7 +69,13 @@ impl AuthService {
     }
 
     pub async fn register_user(&self, req: RegisterUserRequest) -> Result<AuthResponse, AppError> {
-        // ... (existing code)
+        // Check if email already exists
+        match self.repo.find_by_email(&req.email).await {
+            Ok(_) => return Err(AppError::BadRequest("Email already registered".into())),
+            Err(AppError::NotFound(_)) => (),
+            Err(e) => return Err(e),
+        };
+
         // Hash password before storage
         let password_hash = bcrypt::hash(req.password.as_bytes(), bcrypt::DEFAULT_COST)
             .map_err(|_| AppError::InternalError("Failed to hash password".into()))?;
