@@ -157,9 +157,12 @@ impl AuthService {
     pub async fn update_user_password_by_email(
         &self,
         email: &str,
+        current_password: &str,
         new_password: &str,
     ) -> Result<UserResponse, AppError> {
         let mut user = self.repo.find_by_email(email).await?;
+
+        verify_current_password(current_password, &user.password_hash)?;
 
         // Hash new password
         let password_hash = bcrypt::hash(new_password.as_bytes(), bcrypt::DEFAULT_COST)
@@ -256,5 +259,38 @@ impl AuthService {
             token,
             user: Self::to_user_response(&user),
         })
+    }
+}
+
+fn verify_current_password(current_password: &str, password_hash: &str) -> Result<(), AppError> {
+    let is_valid = bcrypt::verify(current_password.as_bytes(), password_hash).unwrap_or(false);
+
+    if !is_valid {
+        return Err(AppError::Unauthorized("Current password is incorrect".into()));
+    }
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn verify_current_password_rejects_mismatched_password() {
+        let password_hash = bcrypt::hash(b"correct-password", bcrypt::DEFAULT_COST).unwrap();
+
+        let result = verify_current_password("wrong-password", &password_hash);
+
+        assert!(matches!(result, Err(AppError::Unauthorized(_))));
+    }
+
+    #[test]
+    fn verify_current_password_accepts_matching_password() {
+        let password_hash = bcrypt::hash(b"correct-password", bcrypt::DEFAULT_COST).unwrap();
+
+        let result = verify_current_password("correct-password", &password_hash);
+
+        assert!(result.is_ok());
     }
 }

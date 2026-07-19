@@ -30,11 +30,6 @@ tower-http = { workspace = true }
 tower = { workspace = true }
 tower_governor = { workspace = true }
 brevo = { workspace = true }
-brevo = { workspace = true }
-brevo = { workspace = true }
-brevo = { workspace = true }
-brevo = { workspace = true }
-brevo = { workspace = true }
 clap = { workspace = true }
 regex = { workspace = true }
 url = "2.5"
