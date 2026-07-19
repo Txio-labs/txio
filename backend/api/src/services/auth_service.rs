@@ -191,9 +191,18 @@ impl AuthService {
 
         let user_result = self.repo.find_by_email(&req.email).await;
 
+        // Only NotFound is expected during normal login; any other error
+        // (timeout, connection failure, etc.) must be surfaced so the caller
+        // can distinguish a real infrastructure problem from a bad password.
+        if let Err(e) = &user_result {
+            if !matches!(e, AppError::NotFound(_)) {
+                return Err(user_result.unwrap_err());
+            }
+        }
+
         let (hash_to_verify, user_found) = match &user_result {
             Ok(user) => (user.password_hash.as_str(), true),
-            Err(_) => (DUMMY_HASH, false),
+            Err(_) => (DUMMY_HASH, false), // only NotFound reaches here
         };
 
         let is_valid = bcrypt::verify(req.password.as_bytes(), hash_to_verify).unwrap_or(false);
@@ -228,10 +237,13 @@ impl AuthService {
             .map(|id| id.to_string())
             .ok_or(AppError::InternalError("User ID missing".into()))?;
 
-        // Clean up all sessions for this user before deleting the account.
-        if let Ok(oid) = user_id.parse::<mongodb::bson::oid::ObjectId>() {
-            let _ = self.session_repo.delete_all_by_user_id(&oid).await;
-        }
+        // Clean up all sessions before deleting the account. If either step
+        // fails the error is propagated — a partial deletion (account gone but
+        // sessions still live) is worse than leaving everything intact.
+        let oid = user_id
+            .parse::<mongodb::bson::oid::ObjectId>()
+            .map_err(|_| AppError::InternalError("Invalid user ID".into()))?;
+        self.session_repo.delete_all_by_user_id(&oid).await?;
 
         let deleted_user = self.repo.delete_by_id(&user_id).await?;
         Ok(Self::to_user_response(&deleted_user))
@@ -332,8 +344,19 @@ impl AuthService {
         google_sub: String,
         email: String,
     ) -> Result<AuthResponse, AppError> {
-        let user_by_sub = self.repo.find_by_google_sub(&google_sub).await.ok();
-        let user_by_email = self.repo.find_by_email(&email).await.ok();
+        // Treat NotFound as absence but propagate every other error.
+        // .ok() would silently turn a database outage into "user not found",
+        // causing an existing account to be re-registered under a new record.
+        let user_by_sub = match self.repo.find_by_google_sub(&google_sub).await {
+            Ok(u) => Some(u),
+            Err(AppError::NotFound(_)) => None,
+            Err(e) => return Err(e),
+        };
+        let user_by_email = match self.repo.find_by_email(&email).await {
+            Ok(u) => Some(u),
+            Err(AppError::NotFound(_)) => None,
+            Err(e) => return Err(e),
+        };
 
         let user = resolve_oauth_account(google_sub, email, user_by_sub, user_by_email)?;
 

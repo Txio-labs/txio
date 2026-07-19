@@ -9,6 +9,7 @@ use reqwest::Client;
 pub struct SorobanAdapter {
     client: Client,
     rpc_url: String,
+    horizon_url: &'static str,
 }
 
 impl SorobanAdapter {
@@ -17,18 +18,23 @@ impl SorobanAdapter {
     }
 
     fn horizon_url(&self) -> &'static str {
-        if self.rpc_url.contains("mainnet") {
-            "https://horizon.stellar.org"
-        } else {
-            "https://horizon-testnet.stellar.org"
-        }
+        self.horizon_url
     }
 
     pub fn with_rpc(rpc_url: Option<String>, network: Network) -> Self {
+        // Resolve the Horizon base URL from the *network enum*, not by
+        // inspecting the RPC URL string. A caller can pass a custom RPC URL
+        // (e.g. a local proxy) while still targeting mainnet; string-matching
+        // against that URL would silently route Horizon calls to testnet.
+        let horizon_url = match network {
+            Network::Mainnet => "https://horizon.stellar.org",
+            _ => "https://horizon-testnet.stellar.org",
+        };
+
         let url = rpc_url.unwrap_or_else(|| match network {
             Network::Mainnet => "https://soroban-rpc.mainnet.stellar.org".to_string(),
             Network::Testnet => "https://soroban-testnet.stellar.org".to_string(),
-            Network::Devnet => "https://futurenet.soroban-rpc.stellar.org".to_string(), // Futurenet is often used as devnet
+            Network::Devnet => "https://futurenet.soroban-rpc.stellar.org".to_string(),
             Network::Localnet => "http://127.0.0.1:8000/soroban/rpc".to_string(),
         });
 
@@ -38,6 +44,7 @@ impl SorobanAdapter {
                 .build()
                 .unwrap_or_else(|_| Client::new()),
             rpc_url: url,
+            horizon_url,
         }
     }
 }
