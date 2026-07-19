@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
-use mongodb::bson::oid::ObjectId;
 use chrono::{DateTime, Utc};
+use mongodb::bson::oid::ObjectId;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct User {
@@ -8,6 +8,8 @@ pub struct User {
     pub id: Option<ObjectId>,
     pub email: String,
     pub password_hash: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub google_sub: Option<String>,
     pub tier: PlanTier,
     #[serde(default)]
     pub network: SuiNetwork,
@@ -45,9 +47,17 @@ impl User {
             id: None,
             email,
             password_hash,
+            google_sub: None,
             tier: PlanTier::Free,
             network: SuiNetwork::Mainnet,
             created_at: Utc::now(),
+        }
+    }
+
+    pub fn new_oauth(email: String, password_hash: String, google_sub: String) -> Self {
+        Self {
+            google_sub: Some(google_sub),
+            ..Self::new(email, password_hash)
         }
     }
 }

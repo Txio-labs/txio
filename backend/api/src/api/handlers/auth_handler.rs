@@ -377,11 +377,24 @@ pub async fn google_callback(
         .json()
         .await
         .map_err(|_| AppError::InternalError("Failed to parse Google user info".into()))?;
+
+    let verified_email = user_data["verified_email"].as_bool().unwrap_or(false);
+    if !verified_email {
+        return Err(AppError::Unauthorized(
+            "Google email address is not verified".into(),
+        ));
+    }
+
+    let google_sub = user_data["id"].as_str().ok_or(AppError::InternalError(
+        "No Google subject in profile".into(),
+    ))?;
     let email = user_data["email"]
         .as_str()
         .ok_or(AppError::InternalError("No email in Google profile".into()))?;
 
-    let auth_res = service.oauth_login_or_register(email.to_string()).await?;
+    let auth_res = service
+        .oauth_login_or_register(google_sub.to_string(), email.to_string())
+        .await?;
 
     let redirect_to = format!(
         "{}/?token={}",
