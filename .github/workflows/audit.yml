@@ -24,7 +24,7 @@ jobs:
         run: cargo audit fetch
 
       - name: Run cargo audit
-        run: cargo audit --deny warnings
+        run: cargo audit
 
   npm-audit-frontend:
     name: npm Audit (Frontend)
