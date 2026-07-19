@@ -15,12 +15,15 @@ import {
     Github,
     Sparkles,
     AlertCircle,
+    Laptop,
+    LogOut,
+    Loader2,
 } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { normalizeNotificationPreferences } from '@/lib/appConfig';
 import { apiService } from '@/services/api';
 import { Avatar } from '../components/ui/Avatar';
-import type { NotificationPreferences, UserProfile } from '../types';
+import type { ActiveSession, NotificationPreferences, UserProfile } from '../types';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -35,19 +38,6 @@ const ERROR_FLASH_MS = 3000;
 const ACCOUNT_LINKS = [
     { id: 'billing', icon: CreditCard, label: 'Billing & invoices', toast: 'Billing page not implemented' },
     { id: 'tokens', icon: Key, label: 'API access tokens', toast: 'Token management not implemented' },
-] as const;
-
-interface DemoSession {
-    id: string;
-    device: string;
-    location: string;
-    last: string;
-    current: boolean;
-}
-
-const DEMO_SESSIONS: readonly DemoSession[] = [
-    { id: 'this', device: 'Chrome on macOS', location: 'San Francisco, US', last: 'Active now', current: true },
-    { id: 'other', device: 'Firefox on Windows', location: 'New York, US', last: '2 days ago', current: false },
 ] as const;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -89,6 +79,27 @@ function validateName(value: string): string | null {
     if (trimmed.length < NAME_MIN_LENGTH) return `Name must be at least ${NAME_MIN_LENGTH} characters.`;
     if (trimmed.length > NAME_MAX_LENGTH) return `Name must be ${NAME_MAX_LENGTH} characters or fewer.`;
     return null;
+}
+
+/** Format an ISO-8601 date string into a compact relative/absolute label. */
+function formatSessionDate(isoString: string): string {
+    try {
+        const date = new Date(isoString);
+        const now = Date.now();
+        const diffMs = now - date.getTime();
+        const diffMins = Math.floor(diffMs / 60_000);
+        const diffHours = Math.floor(diffMins / 60);
+        const diffDays = Math.floor(diffHours / 24);
+
+        if (diffMins < 1) return 'Active now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffDays === 1) return '1 day ago';
+        if (diffDays < 7) return `${diffDays} days ago`;
+        return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    } catch {
+        return isoString;
+    }
 }
 
 // ─── Hooks ──────────────────────────────────────────────────────────────────
@@ -220,6 +231,59 @@ function useImageUpload(field: 'avatarUrl' | 'bannerUrl', maxBytes: number) {
     return { inputRef, trigger, onChange, isUploading };
 }
 
+// ─── Sessions hook ───────────────────────────────────────────────────────────
+
+type SessionsState =
+    | { status: 'idle' }
+    | { status: 'loading' }
+    | { status: 'ready'; data: ActiveSession[] }
+    | { status: 'error'; message: string };
+
+function useActiveSessions() {
+    const [state, setState] = useState<SessionsState>({ status: 'idle' });
+    const [revokingId, setRevokingId] = useState<string | null>(null);
+    const mountedRef = useRef(true);
+
+    useEffect(() => {
+        mountedRef.current = true;
+        return () => { mountedRef.current = false; };
+    }, []);
+
+    const load = useCallback(async () => {
+        setState({ status: 'loading' });
+        try {
+            const sessions = await apiService.getSessions();
+            if (!mountedRef.current) return;
+            setState({ status: 'ready', data: sessions });
+        } catch (err) {
+            if (!mountedRef.current) return;
+            const message = err instanceof Error ? err.message : 'Failed to load sessions.';
+            setState({ status: 'error', message });
+        }
+    }, []);
+
+    useEffect(() => { void load(); }, [load]);
+
+    const revoke = useCallback(async (sessionId: string) => {
+        setRevokingId(sessionId);
+        try {
+            await apiService.revokeSession(sessionId);
+            if (!mountedRef.current) return;
+            appStore.showToast('Session revoked', 'success');
+            // Reload the list.
+            await load();
+        } catch (err) {
+            if (!mountedRef.current) return;
+            const message = err instanceof Error ? err.message : 'Could not revoke session.';
+            appStore.showToast(message, 'error');
+        } finally {
+            if (mountedRef.current) setRevokingId(null);
+        }
+    }, [load]);
+
+    return { state, revokingId, retry: load, revoke };
+}
+
 // ─── Presentational ─────────────────────────────────────────────────────────
 
 interface StatCardProps {
@@ -324,6 +388,125 @@ const editableInputClass = `${baseInputClass} focus:border-electric-violet/60 fo
 const readonlyInputClass = `${baseInputClass} text-slate-500 cursor-not-allowed select-text`;
 const errorInputClass = `${baseInputClass} border-rose-500/40 focus:border-rose-500/60`;
 
+// ─── Sessions section ────────────────────────────────────────────────────────
+
+interface ActiveSessionsSectionProps {
+    sessions: ActiveSession[];
+    revokingId: string | null;
+    onRevoke: (id: string) => void;
+    onRetry: () => void;
+    status: SessionsState['status'];
+    errorMessage?: string;
+}
+
+const ActiveSessionsSection: React.FC<ActiveSessionsSectionProps> = ({
+    sessions,
+    revokingId,
+    onRevoke,
+    onRetry,
+    status,
+    errorMessage,
+}) => {
+    if (status === 'loading') {
+        return (
+            <div className="bg-dark-indigo-glow border border-white/[0.08] rounded-xl flex items-center justify-center gap-2 py-8 text-slate-500 text-sm">
+                <Loader2 size={15} className="animate-spin" />
+                Loading sessions…
+            </div>
+        );
+    }
+
+    if (status === 'error') {
+        return (
+            <div className="bg-dark-indigo-glow border border-white/[0.08] rounded-xl px-5 py-5">
+                <p className="flex items-center gap-1.5 text-xs text-rose-400 mb-3">
+                    <AlertCircle size={13} />
+                    {errorMessage ?? 'Could not load sessions.'}
+                </p>
+                <button
+                    onClick={onRetry}
+                    className="text-[11px] font-medium text-electric-violet hover:text-soft-purple transition-colors"
+                >
+                    Try again
+                </button>
+            </div>
+        );
+    }
+
+    if (status === 'ready' && sessions.length === 0) {
+        return (
+            <div className="bg-dark-indigo-glow border border-white/[0.08] rounded-xl flex items-center justify-center py-8 text-slate-500 text-sm">
+                No active sessions found.
+            </div>
+        );
+    }
+
+    return (
+        <div className="bg-dark-indigo-glow border border-white/[0.08] rounded-xl overflow-hidden">
+            <div className="divide-y divide-white/[0.06]">
+                {sessions.map((s) => {
+                    const isRevoking = revokingId === s.id;
+                    return (
+                        <div key={s.id} className="flex items-center gap-4 px-5 py-3 text-sm">
+                            {/* Status dot */}
+                            <span
+                                className={`h-2 w-2 rounded-full shrink-0 ${
+                                    s.is_current
+                                        ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]'
+                                        : 'bg-slate-600'
+                                }`}
+                            />
+
+                            {/* Device icon */}
+                            <Laptop
+                                size={14}
+                                className="text-slate-500 shrink-0 hidden sm:block"
+                            />
+
+                            {/* Info */}
+                            <div className="min-w-0 flex-1">
+                                <div className="text-slate-200 truncate">
+                                    {s.device_label}
+                                    {s.is_current && (
+                                        <span className="ml-2 text-[10px] font-medium text-emerald-400 uppercase tracking-wide">
+                                            Current
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="text-xs text-slate-500 mt-0.5 truncate">
+                                    {s.ip_address !== 'unknown' ? s.ip_address : 'IP unavailable'}
+                                </div>
+                            </div>
+
+                            {/* Last active */}
+                            <div className="text-xs text-slate-500 shrink-0">
+                                {formatSessionDate(s.last_active_at)}
+                            </div>
+
+                            {/* Revoke — hidden for the current session */}
+                            {!s.is_current && (
+                                <button
+                                    onClick={() => onRevoke(s.id)}
+                                    disabled={isRevoking}
+                                    className="shrink-0 p-1.5 rounded-md text-slate-600 hover:text-rose-400 hover:bg-rose-500/[0.08] disabled:opacity-40 transition-colors"
+                                    title="Revoke session"
+                                    aria-label={`Revoke session for ${s.device_label}`}
+                                >
+                                    {isRevoking ? (
+                                        <Loader2 size={13} className="animate-spin" />
+                                    ) : (
+                                        <LogOut size={13} />
+                                    )}
+                                </button>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
 // ─── Container ──────────────────────────────────────────────────────────────
 
 export const ProfilePage: React.FC = () => {
@@ -356,6 +539,9 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
         onChange: bannerOnChange,
         isUploading: bannerIsUploading,
     } = useImageUpload('bannerUrl', MAX_BANNER_BYTES);
+
+    const { state: sessionsState, revokingId, retry: retrySessions, revoke: revokeSession } =
+        useActiveSessions();
 
     const timezone = useMemo(() => getBrowserTimezone(), []);
     const notificationPreferences = normalizeNotificationPreferences(
@@ -606,31 +792,22 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
                             </div>
                         </Section>
 
-                        <Section title="Active sessions" description="Devices currently signed in to your account.">
-                            <div className="bg-dark-indigo-glow border border-white/[0.08] rounded-xl overflow-hidden">
-                                <div className="divide-y divide-white/[0.06]">
-                                    {DEMO_SESSIONS.map((s) => (
-                                        <div key={s.id} className="flex items-center gap-4 px-5 py-3 text-sm">
-                                            <span className={`h-2 w-2 rounded-full shrink-0 ${s.current ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' : 'bg-slate-600'}`} />
-                                            <div className="min-w-0 flex-1">
-                                                <div className="text-slate-200 truncate">
-                                                    {s.device}
-                                                    {s.current && (
-                                                        <span className="ml-2 text-[10px] font-medium text-emerald-400 uppercase tracking-wide">
-                                                            Current
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="text-xs text-slate-500 mt-0.5">{s.location}</div>
-                                            </div>
-                                            <div className="text-xs text-slate-500 shrink-0">{s.last}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="px-5 py-2 border-t border-white/[0.06] text-[11px] text-slate-600">
-                                    Demo data — session tracking isn&apos;t wired up yet.
-                                </div>
-                            </div>
+                        <Section
+                            title="Active sessions"
+                            description="Devices currently signed in to your account. Revoke any session you don't recognise."
+                        >
+                            <ActiveSessionsSection
+                                sessions={sessionsState.status === 'ready' ? sessionsState.data : []}
+                                revokingId={revokingId}
+                                onRevoke={revokeSession}
+                                onRetry={retrySessions}
+                                status={sessionsState.status}
+                                errorMessage={
+                                    sessionsState.status === 'error'
+                                        ? sessionsState.message
+                                        : undefined
+                                }
+                            />
                         </Section>
                     </div>
 
