@@ -1,7 +1,12 @@
-use mongodb::{Collection, Database};
 use crate::model::otp::OTP;
 use crate::utils::error::AppError;
 use mongodb::bson::doc;
+use mongodb::options::IndexOptions;
+use mongodb::{Collection, Database, IndexModel};
+use std::time::Duration;
+
+/// MongoDB TTL for OTP documents — purges rows even if the app never verifies them.
+const OTP_TTL_SECONDS: u64 = 600;
 
 #[derive(Clone)]
 pub struct OTPRepository {
@@ -12,6 +17,21 @@ impl OTPRepository {
     pub fn new(db: &Database) -> Self {
         let collection = db.collection("otps");
         Self { collection }
+    }
+
+    pub async fn ensure_indexes(&self) -> Result<(), AppError> {
+        let index = IndexModel::builder()
+            .keys(doc! { "created_at": 1 })
+            .options(
+                IndexOptions::builder()
+                    .name(Some("otps_created_at_ttl".to_string()))
+                    .expire_after(Duration::from_secs(OTP_TTL_SECONDS))
+                    .build(),
+            )
+            .build();
+
+        self.collection.create_index(index, None).await?;
+        Ok(())
     }
 
     pub async fn save(&self, otp: &OTP) -> Result<OTP, AppError> {

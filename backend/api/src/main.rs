@@ -80,6 +80,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let user_repo = repositories::user_repository::UserRepository::new(&db);
     let otp_repo = repositories::otp_repository::OTPRepository::new(&db);
+    otp_repo.ensure_indexes().await?;
     let rpc_repo = repositories::rpc_repository::RpcRepository::new(&db);
     let collection_repo =
         repositories::collection_repository::CollectionRepository::new(&db);
