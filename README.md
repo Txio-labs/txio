@@ -1,4 +1,4 @@
-# txio
+﻿# txio
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
@@ -8,7 +8,7 @@
   <p align="center">
     <strong>One terminal. Every chain.</strong>
     <br />
-    Bring Sui, Ethereum, Solana, Aptos, and Soroban under one unified CLI.
+    A unified CLI for Sui, Ethereum, Solana, Aptos, and Soroban.
   </p>
   <p align="center">
     <a href="https://crates.io/crates/txio"><img src="https://img.shields.io/crates/v/txio.svg?style=flat-square" alt="Crates.io"></a>
@@ -20,60 +20,57 @@
 
 ## What is txio?
 
-`txio` unifies five chain CLIs into one polished developer interface.
-It wraps Sui, Ethereum, Solana, Aptos, and Soroban with shared commands,
-flags, and conventions so you can stay in a single terminal and switch networks instantly.
+`txio` replaces five different chain CLIs with one elegant terminal experience. It brings Sui, Ethereum, Solana, Aptos, and Soroban together under shared commands, consistent flags, and a unified workflow.
 
 - Unified commands across all supported chains
-- Consistent flags and network semantics
-- Human-friendly name resolution for `.sui`, `.eth`, and more
-- Designed for CLI-first and full-stack workflows
+- Shared network flag semantics
+- Name resolution for `.sui`, `.eth`, and more
+- Built for CLI-first and full-stack development
 
 ---
 
 ## Why it matters
 
-Multi-chain development should feel seamless, not fractured.
-The current ecosystem is held back by:
+Developers should never need a separate terminal for every chain. Today’s multi-chain landscape is fragmented by:
 
-- Different install flows for each chain CLI
-- Inconsistent network flags and config formats
-- Multiple runtime conventions and tooling assumptions
-- Raw addresses instead of readable names
+- different install flows for each CLI
+- inconsistent network flags and config formats
+- chain-specific runtime conventions
+- raw wallet addresses instead of readable names
 
-`txio` turns cross-chain complexity into a smooth, consistent workflow.
+`txio` removes that friction and turns multi-chain development into one refined experience.
 
 ---
 
 ## Key benefits
 
 - **One interface, five chains** — same UX for Sui, Ethereum, Solana, Aptos, and Soroban
-- **Instant network switching** — use `--network testnet`, `mainnet`, or `devnet` everywhere
-- **Automatic name resolution** — `.sui`, `.eth`, and other namespaces resolve automatically
+- **Instant network switching** — `--network testnet`, `mainnet`, or `devnet` works everywhere
+- **Smart name resolution** — `.sui`, `.eth`, and other namespaces resolve automatically
 - **Readable output** — clean terminal tables with raw JSON available via `--pretty`
-- **Full-stack boot** — launch API, dashboard, and database together with Docker Compose
+- **Full-stack launch** — start API, dashboard, and database together with Docker Compose
 
 ---
 
-## Features
+## Highlights
 
 - Unified chain commands and shared flags
 - Namespace-first address resolution
 - Dynamic network selection without config changes
-- CLI auth via `login`
-- Terminal-friendly formatting with JSON fallback
+- CLI auth workflows via `login`
+- Polished terminal output with JSON fallback
 - Docker Compose orchestration for backend, frontend, and datastore
 
 ---
 
 ## Repository structure
 
-| Path                      | Purpose                                     | Tech Stack               |
-| :------------------------ | :------------------------------------------ | :----------------------- |
-| [`/cli`](./cli)           | Terminal interface and chain adapters       | Rust, Clap               |
-| [`/backend`](./backend)   | API routing, caching, and chain aggregation | Rust, Axum               |
-| [`/frontend`](./frontend) | Web dashboard and docs                      | Next.js, React, Tailwind |
-| [`/desktop`](./desktop)   | Desktop wrapper _(In Development)_          | Electron                 |
+| Path | Purpose | Tech Stack |
+| :--- | :--- | :--- |
+| [`/cli`](./cli) | Terminal interface and chain adapters | Rust, Clap |
+| [`/backend`](./backend) | API routing, caching, and chain aggregation | Rust, Axum |
+| [`/frontend`](./frontend) | Web dashboard and docs | Next.js, React, Tailwind |
+| [`/desktop`](./desktop) | Desktop wrapper *(In Development)* | Electron |
 
 ---
 
