@@ -1,6 +1,8 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 use anyhow::{Result, anyhow};
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 use serde_json;
 
 /// Load environment overrides for the CLI.
