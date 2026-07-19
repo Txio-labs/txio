@@ -33,35 +33,35 @@ flags, and conventions so you can stay in one terminal and switch networks fast.
 
 ## Why it matters
 
-Multi-chain development should not feel like five different products.
-The current ecosystem is fragmented with:
+Multi-chain development should feel seamless, not scattered.
+Today’s ecosystem is broken by:
 
-- Separate install flows for each chain CLI
+- Separate install flows for every chain CLI
 - Different flags for network selection
 - Chain-specific config files and runtime conventions
-- Raw addresses instead of readable names
+- Raw wallet addresses instead of readable names
 
-`txio` makes multi-chain work feel like one polished workflow.
+`txio` turns that fragmentation into one polished workflow.
 
 ---
 
-## Key benefits
+## What you get
 
-- **One interface, five chains** — identical UX for Sui, Ethereum, Solana, Aptos, and Soroban
+- **One interface, five chains** — consistent UX for Sui, Ethereum, Solana, Aptos, and Soroban
 - **Instant network switching** — `--network testnet`, `mainnet`, or `devnet` works everywhere
-- **Name resolution built in** — `.sui`, `.eth`, and other namespaces resolve automatically
-- **Readable by default** — clean tables in the terminal with raw JSON via `--pretty`
-- **Full-stack launch** — `docker-compose up` starts API, dashboard, and database together
+- **Smart name resolution** — `.sui`, `.eth`, and other namespaces resolve automatically
+- **Readable outputs** — clean terminal tables with raw JSON via `--pretty`
+- **Full-stack setup** — start API, dashboard, and database together with Docker Compose
 
 ---
 
-## Features
+## Highlights
 
 - Unified chain commands and shared flags
-- Automatic namespace-based address resolution
-- Dynamic network selection with zero config changes
-- CLI authentication via `login`
-- Smart CLI formatting plus JSON fallback
+- Namespace-first address resolution
+- Zero-config network selection
+- CLI auth via `login`
+- Polished terminal output with JSON fallback
 - Docker Compose orchestration for backend, frontend, and datastore
 
 ---
@@ -87,11 +87,15 @@ The current ecosystem is fragmented with:
 
 ## Quick start
 
+### 1. Clone the repo
+
 ```bash
 git clone https://github.com/Txio-labs/txio.git
 cd txio
 npm install
 ```
+
+### 2. Boot the full stack
 
 ```bash
 cp .env.example backend/api/.env
@@ -101,12 +105,16 @@ cp .env.example backend/api/.env
 docker-compose up -d
 ```
 
+### 3. Run the CLI
+
 ```bash
 cd cli
 cargo run -- login
 cargo run -- sui balance aliphatic.sui
 cargo run -- --network testnet eth balance 0x...
 ```
+
+> `txio --help` shows the full command surface.
 
 ---
 
