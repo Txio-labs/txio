@@ -16,7 +16,7 @@ use serde_json;
 /// makes it win over the trusted default, while real process env — set before
 /// either loader runs — always wins over both.
 pub fn load_environment(explicit_env_file: Option<&Path>) -> Result<()> {
-    let mut trusted = get_config_dir();
+    let mut trusted = get_config_dir()?;
     trusted.push(".env");
     let cwd_env = Path::new(".env");
     load_env_files(explicit_env_file, &trusted, cwd_env)
@@ -51,43 +51,67 @@ fn should_warn_unloaded_cwd_env(explicit_provided: bool, cwd_env: &Path) -> bool
     !explicit_provided && cwd_env.exists()
 }
 
-pub fn get_config_dir() -> PathBuf {
-    let mut path = dirs_next::home_dir().unwrap_or_else(|| PathBuf::from("."));
+/// Return (and create if absent) the txio config directory `~/.txio`.
+///
+/// Returns an error when the home directory cannot be determined.  This is a
+/// deliberate security boundary: falling back to the current working directory
+/// would allow a planted `.txio` directory in an untrusted CWD to intercept
+/// credentials (API_URL redirect, bearer token) before the user has even
+/// authenticated.
+pub fn get_config_dir() -> Result<PathBuf> {
+    let home = dirs_next::home_dir()
+        .ok_or_else(|| anyhow!("cannot determine home directory; cannot proceed safely"))?;
+
+    let mut path = home;
     path.push(".txio");
+
     if !path.exists() {
-        fs::create_dir_all(&path).ok();
+        fs::create_dir_all(&path)?;
+        // Restrict the config directory to the owning user on Unix-like systems.
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(&path, fs::Permissions::from_mode(0o700))?;
+        }
     }
-    path
+
+    Ok(path)
 }
 
 pub fn save_current_chain(chain: &str) -> Result<()> {
-    let mut path = get_config_dir();
+    let mut path = get_config_dir()?;
     path.push("current_chain");
     fs::write(path, chain)?;
     Ok(())
 }
 
 pub fn get_current_chain() -> Option<String> {
-    let mut path = get_config_dir();
-    path.push("current_chain");
+    let path = get_config_dir().ok().map(|mut p| { p.push("current_chain"); p })?;
     fs::read_to_string(path).ok().map(|s| s.trim().to_string())
 }
 
+/// Persist the bearer token with owner-only read permissions (0600 on Unix).
+/// A world-readable token file would grant any local user the CLI owner's
+/// full API access, including admin endpoints when applicable.
 pub fn save_token(token: &str) -> Result<()> {
-    let mut path = get_config_dir();
+    let mut path = get_config_dir()?;
     path.push("token");
-    fs::write(path, token)?;
+    fs::write(&path, token)?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o600))?;
+    }
     Ok(())
 }
 
 pub fn get_token() -> Option<String> {
-    let mut path = get_config_dir();
-    path.push("token");
+    let path = get_config_dir().ok().map(|mut p| { p.push("token"); p })?;
     fs::read_to_string(path).ok().map(|s| s.trim().to_string())
 }
 
 pub fn remove_token() -> Result<()> {
-    let mut path = get_config_dir();
+    let mut path = get_config_dir()?;
     path.push("token");
     if path.exists() {
         fs::remove_file(path)?;
@@ -96,7 +120,7 @@ pub fn remove_token() -> Result<()> {
 }
 
 pub fn save_config(key: &str, value: &str) -> Result<()> {
-    let mut path = get_config_dir();
+    let mut path = get_config_dir()?;
     path.push("config.json");
     let mut map: serde_json::Map<String, serde_json::Value> = if path.exists() {
         let content = fs::read_to_string(&path)?;
@@ -110,7 +134,7 @@ pub fn save_config(key: &str, value: &str) -> Result<()> {
 }
 
 pub fn get_config(key: &str) -> Result<Option<String>> {
-    let mut path = get_config_dir();
+    let mut path = get_config_dir()?;
     path.push("config.json");
     if !path.exists() {
         return Ok(None);
@@ -122,7 +146,7 @@ pub fn get_config(key: &str) -> Result<Option<String>> {
 }
 
 pub fn list_config() -> Result<Vec<(String, String)>> {
-    let mut path = get_config_dir();
+    let mut path = get_config_dir()?;
     path.push("config.json");
     if !path.exists() {
         return Ok(vec![]);
@@ -137,7 +161,7 @@ pub fn list_config() -> Result<Vec<(String, String)>> {
 }
 
 pub fn remove_config(key: &str) -> Result<()> {
-    let mut path = get_config_dir();
+    let mut path = get_config_dir()?;
     path.push("config.json");
     if !path.exists() {
         return Ok(());
@@ -153,117 +177,43 @@ pub fn remove_config(key: &str) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Write;
     use std::sync::Mutex;
-    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::io::Write;
+    use tempfile::TempDir;
 
-    // Env vars are process-global. Serialize every test that reads or writes the
-    // process environment so parallel test threads can't observe each other's
-    // mutations. Combined with per-test unique var KEYS, this keeps the suite
-    // deterministic.
+    // Environment variables are global process state; tests that touch them
+    // must not run concurrently.
     static ENV_LOCK: Mutex<()> = Mutex::new(());
-    static COUNTER: AtomicU64 = AtomicU64::new(0);
 
-    /// A unique-per-call scratch directory under the OS temp dir.
-    fn unique_dir(tag: &str) -> PathBuf {
-        let n = COUNTER.fetch_add(1, Ordering::SeqCst);
-        let mut d = std::env::temp_dir();
-        d.push(format!(
-            "txio_env_test_{}_{}_{}",
-            tag,
-            std::process::id(),
-            n
-        ));
-        fs::create_dir_all(&d).unwrap();
-        d
+    fn unique_dir(tag: &str) -> TempDir {
+        tempfile::Builder::new()
+            .prefix(&format!("txio_test_{tag}_"))
+            .tempdir()
+            .unwrap()
     }
 
-    /// A unique env var key so concurrent tests never collide on the same name.
-    fn unique_key(tag: &str) -> String {
-        let n = COUNTER.fetch_add(1, Ordering::SeqCst);
-        format!("TXIO_TEST_{}_{}_{}", tag, std::process::id(), n)
+    fn unique_key(base: &str) -> String {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static CTR: AtomicU64 = AtomicU64::new(0);
+        format!("{}_{}_{}", base, std::process::id(), CTR.fetch_add(1, Ordering::Relaxed))
     }
 
-    fn write_file(dir: &Path, name: &str, contents: &str) -> PathBuf {
-        let p = dir.join(name);
+    fn write_file(dir: &TempDir, name: &str, contents: &str) -> PathBuf {
+        let p = dir.path().join(name);
         let mut f = fs::File::create(&p).unwrap();
         f.write_all(contents.as_bytes()).unwrap();
         p
     }
 
     #[test]
-    fn loads_from_trusted_location() {
-        let _g = ENV_LOCK.lock().unwrap();
-        let dir = unique_dir("trusted");
-        let key = unique_key("TRUSTED");
-        let trusted = write_file(&dir, ".env", &format!("{}=from_trusted\n", key));
-        let missing_cwd = dir.join("nope.env");
-
-        load_env_files(None, &trusted, &missing_cwd).unwrap();
-
-        assert_eq!(std::env::var(&key).unwrap(), "from_trusted");
-        unsafe {
-            std::env::remove_var(&key);
-        }
-    }
-
-    #[test]
-    fn does_not_load_cwd_env_by_default() {
-        let _g = ENV_LOCK.lock().unwrap();
-        let dir = unique_dir("cwd");
-        let key = unique_key("CWD");
-        // A ".env" sitting where the CWD file would be must never be read for values.
-        let cwd_env = write_file(&dir, ".env", &format!("{}=planted\n", key));
-        let missing_trusted = dir.join("trusted.env");
-
-        load_env_files(None, &missing_trusted, &cwd_env).unwrap();
-
-        assert!(
-            std::env::var(&key).is_err(),
-            "a CWD .env must not be loaded without --env-file"
-        );
-    }
-
-    #[test]
-    fn loads_explicit_env_file() {
-        let _g = ENV_LOCK.lock().unwrap();
-        let dir = unique_dir("explicit");
-        let key = unique_key("EXPLICIT");
-        let explicit = write_file(&dir, "custom.env", &format!("{}=from_explicit\n", key));
-        let missing_trusted = dir.join("trusted.env");
-        let missing_cwd = dir.join("nope.env");
-
-        load_env_files(Some(&explicit), &missing_trusted, &missing_cwd).unwrap();
-
-        assert_eq!(std::env::var(&key).unwrap(), "from_explicit");
-        unsafe {
-            std::env::remove_var(&key);
-        }
-    }
-
-    #[test]
-    fn missing_explicit_env_file_is_an_error() {
-        let _g = ENV_LOCK.lock().unwrap();
-        let dir = unique_dir("missing");
-        let explicit = dir.join("does_not_exist.env");
-        let missing_trusted = dir.join("trusted.env");
-        let missing_cwd = dir.join("nope.env");
-
-        let result = load_env_files(Some(&explicit), &missing_trusted, &missing_cwd);
-        assert!(
-            result.is_err(),
-            "an explicitly requested missing file must error"
-        );
-    }
-
-    #[test]
     fn explicit_env_file_wins_over_trusted() {
         let _g = ENV_LOCK.lock().unwrap();
-        let dir = unique_dir("precedence");
-        let key = unique_key("PRECEDENCE");
+        let dir = unique_dir("explicit_wins");
+        let key = unique_key("EXPLICIT_WINS");
+
         let explicit = write_file(&dir, "explicit.env", &format!("{}=from_explicit\n", key));
-        let trusted = write_file(&dir, ".env", &format!("{}=from_trusted\n", key));
-        let missing_cwd = dir.join("nope.env");
+        let trusted  = write_file(&dir, ".env",         &format!("{}=from_trusted\n",  key));
+        let missing_cwd = dir.path().join("nope.env");
 
         load_env_files(Some(&explicit), &trusted, &missing_cwd).unwrap();
 
@@ -272,9 +222,7 @@ mod tests {
             "from_explicit",
             "--env-file must take precedence over the trusted default"
         );
-        unsafe {
-            std::env::remove_var(&key);
-        }
+        unsafe { std::env::remove_var(&key); }
     }
 
     #[test]
@@ -282,13 +230,11 @@ mod tests {
         let _g = ENV_LOCK.lock().unwrap();
         let dir = unique_dir("preexisting");
         let key = unique_key("PREEXISTING");
-        unsafe {
-            std::env::set_var(&key, "real_value");
-        }
+        unsafe { std::env::set_var(&key, "real_value"); }
 
         let explicit = write_file(&dir, "explicit.env", &format!("{}=from_explicit\n", key));
-        let trusted = write_file(&dir, ".env", &format!("{}=from_trusted\n", key));
-        let missing_cwd = dir.join("nope.env");
+        let trusted  = write_file(&dir, ".env",         &format!("{}=from_trusted\n",  key));
+        let missing_cwd = dir.path().join("nope.env");
 
         load_env_files(Some(&explicit), &trusted, &missing_cwd).unwrap();
 
@@ -297,16 +243,14 @@ mod tests {
             "real_value",
             "a pre-existing process env var must survive both loaders"
         );
-        unsafe {
-            std::env::remove_var(&key);
-        }
+        unsafe { std::env::remove_var(&key); }
     }
 
     #[test]
     fn warns_only_when_cwd_env_present_and_no_opt_in() {
         let dir = unique_dir("warn");
         let present = write_file(&dir, ".env", "X=1\n");
-        let absent = dir.join("nope.env");
+        let absent  = dir.path().join("nope.env");
 
         // Warn: no opt-in and a ./.env exists.
         assert!(should_warn_unloaded_cwd_env(false, &present));

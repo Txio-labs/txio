@@ -63,4 +63,17 @@ impl RequestRepository {
         self.collection.delete_many(filter, None).await?;
         Ok(())
     }
+
+    /// Delete all requests for a collection within an active MongoDB session/transaction.
+    pub async fn delete_all_by_collection_with_session(
+        &self,
+        collection_id: ObjectId,
+        session: &mut mongodb::ClientSession,
+    ) -> Result<(), AppError> {
+        let filter = doc! { "collection_id": collection_id };
+        self.collection
+            .delete_many_with_session(filter, None, session)
+            .await?;
+        Ok(())
+    }
 }

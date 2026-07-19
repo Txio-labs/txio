@@ -34,14 +34,15 @@ COPY --from=builder /app/target/release/txio-api /app/api
 # Copy CLI binary to system PATH so TerminalService can find it
 COPY --from=builder /app/target/release/txio /usr/local/bin/txio
 
-# Create a temporary directory for cargo operations if needed
-RUN mkdir -p /app/temp
+# Create a dedicated non-root user and grant it access to runtime paths.
+RUN install -d -o 10001 -g 10001 /app/temp
+USER 10001:10001
 
 # Set environment variables
 ENV RUST_LOG=info
 ENV MONGO_URI=mongodb://mongodb:27017/txio
 
-EXPOSE 3000
+EXPOSE 8000
 
 # The entrypoint is the backend API
 CMD ["./api"]
