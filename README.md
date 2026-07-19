@@ -8,7 +8,7 @@
   <p align="center">
     <strong>One terminal. Every chain.</strong>
     <br />
-    A unified terminal experience for Sui, Ethereum, Solana, Aptos, and Soroban.
+    Bring Sui, Ethereum, Solana, Aptos, and Soroban under one unified CLI.
   </p>
   <p align="center">
     <a href="https://crates.io/crates/txio"><img src="https://img.shields.io/crates/v/txio.svg?style=flat-square" alt="Crates.io"></a>
@@ -20,48 +20,48 @@
 
 ## What is txio?
 
-`txio` combines five chain CLIs into one consistent developer interface.
-It wraps Sui, Ethereum, Solana, Aptos, and Soroban behind shared commands,
-flags, and conventions so you can stay in one terminal and switch networks fast.
+`txio` unifies five chain CLIs into one polished developer interface.
+It wraps Sui, Ethereum, Solana, Aptos, and Soroban with shared commands,
+flags, and conventions so you can stay in a single terminal and switch networks instantly.
 
-- Unified commands across chains
-- Shared flags and network switching
-- Human-readable names and output
-- Built for CLI-first and full-stack workflows
+- Unified commands across all supported chains
+- Consistent flags and network semantics
+- Human-friendly name resolution for `.sui`, `.eth`, and more
+- Designed for CLI-first and full-stack workflows
 
 ---
 
 ## Why it matters
 
-Multi-chain development should feel seamless, not scattered.
-Today’s ecosystem is broken by:
+Multi-chain development should feel seamless, not fractured.
+The current ecosystem is held back by:
 
-- Separate install flows for every chain CLI
-- Different flags for network selection
-- Chain-specific config files and runtime conventions
-- Raw wallet addresses instead of readable names
+- Different install flows for each chain CLI
+- Inconsistent network flags and config formats
+- Multiple runtime conventions and tooling assumptions
+- Raw addresses instead of readable names
 
-`txio` turns that fragmentation into one polished workflow.
-
----
-
-## What you get
-
-- **One interface, five chains** — consistent UX for Sui, Ethereum, Solana, Aptos, and Soroban
-- **Instant network switching** — `--network testnet`, `mainnet`, or `devnet` works everywhere
-- **Smart name resolution** — `.sui`, `.eth`, and other namespaces resolve automatically
-- **Readable outputs** — clean terminal tables with raw JSON via `--pretty`
-- **Full-stack setup** — start API, dashboard, and database together with Docker Compose
+`txio` turns cross-chain complexity into a smooth, consistent workflow.
 
 ---
 
-## Highlights
+## Key benefits
+
+- **One interface, five chains** — same UX for Sui, Ethereum, Solana, Aptos, and Soroban
+- **Instant network switching** — use `--network testnet`, `mainnet`, or `devnet` everywhere
+- **Automatic name resolution** — `.sui`, `.eth`, and other namespaces resolve automatically
+- **Readable output** — clean terminal tables with raw JSON available via `--pretty`
+- **Full-stack boot** — launch API, dashboard, and database together with Docker Compose
+
+---
+
+## Features
 
 - Unified chain commands and shared flags
 - Namespace-first address resolution
-- Zero-config network selection
+- Dynamic network selection without config changes
 - CLI auth via `login`
-- Polished terminal output with JSON fallback
+- Terminal-friendly formatting with JSON fallback
 - Docker Compose orchestration for backend, frontend, and datastore
 
 ---
@@ -95,7 +95,7 @@ cd txio
 npm install
 ```
 
-### 2. Boot the full stack
+### 2. Start the stack
 
 ```bash
 cp .env.example backend/api/.env
@@ -114,7 +114,7 @@ cargo run -- sui balance aliphatic.sui
 cargo run -- --network testnet eth balance 0x...
 ```
 
-> `txio --help` shows the full command surface.
+> Run `txio --help` to explore the full command surface.
 
 ---
 
@@ -133,3 +133,5 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
 ## License
 
 MIT — see [LICENSE](./LICENSE).
+
+[implement GitHub OAuth account linking (stubbed in two places)](https://contribute.grantfox.xyz/campaigns/org/Txio-labs/repo/txio/issue/153)
