@@ -13,10 +13,6 @@ pub struct SorobanAdapter {
 }
 
 impl SorobanAdapter {
-    pub fn new() -> Self {
-        Self::with_rpc(None, Network::Mainnet)
-    }
-
     fn horizon_url(&self) -> &'static str {
         self.horizon_url
     }

@@ -7,8 +7,8 @@ use crate::services::sui_service::SuiService;
 use crate::utils::error::AppError;
 use mongodb::{Database, bson::oid::ObjectId};
 use serde_json::Value;
-use url::Url;
 use std::net::IpAddr;
+use url::{Host, Url};
 
 #[derive(Clone)]
 pub struct CollectionService {
@@ -75,36 +75,30 @@ impl CollectionService {
             ));
         }
 
-        let host = url
-            .host_str()
-            .ok_or_else(|| AppError::BadRequest("URL must include a host".into()))?;
+        let host = url.host().ok_or_else(|| AppError::BadRequest("URL must include a host".into()))?;
 
-        // Reject the bare "localhost" name before DNS is involved.
-        if host.eq_ignore_ascii_case("localhost") {
-            return Err(AppError::BadRequest("Localhost URLs are not allowed".into()));
-        }
+        match host {
+            Host::Domain(domain) => {
+                if domain.eq_ignore_ascii_case("localhost") {
+                    return Err(AppError::BadRequest("Localhost URLs are not allowed".into()));
+                }
 
-        // Fast path: literal IP addresses are validated directly without DNS.
-        // url::Url::host_str() strips the brackets from IPv6 literals.
-        if let Ok(ip) = host.parse::<IpAddr>() {
-            return Self::check_ip_allowed(ip);
-        }
+                let port = url.port_or_known_default().unwrap_or(443);
+                let lookup_target = format!("{}:{}", domain, port);
 
-        // Hostname path: resolve all addresses and reject if any is disallowed.
-        // Using the URL's explicit port when present keeps the lookup accurate;
-        // port 443 is used as a fallback because HTTPS is the only permitted scheme.
-        let port = url.port_or_known_default().unwrap_or(443);
-        let lookup_target = format!("{}:{}", host, port);
+                let addrs = tokio::net::lookup_host(&lookup_target).await.map_err(|e| {
+                    AppError::BadRequest(format!(
+                        "DNS resolution failed for '{}': {}",
+                        domain, e
+                    ))
+                })?;
 
-        let addrs = tokio::net::lookup_host(&lookup_target).await.map_err(|e| {
-            AppError::BadRequest(format!(
-                "DNS resolution failed for '{}': {}",
-                host, e
-            ))
-        })?;
-
-        for addr in addrs {
-            Self::check_ip_allowed(addr.ip())?;
+                for addr in addrs {
+                    Self::check_ip_allowed(addr.ip())?;
+                }
+            }
+            Host::Ipv4(v4) => Self::check_ip_allowed(IpAddr::V4(v4))?,
+            Host::Ipv6(v6) => Self::check_ip_allowed(IpAddr::V6(v6))?,
         }
 
         Ok(())
@@ -119,8 +113,7 @@ impl CollectionService {
         };
         if is_disallowed {
             return Err(AppError::BadRequest(format!(
-                "Resolved address {} is not allowed \
-                 (loopback, private, link-local, or metadata range)",
+                "Resolved address {} is not allowed (loopback, private, link-local, or metadata range)",
                 ip
             )));
         }
