@@ -3,7 +3,7 @@ use crate::chains::validation::validate_solana_address;
 use crate::cli::parser::Network;
 use async_trait::async_trait;
 use serde_json::{json, Value};
-use anyhow::{Result, anyhow};
+use anyhow::Result;
 use reqwest::Client;
 
 pub struct SolanaAdapter {
@@ -12,10 +12,6 @@ pub struct SolanaAdapter {
 }
 
 impl SolanaAdapter {
-    pub fn new() -> Self {
-        Self::with_rpc(None, Network::Mainnet)
-    }
-
     pub fn with_rpc(rpc_url: Option<String>, network: Network) -> Self {
         let url = rpc_url.unwrap_or_else(|| match network {
             Network::Mainnet => "https://api.mainnet-beta.solana.com".to_string(),

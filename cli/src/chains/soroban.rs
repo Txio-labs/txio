@@ -12,10 +12,6 @@ pub struct SorobanAdapter {
 }
 
 impl SorobanAdapter {
-    pub fn new() -> Self {
-        Self::with_rpc(None, Network::Mainnet)
-    }
-
     fn horizon_url(&self) -> &'static str {
         if self.rpc_url.contains("mainnet") {
             "https://horizon.stellar.org"
