@@ -95,17 +95,28 @@ export const PTBBuilder: React.FC = () => {
     const [splitOutputs, setSplitOutputs] = useState('split_1, split_2');
 
     useEffect(() => {
+        let isSubscribed = true;
         if (activeModal === 'addObject' && connectedAddress) {
-            setLoadingOwned(true);
-            getOwnedObjects(network, connectedAddress)
-                .then(res => {
-                    if (res?.result?.data) {
-                        setOwnedObjects(res.result.data);
-                    }
-                })
-                .catch(() => {})
-                .finally(() => setLoadingOwned(false));
+            queueMicrotask(() => {
+                if (!isSubscribed) return;
+                setLoadingOwned(true);
+                getOwnedObjects(network, connectedAddress)
+                    .then(res => {
+                        if (isSubscribed && res?.result?.data) {
+                            setOwnedObjects(res.result.data);
+                        }
+                    })
+                    .catch(() => {})
+                    .finally(() => {
+                        if (isSubscribed) {
+                            setLoadingOwned(false);
+                        }
+                    });
+            });
         }
+        return () => {
+            isSubscribed = false;
+        };
     }, [activeModal, connectedAddress, network]);
 
     // Simple Drag Logic
