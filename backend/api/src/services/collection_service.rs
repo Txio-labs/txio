@@ -59,10 +59,23 @@ impl CollectionService {
         if url.scheme() != "https" {
             return Err(AppError::BadRequest("Only HTTPS RPC URLs are allowed".into()));
         }
-        // Disallow localhost and loopback IPs
         if let Some(host) = url.host_str() {
-            if host == "localhost" {
-                return Err(AppError::BadRequest("Localhost URLs are not allowed".into()));
+            // Block well-known private and loopback hostnames. Note: this is a
+            // best-effort check on the URL string. For complete SSRF protection
+            // the egress/resolution layer must also enforce private-address
+            // blocking, since a user-controlled hostname can resolve to a
+            // private IP even when it passes this check.
+            let lower = host.to_lowercase();
+            if lower == "localhost"
+                || lower.ends_with(".local")
+                || lower.ends_with(".internal")
+                || lower.ends_with(".localhost")
+                || lower == "metadata.google.internal"
+                || lower == "169.254.169.254"
+            {
+                return Err(AppError::BadRequest(
+                    "Private, internal, or metadata hostnames are not allowed".into(),
+                ));
             }
             // If host is an IP address, check for private ranges
             if let Ok(ip) = host.parse::<IpAddr>() {

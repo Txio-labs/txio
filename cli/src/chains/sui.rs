@@ -105,6 +105,10 @@ impl SuiAdapter {
                 }
 
                 if !unique_names.is_empty() {
+                    // Sort longest-first so a shorter name (e.g. "alice.sui") is never
+                    // replaced inside a longer one (e.g. "foo-alice.sui") before the
+                    // longer one gets its turn.
+                    unique_names.sort_by(|left, right| right.len().cmp(&left.len()));
                     // Resolve each unique name once, then apply all replacements.
                     let mut new_string = s.to_string();
                     for name in unique_names {
@@ -362,8 +366,8 @@ mod tests {
         let counter = resolve_count.clone();
 
         let server = tokio::spawn(async move {
-            // Allow up to 3 requests but record how many resolve calls arrive.
-            for _ in 0..3 {
+            // One resolution request and one actual RPC request.
+            for _ in 0..2 {
                 let Ok((mut socket, _)) = listener.accept().await else { break };
                 let mut buf = vec![0u8; 8192];
                 let Ok(n) = socket.read(&mut buf).await else { break };

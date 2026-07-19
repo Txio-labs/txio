@@ -369,6 +369,7 @@ mod oauth_tests {
             tier: crate::model::user::PlanTier::Free,
             network: crate::model::user::SuiNetwork::Mainnet,
             created_at: Utc::now(),
+            notification_preferences: crate::model::user::NotificationPreferences::default(),
         }
     }
 

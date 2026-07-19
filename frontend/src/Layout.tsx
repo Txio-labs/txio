@@ -162,12 +162,14 @@ export const Layout: React.FC<LayoutProps> = ({
             <footer className="h-7 bg-near-black border-t border-white/[0.06] flex items-center justify-between px-3 text-[11px] text-slate-500 select-none">
                 <div className="flex items-center gap-4">
                     <span className="flex items-center gap-1.5 hover:text-slate-300 cursor-pointer transition-colors"><Settings size={11} /> v2.4.0</span>
-                    <span
+                    <button
+                        type="button"
+                        aria-label="Toggle terminal"
                         onClick={() => appStore.toggleTerminal()}
                         className={`flex items-center gap-1.5 cursor-pointer transition-colors ${useAppStore().isTerminalOpen ? 'text-electric-violet' : 'hover:text-slate-300'}`}
                     >
                         <Terminal size={11} /> Terminal
-                    </span>
+                    </button>
                     <span className="hover:text-slate-300 cursor-pointer transition-colors">0 Errors</span>
                 </div>
                 <div className="flex items-center gap-4">

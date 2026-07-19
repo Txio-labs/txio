@@ -23,6 +23,9 @@ RUN cargo build --release --package txio-api --package txio
 # Use a minimal base image for runtime to reduce attack surface
 FROM debian:bookworm-slim
 
+# Add a non-root system user so the process never runs as root.
+RUN useradd --system --uid 10001 txio
+
 WORKDIR /app
 
 # Install runtime dependencies
@@ -36,6 +39,10 @@ COPY --from=builder /app/target/release/txio /usr/local/bin/txio
 
 # Create a temporary directory for cargo operations if needed
 RUN mkdir -p /app/temp
+
+# Transfer ownership to the non-root user before switching to it.
+RUN chown -R txio:txio /app
+USER txio
 
 # Set environment variables
 ENV RUST_LOG=info

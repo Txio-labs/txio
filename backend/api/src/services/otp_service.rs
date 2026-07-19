@@ -22,14 +22,17 @@ impl OTPService {
     pub async fn generate_otp(&self, email: &str) -> Result<String, AppError> {
         let now = Utc::now();
 
-        if let Ok(existing_otp) = self.repository.find_by_email(email).await {
-            if now < existing_otp.created_at + Duration::seconds(OTP_SEND_COOLDOWN_SECONDS) {
-                return Err(AppError::BadRequest(
-                    "OTP request rate limit exceeded. Please try again later.".into(),
-                ));
+        match self.repository.find_by_email(email).await {
+            Ok(existing_otp) => {
+                if now < existing_otp.created_at + Duration::seconds(OTP_SEND_COOLDOWN_SECONDS) {
+                    return Err(AppError::BadRequest(
+                        "OTP request rate limit exceeded. Please try again later.".into(),
+                    ));
+                }
+                self.repository.delete_by_email(email).await?;
             }
-
-            let _ = self.repository.delete_by_email(email).await;
+            Err(AppError::NotFound(_)) => {} // No existing OTP — continue normally
+            Err(e) => return Err(e),         // Propagate unexpected repository errors
         }
 
         let code = generate_otp(OTP_LENGTH);

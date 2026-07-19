@@ -43,8 +43,11 @@ impl RequestRepository {
     pub async fn update(&self, request: &SavedRequest) -> Result<SavedRequest, AppError> {
         let id = request.id.ok_or(AppError::InternalError("Cannot update request without ID".into()))?;
         let filter = doc! { "_id": id };
-        
-        self.collection.replace_one(filter, request, None).await?;
+
+        let result = self.collection.replace_one(filter, request, None).await?;
+        if result.matched_count == 0 {
+            return Err(AppError::NotFound(format!("Request not found with id: {}", id)));
+        }
         Ok(request.clone())
     }
 
