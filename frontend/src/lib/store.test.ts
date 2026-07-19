@@ -39,6 +39,13 @@ const user = {
     name: 'Ada Lovelace'
 };
 
+const defaultNotificationPreferences = {
+    emailDigests: true,
+    emailSecurityAlerts: true,
+    inAppActivityAlerts: true,
+    inAppProductUpdates: false
+};
+
 const workspace = {
     id: 'workspace-1',
     name: 'Core Protocol',
@@ -148,7 +155,11 @@ describe('appStore auth and session state', () => {
                     'txio_user'
                 ) || 'null'
             )
-        ).toEqual(user);
+        ).toEqual({
+            ...user,
+            notificationPreferences:
+                defaultNotificationPreferences
+        });
         expect(
             localStorage.getItem(
                 'txio_current_workspace'
@@ -258,6 +269,9 @@ describe('appStore auth and session state', () => {
             apiService,
             ApiError
         } = await loadStore();
+        apiService.getWorkspaces.mockResolvedValue(
+            []
+        );
         apiService.getProfile.mockRejectedValue(
             new ApiError('Unauthorized', 401)
         );

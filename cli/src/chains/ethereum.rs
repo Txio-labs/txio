@@ -19,10 +19,6 @@ pub struct EthereumAdapter {
 }
 
 impl EthereumAdapter {
-    pub fn new() -> Self {
-        Self::with_rpc(None, Network::Mainnet)
-    }
-
     pub fn with_rpc(rpc_url: Option<String>, network: Network) -> Self {
         let url = rpc_url.unwrap_or_else(|| match network {
             Network::Mainnet => "https://eth.llamarpc.com".to_string(),
