@@ -32,10 +32,6 @@ pub struct SuiAdapter {
 }
 
 impl SuiAdapter {
-    pub fn new() -> Self {
-        Self::with_rpc(None, Network::Mainnet)
-    }
-
     pub fn with_rpc(rpc_url: Option<String>, network: Network) -> Self {
         let url = rpc_url.unwrap_or_else(|| match network {
             Network::Mainnet => "https://fullnode.mainnet.sui.io".to_string(),
@@ -362,8 +358,9 @@ mod tests {
         let counter = resolve_count.clone();
 
         let server = tokio::spawn(async move {
-            // Allow up to 3 requests but record how many resolve calls arrive.
-            for _ in 0..3 {
+            // Exactly 2 requests are expected: one resolve call (deduped) and
+            // one real call carrying the resolved address.
+            for _ in 0..2 {
                 let Ok((mut socket, _)) = listener.accept().await else { break };
                 let mut buf = vec![0u8; 8192];
                 let Ok(n) = socket.read(&mut buf).await else { break };

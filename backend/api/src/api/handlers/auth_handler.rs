@@ -8,6 +8,7 @@ use crate::dtos::{
     response::{AuthResponse, UserResponse},
 };
 use crate::services::auth_service::AuthService;
+use crate::services::otp_service::constant_time_eq;
 use crate::utils::error::AppError;
 use axum::{Json, extract::State, http::header, response::IntoResponse};
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};

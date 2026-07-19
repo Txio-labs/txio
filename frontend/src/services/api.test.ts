@@ -82,7 +82,13 @@ describe('apiService', () => {
                 email: 'ada@example.com',
                 name: 'Ada Lovelace',
                 avatarUrl: undefined,
-                bannerUrl: undefined
+                bannerUrl: undefined,
+                notificationPreferences: {
+                    emailDigests: true,
+                    emailSecurityAlerts: true,
+                    inAppActivityAlerts: true,
+                    inAppProductUpdates: false
+                }
             }
         });
         expect(

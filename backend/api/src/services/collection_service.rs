@@ -7,8 +7,7 @@ use crate::services::sui_service::SuiService;
 use crate::utils::error::AppError;
 use mongodb::bson::oid::ObjectId;
 use serde_json::Value;
-use url::Url;
-use std::net::IpAddr;
+use url::{Host, Url};
 
 #[derive(Clone)]
 pub struct CollectionService {
@@ -60,22 +59,21 @@ impl CollectionService {
             return Err(AppError::BadRequest("Only HTTPS RPC URLs are allowed".into()));
         }
         // Disallow localhost and loopback IPs
-        if let Some(host) = url.host_str() {
-            if host == "localhost" {
+        match url.host() {
+            Some(Host::Domain(domain)) if domain == "localhost" => {
                 return Err(AppError::BadRequest("Localhost URLs are not allowed".into()));
             }
-            // If host is an IP address, check for private ranges
-            if let Ok(ip) = host.parse::<IpAddr>() {
-                let is_disallowed = match ip {
-                    IpAddr::V4(v4) => v4.is_loopback() || v4.is_private() || v4.is_link_local(),
-                    IpAddr::V6(v6) => {
-                        v6.is_loopback() || v6.is_unique_local() || v6.is_unicast_link_local()
-                    }
-                };
-                if is_disallowed {
+            Some(Host::Ipv4(v4)) => {
+                if v4.is_loopback() || v4.is_private() || v4.is_link_local() {
                     return Err(AppError::BadRequest("Private or link‑local IP addresses are not allowed".into()));
                 }
             }
+            Some(Host::Ipv6(v6)) => {
+                if v6.is_loopback() || v6.is_unique_local() || v6.is_unicast_link_local() {
+                    return Err(AppError::BadRequest("Private or link‑local IP addresses are not allowed".into()));
+                }
+            }
+            _ => {}
         }
         Ok(())
     }
