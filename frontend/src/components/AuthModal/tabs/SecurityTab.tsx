@@ -11,7 +11,7 @@ import { appStore } from '@/lib/store';
 export const SecurityTab: React.FC = () => {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-      <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(145deg,rgba(167,139,250,0.12)_0%,rgba(10,10,14,0.96)_40%,rgba(6,6,8,1)_100%)] p-6">
+      <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(145deg,rgba(127,196,227,0.12)_0%,rgba(0,49,82,0.96)_40%,rgba(0,27,46,1)_100%)] p-6">
         <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-electric-violet/15 blur-3xl" />
 
         <div className="relative">
@@ -31,7 +31,7 @@ export const SecurityTab: React.FC = () => {
       </section>
 
       <div className="grid gap-6 xl:grid-cols-3">
-        <div className="rounded-[1.75rem] border border-white/10 bg-[#0b0b10]/85 p-5">
+        <div className="rounded-[1.75rem] border border-white/10 bg-[#003152]/85 p-5">
           <div className="flex items-start gap-3">
             <div className="rounded-2xl bg-amber-500/10 p-3 text-amber-400">
               <Smartphone size={18} />
@@ -57,7 +57,7 @@ export const SecurityTab: React.FC = () => {
           </button>
         </div>
 
-        <div className="rounded-[1.75rem] border border-white/10 bg-[#0b0b10]/85 p-5">
+        <div className="rounded-[1.75rem] border border-white/10 bg-[#003152]/85 p-5">
           <div className="flex items-start gap-3">
             <div className="rounded-2xl bg-electric-violet/10 p-3 text-electric-violet">
               <KeyRound size={18} />
@@ -80,13 +80,13 @@ export const SecurityTab: React.FC = () => {
                 'info'
               )
             }
-            className="mt-5 w-full rounded-2xl bg-electric-violet px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white shadow-[0_18px_35px_-20px_rgba(123,63,242,0.8)] transition-colors hover:bg-soft-purple"
+            className="mt-5 w-full rounded-2xl bg-electric-violet px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white shadow-[0_18px_35px_-20px_rgba(173,223,241,0.8)] transition-colors hover:bg-soft-purple"
           >
             Rotate Password
           </button>
         </div>
 
-        <div className="rounded-[1.75rem] border border-white/10 bg-[#0b0b10]/85 p-5">
+        <div className="rounded-[1.75rem] border border-white/10 bg-[#003152]/85 p-5">
           <div className="flex items-start gap-3">
             <div className="rounded-2xl bg-emerald-500/10 p-3 text-emerald-400">
               <RefreshCcw size={18} />
@@ -116,7 +116,7 @@ export const SecurityTab: React.FC = () => {
         </div>
       </div>
 
-      <section className="rounded-[1.75rem] border border-white/10 bg-[#0b0b10]/85 p-5">
+      <section className="rounded-[1.75rem] border border-white/10 bg-[#003152]/85 p-5">
         <div className="flex items-start gap-3">
           <div className="rounded-2xl bg-soft-purple/10 p-3 text-soft-purple">
             <Sparkles size={18} />

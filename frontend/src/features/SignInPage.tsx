@@ -59,14 +59,29 @@ export const SignInPage: React.FC = () => {
                 appStore.setViewMode('app');
 
                 try {
+                    const profilePromise =
+                        apiService.getProfile();
+                    const workspacesPromise =
+                        apiService.getWorkspaces();
+
+                    void workspacesPromise.catch(
+                        () => undefined
+                    );
+
                     // Fetch authenticated user
-                    const user = await apiService.getProfile();
+                    const user = await profilePromise;
 
                     // Save user
                     appStore.updateUser(user);
 
                     try {
-                        await appStore.fetchWorkspaces();
+                        const workspaces =
+                            await workspacesPromise;
+
+                        await appStore.fetchWorkspaces(
+                            undefined,
+                            workspaces
+                        );
                     } catch (workspaceError) {
                         console.error(
                             'Workspace fetch failed:',
@@ -202,7 +217,7 @@ export const SignInPage: React.FC = () => {
                     className="absolute inset-0 opacity-20"
                     style={{
                         backgroundImage:
-                            'radial-gradient(circle at 2px 2px, #7b3ff2 1px, transparent 0)',
+                            'radial-gradient(circle at 2px 2px, #ADDFF1 1px, transparent 0)',
                         backgroundSize: '30px 30px'
                     }}
                 />
@@ -415,7 +430,7 @@ export const SignInPage: React.FC = () => {
                             <span
                                 className={`relative px-4 text-[10px] font-bold uppercase tracking-widest ${
                                     theme === 'dark'
-                                        ? 'bg-[#0a0a0a] text-slate-600'
+                                        ? 'bg-[#001B2E] text-slate-600'
                                         : 'bg-white text-slate-400'
                                 }`}
                             >

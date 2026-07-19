@@ -358,7 +358,7 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
     const saveButtonClass = (() => {
         if (save.status === 'saved') return 'bg-emerald-500/[0.15] text-emerald-300 border border-emerald-500/30';
         if (save.status === 'error') return 'bg-rose-500/[0.15] text-rose-300 border border-rose-500/30 hover:bg-rose-500/20';
-        return 'bg-electric-violet hover:bg-electric-violet/90 text-white shadow-[0_0_20px_-8px_rgba(123,63,242,0.6)]';
+        return 'bg-electric-violet hover:bg-electric-violet/90 text-white shadow-[0_0_20px_-8px_rgba(173,223,241,0.6)]';
     })();
 
     const isSaveDisabled = !isDirty || save.status === 'saving' || save.status === 'saved';
@@ -381,7 +381,7 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
                             </>
                         ) : (
                             <>
-                                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(123,63,242,0.18),_transparent_60%)]" />
+                                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(173,223,241,0.18),_transparent_60%)]" />
                                 <div className="absolute inset-0 dot-grid opacity-20" style={{ backgroundSize: '18px 18px' }} />
                             </>
                         )}

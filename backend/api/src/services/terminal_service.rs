@@ -216,12 +216,10 @@ impl TerminalService {
         let cmd = &parts[0];
         let args = &parts[1..];
 
-        if cmd != "txio" {
+        if let Err(error) = validate_txio_command(&parts) {
             return FinalizedExecution {
                 state: CommandExecutionState::Error,
-                output: Some(format!(
-                    "bash: command not found: {cmd}. Only 'txio' is authorized."
-                )),
+                output: Some(format!("Execution failed: {error}")),
                 stdout: None,
                 stderr: None,
                 exit_code: Some(127),
@@ -462,4 +460,116 @@ fn parse_command(input: &str) -> Result<Vec<String>, String> {
     }
 
     Ok(args)
+}
+
+fn validate_txio_command(parts: &[String]) -> Result<(), String> {
+    if parts.is_empty() {
+        return Err("Empty command".to_string());
+    }
+
+    let cmd = &parts[0];
+    if cmd != "txio" {
+        return Err(format!("Unsupported command: {cmd}. Only 'txio' is authorized."));
+    }
+
+    let args = &parts[1..];
+    let Some(first_arg) = args.first() else {
+        return Ok(());
+    };
+
+    match first_arg.as_str() {
+        "--help" | "-h" | "--version" | "-V" => {
+            if args.len() != 1 {
+                return Err("Usage: txio --help | txio --version".to_string());
+            }
+            Ok(())
+        }
+        "status" => {
+            if args.len() != 1 {
+                return Err("Usage: txio status".to_string());
+            }
+            Ok(())
+        }
+        "chains" => {
+            if args.len() != 1 {
+                return Err("Usage: txio chains".to_string());
+            }
+            Ok(())
+        }
+        "config" => {
+            match args.get(1).map(String::as_str) {
+                Some("list") => {
+                    if args.len() != 2 {
+                        return Err("Usage: txio config list".to_string());
+                    }
+                    Ok(())
+                }
+                Some("get") => {
+                    if args.len() != 3 || args[2].trim().is_empty() {
+                        return Err("Usage: txio config get <key>".to_string());
+                    }
+                    if !is_safe_config_key(&args[2]) {
+                        return Err("Unsupported config key".to_string());
+                    }
+                    Ok(())
+                }
+                Some(action) => Err(format!("Unsupported config action: {action}")),
+                None => Err("Usage: txio config list|get <key>".to_string()),
+            }
+        }
+        "profile" => {
+            if args.len() == 2 && args[1] == "list" {
+                Ok(())
+            } else {
+                Err("Usage: txio profile list".to_string())
+            }
+        }
+        "wallet" => {
+            if args.len() == 2 && args[1] == "list" {
+                Ok(())
+            } else {
+                Err("Usage: txio wallet list".to_string())
+            }
+        }
+        "completion" => {
+            if args.len() != 2 || !is_supported_shell(&args[1]) {
+                return Err("Usage: txio completion <bash|zsh|fish|powershell|elvish>"
+                    .to_string());
+            }
+            Ok(())
+        }
+        _ => Err(format!("Unsupported txio command: {}", args.join(" "))),
+    }
+}
+
+fn is_safe_config_key(key: &str) -> bool {
+    let safe = key
+        .chars()
+        .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '-' | '_' | '.'));
+    key.len() <= 64 && safe
+}
+
+fn is_supported_shell(shell: &str) -> bool {
+    matches!(shell, "bash" | "zsh" | "fish" | "powershell" | "elvish")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{parse_command, validate_txio_command};
+
+    #[test]
+    fn allows_only_vetted_txio_subcommands() {
+        let command = parse_command("txio status").expect("should parse");
+        assert!(validate_txio_command(&command).is_ok());
+
+        let help_command = parse_command("txio --help").expect("should parse");
+        assert!(validate_txio_command(&help_command).is_ok());
+
+        let blocked = parse_command("txio sui balance 0x123").expect("should parse");
+        assert!(validate_txio_command(&blocked).is_err());
+
+        let blocked_cargo = parse_command("cargo run --manifest-path /tmp/evil/Cargo.toml")
+            .expect("should parse");
+        assert!(validate_txio_command(&blocked_cargo).is_err());
+    }
 }

@@ -148,7 +148,7 @@ export const CommandPalette: React.FC = () => {
             onClick={() => appStore.setCommandPalette(false)}
         >
             <div 
-                className="w-full max-w-2xl bg-[#0c0c0e] border border-white/10 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[60vh] relative animate-in zoom-in-95 duration-200"
+                className="w-full max-w-2xl bg-[#003152] border border-white/10 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[60vh] relative animate-in zoom-in-95 duration-200"
                 onClick={e => e.stopPropagation()}
             >
                 <div className="flex items-center px-4 py-3 border-b border-white/5 bg-dark-indigo-glow/50">

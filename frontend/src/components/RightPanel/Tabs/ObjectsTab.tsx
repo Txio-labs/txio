@@ -70,7 +70,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
           </button>
           <span className="text-xs font-bold text-white">Object Details</span>
         </div>
-        <div className="flex-1 overflow-auto custom-scrollbar p-0 bg-[#0c0c0e]">
+        <div className="flex-1 overflow-auto custom-scrollbar p-0 bg-[#003152]">
           <div className="p-4 border-b border-white/10">
             <label className="text-[10px] uppercase font-black text-slate-600 tracking-widest block mb-1">Object ID</label>
             <div className="text-xs font-mono text-electric-violet break-all select-all">{selectedObject.objectId || selectedObject.data?.objectId}</div>
