@@ -228,12 +228,20 @@ export interface TeamUser {
   status: 'online' | 'offline' | 'busy';
 }
 
+export interface NotificationPreferences {
+  emailDigests: boolean;
+  emailSecurityAlerts: boolean;
+  inAppActivityAlerts: boolean;
+  inAppProductUpdates: boolean;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
   email: string;
   avatarUrl?: string;
   bannerUrl?: string;
+  notificationPreferences?: NotificationPreferences;
 }
 
 export interface TeamMember {
