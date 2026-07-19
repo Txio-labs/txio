@@ -358,8 +358,7 @@ mod tests {
         let counter = resolve_count.clone();
 
         let server = tokio::spawn(async move {
-            // Exactly 2 requests are expected: one resolve call (deduped) and
-            // one real call carrying the resolved address.
+            // One SuiNS lookup and one target RPC call are expected.
             for _ in 0..2 {
                 let Ok((mut socket, _)) = listener.accept().await else { break };
                 let mut buf = vec![0u8; 8192];
