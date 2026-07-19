@@ -362,9 +362,9 @@ mod tests {
         let counter = resolve_count.clone();
 
         let server = tokio::spawn(async move {
-            // Allow up to 3 requests but record how many resolve calls arrive.
-            for _ in 0..3 {
-                let Ok((mut socket, _)) = listener.accept().await else { break };
+            // One SuiNS lookup and one target RPC call are expected.
+            for _ in 0..2 {
+                let (mut socket, _) = listener.accept().await.unwrap();
                 let mut buf = vec![0u8; 8192];
                 let Ok(n) = socket.read(&mut buf).await else { break };
                 let request = String::from_utf8_lossy(&buf[..n]).to_string();

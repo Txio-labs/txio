@@ -604,7 +604,7 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
         return 'bg-electric-violet hover:bg-electric-violet/90 text-white shadow-[0_0_20px_-8px_rgba(173,223,241,0.6)]';
     })();
 
-    const isSaveDisabled = !isDirty || save.status === 'saving' || save.status === 'saved';
+    const isSaveDisabled = save.status === 'saving' || (!isDirty && save.status !== 'error');
 
     return (
         <div className="h-full bg-near-black overflow-y-auto custom-scrollbar">

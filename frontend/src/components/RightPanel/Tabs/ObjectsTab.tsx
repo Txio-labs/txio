@@ -33,6 +33,8 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
       if (res.result && res.result.data) {
         setSelectedObject(res.result.data);
       }
+    } catch {
+      setSelectedObject(null);
     } finally {
       setSearchLoading(false);
     }

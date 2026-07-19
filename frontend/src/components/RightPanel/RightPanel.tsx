@@ -70,20 +70,30 @@ export const RightPanel: React.FC<RightPanelProps> = ({
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
+  // A monotonically-increasing counter lets each fetch "tag" its own result.
+  // If a newer fetch starts (or dependencies change) while an earlier one is
+  // still in-flight, the stale result is discarded when it eventually resolves,
+  // preventing it from overwriting the current wallet's object list.
+  const fetchGenerationRef = useRef(0);
   const fetchObjects = useCallback(async () => {
     if (!connectedAddress) return;
+    const generation = ++fetchGenerationRef.current;
     setLoadingObjects(true);
     try {
       const res = await getOwnedObjects(network, connectedAddress);
+      if (fetchGenerationRef.current !== generation) return; // stale — discard
       if (res.result && res.result.data) {
         setObjects(res.result.data);
       } else {
         setObjects([]);
       }
-    } catch (e) {
+    } catch {
+      if (fetchGenerationRef.current !== generation) return; // stale — discard
       setObjects([]);
     } finally {
-      setLoadingObjects(false);
+      if (fetchGenerationRef.current === generation) {
+        setLoadingObjects(false);
+      }
     }
   }, [connectedAddress, network]);
 
