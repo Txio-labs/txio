@@ -2,7 +2,7 @@ use crate::dtos::admin_dtos::RpcLogRequest;
 use crate::dtos::request::{LoginRequest, RegisterUserRequest};
 use crate::dtos::response::{AuthResponse, UserResponse};
 use crate::model::rpc::RpcLog;
-use crate::model::user::User;
+use crate::model::user::{NotificationPreferences, User};
 use crate::repositories::rpc_repository::RpcRepository;
 use crate::repositories::user_repository::UserRepository;
 use crate::services::email_service::EmailService;
@@ -32,6 +32,7 @@ impl AuthService {
             name,
             email: user.email.clone(),
             created_at: user.created_at.to_string(),
+            notification_preferences: user.notification_preferences.clone(),
         }
     }
 
@@ -154,6 +155,19 @@ impl AuthService {
         Ok(Self::to_user_response(&updated_user))
     }
 
+    pub async fn update_notification_preferences_by_email(
+        &self,
+        email: &str,
+        preferences: NotificationPreferences,
+    ) -> Result<UserResponse, AppError> {
+        let mut user = self.repo.find_by_email(email).await?;
+        user.notification_preferences = preferences;
+
+        let updated_user = self.repo.update(&user).await?;
+
+        Ok(Self::to_user_response(&updated_user))
+    }
+
     pub async fn update_user_password_by_email(
         &self,
         email: &str,
@@ -266,7 +280,9 @@ fn verify_current_password(current_password: &str, password_hash: &str) -> Resul
     let is_valid = bcrypt::verify(current_password.as_bytes(), password_hash).unwrap_or(false);
 
     if !is_valid {
-        return Err(AppError::Unauthorized("Current password is incorrect".into()));
+        return Err(AppError::Unauthorized(
+            "Current password is incorrect".into(),
+        ));
     }
 
     Ok(())
