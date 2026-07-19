@@ -9,6 +9,7 @@ use reqwest::Client;
 pub struct SorobanAdapter {
     client: Client,
     rpc_url: String,
+    network: Network,
 }
 
 impl SorobanAdapter {
@@ -17,10 +18,11 @@ impl SorobanAdapter {
     }
 
     fn horizon_url(&self) -> &'static str {
-        if self.rpc_url.contains("mainnet") {
-            "https://horizon.stellar.org"
-        } else {
-            "https://horizon-testnet.stellar.org"
+        // Use the persisted network value — never infer from the RPC hostname,
+        // since a custom RPC URL may not contain "mainnet" even on mainnet.
+        match self.network {
+            Network::Mainnet => "https://horizon.stellar.org",
+            _ => "https://horizon-testnet.stellar.org",
         }
     }
 
@@ -38,6 +40,7 @@ impl SorobanAdapter {
                 .build()
                 .unwrap_or_else(|_| Client::new()),
             rpc_url: url,
+            network,
         }
     }
 }

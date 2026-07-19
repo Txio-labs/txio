@@ -1,6 +1,8 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 use anyhow::{Result, anyhow};
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 use serde_json;
 
 /// Load environment overrides for the CLI.
@@ -56,6 +58,10 @@ pub fn get_config_dir() -> PathBuf {
     path.push(".txio");
     if !path.exists() {
         fs::create_dir_all(&path).ok();
+        // Restrict to owner-only access (rwx------) so other local users
+        // cannot read tokens or config stored inside.
+        #[cfg(unix)]
+        let _ = fs::set_permissions(&path, fs::Permissions::from_mode(0o700));
     }
     path
 }
@@ -76,7 +82,11 @@ pub fn get_current_chain() -> Option<String> {
 pub fn save_token(token: &str) -> Result<()> {
     let mut path = get_config_dir();
     path.push("token");
-    fs::write(path, token)?;
+    fs::write(&path, token)?;
+    // Restrict to owner read/write only (rw-------) to protect the
+    // authentication credential from other local users.
+    #[cfg(unix)]
+    let _ = fs::set_permissions(&path, fs::Permissions::from_mode(0o600));
     Ok(())
 }
 

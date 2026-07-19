@@ -9,7 +9,7 @@ const createWindow = () => {
   const win = new BrowserWindow({
     width: 800,
     height: 600,
-    icon: path.join(__dirname, "../assets/logo/512x512.png")
+    icon: path.join(__dirname, "assets/logo/512x512.png")
   })
 
   win.loadFile(path.join(__dirname, "../dist/index.html"))
