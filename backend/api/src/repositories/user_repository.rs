@@ -1,9 +1,8 @@
-use mongodb::{Collection, Database};
 use crate::model::user::User;
 use crate::utils::error::AppError;
 use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
-
+use mongodb::{Collection, Database};
 
 #[derive(Clone)]
 pub struct UserRepository {
@@ -17,15 +16,13 @@ impl UserRepository {
     }
 
     pub async fn save(&self, user: &User) -> Result<User, AppError> {
-        let result = self.collection
-            .insert_one(user, None)
-            .await?;
-        
+        let result = self.collection.insert_one(user, None).await?;
+
         let mut user_with_id = user.clone();
         if let Some(inserted_id) = result.inserted_id.as_object_id() {
-             user_with_id.id = Some(inserted_id);
+            user_with_id.id = Some(inserted_id);
         }
-        
+
         Ok(user_with_id)
     }
 
@@ -39,6 +36,18 @@ impl UserRepository {
         Ok(user)
     }
 
+    pub async fn find_by_google_sub(&self, google_sub: &str) -> Result<User, AppError> {
+        let user = self
+            .collection
+            .find_one(doc! { "google_sub": google_sub }, None)
+            .await?
+            .ok_or(AppError::NotFound(
+                "User not found with Google subject".to_string(),
+            ))?;
+
+        Ok(user)
+    }
+
     pub async fn find_by_id(&self, id: &ObjectId) -> Result<User, AppError> {
         let user = self
             .collection
@@ -48,7 +57,6 @@ impl UserRepository {
 
         Ok(user)
     }
-    
 
     pub async fn delete_by_id(&self, id: &str) -> Result<User, AppError> {
         let object_id = ObjectId::parse_str(id)
@@ -92,4 +100,3 @@ impl UserRepository {
         Ok(emails)
     }
 }
-
