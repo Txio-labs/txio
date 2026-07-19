@@ -4,3 +4,4 @@ pub mod rpc_repository;
 pub mod collection_repository;
 pub mod request_repository;
 pub mod workspace_repository;
+pub mod session_repository;

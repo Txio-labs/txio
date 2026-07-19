@@ -269,3 +269,21 @@ export interface Comment {
   content: string;
   timestamp: number;
 }
+
+// --- Session Tracking ---
+
+/** A live sign-in session returned by GET /auth/sessions. */
+export interface ActiveSession {
+  /** MongoDB ObjectId of the session document — used as the revocation key. */
+  id: string;
+  /** Human-readable device label, e.g. "Chrome on macOS". */
+  device_label: string;
+  /** IP address recorded at sign-in time. */
+  ip_address: string;
+  /** ISO-8601 timestamp of when the session was created. */
+  created_at: string;
+  /** ISO-8601 timestamp of the last known activity. */
+  last_active_at: string;
+  /** True when this entry corresponds to the currently active JWT. */
+  is_current: boolean;
+}

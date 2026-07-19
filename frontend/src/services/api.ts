@@ -1,4 +1,5 @@
 import {
+    ActiveSession,
     CollectionNode,
     Network,
     RequestItem,
@@ -1164,6 +1165,18 @@ class ApiService {
         }
 
         return response;
+    }
+
+    // Sessions
+    async getSessions(): Promise<ActiveSession[]> {
+        const data = await this.request<{ sessions: ActiveSession[] }>('/auth/sessions');
+        return data.sessions;
+    }
+
+    async revokeSession(sessionId: string): Promise<void> {
+        await this.request<void>(`/auth/sessions/${encodeURIComponent(sessionId)}`, {
+            method: 'DELETE',
+        });
     }
 
     async executeCommand(
