@@ -21,6 +21,7 @@ import {
     ensureTerminalOpen,
     logCommandToTerminal
 } from '@/lib/terminalLog';
+import { runHooks } from '@/lib/hooksEngine';
 
 const ZERO_ADDRESS =
     '0x0000000000000000000000000000000000000000000000000000000000000000';
@@ -141,7 +142,9 @@ export const RPCBuilder: React.FC = () => {
 
         setIsLoading(true);
 
-        const activeEnvVars = envVariables.filter(
+        await runHooks(request.hooks, 'pre', network);
+
+        const activeEnvVars = appStore.getSnapshot().envVariables.filter(
             v => v.enabled && (!v.network || v.network === 'all' || v.network === network)
         );
         const resolved = resolveRequestVars(request, activeEnvVars);
@@ -219,6 +222,8 @@ export const RPCBuilder: React.FC = () => {
 
             const { result, duration, status } = res;
 
+            await runHooks(request.hooks, 'post', network, result);
+
             appStore.addToHistory(request, status, duration);
 
             logCommandToTerminal({
@@ -287,7 +292,9 @@ export const RPCBuilder: React.FC = () => {
         setIsLoading(true);
         setIsNetworkSwitchOpen(false);
 
-        const activeEnvVars = envVariables.filter(
+        await runHooks(request.hooks, 'pre', network);
+
+        const activeEnvVars = appStore.getSnapshot().envVariables.filter(
             v => v.enabled && (!v.network || v.network === 'all' || v.network === network)
         );
         const resolved = resolveRequestVars(request, activeEnvVars);
@@ -330,6 +337,8 @@ export const RPCBuilder: React.FC = () => {
             }
 
             const { result, duration, status } = res;
+
+            await runHooks(request.hooks, 'post', network, result);
 
             appStore.addToHistory(request, status, duration);
 
