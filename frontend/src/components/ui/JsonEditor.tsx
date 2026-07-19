@@ -164,17 +164,7 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
     ) => {
         if (readOnly) return;
 
-        // Cmd/Ctrl+F → search
-        if (
-            (e.metaKey || e.ctrlKey) &&
-            e.key.toLowerCase() === 'f'
-        ) {
-            e.preventDefault();
-            setSearchOpen(true);
-            return;
-        }
-
-        // Cmd/Ctrl+Shift+F → format
+        // Cmd/Ctrl+Shift+F → format (must be checked before plain Ctrl+F)
         if (
             (e.metaKey || e.ctrlKey) &&
             e.shiftKey &&
@@ -182,6 +172,16 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
         ) {
             e.preventDefault();
             handleFormat();
+            return;
+        }
+
+        // Cmd/Ctrl+F → search
+        if (
+            (e.metaKey || e.ctrlKey) &&
+            e.key.toLowerCase() === 'f'
+        ) {
+            e.preventDefault();
+            setSearchOpen(true);
             return;
         }
 

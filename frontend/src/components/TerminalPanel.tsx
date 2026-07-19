@@ -18,7 +18,11 @@ const getInitialTerminalHeight = (): number => {
     if (!stored) return DEFAULT_TERMINAL_HEIGHT;
     const parsed = Number.parseInt(stored, 10);
     if (!Number.isFinite(parsed) || parsed < MIN_TERMINAL_HEIGHT) return DEFAULT_TERMINAL_HEIGHT;
-    return parsed;
+    const maxHeight = Math.max(
+        MIN_TERMINAL_HEIGHT,
+        window.innerHeight - MAX_TERMINAL_HEIGHT_INSET
+    );
+    return Math.min(parsed, maxHeight);
 };
 
 export const TerminalPanel: React.FC = () => {

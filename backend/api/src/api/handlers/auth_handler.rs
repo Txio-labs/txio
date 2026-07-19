@@ -443,7 +443,7 @@ pub async fn google_callback(
     State(service): State<AuthService>,
     axum::extract::Query(query): axum::extract::Query<OAuthCallbackQuery>,
     headers: axum::http::HeaderMap,
-) -> Result<axum::response::Redirect, AppError> {
+) -> Result<axum::response::Response, AppError> {
     let cookie_state = get_cookie(&headers, "oauth_state")
         .ok_or(AppError::BadRequest("Missing OAuth state cookie".into()))?;
 
@@ -547,13 +547,20 @@ pub async fn google_callback(
             .await;
     }
 
-    let redirect_to = format!(
-        "{}/?token={}",
-        frontend_url.trim_end_matches('/'),
+    // Set the JWT in an HttpOnly cookie instead of exposing it in the redirect
+    // URL, where it would be retained in browser history and visible in server
+    // access logs and Referer headers sent to third-party resources.
+    let cookie = format!(
+        "txio_auth={}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800",
         auth_res.token
     );
+    let redirect_url = format!("{}/", frontend_url.trim_end_matches('/'));
 
-    Ok(axum::response::Redirect::temporary(&redirect_to))
+    let mut response = axum::response::Redirect::temporary(&redirect_url).into_response();
+    if let Ok(cookie_val) = axum::http::HeaderValue::from_str(&cookie) {
+        response.headers_mut().insert(axum::http::header::SET_COOKIE, cookie_val);
+    }
+    Ok(response)
 }
 
 fn constant_time_eq(a: &str, b: &str) -> bool {
