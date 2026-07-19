@@ -2,18 +2,14 @@ use crate::dtos::{
     admin_dtos::RpcLogRequest,
     request::{
         LoginRequest, OTPRequest, RegisterUserRequest, ResetPasswordWithOTPRequest,
-        SwitchNetworkRequest, UpdateEmailRequest, UpdatePasswordRequest, VerifyOTPRequest,
+        SwitchNetworkRequest, UpdateEmailRequest, UpdateNotificationPreferencesRequest,
+        UpdatePasswordRequest, VerifyOTPRequest,
     },
     response::{AuthResponse, UserResponse},
 };
 use crate::services::auth_service::AuthService;
 use crate::utils::error::AppError;
-use axum::{
-    Json,
-    extract::State,
-    http::header,
-    response::IntoResponse,
-};
+use axum::{Json, extract::State, http::header, response::IntoResponse};
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
 use hmac::{Hmac, Mac};
 use serde_json::{Value, json};
@@ -120,6 +116,18 @@ pub async fn update_user_email(
     Ok(Json(json!({ "user": user })))
 }
 
+pub async fn update_notification_preferences(
+    State(service): State<AuthService>,
+    claims: crate::utils::auth_jwt::Claims,
+    Json(payload): Json<UpdateNotificationPreferencesRequest>,
+) -> Result<Json<Value>, AppError> {
+    let user = service
+        .update_notification_preferences_by_email(&claims.email, payload.notification_preferences)
+        .await?;
+
+    Ok(Json(json!({ "user": user })))
+}
+
 pub async fn update_user_password(
     State(service): State<AuthService>,
     claims: crate::utils::auth_jwt::Claims,
@@ -131,7 +139,11 @@ pub async fn update_user_password(
         .map_err(|e| AppError::ValidationError(e.to_string()))?;
 
     let user = service
-        .update_user_password_by_email(&claims.email, &payload.new_password)
+        .update_user_password_by_email(
+            &claims.email,
+            &payload.current_password,
+            &payload.new_password,
+        )
         .await?;
 
     Ok(Json(json!({ "user": user })))
@@ -229,8 +241,8 @@ fn oauth_signing_key() -> Result<Vec<u8>, AppError> {
 fn generate_oauth_state() -> Result<String, AppError> {
     let nonce: Vec<u8> = (0..32).map(|_| rand::random::<u8>()).collect();
     let key = oauth_signing_key()?;
-    let mut mac =
-        HmacSha256::new_from_slice(&key).map_err(|_| AppError::InternalError("HMAC key error".into()))?;
+    let mut mac = HmacSha256::new_from_slice(&key)
+        .map_err(|_| AppError::InternalError("HMAC key error".into()))?;
     mac.update(&nonce);
     let signature = mac.finalize().into_bytes();
     let mut payload = nonce;
@@ -247,8 +259,8 @@ fn verify_oauth_state(state: &str) -> Result<(), AppError> {
     }
     let (nonce, signature) = decoded.split_at(decoded.len() - 32);
     let key = oauth_signing_key()?;
-    let mut mac =
-        HmacSha256::new_from_slice(&key).map_err(|_| AppError::InternalError("HMAC key error".into()))?;
+    let mut mac = HmacSha256::new_from_slice(&key)
+        .map_err(|_| AppError::InternalError("HMAC key error".into()))?;
     mac.update(nonce);
     mac.verify_slice(signature)
         .map_err(|_| AppError::BadRequest("Invalid or expired OAuth state parameter".into()))
@@ -388,11 +400,24 @@ pub async fn google_callback(
         .json()
         .await
         .map_err(|_| AppError::InternalError("Failed to parse Google user info".into()))?;
+
+    let verified_email = user_data["verified_email"].as_bool().unwrap_or(false);
+    if !verified_email {
+        return Err(AppError::Unauthorized(
+            "Google email address is not verified".into(),
+        ));
+    }
+
+    let google_sub = user_data["id"].as_str().ok_or(AppError::InternalError(
+        "No Google subject in profile".into(),
+    ))?;
     let email = user_data["email"]
         .as_str()
         .ok_or(AppError::InternalError("No email in Google profile".into()))?;
 
-    let auth_res = service.oauth_login_or_register(email.to_string()).await?;
+    let auth_res = service
+        .oauth_login_or_register(google_sub.to_string(), email.to_string())
+        .await?;
 
     let redirect_to = format!(
         "{}/?token={}",

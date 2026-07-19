@@ -141,7 +141,10 @@ export const RPCBuilder: React.FC = () => {
 
         setIsLoading(true);
 
-        const resolved = resolveRequestVars(request, envVariables);
+        const activeEnvVars = envVariables.filter(
+            v => v.enabled && (!v.network || v.network === 'all' || v.network === network)
+        );
+        const resolved = resolveRequestVars(request, activeEnvVars);
 
         // Auto-resolve SuiNS in the first param for address-taking RPC methods.
         if (
@@ -284,7 +287,10 @@ export const RPCBuilder: React.FC = () => {
         setIsLoading(true);
         setIsNetworkSwitchOpen(false);
 
-        const resolved = resolveRequestVars(request, envVariables);
+        const activeEnvVars = envVariables.filter(
+            v => v.enabled && (!v.network || v.network === 'all' || v.network === network)
+        );
+        const resolved = resolveRequestVars(request, activeEnvVars);
 
         const commandLine =
             resolved.type === RequestType.TRANSACTION

@@ -4,6 +4,11 @@ use crate::utils::error::AppError;
 use crate::utils::generate_otp::generate_otp;
 use chrono::{Duration, Utc};
 
+const OTP_LENGTH: usize = 6;
+const OTP_VALIDITY_MINUTES: i64 = 5;
+const OTP_SEND_COOLDOWN_SECONDS: i64 = 60;
+const OTP_MAX_FAILED_ATTEMPTS: i32 = 5;
+
 #[derive(Clone)]
 pub struct OTPService {
     repository: OTPRepository,
@@ -15,13 +20,19 @@ impl OTPService {
     }
 
     pub async fn generate_otp(&self, email: &str) -> Result<String, AppError> {
-        // 1. Delete existing OTPs for this email
-        self.repository.delete_by_email(email).await?;
+        let now = Utc::now();
 
-        // 2. Generate 6-digit OTP
-        let code = generate_otp(6);
+        if let Ok(existing_otp) = self.repository.find_by_email(email).await {
+            if now < existing_otp.created_at + Duration::seconds(OTP_SEND_COOLDOWN_SECONDS) {
+                return Err(AppError::BadRequest(
+                    "OTP request rate limit exceeded. Please try again later.".into(),
+                ));
+            }
 
-        // 3. Save new OTP
+            let _ = self.repository.delete_by_email(email).await;
+        }
+
+        let code = generate_otp(OTP_LENGTH);
         let otp = OTP::new(email.to_string(), code.clone());
         self.repository.save(&otp).await?;
 
@@ -35,22 +46,38 @@ impl OTPService {
             Err(e) => return Err(e),
         };
 
-        // Check if code matches
-        if otp.otp != code {
-            return Ok(false);
-        }
-
-        // Check expiration (e.g., 10 minutes)
         let now = Utc::now();
-        if now > otp.created_at + Duration::minutes(10) {
-            // OTP expired, delete it
+        if now > otp.created_at + Duration::minutes(OTP_VALIDITY_MINUTES) {
             let _ = self.repository.delete_by_email(email).await;
             return Ok(false);
         }
 
-        // OTP valid, delete it so it can't be reused
-        self.repository.delete_by_email(email).await?;
+        if !constant_time_eq(&otp.otp, code) {
+            let failed_attempts = otp.failed_attempts + 1;
+            if failed_attempts >= OTP_MAX_FAILED_ATTEMPTS {
+                let _ = self.repository.delete_by_email(email).await;
+            } else {
+                self.repository
+                    .update_failed_attempts(email, failed_attempts)
+                    .await?;
+            }
+            return Ok(false);
+        }
 
+        self.repository.delete_by_email(email).await?;
         Ok(true)
     }
+}
+
+fn constant_time_eq(a: &str, b: &str) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+
+    let mut diff = 0u8;
+    for (x, y) in a.bytes().zip(b.bytes()) {
+        diff |= x ^ y;
+    }
+
+    diff == 0
 }

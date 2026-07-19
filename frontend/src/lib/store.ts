@@ -18,7 +18,8 @@ import {
 import { DEFAULT_MOVE_CALL } from './constants';
 import {
     DEFAULT_APP_SETTINGS,
-    normalizeAppSettings
+    normalizeAppSettings,
+    normalizeNotificationPreferences
 } from './appConfig';
 import {
     ApiError,
@@ -32,13 +33,14 @@ const listeners = new Set<Listener>();
 type UserProfileOverrides = Partial<
     Pick<
         UserProfile,
-        'name' | 'avatarUrl' | 'bannerUrl'
+        'name' | 'avatarUrl' | 'bannerUrl' | 'notificationPreferences'
     >
 >;
 const userProfileOverrideFields = [
     'name',
     'avatarUrl',
-    'bannerUrl'
+    'bannerUrl',
+    'notificationPreferences'
 ] as const;
 const storedUserStorageKey =
     'txio_user';
@@ -107,9 +109,16 @@ const readUserProfileOverrides = (
 const applyUserProfileOverrides = (
     user: UserProfile
 ): UserProfile => {
+    const overrides = readUserProfileOverrides(user);
+
     return {
         ...user,
-        ...readUserProfileOverrides(user)
+        ...overrides,
+        notificationPreferences:
+            normalizeNotificationPreferences(
+                overrides.notificationPreferences ||
+                    user.notificationPreferences
+            )
     };
 };
 
@@ -126,6 +135,16 @@ const persistUserProfileOverrides = (
     userProfileOverrideFields.forEach(
         (field) => {
             const value = user[field];
+
+            if (field === 'notificationPreferences') {
+                overrides[field] =
+                    normalizeNotificationPreferences(
+                        typeof value === 'object'
+                            ? value
+                            : undefined
+                    );
+                return;
+            }
 
             if (
                 typeof value === 'string' &&
@@ -159,14 +178,20 @@ const isUserProfile = (
     const candidate =
         value as Partial<UserProfile>;
 
-    return (
-        typeof candidate.id ===
-            'string' &&
-        typeof candidate.email ===
-            'string' &&
-        typeof candidate.name ===
-            'string'
-    );
+    if (
+        typeof candidate.id !== 'string' ||
+        typeof candidate.email !== 'string' ||
+        typeof candidate.name !== 'string'
+    ) {
+        return false;
+    }
+
+    candidate.notificationPreferences =
+        normalizeNotificationPreferences(
+            candidate.notificationPreferences
+        );
+
+    return true;
 };
 
 const readStoredUser = () => {
@@ -467,7 +492,9 @@ const buildUserFromToken = (
         email,
         name:
             email.split('@')[0]?.trim() ||
-            'user'
+            'user',
+        notificationPreferences:
+            normalizeNotificationPreferences()
     };
 };
 
@@ -522,6 +549,8 @@ interface AppState {
     theme: 'dark' | 'light';
 
     network: Network;
+
+    pendingNetworkSwitch: Network | null;
 
     isSyncing: boolean;
     scanStep: string;
@@ -599,6 +628,8 @@ let state: AppState = {
     theme: initialSettings.theme,
 
     network: initialNetwork,
+
+    pendingNetworkSwitch: null,
 
     isSyncing: false,
 
@@ -1056,6 +1087,36 @@ export const appStore = {
             persistNetwork(network);
             emit();
         }, 2000);
+    },
+
+    requestNetworkSwitch(network: Network) {
+        if (state.network === network) return;
+        state = {
+            ...state,
+            pendingNetworkSwitch: network
+        };
+        emit();
+    },
+
+    cancelNetworkSwitch() {
+        state = {
+            ...state,
+            pendingNetworkSwitch: null
+        };
+        emit();
+    },
+
+    confirmNetworkSwitch() {
+        const target = state.pendingNetworkSwitch;
+        if (!target) return;
+
+        state = {
+            ...state,
+            pendingNetworkSwitch: null
+        };
+        emit();
+
+        appStore.setNetwork(target);
     },
 
     async fetchWorkspaces(
@@ -1659,15 +1720,16 @@ export const appStore = {
 
             emit();
 
+            const workspacesPromise =
+                apiService.getWorkspaces();
+
+            void workspacesPromise.catch(
+                () => undefined
+            );
+
             try {
                 const profilePromise =
                     apiService.getProfile();
-                const workspacesPromise =
-                    apiService.getWorkspaces();
-
-                void workspacesPromise.catch(
-                    () => undefined
-                );
 
                 const user =
                     await profilePromise;
@@ -1830,9 +1892,14 @@ export const appStore = {
 
         if (isFullUser) {
             const hydratedUser =
-                applyUserProfileOverrides(
-                    user as UserProfile
-                );
+                applyUserProfileOverrides({
+                    ...(user as UserProfile),
+                    notificationPreferences:
+                        normalizeNotificationPreferences(
+                            (user as UserProfile)
+                                .notificationPreferences
+                        )
+                });
 
             state = {
                 ...state,
@@ -1855,7 +1922,13 @@ export const appStore = {
             ...state,
             user: {
                 ...state.user,
-                ...user
+                ...user,
+                notificationPreferences:
+                    'notificationPreferences' in user
+                        ? normalizeNotificationPreferences(
+                            user.notificationPreferences
+                        )
+                        : state.user.notificationPreferences
             }
         };
 

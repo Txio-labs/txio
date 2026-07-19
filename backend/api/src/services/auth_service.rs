@@ -2,7 +2,7 @@ use crate::dtos::admin_dtos::RpcLogRequest;
 use crate::dtos::request::{LoginRequest, RegisterUserRequest};
 use crate::dtos::response::{AuthResponse, UserResponse};
 use crate::model::rpc::RpcLog;
-use crate::model::user::User;
+use crate::model::user::{NotificationPreferences, User};
 use crate::repositories::rpc_repository::RpcRepository;
 use crate::repositories::user_repository::UserRepository;
 use crate::services::email_service::EmailService;
@@ -32,6 +32,7 @@ impl AuthService {
             name,
             email: user.email.clone(),
             created_at: user.created_at.to_string(),
+            notification_preferences: user.notification_preferences.clone(),
         }
     }
 
@@ -69,7 +70,13 @@ impl AuthService {
     }
 
     pub async fn register_user(&self, req: RegisterUserRequest) -> Result<AuthResponse, AppError> {
-        // ... (existing code)
+        // Check if email already exists
+        match self.repo.find_by_email(&req.email).await {
+            Ok(_) => return Err(AppError::BadRequest("Email already registered".into())),
+            Err(AppError::NotFound(_)) => (),
+            Err(e) => return Err(e),
+        };
+
         // Hash password before storage
         let password_hash = bcrypt::hash(req.password.as_bytes(), bcrypt::DEFAULT_COST)
             .map_err(|_| AppError::InternalError("Failed to hash password".into()))?;
@@ -154,12 +161,28 @@ impl AuthService {
         Ok(Self::to_user_response(&updated_user))
     }
 
+    pub async fn update_notification_preferences_by_email(
+        &self,
+        email: &str,
+        preferences: NotificationPreferences,
+    ) -> Result<UserResponse, AppError> {
+        let mut user = self.repo.find_by_email(email).await?;
+        user.notification_preferences = preferences;
+
+        let updated_user = self.repo.update(&user).await?;
+
+        Ok(Self::to_user_response(&updated_user))
+    }
+
     pub async fn update_user_password_by_email(
         &self,
         email: &str,
+        current_password: &str,
         new_password: &str,
     ) -> Result<UserResponse, AppError> {
         let mut user = self.repo.find_by_email(email).await?;
+
+        verify_current_password(current_password, &user.password_hash)?;
 
         // Hash new password
         let password_hash = bcrypt::hash(new_password.as_bytes(), bcrypt::DEFAULT_COST)
@@ -232,17 +255,24 @@ impl AuthService {
         Ok(Self::to_user_response(&updated_user))
     }
 
-    pub async fn oauth_login_or_register(&self, email: String) -> Result<AuthResponse, AppError> {
-        let user_result = self.repo.find_by_email(&email).await;
+    pub async fn oauth_login_or_register(
+        &self,
+        google_sub: String,
+        email: String,
+    ) -> Result<AuthResponse, AppError> {
+        let user_by_sub = self.repo.find_by_google_sub(&google_sub).await.ok();
+        let user_by_email = self.repo.find_by_email(&email).await.ok();
 
-        let user = match user_result {
-            Ok(u) => u,
-            Err(_) => {
+        let user = resolve_oauth_account(google_sub, email, user_by_sub, user_by_email)?;
+
+        let user = match user {
+            OAuthAccountResolution::Login(existing) => existing,
+            OAuthAccountResolution::Register { email, google_sub } => {
                 let random_password = uuid::Uuid::new_v4().to_string();
                 let password_hash = bcrypt::hash(random_password.as_bytes(), bcrypt::DEFAULT_COST)
                     .map_err(|_| AppError::InternalError("Failed to hash password".into()))?;
 
-                let new_user = User::new(email.clone(), password_hash);
+                let new_user = User::new_oauth(email, password_hash, google_sub);
                 self.repo.save(&new_user).await?
             }
         };
@@ -256,5 +286,151 @@ impl AuthService {
             token,
             user: Self::to_user_response(&user),
         })
+    }
+}
+
+fn verify_current_password(current_password: &str, password_hash: &str) -> Result<(), AppError> {
+    let is_valid = bcrypt::verify(current_password.as_bytes(), password_hash).unwrap_or(false);
+
+    if !is_valid {
+        return Err(AppError::Unauthorized(
+            "Current password is incorrect".into(),
+        ));
+    }
+
+    Ok(())
+}
+
+enum OAuthAccountResolution {
+    Login(User),
+    Register { email: String, google_sub: String },
+}
+
+fn resolve_oauth_account(
+    google_sub: String,
+    email: String,
+    user_by_sub: Option<User>,
+    user_by_email: Option<User>,
+) -> Result<OAuthAccountResolution, AppError> {
+    if let Some(user) = user_by_sub {
+        return Ok(OAuthAccountResolution::Login(user));
+    }
+
+    if let Some(user) = user_by_email {
+        match user.google_sub.as_deref() {
+            Some(existing) if existing == google_sub => Ok(OAuthAccountResolution::Login(user)),
+            Some(_) => Err(AppError::Unauthorized(
+                "This Google account is not linked to the existing user".into(),
+            )),
+            None => Err(AppError::Forbidden(
+                "An account with this email already exists. Sign in with your password to link Google.".into(),
+            )),
+        }
+    } else {
+        Ok(OAuthAccountResolution::Register { email, google_sub })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn verify_current_password_rejects_mismatched_password() {
+        let password_hash = bcrypt::hash(b"correct-password", bcrypt::DEFAULT_COST).unwrap();
+
+        let result = verify_current_password("wrong-password", &password_hash);
+
+        assert!(matches!(result, Err(AppError::Unauthorized(_))));
+    }
+
+    #[test]
+    fn verify_current_password_accepts_matching_password() {
+        let password_hash = bcrypt::hash(b"correct-password", bcrypt::DEFAULT_COST).unwrap();
+
+        let result = verify_current_password("correct-password", &password_hash);
+
+        assert!(result.is_ok());
+    }
+}
+
+#[cfg(test)]
+mod oauth_tests {
+    use super::*;
+    use chrono::Utc;
+    use mongodb::bson::oid::ObjectId;
+
+    fn sample_user(email: &str, google_sub: Option<&str>) -> User {
+        User {
+            id: Some(ObjectId::new()),
+            email: email.to_string(),
+            password_hash: "hash".to_string(),
+            google_sub: google_sub.map(str::to_string),
+            tier: crate::model::user::PlanTier::Free,
+            network: crate::model::user::SuiNetwork::Mainnet,
+            created_at: Utc::now(),
+        }
+    }
+
+    #[test]
+    fn logs_in_when_google_sub_matches() {
+        let user = sample_user("user@example.com", Some("google-sub-123"));
+        let result = resolve_oauth_account(
+            "google-sub-123".to_string(),
+            "user@example.com".to_string(),
+            Some(user.clone()),
+            None,
+        )
+        .unwrap();
+
+        match result {
+            OAuthAccountResolution::Login(found) => assert_eq!(found.email, user.email),
+            OAuthAccountResolution::Register { .. } => panic!("expected login"),
+        }
+    }
+
+    #[test]
+    fn rejects_unlinked_password_account_with_matching_email() {
+        let user = sample_user("victim@example.com", None);
+        let result = resolve_oauth_account(
+            "attacker-sub".to_string(),
+            "victim@example.com".to_string(),
+            None,
+            Some(user),
+        );
+
+        assert!(matches!(result, Err(AppError::Forbidden(_))));
+    }
+
+    #[test]
+    fn registers_new_oauth_user_when_email_is_unknown() {
+        let result = resolve_oauth_account(
+            "new-sub".to_string(),
+            "new@example.com".to_string(),
+            None,
+            None,
+        )
+        .unwrap();
+
+        match result {
+            OAuthAccountResolution::Register { email, google_sub } => {
+                assert_eq!(email, "new@example.com");
+                assert_eq!(google_sub, "new-sub");
+            }
+            OAuthAccountResolution::Login(_) => panic!("expected register"),
+        }
+    }
+
+    #[test]
+    fn rejects_conflicting_google_sub_for_existing_email() {
+        let user = sample_user("user@example.com", Some("linked-sub"));
+        let result = resolve_oauth_account(
+            "different-sub".to_string(),
+            "user@example.com".to_string(),
+            None,
+            Some(user),
+        );
+
+        assert!(matches!(result, Err(AppError::Unauthorized(_))));
     }
 }

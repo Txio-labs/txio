@@ -1,3 +1,4 @@
+use mongodb::{Collection, Database};
 use crate::model::rpc::RpcLog;
 use crate::utils::error::AppError;
 use mongodb::{Client, Collection};
@@ -8,8 +9,8 @@ pub struct RpcRepository {
 }
 
 impl RpcRepository {
-    pub fn new(db: &Client) -> Self {
-        let collection = db.database("txio_db").collection("rpc_logs");
+    pub fn new(db: &Database) -> Self {
+        let collection = db.collection("rpc_logs");
         Self { collection }
     }
 

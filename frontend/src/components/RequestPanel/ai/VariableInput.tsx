@@ -1,5 +1,5 @@
 import React from 'react';
-import { EnvironmentVariable } from '../../../types';
+import { EnvironmentVariable, Network } from '../../../types';
 
 interface VariableInputProps {
   value: string;
@@ -8,6 +8,7 @@ interface VariableInputProps {
   className?: string;
   disabled?: boolean;
   envVars: EnvironmentVariable[];
+  network?: Network;
 }
 
 export const VariableInput: React.FC<VariableInputProps> = ({ 
@@ -16,10 +17,13 @@ export const VariableInput: React.FC<VariableInputProps> = ({
   placeholder, 
   className, 
   disabled,
-  envVars 
+  envVars,
+  network 
 }) => {
   const hasVar = value.includes('{{');
-  const isVarResolved = hasVar && envVars.some(v => value.includes(`{{${v.key}}}`));
+  const isVarResolved = hasVar && envVars.some(v => 
+    v.enabled && (!v.network || v.network === 'all' || v.network === network) && value.includes(`{{${v.key}}}`)
+  );
 
   return (
     <div className="relative w-full group">
