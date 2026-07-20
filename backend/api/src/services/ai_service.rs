@@ -393,5 +393,5 @@ fn parse_groq_error(status: StatusCode, body: &str) -> String {
                 Some(trimmed.to_string())
             }
         })
-        .unwrap_or_else(|| format!("Groq request failed with status {}.", status))
+        .unwrap_or_else(|| format!("Groq request failed with status {status}."))
 }

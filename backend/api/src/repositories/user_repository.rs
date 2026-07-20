@@ -95,7 +95,6 @@ impl UserRepository {
     pub async fn update(&self, user: &User) -> Result<User, AppError> {
         let object_id = user
             .id
-            .clone()
             .ok_or_else(|| AppError::BadRequest("User ID is missing".into()))?;
 
         self.collection

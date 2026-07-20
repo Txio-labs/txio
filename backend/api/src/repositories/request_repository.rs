@@ -1,7 +1,7 @@
+use mongodb::{Collection, Database};
+use mongodb::bson::{doc, oid::ObjectId};
 use crate::model::request::SavedRequest;
 use crate::utils::error::AppError;
-use mongodb::bson::{doc, oid::ObjectId};
-use mongodb::{Collection, Database};
 
 #[derive(Clone)]
 pub struct RequestRepository {
@@ -30,9 +30,7 @@ impl RequestRepository {
 
         let mut requests = Vec::new();
         while cursor.advance().await? {
-            let req: SavedRequest = cursor
-                .deserialize_current()
-                .map_err(|e| AppError::Database(e))?;
+            let req: SavedRequest = cursor.deserialize_current().map_err(AppError::Database)?;
             requests.push(req);
         }
 
@@ -42,7 +40,7 @@ impl RequestRepository {
     pub async fn find_by_id(&self, id: ObjectId) -> Result<SavedRequest, AppError> {
         let filter = doc! { "_id": id };
         let result = self.collection.find_one(filter, None).await?;
-        result.ok_or_else(|| AppError::NotFound(format!("Request not found with id: {}", id)))
+        result.ok_or_else(|| AppError::NotFound(format!("Request not found with id: {id}")))
     }
 
     pub async fn update(&self, request: &SavedRequest) -> Result<SavedRequest, AppError> {
@@ -61,8 +59,7 @@ impl RequestRepository {
 
         if result.deleted_count == 0 {
             return Err(AppError::NotFound(format!(
-                "Request not found for deletion: {}",
-                id
+                "Request not found for deletion: {id}"
             )));
         }
         Ok(())

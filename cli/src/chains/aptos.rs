@@ -1,10 +1,10 @@
 use crate::chains::traits::ChainAdapter;
 use crate::chains::validation::{build_url, build_url_with_query, validate_aptos_address};
 use crate::cli::parser::Network;
-use anyhow::{Result, anyhow};
+use anyhow::Result;
 use async_trait::async_trait;
 use reqwest::Client;
-use serde_json::{Value, json};
+use serde_json::Value;
 
 pub struct AptosAdapter {
     client: Client,
@@ -12,6 +12,7 @@ pub struct AptosAdapter {
 }
 
 impl AptosAdapter {
+    #[allow(dead_code)]
     pub fn new() -> Self {
         Self::with_rpc(None, Network::Mainnet)
     }

@@ -81,7 +81,7 @@ pub fn validate_sui_address(address: &str) -> Result<String> {
 }
 
 pub fn build_url(base: &str, segments: &[&str]) -> Result<Url> {
-    let mut url = Url::parse(base).map_err(|e| anyhow!("Invalid base URL: {}", e))?;
+    let mut url = Url::parse(base).map_err(|e| anyhow!("Invalid base URL: {e}"))?;
     {
         let mut path_segments = url
             .path_segments_mut()

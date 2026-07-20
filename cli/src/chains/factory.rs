@@ -25,9 +25,9 @@ impl ChainFactory {
             "soroban" | "stellar" => Ok(Arc::new(SorobanAdapter::with_rpc(rpc_url, network))),
             _ => {
                 let suggestion = Self::suggest_chain(chain_name);
-                let mut msg = format!("Unknown chain '{}'", chain_name);
+                let mut msg = format!("Unknown chain '{chain_name}'");
                 if let Some(s) = suggestion {
-                    msg.push_str(&format!("\n\nDid you mean:\n  {}", s));
+                    msg.push_str(&format!("\n\nDid you mean:\n  {s}"));
                 }
                 Err(anyhow!(msg))
             }
