@@ -101,14 +101,6 @@ impl SuiAdapter {
                 }
 
                 if !unique_names.is_empty() {
- fix/recipes-load-btn-#157
-                    // Sort longest-first so a shorter name (e.g. "alice.sui") is never
-                    // replaced inside a longer one (e.g. "foo-alice.sui") before the
-                    // longer one gets its turn.
-                    unique_names.sort_by(|left, right| right.len().cmp(&left.len()));
-                    // Resolve each unique name once, then apply all replacements.
-                    let mut new_string = s.to_string();
-                    for name in unique_names 
                     // Resolve each unique name once, building a name→addr map.
                     let mut name_to_addr: std::collections::HashMap<String, String> =
                         std::collections::HashMap::new();
