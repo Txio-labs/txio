@@ -108,7 +108,13 @@ impl CollectionService {
         let is_disallowed = match ip {
             IpAddr::V4(v4) => v4.is_loopback() || v4.is_private() || v4.is_link_local(),
             IpAddr::V6(v6) => {
-                v6.is_loopback() || v6.is_unique_local() || v6.is_unicast_link_local()
+                // Fold IPv4-mapped IPv6 addresses (e.g. ::ffff:127.0.0.1) through
+                // to their IPv4 equivalent so they cannot bypass the IPv4 checks.
+                if let Some(v4) = v6.to_ipv4() {
+                    v4.is_loopback() || v4.is_private() || v4.is_link_local()
+                } else {
+                    v6.is_loopback() || v6.is_unique_local() || v6.is_unicast_link_local()
+                }
             }
         };
         if is_disallowed {

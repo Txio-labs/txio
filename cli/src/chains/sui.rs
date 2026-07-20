@@ -101,22 +101,47 @@ impl SuiAdapter {
                 }
 
                 if !unique_names.is_empty() {
+ fix/recipes-load-btn-#157
                     // Sort longest-first so a shorter name (e.g. "alice.sui") is never
                     // replaced inside a longer one (e.g. "foo-alice.sui") before the
                     // longer one gets its turn.
                     unique_names.sort_by(|left, right| right.len().cmp(&left.len()));
                     // Resolve each unique name once, then apply all replacements.
                     let mut new_string = s.to_string();
-                    for name in unique_names {
+                    for name in unique_names 
+                    // Resolve each unique name once, building a name→addr map.
+                    let mut name_to_addr: std::collections::HashMap<String, String> =
+                        std::collections::HashMap::new();
+                    for name in &unique_names {
+
                         if let Some(addr) = self
-                            .resolve_name(&name)
+                            .resolve_name(name)
                             .await
                             .with_context(|| format!("resolving Sui name {name}"))?
                         {
-                            new_string = new_string.replace(&name, &addr);
+                            name_to_addr.insert(name.clone(), addr);
                         }
                     }
-                    *s = new_string;
+
+                    // Collect every boundary-valid match position in the original
+                    // string, then replace from right to left so earlier byte
+                    // offsets stay valid as we mutate the buffer.
+                    let positions: Vec<(usize, usize, String)> = SUINS_REGEX
+                        .find_iter(s)
+                        .filter(|m| !is_name_continuation(s, m.end()))
+                        .filter_map(|m| {
+                            let name = m.as_str().to_string();
+                            name_to_addr.get(&name).map(|addr| (m.start(), m.end(), addr.clone()))
+                        })
+                        .collect();
+
+                    if !positions.is_empty() {
+                        let mut result = s.clone();
+                        for (start, end, addr) in positions.into_iter().rev() {
+                            result.replace_range(start..end, &addr);
+                        }
+                        *s = result;
+                    }
                 }
             }
             Value::Array(arr) => {
