@@ -1,6 +1,7 @@
 import {
     ActiveSession,
     CollectionNode,
+    isNetwork,
     Network,
     RequestItem,
     RequestType,
@@ -108,13 +109,6 @@ interface BackendSavedRequest {
     last_response?: unknown;
     last_executed_at?: string | null;
 }
-
-const isNetwork = (
-    value: string | null | undefined
-): value is Network =>
-    value === 'mainnet' ||
-    value === 'testnet' ||
-    value === 'devnet';
 
 interface BackendMessageResponse {
     message: string;

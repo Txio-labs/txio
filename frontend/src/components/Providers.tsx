@@ -12,6 +12,7 @@ import { RedirectManager } from "./RedirectManager";
 import { ThemeSync } from './ThemeSync';
 import { useAppStore } from '@/lib/store';
 import { resolveRpcUrl } from '@/lib/appConfig';
+import { ALL_NETWORKS } from '@/types';
 
 export function Providers({ children }: { children: React.ReactNode }) {
     const { network, settings } = useAppStore();
@@ -24,26 +25,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
         },
     }));
     const networks = useMemo(
-        () => ({
-            mainnet: {
-                url: resolveRpcUrl(
-                    'mainnet',
-                    settings
-                )
-            },
-            testnet: {
-                url: resolveRpcUrl(
-                    'testnet',
-                    settings
-                )
-            },
-            devnet: {
-                url: resolveRpcUrl(
-                    'devnet',
-                    settings
-                )
-            }
-        }),
+        () =>
+            Object.fromEntries(
+                ALL_NETWORKS.map((net) => [
+                    net,
+                    { url: resolveRpcUrl(net, settings) }
+                ])
+            ),
         [settings]
     );
 

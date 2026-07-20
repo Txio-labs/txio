@@ -93,7 +93,7 @@ impl CommandHandler {
                 println!(
                     "  {} Network:        {}",
                     "»".dimmed(),
-                    format!("{:?}", cli.network).yellow()
+                    cli.network.to_string().yellow()
                 );
                 println!(
                     "  {} Authenticated:  {}",
@@ -333,9 +333,7 @@ impl CommandHandler {
                 "✖".red(),
                 "txio login".cyan()
             )),
-            reqwest::StatusCode::FORBIDDEN => {
-                Some(format!("{} Admin access required.", "✖".red()))
-            }
+            reqwest::StatusCode::FORBIDDEN => Some(format!("{} Admin access required.", "✖".red())),
             status if status.is_success() => None,
             status => Some(format!("{} Request failed ({}).", "✖".red(), status)),
         }

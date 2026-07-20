@@ -68,7 +68,8 @@ export const EnvironmentList: React.FC<EnvironmentListProps> = ({
                     className={`appearance-none bg-near-black border border-white/10 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase outline-none cursor-pointer hover:border-white/20 transition-colors ${
                       v.network === 'mainnet' ? 'text-emerald-400' :
                       v.network === 'testnet' ? 'text-amber-400' :
-                      v.network === 'devnet' ? 'text-blue-400' : 'text-slate-400'
+                      v.network === 'devnet' ? 'text-blue-400' :
+                      v.network === 'localnet' ? 'text-fuchsia-400' : 'text-slate-400'
                     }`}
                     value={v.network || 'all'}
                     onChange={(e) => updateEnvVar(i, { network: e.target.value as any })}
@@ -77,6 +78,7 @@ export const EnvironmentList: React.FC<EnvironmentListProps> = ({
                     <option value="mainnet">MAIN</option>
                     <option value="testnet">TEST</option>
                     <option value="devnet">DEV</option>
+                    <option value="localnet">LOCAL</option>
                   </select>
                 </div>
                 

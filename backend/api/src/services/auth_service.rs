@@ -331,7 +331,7 @@ impl AuthService {
     pub async fn update_user_network(
         &self,
         user_id: mongodb::bson::oid::ObjectId,
-        network: crate::model::user::SuiNetwork,
+        network: crate::model::network::Network,
     ) -> Result<UserResponse, AppError> {
         let mut user = self.repo.find_by_id(&user_id).await?;
         user.network = network;

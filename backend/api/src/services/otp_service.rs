@@ -22,17 +22,14 @@ impl OTPService {
     pub async fn generate_otp(&self, email: &str) -> Result<String, AppError> {
         let now = Utc::now();
 
-        match self.repository.find_by_email(email).await {
-            Ok(existing_otp) => {
-                if now < existing_otp.created_at + Duration::seconds(OTP_SEND_COOLDOWN_SECONDS) {
-                    return Err(AppError::BadRequest(
-                        "OTP request rate limit exceeded. Please try again later.".into(),
-                    ));
-                }
-                self.repository.delete_by_email(email).await?;
+        if let Ok(existing_otp) = self.repository.find_by_email(email).await {
+            if now < existing_otp.created_at + Duration::seconds(OTP_SEND_COOLDOWN_SECONDS) {
+                return Err(AppError::BadRequest(
+                    "OTP request rate limit exceeded. Please try again later.".into(),
+                ));
             }
-            Err(AppError::NotFound(_)) => {} // No existing OTP — continue normally
-            Err(e) => return Err(e),         // Propagate unexpected repository errors
+
+            let _ = self.repository.delete_by_email(email).await;
         }
 
         let code = generate_otp(OTP_LENGTH);
@@ -72,6 +69,9 @@ impl OTPService {
     }
 }
 
+/// Compares two strings in constant time relative to their length, so that
+/// early-exit timing cannot be used to learn how much of a secret matched.
+/// Shared by OTP verification and OAuth CSRF-state checks.
 pub(crate) fn constant_time_eq(a: &str, b: &str) -> bool {
     if a.len() != b.len() {
         return false;

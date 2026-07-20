@@ -25,6 +25,7 @@ export const NetworkSwitcherModal: React.FC<NetworkSwitcherModalProps> = ({
           case 'mainnet': return 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
           case 'testnet': return 'text-amber-400 bg-amber-400/10 border-amber-400/20';
           case 'devnet': return 'text-blue-400 bg-blue-400/10 border-blue-400/20';
+          case 'localnet': return 'text-fuchsia-400 bg-fuchsia-400/10 border-fuchsia-400/20';
           default: return 'text-slate-400 bg-slate-400/10 border-slate-400/20';
       }
   };
@@ -71,7 +72,7 @@ export const NetworkSwitcherModal: React.FC<NetworkSwitcherModalProps> = ({
                   {/* To Node */}
                   <div className="flex flex-col items-center gap-3 w-24">
                       <div className={`w-14 h-14 rounded-2xl border-2 border-dashed flex items-center justify-center ${getNetworkColor(to).replace('bg-', 'hover:bg-')}`}>
-                           <Activity size={24} className={to === 'mainnet' ? 'text-emerald-400' : to === 'testnet' ? 'text-amber-400' : 'text-blue-400'} />
+                           <Activity size={24} className={to === 'mainnet' ? 'text-emerald-400' : to === 'testnet' ? 'text-amber-400' : to === 'devnet' ? 'text-blue-400' : 'text-fuchsia-400'} />
                       </div>
                       <div className="text-center">
                           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Target</div>

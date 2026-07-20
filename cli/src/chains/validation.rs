@@ -1,14 +1,18 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use reqwest::Url;
 
 pub fn validate_aptos_address(address: &str) -> Result<String> {
     let address = address.trim();
     let stripped = address.strip_prefix("0x").unwrap_or(address);
     if stripped.is_empty() || stripped.len() > 64 {
-        return Err(anyhow!("Invalid Aptos address: length must be 1-64 hex chars, optionally prefixed with 0x"));
+        return Err(anyhow!(
+            "Invalid Aptos address: length must be 1-64 hex chars, optionally prefixed with 0x"
+        ));
     }
     if !stripped.chars().all(|c| c.is_ascii_hexdigit()) {
-        return Err(anyhow!("Invalid Aptos address: must contain only hexadecimal characters"));
+        return Err(anyhow!(
+            "Invalid Aptos address: must contain only hexadecimal characters"
+        ));
     }
     Ok(format!("0x{}", stripped.to_lowercase()))
 }
@@ -16,10 +20,14 @@ pub fn validate_aptos_address(address: &str) -> Result<String> {
 pub fn validate_soroban_address(address: &str) -> Result<String> {
     let address = address.trim();
     if address.len() != 56 || !address.starts_with('G') {
-        return Err(anyhow!("Invalid Soroban address: expected a Stellar account ID starting with G"));
+        return Err(anyhow!(
+            "Invalid Soroban address: expected a Stellar account ID starting with G"
+        ));
     }
     if !address.chars().all(|c| matches!(c, 'A'..='Z' | '2'..='7')) {
-        return Err(anyhow!("Invalid Soroban address: must be a valid Stellar strkey public key"));
+        return Err(anyhow!(
+            "Invalid Soroban address: must be a valid Stellar strkey public key"
+        ));
     }
     Ok(address.to_string())
 }
@@ -28,10 +36,14 @@ pub fn validate_ethereum_address(address: &str) -> Result<String> {
     let address = address.trim();
     let stripped = address.strip_prefix("0x").unwrap_or(address);
     if stripped.is_empty() || stripped.len() > 40 {
-        return Err(anyhow!("Invalid Ethereum address: must be 1-40 hex characters, optionally prefixed with 0x"));
+        return Err(anyhow!(
+            "Invalid Ethereum address: must be 1-40 hex characters, optionally prefixed with 0x"
+        ));
     }
     if !stripped.chars().all(|c| c.is_ascii_hexdigit()) {
-        return Err(anyhow!("Invalid Ethereum address: must contain only hexadecimal characters"));
+        return Err(anyhow!(
+            "Invalid Ethereum address: must contain only hexadecimal characters"
+        ));
     }
     Ok(format!("0x{}", stripped.to_lowercase()))
 }
@@ -41,8 +53,13 @@ pub fn validate_solana_address(address: &str) -> Result<String> {
     if address.is_empty() {
         return Err(anyhow!("Invalid Solana address: cannot be empty"));
     }
-    if !address.chars().all(|c| matches!(c, '1'..='9' | 'A'..='H' | 'J'..='N' | 'P'..='Z' | 'a'..='k' | 'm'..='z')) {
-        return Err(anyhow!("Invalid Solana address: must be a base58-encoded public key"));
+    if !address
+        .chars()
+        .all(|c| matches!(c, '1'..='9' | 'A'..='H' | 'J'..='N' | 'P'..='Z' | 'a'..='k' | 'm'..='z'))
+    {
+        return Err(anyhow!(
+            "Invalid Solana address: must be a base58-encoded public key"
+        ));
     }
     Ok(address.to_string())
 }
@@ -51,10 +68,14 @@ pub fn validate_sui_address(address: &str) -> Result<String> {
     let address = address.trim();
     let stripped = address.strip_prefix("0x").unwrap_or(address);
     if stripped.is_empty() || stripped.len() > 64 {
-        return Err(anyhow!("Invalid Sui address: length must be 1-64 hex chars, optionally prefixed with 0x"));
+        return Err(anyhow!(
+            "Invalid Sui address: length must be 1-64 hex chars, optionally prefixed with 0x"
+        ));
     }
     if !stripped.chars().all(|c| c.is_ascii_hexdigit()) {
-        return Err(anyhow!("Invalid Sui address: must contain only hexadecimal characters"));
+        return Err(anyhow!(
+            "Invalid Sui address: must contain only hexadecimal characters"
+        ));
     }
     Ok(format!("0x{}", stripped.to_lowercase()))
 }
@@ -72,7 +93,11 @@ pub fn build_url(base: &str, segments: &[&str]) -> Result<Url> {
     Ok(url)
 }
 
-pub fn build_url_with_query(base: &str, segments: &[&str], query: &[(&str, String)]) -> Result<Url> {
+pub fn build_url_with_query(
+    base: &str,
+    segments: &[&str],
+    query: &[(&str, String)],
+) -> Result<Url> {
     let mut url = build_url(base, segments)?;
     {
         let mut pairs = url.query_pairs_mut();

@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
-use mongodb::bson::oid::ObjectId;
 use chrono::{DateTime, Utc};
+use mongodb::bson::oid::ObjectId;
+use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -16,7 +16,13 @@ pub struct RpcLog {
 }
 
 impl RpcLog {
-    pub fn new(user_id: ObjectId, method: String, params: Value, success: bool, error: Option<String>) -> Self {
+    pub fn new(
+        user_id: ObjectId,
+        method: String,
+        params: Value,
+        success: bool,
+        error: Option<String>,
+    ) -> Self {
         Self {
             id: None,
             user_id,
@@ -41,7 +47,9 @@ impl RpcLog {
                 }
                 Value::Object(sanitized)
             }
-            Value::Array(values) => Value::Array(values.iter().map(Self::sanitize_params).collect()),
+            Value::Array(values) => {
+                Value::Array(values.iter().map(Self::sanitize_params).collect())
+            }
             Value::String(s) => {
                 if Self::looks_like_sensitive_data(s) {
                     Value::String("[REDACTED]".to_string())
@@ -99,11 +107,23 @@ mod tests {
             "network": "mainnet"
         });
 
-        let log = RpcLog::new(ObjectId::new(), "eth_sendRawTransaction".to_string(), params, true, None);
+        let log = RpcLog::new(
+            ObjectId::new(),
+            "eth_sendRawTransaction".to_string(),
+            params,
+            true,
+            None,
+        );
         let params = log.params;
 
-        assert_eq!(params["params"][0]["rawTransaction"], Value::String("[REDACTED]".to_string()));
-        assert_eq!(params["params"][0]["password"], Value::String("[REDACTED]".to_string()));
+        assert_eq!(
+            params["params"][0]["rawTransaction"],
+            Value::String("[REDACTED]".to_string())
+        );
+        assert_eq!(
+            params["params"][0]["password"],
+            Value::String("[REDACTED]".to_string())
+        );
         assert_eq!(params["network"], Value::String("mainnet".to_string()));
     }
 
@@ -114,10 +134,19 @@ mod tests {
             "params": []
         });
 
-        let log = RpcLog::new(ObjectId::new(), "eth_blockNumber".to_string(), params, true, None);
-        assert_eq!(log.params, serde_json::json!({
-            "method": "eth_blockNumber",
-            "params": []
-        }));
+        let log = RpcLog::new(
+            ObjectId::new(),
+            "eth_blockNumber".to_string(),
+            params,
+            true,
+            None,
+        );
+        assert_eq!(
+            log.params,
+            serde_json::json!({
+                "method": "eth_blockNumber",
+                "params": []
+            })
+        );
     }
 }

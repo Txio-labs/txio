@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { Settings, Server, Layout, Shield, Monitor, Globe, ChevronRight } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
-import { Network } from '../types';
+import { NETWORKS } from '@/lib/constants';
+import { ALL_NETWORKS, Network } from '../types';
 
 type SettingsSection = 'general' | 'network' | 'appearance';
 
@@ -126,11 +127,11 @@ export const SettingsPage: React.FC = () => {
                     </div>
 
                     <div className="bg-dark-indigo-glow border border-white/5 rounded-xl p-6 space-y-6">
-                         {['mainnet', 'testnet', 'devnet'].map((net) => (
+                         {ALL_NETWORKS.map((net) => (
                              <div key={net} className="space-y-2">
                                  <div className="flex justify-between">
                                      <label className="text-xs font-bold text-slate-400 uppercase">{net}</label>
-                                     <span className="text-[10px] text-slate-600">Default: https://fullnode.{net}.sui.io</span>
+                                     <span className="text-[10px] text-slate-600">Default: {NETWORKS[net]}</span>
                                  </div>
                                  <input 
                                     className="w-full bg-near-black border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white font-mono placeholder:text-slate-700 focus:border-electric-violet outline-none"

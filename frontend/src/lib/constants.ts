@@ -1,10 +1,14 @@
 
 import { Network } from "../types";
 
+// Default Sui fullnode endpoint per network. Mirrors `Network::sui_url` on the
+// backend (backend/api/src/model/network.rs). `Record<Network, ...>` forces
+// this map to stay exhaustive as networks are added.
 export const NETWORKS: Record<Network, string> = {
   mainnet: 'https://fullnode.mainnet.sui.io:443',
   testnet: 'https://fullnode.testnet.sui.io:443',
   devnet: 'https://fullnode.devnet.sui.io:443',
+  localnet: 'http://127.0.0.1:9000',
 };
 
 export const COMMON_RPC_METHODS = [
