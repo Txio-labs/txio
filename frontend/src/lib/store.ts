@@ -18,7 +18,8 @@ import {
 import { DEFAULT_MOVE_CALL } from './constants';
 import {
     DEFAULT_APP_SETTINGS,
-    normalizeAppSettings
+    normalizeAppSettings,
+    normalizeNotificationPreferences
 } from './appConfig';
 import {
     ApiError,
@@ -32,13 +33,14 @@ const listeners = new Set<Listener>();
 type UserProfileOverrides = Partial<
     Pick<
         UserProfile,
-        'name' | 'avatarUrl' | 'bannerUrl'
+        'name' | 'avatarUrl' | 'bannerUrl' | 'notificationPreferences'
     >
 >;
 const userProfileOverrideFields = [
     'name',
     'avatarUrl',
-    'bannerUrl'
+    'bannerUrl',
+    'notificationPreferences'
 ] as const;
 const storedUserStorageKey =
     'txio_user';
@@ -107,9 +109,16 @@ const readUserProfileOverrides = (
 const applyUserProfileOverrides = (
     user: UserProfile
 ): UserProfile => {
+    const overrides = readUserProfileOverrides(user);
+
     return {
         ...user,
-        ...readUserProfileOverrides(user)
+        ...overrides,
+        notificationPreferences:
+            normalizeNotificationPreferences(
+                overrides.notificationPreferences ||
+                    user.notificationPreferences
+            )
     };
 };
 
@@ -126,6 +135,16 @@ const persistUserProfileOverrides = (
     userProfileOverrideFields.forEach(
         (field) => {
             const value = user[field];
+
+            if (field === 'notificationPreferences') {
+                overrides[field] =
+                    normalizeNotificationPreferences(
+                        typeof value === 'object'
+                            ? value
+                            : undefined
+                    );
+                return;
+            }
 
             if (
                 typeof value === 'string' &&
@@ -159,14 +178,20 @@ const isUserProfile = (
     const candidate =
         value as Partial<UserProfile>;
 
-    return (
-        typeof candidate.id ===
-            'string' &&
-        typeof candidate.email ===
-            'string' &&
-        typeof candidate.name ===
-            'string'
-    );
+    if (
+        typeof candidate.id !== 'string' ||
+        typeof candidate.email !== 'string' ||
+        typeof candidate.name !== 'string'
+    ) {
+        return false;
+    }
+
+    candidate.notificationPreferences =
+        normalizeNotificationPreferences(
+            candidate.notificationPreferences
+        );
+
+    return true;
 };
 
 const readStoredUser = () => {
@@ -329,6 +354,83 @@ const resolveWorkspaceSelection = (
     return workspaces[0]?.id || '';
 };
 
+const hydrateWorkspaceState = async (
+    workspaces: Workspace[],
+    preferredWorkspaceId?: string
+) => {
+    const nextWorkspaceId =
+        resolveWorkspaceSelection(
+            workspaces,
+            preferredWorkspaceId
+        );
+    const currentSession =
+        state.currentWorkspaceId
+            ? {
+                  tabs: state.tabs,
+                  activeTabId:
+                      state.activeTabId
+              }
+            : null;
+    const updatedSessions =
+        currentSession
+            ? {
+                  ...state.workspaceSessions,
+                  [state.currentWorkspaceId]:
+                      currentSession
+              }
+            : state.workspaceSessions;
+    const nextSession =
+        nextWorkspaceId
+            ? updatedSessions[
+                  nextWorkspaceId
+              ] || {
+                  tabs: [],
+                  activeTabId: null
+              }
+            : {
+                  tabs: [],
+                  activeTabId: null
+              };
+
+    persistCurrentWorkspaceId(
+        nextWorkspaceId
+    );
+
+    state = {
+        ...state,
+        workspaces,
+        currentWorkspaceId:
+            nextWorkspaceId,
+        workspaceSessions:
+            updatedSessions,
+        tabs: nextSession.tabs,
+        activeTabId:
+            nextSession.activeTabId,
+        collections: nextWorkspaceId
+            ? state.collections
+            : [],
+        isLoadingWorkspaces: false,
+        hasHydratedWorkspaces: true
+    };
+
+    emit();
+
+    if (nextWorkspaceId) {
+        await appStore.fetchCollections(
+            nextWorkspaceId
+        );
+    } else {
+        state = {
+            ...state,
+            collections: []
+        };
+
+        emit();
+    }
+
+    return workspaces;
+};
+
 const decodeStoredTokenClaims = (
     token: string
 ) => {
@@ -390,7 +492,9 @@ const buildUserFromToken = (
         email,
         name:
             email.split('@')[0]?.trim() ||
-            'user'
+            'user',
+        notificationPreferences:
+            normalizeNotificationPreferences()
     };
 };
 
@@ -445,6 +549,8 @@ interface AppState {
     theme: 'dark' | 'light';
 
     network: Network;
+
+    pendingNetworkSwitch: Network | null;
 
     isSyncing: boolean;
     scanStep: string;
@@ -522,6 +628,8 @@ let state: AppState = {
     theme: initialSettings.theme,
 
     network: initialNetwork,
+
+    pendingNetworkSwitch: null,
 
     isSyncing: false,
 
@@ -981,8 +1089,41 @@ export const appStore = {
         }, 2000);
     },
 
+    requestNetworkSwitch(network: Network) {
+        if (state.network === network) return;
+        state = {
+            ...state,
+            pendingNetworkSwitch: network
+        };
+        emit();
+    },
+
+    cancelNetworkSwitch() {
+        state = {
+            ...state,
+            pendingNetworkSwitch: null
+        };
+        emit();
+    },
+
+    confirmNetworkSwitch() {
+        const target = state.pendingNetworkSwitch;
+        if (!target) return;
+
+        state = {
+            ...state,
+            pendingNetworkSwitch: null
+        };
+        emit();
+
+        appStore.setNetwork(target);
+    },
+
     async fetchWorkspaces(
-        preferredWorkspaceId?: string
+        preferredWorkspaceId?: string,
+        prefetchedWorkspaces?:
+            | Workspace[]
+            | null
     ) {
         if (!state.user) {
             persistCurrentWorkspaceId('');
@@ -1011,78 +1152,13 @@ export const appStore = {
 
         try {
             const workspaces =
-                await apiService.getWorkspaces();
-            const nextWorkspaceId =
-                resolveWorkspaceSelection(
-                    workspaces,
-                    preferredWorkspaceId
-                );
-            const currentSession =
-                state.currentWorkspaceId
-                    ? {
-                          tabs: state.tabs,
-                          activeTabId:
-                              state.activeTabId
-                      }
-                    : null;
-            const updatedSessions =
-                currentSession
-                    ? {
-                          ...state.workspaceSessions,
-                          [state.currentWorkspaceId]:
-                              currentSession
-                      }
-                    : state.workspaceSessions;
-            const nextSession =
-                nextWorkspaceId
-                    ? updatedSessions[
-                          nextWorkspaceId
-                      ] || {
-                          tabs: [],
-                          activeTabId: null
-                      }
-                    : {
-                          tabs: [],
-                          activeTabId: null
-                      };
+                prefetchedWorkspaces ??
+                (await apiService.getWorkspaces());
 
-            persistCurrentWorkspaceId(
-                nextWorkspaceId
-            );
-
-            state = {
-                ...state,
+            return await hydrateWorkspaceState(
                 workspaces,
-                currentWorkspaceId:
-                    nextWorkspaceId,
-                workspaceSessions:
-                    updatedSessions,
-                tabs: nextSession.tabs,
-                activeTabId:
-                    nextSession.activeTabId,
-                collections: nextWorkspaceId
-                    ? state.collections
-                    : [],
-                isLoadingWorkspaces: false,
-                hasHydratedWorkspaces: true
-            };
-
-            emit();
-
-            if (nextWorkspaceId) {
-                await appStore.fetchCollections(
-                    nextWorkspaceId
-                );
-            } else {
-                state = {
-                    ...state,
-                    collections: []
-                };
-
-                emit();
-            }
-
-            return workspaces;
+                preferredWorkspaceId
+            );
         } catch (error) {
             state = {
                 ...state,
@@ -1644,9 +1720,19 @@ export const appStore = {
 
             emit();
 
+            const workspacesPromise =
+                apiService.getWorkspaces();
+
+            void workspacesPromise.catch(
+                () => undefined
+            );
+
             try {
+                const profilePromise =
+                    apiService.getProfile();
+
                 const user =
-                    await apiService.getProfile();
+                    await profilePromise;
 
                 const hydratedUser =
                     applyUserProfileOverrides(
@@ -1666,7 +1752,13 @@ export const appStore = {
                 emit();
 
                 try {
-                    await appStore.fetchWorkspaces();
+                    const workspaces =
+                        await workspacesPromise;
+
+                    await appStore.fetchWorkspaces(
+                        undefined,
+                        workspaces
+                    );
                 } catch (workspaceError) {
                     console.error(
                         'Failed to restore workspaces during refresh:',
@@ -1723,7 +1815,13 @@ export const appStore = {
                     hydratedRestoredUser
                 ) {
                     try {
-                        await appStore.fetchWorkspaces();
+                        const workspaces =
+                            await workspacesPromise;
+
+                        await appStore.fetchWorkspaces(
+                            undefined,
+                            workspaces
+                        );
                     } catch (workspaceError) {
                         console.error(
                             'Failed to restore workspaces after profile fallback:',
@@ -1768,6 +1866,13 @@ export const appStore = {
             | null
     ) {
         if (user === null) {
+            apiService.setToken(null);
+
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('txio_token');
+                localStorage.removeItem('txio_viewMode');
+            }
+
             clearStoredUser();
             persistCurrentWorkspaceId('');
 
@@ -1780,7 +1885,8 @@ export const appStore = {
                 tabs: [],
                 activeTabId: null,
                 isLoadingWorkspaces: false,
-                hasHydratedWorkspaces: false
+                hasHydratedWorkspaces: false,
+                viewMode: 'landing'
             };
 
             emit();
@@ -1794,9 +1900,14 @@ export const appStore = {
 
         if (isFullUser) {
             const hydratedUser =
-                applyUserProfileOverrides(
-                    user as UserProfile
-                );
+                applyUserProfileOverrides({
+                    ...(user as UserProfile),
+                    notificationPreferences:
+                        normalizeNotificationPreferences(
+                            (user as UserProfile)
+                                .notificationPreferences
+                        )
+                });
 
             state = {
                 ...state,
@@ -1819,7 +1930,13 @@ export const appStore = {
             ...state,
             user: {
                 ...state.user,
-                ...user
+                ...user,
+                notificationPreferences:
+                    'notificationPreferences' in user
+                        ? normalizeNotificationPreferences(
+                            user.notificationPreferences
+                        )
+                        : state.user.notificationPreferences
             }
         };
 

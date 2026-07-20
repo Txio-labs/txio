@@ -97,7 +97,7 @@ export const Dashboard: React.FC = () => {
         >
             {/* Background Architecture */}
             <div className="absolute inset-0 pointer-events-none opacity-20">
-                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(123, 63, 242, 0.15) 1px, transparent 0)', backgroundSize: '40px 40px' }}></div>
+                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(173,223,241, 0.15) 1px, transparent 0)', backgroundSize: '40px 40px' }}></div>
                 <div className="absolute inset-0 bg-gradient-to-t from-near-black via-transparent to-transparent"></div>
             </div>
 
@@ -133,7 +133,7 @@ export const Dashboard: React.FC = () => {
                             className="flex items-center gap-2 mb-4"
                         >
                             <div className="h-0.5 w-16 bg-gradient-to-r from-electric-violet to-transparent rounded-full"></div>
-                            <span className="text-[11px] font-bold uppercase tracking-[0.4em] text-electric-violet drop-shadow-[0_0_5px_rgba(123,63,242,0.5)]">All systems good</span>
+                            <span className="text-[11px] font-bold uppercase tracking-[0.4em] text-electric-violet drop-shadow-[0_0_5px_rgba(173,223,241,0.5)]">All systems good</span>
                         </motion.div>
                         <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tighter leading-tight">
                             Good to see <br />
@@ -148,7 +148,7 @@ export const Dashboard: React.FC = () => {
                             <div className="absolute inset-0 bg-electric-violet/30 blur-3xl rounded-full group-hover:bg-electric-violet/50 transition-all duration-700"></div>
                             <button 
                                 onClick={() => appStore.openTab('new_request')}
-                                className="relative flex items-center gap-3 px-8 py-4 bg-white text-black rounded-2xl font-bold text-base hover:bg-electric-violet hover:text-white transition-all duration-500 hover:shadow-[0_0_40px_rgba(123,63,242,0.6)] active:scale-95 group"
+                                className="relative flex items-center gap-3 px-8 py-4 bg-white text-black rounded-2xl font-bold text-base hover:bg-electric-violet hover:text-white transition-all duration-500 hover:shadow-[0_0_40px_rgba(173,223,241,0.6)] active:scale-95 group"
                             >
                                 <Sparkles size={20} className="text-electric-violet group-hover:text-white transition-colors" />
                                 Start Building

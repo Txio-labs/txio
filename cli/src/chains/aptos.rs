@@ -2,8 +2,8 @@ use crate::chains::traits::ChainAdapter;
 use crate::chains::validation::{build_url, build_url_with_query, validate_aptos_address};
 use crate::cli::parser::Network;
 use async_trait::async_trait;
-use serde_json::{json, Value};
-use anyhow::{Result, anyhow};
+use serde_json::Value;
+use anyhow::Result;
 use reqwest::Client;
 
 pub struct AptosAdapter {
@@ -12,10 +12,6 @@ pub struct AptosAdapter {
 }
 
 impl AptosAdapter {
-    pub fn new() -> Self {
-        Self::with_rpc(None, Network::Mainnet)
-    }
-
     pub fn with_rpc(rpc_url: Option<String>, network: Network) -> Self {
         let url = rpc_url.unwrap_or_else(|| match network {
             Network::Mainnet => "https://fullnode.mainnet.aptoslabs.com/v1".to_string(),

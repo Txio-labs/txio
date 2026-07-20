@@ -12,10 +12,6 @@ pub struct SolanaAdapter {
 }
 
 impl SolanaAdapter {
-    pub fn new() -> Self {
-        Self::with_rpc(None, Network::Mainnet)
-    }
-
     pub fn with_rpc(rpc_url: Option<String>, network: Network) -> Self {
         let url = rpc_url.unwrap_or_else(|| match network {
             Network::Mainnet => "https://api.mainnet-beta.solana.com".to_string(),
@@ -58,6 +54,14 @@ impl ChainAdapter for SolanaAdapter {
             .await?;
 
         let body: Value = response.json().await?;
+        if let Some(error) = body.get("error") {
+            let message = error
+                .get("message")
+                .and_then(Value::as_str)
+                .unwrap_or("Unknown RPC error");
+            let code = error.get("code").and_then(Value::as_i64).unwrap_or(0);
+            return Err(anyhow!("{message} (Code: {code})"));
+        }
         Ok(body.get("result").cloned().unwrap_or(Value::Null))
     }
 
