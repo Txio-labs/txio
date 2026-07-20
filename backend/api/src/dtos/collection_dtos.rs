@@ -97,7 +97,10 @@ mod tests {
         });
         let req: UpdateSavedRequestRequest = serde_json::from_value(json_data).unwrap();
         assert_eq!(req.network, Some(Some("testnet".to_string())));
-        assert_eq!(req.rpc_url, Some(Some("https://fullnode.testnet.sui.io".to_string())));
+        assert_eq!(
+            req.rpc_url,
+            Some(Some("https://fullnode.testnet.sui.io".to_string()))
+        );
         assert_eq!(req.last_response, Some(Some(json!({ "status": "ok" }))));
     }
 }

@@ -47,10 +47,7 @@ impl SessionRepository {
     ) -> Result<(), AppError> {
         let result = self
             .collection
-            .delete_one(
-                doc! { "_id": session_id, "user_id": user_id },
-                None,
-            )
+            .delete_one(doc! { "_id": session_id, "user_id": user_id }, None)
             .await?;
 
         if result.deleted_count == 0 {

@@ -37,12 +37,7 @@ pub struct Session {
 }
 
 impl Session {
-    pub fn new(
-        user_id: ObjectId,
-        jti: String,
-        device_label: String,
-        ip_address: String,
-    ) -> Self {
+    pub fn new(user_id: ObjectId, jti: String, device_label: String, ip_address: String) -> Self {
         let now = Utc::now();
         Self {
             id: None,

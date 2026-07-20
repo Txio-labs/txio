@@ -432,6 +432,9 @@ describe('appStore auth and session state', () => {
                     'txio_user'
                 ) || 'null'
             )
-        ).toEqual(user);
+        ).toEqual({
+            ...user,
+            notificationPreferences: defaultNotificationPreferences
+        });
     });
 });

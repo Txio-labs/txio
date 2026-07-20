@@ -469,7 +469,9 @@ fn validate_txio_command(parts: &[String]) -> Result<(), String> {
 
     let cmd = &parts[0];
     if cmd != "txio" {
-        return Err(format!("Unsupported command: {cmd}. Only 'txio' is authorized."));
+        return Err(format!(
+            "Unsupported command: {cmd}. Only 'txio' is authorized."
+        ));
     }
 
     let args = &parts[1..];
@@ -496,27 +498,25 @@ fn validate_txio_command(parts: &[String]) -> Result<(), String> {
             }
             Ok(())
         }
-        "config" => {
-            match args.get(1).map(String::as_str) {
-                Some("list") => {
-                    if args.len() != 2 {
-                        return Err("Usage: txio config list".to_string());
-                    }
-                    Ok(())
+        "config" => match args.get(1).map(String::as_str) {
+            Some("list") => {
+                if args.len() != 2 {
+                    return Err("Usage: txio config list".to_string());
                 }
-                Some("get") => {
-                    if args.len() != 3 || args[2].trim().is_empty() {
-                        return Err("Usage: txio config get <key>".to_string());
-                    }
-                    if !is_safe_config_key(&args[2]) {
-                        return Err("Unsupported config key".to_string());
-                    }
-                    Ok(())
-                }
-                Some(action) => Err(format!("Unsupported config action: {action}")),
-                None => Err("Usage: txio config list|get <key>".to_string()),
+                Ok(())
             }
-        }
+            Some("get") => {
+                if args.len() != 3 || args[2].trim().is_empty() {
+                    return Err("Usage: txio config get <key>".to_string());
+                }
+                if !is_safe_config_key(&args[2]) {
+                    return Err("Unsupported config key".to_string());
+                }
+                Ok(())
+            }
+            Some(action) => Err(format!("Unsupported config action: {action}")),
+            None => Err("Usage: txio config list|get <key>".to_string()),
+        },
         "profile" => {
             if args.len() == 2 && args[1] == "list" {
                 Ok(())
@@ -533,8 +533,7 @@ fn validate_txio_command(parts: &[String]) -> Result<(), String> {
         }
         "completion" => {
             if args.len() != 2 || !is_supported_shell(&args[1]) {
-                return Err("Usage: txio completion <bash|zsh|fish|powershell|elvish>"
-                    .to_string());
+                return Err("Usage: txio completion <bash|zsh|fish|powershell|elvish>".to_string());
             }
             Ok(())
         }
@@ -568,8 +567,8 @@ mod tests {
         let blocked = parse_command("txio sui balance 0x123").expect("should parse");
         assert!(validate_txio_command(&blocked).is_err());
 
-        let blocked_cargo = parse_command("cargo run --manifest-path /tmp/evil/Cargo.toml")
-            .expect("should parse");
+        let blocked_cargo =
+            parse_command("cargo run --manifest-path /tmp/evil/Cargo.toml").expect("should parse");
         assert!(validate_txio_command(&blocked_cargo).is_err());
     }
 }
