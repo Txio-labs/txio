@@ -118,9 +118,9 @@ export const EcosystemPage: React.FC<
 
                 <div className="flex items-center gap-6">
                     <div className="hidden md:flex items-center gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-                        <span onClick={() => navigateTo('integrations')} className="hover:text-electric-violet transition-colors cursor-pointer">Integrations</span>
-                        <span onClick={() => navigateTo('infrastructure')} className="hover:text-electric-violet transition-colors cursor-pointer">Infrastructure</span>
-                        <span onClick={() => navigateTo('partners')} className="hover:text-electric-violet transition-colors cursor-pointer">Partners</span>
+                        <button onClick={() => navigateTo('integrations')} className="hover:text-electric-violet transition-colors cursor-pointer">Integrations</button>
+                        <button onClick={() => navigateTo('infrastructure')} className="hover:text-electric-violet transition-colors cursor-pointer">Infrastructure</button>
+                        <button onClick={() => navigateTo('partners')} className="hover:text-electric-violet transition-colors cursor-pointer">Partners</button>
                     </div>
                     <button 
                         onClick={() =>
@@ -343,16 +343,16 @@ export const EcosystemPage: React.FC<
                         <div className="space-y-4">
                             <div className="text-[11px] font-black uppercase tracking-widest text-slate-200">Ecosystem</div>
                             <ul className="space-y-3 text-sm text-slate-500 font-bold">
-                                <li><span onClick={() => navigateTo('integrations')} className="hover:text-white transition-colors cursor-pointer">Integrations</span></li>
-                                <li><span onClick={() => navigateTo('infrastructure')} className="hover:text-white transition-colors cursor-pointer">Infrastructure</span></li>
-                                <li><span onClick={() => navigateTo('partners')} className="hover:text-white transition-colors cursor-pointer">Partners</span></li>
+                                <li><button onClick={() => appStore.setViewMode('integrations')} className="hover:text-white transition-colors cursor-pointer">Integrations</button></li>
+                                <li><button onClick={() => appStore.setViewMode('infrastructure')} className="hover:text-white transition-colors cursor-pointer">Infrastructure</button></li>
+                                <li><button onClick={() => appStore.setViewMode('partners')} className="hover:text-white transition-colors cursor-pointer">Partners</button></li>
                             </ul>
                         </div>
                         <div className="space-y-4">
                             <div className="text-[11px] font-black uppercase tracking-widest text-slate-200">Resources</div>
                             <ul className="space-y-3 text-sm text-slate-500 font-bold">
-                                <li><span onClick={() => navigateTo('docs')} className="hover:text-white transition-colors cursor-pointer">Documentation</span></li>
-                                <li><span onClick={() => navigateTo('signup')} className="hover:text-white transition-colors cursor-pointer">Launch App</span></li>
+                                <li><button onClick={() => appStore.setViewMode('docs')} className="hover:text-white transition-colors cursor-pointer">Documentation</button></li>
+                                <li><button onClick={() => appStore.setViewMode('signup')} className="hover:text-white transition-colors cursor-pointer">Launch App</button></li>
                             </ul>
                         </div>
                     </div>

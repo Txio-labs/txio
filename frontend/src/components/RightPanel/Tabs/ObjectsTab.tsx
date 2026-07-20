@@ -117,7 +117,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
           const shortType = type.split('::').pop().split('<')[0];
           
           return (
-            <div key={i} onClick={() => setSelectedObject(obj)} className="group flex items-center gap-3 p-2.5 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/10 cursor-pointer transition-all">
+            <button key={i} onClick={() => setSelectedObject(obj)} className="group flex items-center gap-3 p-2.5 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/10 cursor-pointer transition-all w-full text-left">
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${
                 isCoin ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' : 'bg-blue-500/10 border-blue-500/20 text-blue-500'
               }`}>
@@ -130,7 +130,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                 </div>
                 <div className="text-[10px] font-mono text-slate-600 truncate opacity-60 group-hover:opacity-100">{obj.data?.objectId}</div>
               </div>
-            </div>
+            </button>
           );
         })}
         {objects.length === 0 && !loadingObjects && (

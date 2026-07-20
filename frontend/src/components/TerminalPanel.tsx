@@ -424,7 +424,7 @@ export const TerminalPanel: React.FC = () => {
     return (
         <AnimatePresence>
             {isTerminalOpen && (
-                <motion.div
+                <motion.button
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: terminalHeight, opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
@@ -434,7 +434,7 @@ export const TerminalPanel: React.FC = () => {
                             : { type: 'spring', damping: 25, stiffness: 200 }
                     }
                     onClick={focusInput}
-                    className="bg-near-black border-t border-white/[0.06] flex flex-col font-mono text-xs shadow-2xl relative z-40 overflow-hidden"
+                    className="bg-near-black border-t border-white/[0.06] flex flex-col font-mono text-xs shadow-2xl relative z-40 overflow-hidden text-left"
                 >
                     {/* Resize handle */}
                     <div
@@ -444,6 +444,8 @@ export const TerminalPanel: React.FC = () => {
                         onPointerCancel={handleResizeEnd}
                         onClick={(e) => e.stopPropagation()}
                         role="separator"
+                        tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}
                         aria-orientation="horizontal"
                         aria-label="Resize terminal"
                         className={`shrink-0 h-1.5 cursor-row-resize flex items-center justify-center group transition-colors ${
@@ -627,7 +629,7 @@ export const TerminalPanel: React.FC = () => {
 
                     {/* Subtle bottom glow */}
                     <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-electric-violet/30 to-transparent"></div>
-                </motion.div>
+                </motion.button>
             )}
         </AnimatePresence>
     );
