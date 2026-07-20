@@ -5,20 +5,86 @@ use crate::dtos::{
         SwitchNetworkRequest, UpdateEmailRequest, UpdateNotificationPreferencesRequest,
         UpdatePasswordRequest, VerifyOTPRequest,
     },
-    response::{AuthResponse, UserResponse},
+    response::AuthResponse,
 };
 use crate::services::auth_service::AuthService;
+use crate::services::otp_service::constant_time_eq;
 use crate::utils::error::AppError;
-use axum::{Json, extract::State, http::header, response::IntoResponse};
+use axum::{
+    Json,
+    extract::{Path, State},
+    http::header,
+    response::IntoResponse,
+};
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
 use hmac::{Hmac, Mac};
 use serde_json::{Value, json};
 use sha2::Sha256;
+use std::net::SocketAddr;
 
 type HmacSha256 = Hmac<Sha256>;
 
+// ── Device-label helper ──────────────────────────────────────────────────────
+
+/// Parse a raw User-Agent header into a short human-readable label such as
+/// "Chrome on macOS" or "Firefox on Windows".
+fn parse_device_label(ua: &str) -> String {
+    let browser = if ua.contains("Edg/") || ua.contains("Edge/") {
+        "Edge"
+    } else if ua.contains("OPR/") || ua.contains("Opera/") {
+        "Opera"
+    } else if ua.contains("Firefox/") {
+        "Firefox"
+    } else if ua.contains("Chrome/") {
+        "Chrome"
+    } else if ua.contains("Safari/") {
+        "Safari"
+    } else {
+        "Unknown Browser"
+    };
+
+    let os = if ua.contains("Windows") {
+        "Windows"
+    } else if ua.contains("iPhone") || ua.contains("iPad") {
+        "iOS"
+    } else if ua.contains("Android") {
+        "Android"
+    } else if ua.contains("Macintosh") || ua.contains("Mac OS X") {
+        "macOS"
+    } else if ua.contains("Linux") {
+        "Linux"
+    } else {
+        "Unknown OS"
+    };
+
+    format!("{} on {}", browser, os)
+}
+
+/// Extract the best available client IP from headers or the TCP peer address.
+fn extract_ip(headers: &axum::http::HeaderMap, addr: Option<SocketAddr>) -> String {
+    // Prefer X-Forwarded-For (set by reverse proxies like nginx / Cloudflare).
+    // Only trust the leftmost entry — it is the original client address.
+    if let Some(xff) = headers
+        .get("x-forwarded-for")
+        .and_then(|v| v.to_str().ok())
+    {
+        let first = xff.split(',').next().unwrap_or("").trim();
+        if !first.is_empty() {
+            return first.to_string();
+        }
+    }
+
+    // Fall back to direct TCP peer.
+    addr.map(|a| a.ip().to_string())
+        .unwrap_or_else(|| "unknown".to_string())
+}
+
+// ── Auth handlers ────────────────────────────────────────────────────────────
+
 pub async fn register(
     State(service): State<AuthService>,
+    axum::extract::ConnectInfo(addr): axum::extract::ConnectInfo<SocketAddr>,
+    headers: axum::http::HeaderMap,
     Json(payload): Json<RegisterUserRequest>,
 ) -> Result<Json<AuthResponse>, AppError> {
     use validator::Validate;
@@ -26,13 +92,29 @@ pub async fn register(
         .validate()
         .map_err(|e| AppError::ValidationError(e.to_string()))?;
 
-    let response = service.register_user(payload).await?;
+    let auth = service.register_user(payload).await?;
 
-    Ok(Json(response))
+    // Create a session record for this new login.
+    if let Ok(claims) = service.verify_token(&auth.token) {
+        let ua = headers
+            .get(header::USER_AGENT)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("Unknown");
+        let device_label = parse_device_label(ua);
+        let ip = extract_ip(&headers, Some(addr));
+        let jti = claims.jti.as_deref().unwrap_or(&claims.sub);
+        let _ = service
+            .create_session(&claims.sub, jti, &device_label, &ip)
+            .await;
+    }
+
+    Ok(Json(auth))
 }
 
 pub async fn login(
     State(service): State<AuthService>,
+    axum::extract::ConnectInfo(addr): axum::extract::ConnectInfo<SocketAddr>,
+    headers: axum::http::HeaderMap,
     Json(payload): Json<LoginRequest>,
 ) -> Result<Json<AuthResponse>, AppError> {
     use validator::Validate;
@@ -40,9 +122,23 @@ pub async fn login(
         .validate()
         .map_err(|e| AppError::ValidationError(e.to_string()))?;
 
-    let response = service.login_user(payload).await?;
+    let auth = service.login_user(payload).await?;
 
-    Ok(Json(response))
+    // Create a session record after successful authentication.
+    if let Ok(claims) = service.verify_token(&auth.token) {
+        let ua = headers
+            .get(header::USER_AGENT)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("Unknown");
+        let device_label = parse_device_label(ua);
+        let ip = extract_ip(&headers, Some(addr));
+        let jti = claims.jti.as_deref().unwrap_or(&claims.sub);
+        let _ = service
+            .create_session(&claims.sub, jti, &device_label, &ip)
+            .await;
+    }
+
+    Ok(Json(auth))
 }
 
 pub async fn request_otp(
@@ -80,9 +176,8 @@ pub async fn verify_otp(
 pub async fn profile(
     State(service): State<AuthService>,
     claims: crate::utils::auth_jwt::Claims,
-) -> Result<Json<UserResponse>, AppError> {
+) -> Result<Json<crate::dtos::response::UserResponse>, AppError> {
     let user = service.get_user_profile_by_email(&claims.email).await?;
-
     Ok(Json(user))
 }
 
@@ -95,7 +190,6 @@ pub async fn get_user_profile(
     claims: crate::utils::auth_jwt::Claims,
 ) -> Result<Json<Value>, AppError> {
     let user = service.get_user_profile_by_email(&claims.email).await?;
-
     Ok(Json(json!({ "user": user })))
 }
 
@@ -154,7 +248,6 @@ pub async fn delete_user(
     claims: crate::utils::auth_jwt::Claims,
 ) -> Result<Json<Value>, AppError> {
     let user = service.delete_user_by_email(&claims.email).await?;
-
     Ok(Json(json!({ "user": user })))
 }
 
@@ -231,6 +324,32 @@ pub async fn switch_network(
         "user": user
     })))
 }
+
+// ── Session handlers ─────────────────────────────────────────────────────────
+
+/// `GET /auth/sessions` — list all active sessions for the authenticated user.
+/// The session matching the current request's JWT is flagged `is_current: true`.
+pub async fn list_sessions(
+    State(service): State<AuthService>,
+    claims: crate::utils::auth_jwt::Claims,
+) -> Result<Json<Value>, AppError> {
+    let current_jti = claims.jti.as_deref();
+    let sessions = service.list_sessions(&claims.sub, current_jti).await?;
+    Ok(Json(json!({ "sessions": sessions })))
+}
+
+/// `DELETE /auth/sessions/:session_id` — revoke a specific session.
+/// Users can only revoke their own sessions.
+pub async fn revoke_session(
+    State(service): State<AuthService>,
+    claims: crate::utils::auth_jwt::Claims,
+    Path(session_id): Path<String>,
+) -> Result<Json<Value>, AppError> {
+    service.revoke_session(&claims.sub, &session_id).await?;
+    Ok(Json(json!({ "message": "Session revoked" })))
+}
+
+// ── OAuth helpers ─────────────────────────────────────────────────────────────
 
 fn oauth_signing_key() -> Result<Vec<u8>, AppError> {
     let secret = std::env::var("JWT_SECRET")
@@ -408,6 +527,26 @@ pub async fn google_callback(
         .oauth_login_or_register(google_sub.to_string(), email.to_string())
         .await?;
 
+    // Create a session for the OAuth login.
+    if let Ok(claims) = service.verify_token(&auth_res.token) {
+        let ua = headers
+            .get(header::USER_AGENT)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("Unknown");
+        let device_label = parse_device_label(ua);
+        // No ConnectInfo available here (redirect flow); use X-Forwarded-For only.
+        let ip = headers
+            .get("x-forwarded-for")
+            .and_then(|v| v.to_str().ok())
+            .and_then(|v| v.split(',').next())
+            .map(|s| s.trim().to_string())
+            .unwrap_or_else(|| "unknown".to_string());
+        let jti = claims.jti.as_deref().unwrap_or(&claims.sub);
+        let _ = service
+            .create_session(&claims.sub, jti, &device_label, &ip)
+            .await;
+    }
+
     // Set the JWT in an HttpOnly cookie instead of exposing it in the redirect
     // URL, where it would be retained in browser history and visible in server
     // access logs and Referer headers sent to third-party resources.
@@ -422,4 +561,11 @@ pub async fn google_callback(
         response.headers_mut().insert(axum::http::header::SET_COOKIE, cookie_val);
     }
     Ok(response)
+}
+
+fn constant_time_eq(a: &str, b: &str) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+    a.bytes().zip(b.bytes()).fold(0u8, |acc, (x, y)| acc | (x ^ y)) == 0
 }

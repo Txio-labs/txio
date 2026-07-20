@@ -16,6 +16,25 @@ use uuid::Uuid;
 
 const COMMAND_TIMEOUT: Duration = Duration::from_secs(60);
 
+/// How long a completed execution record is retained before eviction.
+/// Running records are never evicted; only terminated ones (Success, Error,
+/// Cancelled, TimedOut) are eligible after this interval.
+const EXECUTION_TTL: Duration = Duration::from_secs(5 * 60);
+
+/// Maximum number of records kept in the map at any time (running + completed).
+/// When this is exceeded the oldest completed records are evicted first so that
+/// sustained use cannot grow memory without bound.
+const MAX_EXECUTIONS: usize = 500;
+
+/// Maximum bytes retained per output field (output, stdout, stderr) after a
+/// command finishes. Captured output beyond this limit is truncated with a
+/// marker, keeping the last MAX_OUTPUT_BYTES of content so the tail (most
+/// useful for diagnosis) is always visible.
+const MAX_OUTPUT_BYTES: usize = 256 * 1024;
+
+/// How often the background eviction loop wakes up to prune stale records.
+const EVICTION_INTERVAL: Duration = Duration::from_secs(60);
+
 #[derive(Debug, Clone)]
 pub struct TerminalService {
     executions: Arc<RwLock<HashMap<String, CommandExecutionRecord>>>,
@@ -29,6 +48,12 @@ pub enum CommandExecutionState {
     Error,
     Cancelled,
     TimedOut,
+}
+
+impl CommandExecutionState {
+    fn is_terminal(&self) -> bool {
+        !matches!(self, CommandExecutionState::Running)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -55,6 +80,9 @@ struct CommandExecutionRecord {
     exit_code: Option<i32>,
     duration_ms: Option<u64>,
     cancel_tx: Option<oneshot::Sender<()>>,
+    /// Wall-clock instant when this record transitioned to a terminal state.
+    /// `None` while the execution is still running.
+    completed_at: Option<Instant>,
 }
 
 #[derive(Debug)]
@@ -84,6 +112,7 @@ impl CommandExecutionRecord {
             exit_code: None,
             duration_ms: None,
             cancel_tx: Some(cancel_tx),
+            completed_at: None,
         }
     }
 
@@ -101,11 +130,73 @@ impl CommandExecutionRecord {
     }
 }
 
+/// Truncate `s` to at most `max_bytes`, keeping the **tail** and prepending a
+/// truncation notice so callers know output was clipped.
+fn cap_output(s: Option<String>, max_bytes: usize) -> Option<String> {
+    s.map(|text| {
+        if text.len() <= max_bytes {
+            return text;
+        }
+        // Keep the tail — it is the most useful part for post-mortem diagnosis.
+        let tail_start = text.len() - max_bytes;
+        // Advance to the next valid UTF-8 boundary.
+        let tail_start = text
+            .char_indices()
+            .map(|(i, _)| i)
+            .filter(|&i| i >= tail_start)
+            .next()
+            .unwrap_or(text.len());
+        format!(
+            "[... output truncated — showing last {} bytes ...]\n{}",
+            max_bytes,
+            &text[tail_start..]
+        )
+    })
+}
+
 impl TerminalService {
     pub fn new() -> Self {
-        Self {
-            executions: Arc::new(RwLock::new(HashMap::new())),
-        }
+        let executions = Arc::new(RwLock::new(HashMap::new()));
+
+        // Spawn a background task that periodically evicts stale records so the
+        // in-memory map does not grow without bound during sustained use.
+        let executions_bg = Arc::clone(&executions);
+        tokio::spawn(async move {
+            loop {
+                sleep(EVICTION_INTERVAL).await;
+
+                let mut map = executions_bg.write().await;
+
+                // Phase 1: remove completed records older than TTL.
+                map.retain(|_, record| {
+                    if let Some(completed_at) = record.completed_at {
+                        completed_at.elapsed() < EXECUTION_TTL
+                    } else {
+                        true // keep running records
+                    }
+                });
+
+                // Phase 2: if still over the cap, evict the oldest completed
+                // records (by completed_at) until we are back under the limit.
+                if map.len() > MAX_EXECUTIONS {
+                    let mut completed_ids: Vec<(Instant, String)> = map
+                        .values()
+                        .filter(|r| r.completed_at.is_some())
+                        .map(|r| (r.completed_at.unwrap(), r.execution_id.clone()))
+                        .collect();
+
+                    // Sort oldest-first.
+                    completed_ids.sort_by_key(|(t, _)| *t);
+
+                    let to_remove = map.len().saturating_sub(MAX_EXECUTIONS);
+                    for (_, id) in completed_ids.iter().take(to_remove) {
+                        map.remove(id);
+                    }
+                }
+            }
+        });
+
+        Self { executions }
     }
 
     pub async fn execute(&self, command_str: &str) -> Result<CommandExecutionResponse, String> {
@@ -233,7 +324,7 @@ impl TerminalService {
             Err(error) => {
                 return FinalizedExecution {
                     state: CommandExecutionState::Error,
-                    output: Some(format!("Execution failed: {}", error)),
+                    output: Some(format!("Failed to spawn command: {}", error)),
                     stdout: None,
                     stderr: None,
                     exit_code: None,
@@ -241,89 +332,70 @@ impl TerminalService {
             }
         };
 
-        let stdout_task = spawn_output_reader(child.stdout.take());
-        let stderr_task = spawn_output_reader(child.stderr.take());
+        let stdout_handle = spawn_output_reader(child.stdout.take());
+        let stderr_handle = spawn_output_reader(child.stderr.take());
 
-        let wait_outcome = wait_for_child(&mut child, cancel_rx).await;
+        let outcome = tokio::select! {
+            status = child.wait() => WaitOutcome::Finished(status),
+            _ = cancel_rx => WaitOutcome::Cancelled,
+            _ = sleep(COMMAND_TIMEOUT) => WaitOutcome::TimedOut,
+        };
 
-        let stdout = join_output(stdout_task).await;
-        let stderr = join_output(stderr_task).await;
+        let stdout = collect_output(stdout_handle).await;
+        let stderr = collect_output(stderr_handle).await;
 
-        match wait_outcome {
-            WaitOutcome::Finished(result) => match result {
-                Ok(status) => {
-                    let exit_code = status.code();
-                    let state = if status.success() {
-                        CommandExecutionState::Success
-                    } else {
-                        CommandExecutionState::Error
-                    };
+        match outcome {
+            WaitOutcome::Finished(Ok(status)) => {
+                let exit_code = status.code();
+                let success = status.success();
 
-                    let output = match state {
-                        CommandExecutionState::Success => {
-                            if !stdout.trim().is_empty() {
-                                stdout.clone()
-                            } else {
-                                stderr.clone()
-                            }
-                        }
-                        _ => {
-                            if !stderr.trim().is_empty() {
-                                stderr.clone()
-                            } else {
-                                stdout.clone()
-                            }
-                        }
-                    };
-
-                    FinalizedExecution {
-                        state,
-                        output: non_empty(output),
-                        stdout: non_empty(stdout),
-                        stderr: non_empty(stderr),
-                        exit_code,
-                    }
-                }
-                Err(error) => FinalizedExecution {
-                    state: CommandExecutionState::Error,
-                    output: Some(format!("Execution failed: {}", error)),
-                    stdout: non_empty(stdout),
-                    stderr: non_empty(stderr),
-                    exit_code: None,
-                },
-            },
-            WaitOutcome::Cancelled => {
-                let output = if !stderr.trim().is_empty() {
-                    stderr.clone()
-                } else if !stdout.trim().is_empty() {
-                    stdout.clone()
+                let output = if success {
+                    stdout.clone().or_else(|| stderr.clone())
                 } else {
-                    "Command cancelled.".to_string()
+                    stderr.clone().or_else(|| stdout.clone())
                 };
 
                 FinalizedExecution {
-                    state: CommandExecutionState::Cancelled,
+                    state: if success {
+                        CommandExecutionState::Success
+                    } else {
+                        CommandExecutionState::Error
+                    },
                     output: non_empty(output),
+                    stdout: non_empty(stdout),
+                    stderr: non_empty(stderr),
+                    exit_code,
+                }
+            }
+            WaitOutcome::Finished(Err(error)) => FinalizedExecution {
+                state: CommandExecutionState::Error,
+                output: Some(format!("Command execution failed: {}", error)),
+                stdout: non_empty(stdout),
+                stderr: non_empty(stderr),
+                exit_code: None,
+            },
+            WaitOutcome::Cancelled => {
+                let _ = child.kill().await;
+
+                FinalizedExecution {
+                    state: CommandExecutionState::Cancelled,
+                    output: non_empty(stdout.clone().or_else(|| stderr.clone())),
                     stdout: non_empty(stdout),
                     stderr: non_empty(stderr),
                     exit_code: None,
                 }
             }
             WaitOutcome::TimedOut => {
-                let output = if !stderr.trim().is_empty() {
-                    stderr.clone()
-                } else if !stdout.trim().is_empty() {
-                    stdout.clone()
-                } else {
-                    format!(
-                        "Command timed out after {} seconds.",
-                        COMMAND_TIMEOUT.as_secs()
-                    )
-                };
+                let _ = child.kill().await;
+
+                let output = format!(
+                    "Command timed out after {} seconds",
+                    COMMAND_TIMEOUT.as_secs()
+                );
 
                 FinalizedExecution {
                     state: CommandExecutionState::TimedOut,
-                    output: non_empty(output),
+                    output: non_empty(Some(output)),
                     stdout: non_empty(stdout),
                     stderr: non_empty(stderr),
                     exit_code: None,
@@ -344,12 +416,14 @@ impl TerminalService {
         };
 
         record.state = finalized.state;
-        record.output = finalized.output;
-        record.stdout = finalized.stdout;
-        record.stderr = finalized.stderr;
+        // Cap each output field before storing to bound per-record memory use.
+        record.output = cap_output(finalized.output, MAX_OUTPUT_BYTES);
+        record.stdout = cap_output(finalized.stdout, MAX_OUTPUT_BYTES);
+        record.stderr = cap_output(finalized.stderr, MAX_OUTPUT_BYTES);
         record.exit_code = finalized.exit_code;
         record.duration_ms = Some(elapsed.as_millis().min(u64::MAX as u128) as u64);
         record.cancel_tx = None;
+        record.completed_at = Some(Instant::now());
     }
 }
 
@@ -382,46 +456,15 @@ where
     })
 }
 
-async fn join_output(handle: Option<JoinHandle<String>>) -> String {
+async fn collect_output(handle: Option<JoinHandle<String>>) -> Option<String> {
     match handle {
-        Some(handle) => handle
-            .await
-            .unwrap_or_else(|error| format!("Failed to join process output task: {}", error)),
-        None => String::new(),
+        Some(h) => h.await.ok(),
+        None => None,
     }
 }
 
-async fn wait_for_child(
-    child: &mut tokio::process::Child,
-    cancel_rx: oneshot::Receiver<()>,
-) -> WaitOutcome {
-    tokio::pin!(cancel_rx);
-    let timeout = sleep(COMMAND_TIMEOUT);
-    tokio::pin!(timeout);
-
-    tokio::select! {
-        result = child.wait() => {
-            WaitOutcome::Finished(result)
-        }
-        _ = &mut cancel_rx => {
-            let _ = child.kill().await;
-            let _ = child.wait().await;
-            WaitOutcome::Cancelled
-        }
-        _ = &mut timeout => {
-            let _ = child.kill().await;
-            let _ = child.wait().await;
-            WaitOutcome::TimedOut
-        }
-    }
-}
-
-fn non_empty(value: String) -> Option<String> {
-    if value.trim().is_empty() {
-        None
-    } else {
-        Some(value)
-    }
+fn non_empty(s: Option<String>) -> Option<String> {
+    s.filter(|v| !v.trim().is_empty())
 }
 
 fn parse_command(input: &str) -> Result<Vec<String>, String> {
