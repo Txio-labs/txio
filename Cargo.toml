@@ -26,11 +26,11 @@ thiserror = "2.0"
 uuid = { version = "1.0", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 dotenvy = "0.15"
-tower-http = { version = "0.6", features = ["cors", "trace", "limit"] }
+tower-http = { version = "0.7", features = ["cors", "trace", "limit"] }
 tower = { version = "0.5", features = ["util", "timeout"] }
 tower_governor = { version = "0.8.0", default-features = false, features = ["axum"] }
 mongodb = { version = "2.8.2", features = ["tokio-runtime"] }
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.13", features = ["json"] }
 clap = { version = "4.5", features = ["derive", "suggestions", "env"] }
 async-trait = "0.1"
 regex = "1.10"
@@ -41,7 +41,7 @@ indicatif = "0.18"
 dirs-next = "2.0"
 jsonwebtoken = "10.4"
 config = "0.15"
-rand = "0.9"
+rand = "0.10"
 validator = { version = "0.20", features = ["derive"] }
 bcrypt = "0.19"
 hmac = "0.13"
