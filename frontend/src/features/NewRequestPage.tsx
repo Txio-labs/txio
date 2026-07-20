@@ -21,7 +21,8 @@ export const NewRequestPage: React.FC<NewRequestPageProps> = ({ tabId, initialDa
   // Resolve a human-readable collection name for display when pre-scoped.
   const collectionName = collectionId
     ? (() => {
-        const findCollection = (nodes: typeof appStore.getSnapshot()['collections'], id: string): string | undefined => {
+        type CollectionNode = ReturnType<typeof appStore.getSnapshot>['collections'][number];
+        const findCollection = (nodes: CollectionNode[], id: string): string | undefined => {
           for (const node of nodes) {
             if (node.id === id) return node.name;
             if (node.children) {

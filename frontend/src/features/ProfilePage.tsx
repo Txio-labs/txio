@@ -262,7 +262,10 @@ function useActiveSessions() {
         }
     }, []);
 
-    useEffect(() => { void load(); }, [load]);
+    useEffect(() => {
+        load();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const revoke = useCallback(async (sessionId: string) => {
         setRevokingId(sessionId);
