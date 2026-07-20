@@ -132,7 +132,9 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                         args,
                     );
                     setRunList((prev) =>
-                        prev.map((r, i) => (i === idx ? { ...r, status: 'success' as const, duration, httpStatus: status } : r)),
+                        abortRef.current
+                            ? prev
+                            : prev.map((r, i) => (i === idx ? { ...r, status: 'success' as const, duration, httpStatus: status } : r)),
                     );
                 } else {
                     const { result, status, duration } = await executeSuiRpc(
@@ -141,9 +143,11 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                         resolved.rpcParams.params,
                     );
                     setRunList((prev) =>
-                        prev.map((r, i) =>
-                            i === idx ? { ...r, status: 'success' as const, duration, httpStatus: status, response: result } : r,
-                        ),
+                        abortRef.current
+                            ? prev
+                            : prev.map((r, i) =>
+                                i === idx ? { ...r, status: 'success' as const, duration, httpStatus: status, response: result } : r,
+                              ),
                     );
                 }
             } catch (error) {
@@ -151,17 +155,19 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                 const rpcError = error instanceof SuiRpcError ? error : null;
                 const errorMessage = error instanceof Error && error.message.trim() ? error.message : 'Request failed';
                 setRunList((prev) =>
-                    prev.map((r, i) =>
-                        i === idx
-                            ? {
-                                  ...r,
-                                  status: 'error' as const,
-                                  duration,
-                                  httpStatus: rpcError?.status ?? 0,
-                                  errorMessage,
-                              }
-                            : r,
-                    ),
+                    abortRef.current
+                        ? prev
+                        : prev.map((r, i) =>
+                            i === idx
+                                ? {
+                                      ...r,
+                                      status: 'error' as const,
+                                      duration,
+                                      httpStatus: rpcError?.status ?? 0,
+                                      errorMessage,
+                                  }
+                                : r,
+                          ),
                 );
             }
 

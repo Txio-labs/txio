@@ -1866,6 +1866,13 @@ export const appStore = {
             | null
     ) {
         if (user === null) {
+            apiService.setToken(null);
+
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('txio_token');
+                localStorage.removeItem('txio_viewMode');
+            }
+
             clearStoredUser();
             persistCurrentWorkspaceId('');
 
@@ -1878,7 +1885,8 @@ export const appStore = {
                 tabs: [],
                 activeTabId: null,
                 isLoadingWorkspaces: false,
-                hasHydratedWorkspaces: false
+                hasHydratedWorkspaces: false,
+                viewMode: 'landing'
             };
 
             emit();

@@ -1,21 +1,41 @@
 import React, { useRef, useState } from 'react';
-import { Terminal, Layers, Plus } from 'lucide-react';
+import { Terminal, Layers, FolderOpen } from 'lucide-react';
 import { appStore } from '@/lib/store';
 import { RequestType, RequestItem } from '../types';
 import { DEFAULT_MOVE_CALL } from '@/lib/constants';
 import { ImportedRpcRequest, parseImportFile } from '@/lib/importRequest';
 import { ImportCurlModal } from '@/components/ImportCurlModal';
+import { apiService } from '@/services/api';
 
 interface NewRequestPageProps {
   tabId: string;
   initialData?: any;
 }
 
-export const NewRequestPage: React.FC<NewRequestPageProps> = ({ tabId }) => {
+export const NewRequestPage: React.FC<NewRequestPageProps> = ({ tabId, initialData }) => {
   const [isCurlModalOpen, setIsCurlModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleCreate = (type: 'rpc' | 'ptb') => {
+  const collectionId: string | undefined = initialData?.collectionId;
+
+  // Resolve a human-readable collection name for display when pre-scoped.
+  const collectionName = collectionId
+    ? (() => {
+        const findCollection = (nodes: typeof appStore.getSnapshot()['collections'], id: string): string | undefined => {
+          for (const node of nodes) {
+            if (node.id === id) return node.name;
+            if (node.children) {
+              const found = findCollection(node.children, id);
+              if (found) return found;
+            }
+          }
+          return undefined;
+        };
+        return findCollection(appStore.getSnapshot().collections, collectionId) ?? 'collection';
+      })()
+    : undefined;
+
+  const handleCreate = async (type: 'rpc' | 'ptb') => {
     let reqType = RequestType.RPC;
     let name = 'Untitled Request';
 
@@ -40,8 +60,19 @@ export const NewRequestPage: React.FC<NewRequestPageProps> = ({ tabId }) => {
     // 2. CRITICAL: Set this tab as active so WorkspaceContent re-renders with RPCBuilder
     appStore.setActiveTab(tabId);
 
-    // Optional: Show a toast notification
-    appStore.showToast(`${type === 'rpc' ? 'RPC' : 'PTB'} request created`, 'success');
+    // 3. If this request was opened from a collection sidebar quick-action,
+    //    persist it to that collection immediately so it appears in the tree.
+    if (collectionId) {
+      try {
+        await apiService.addRequest(collectionId, requestData);
+        await appStore.fetchCollections();
+        appStore.showToast(`${type === 'rpc' ? 'RPC' : 'PTB'} request added to ${collectionName ?? 'collection'}`, 'success');
+      } catch {
+        appStore.showToast(`${type === 'rpc' ? 'RPC' : 'PTB'} request created`, 'success');
+      }
+    } else {
+      appStore.showToast(`${type === 'rpc' ? 'RPC' : 'PTB'} request created`, 'success');
+    }
   };
 
   const buildRequestItem = (imported: ImportedRpcRequest, id: string): RequestItem => ({
@@ -54,13 +85,14 @@ export const NewRequestPage: React.FC<NewRequestPageProps> = ({ tabId }) => {
     localVars: []
   });
 
-  const handleImportedRequests = (requests: ImportedRpcRequest[]) => {
+  const handleImportedRequests = async (requests: ImportedRpcRequest[]) => {
     if (!requests.length) return;
 
     const [first, ...rest] = requests;
 
     // The current tab becomes the first imported request.
-    appStore.finalizeRequest(tabId, 'rpc', buildRequestItem(first, tabId));
+    const firstItem = buildRequestItem(first, tabId);
+    appStore.finalizeRequest(tabId, 'rpc', firstItem);
 
     // Additional requests (from a file/HAR with multiple entries) each get their own tab.
     rest.forEach((req, index) => {
@@ -71,6 +103,16 @@ export const NewRequestPage: React.FC<NewRequestPageProps> = ({ tabId }) => {
     });
 
     appStore.setActiveTab(tabId);
+
+    // If opened from a collection, persist the first imported request to that collection.
+    if (collectionId) {
+      try {
+        await apiService.addRequest(collectionId, firstItem);
+        await appStore.fetchCollections();
+      } catch {
+        // Non-fatal — request is still open in the tab
+      }
+    }
 
     appStore.showToast(
       requests.length > 1
@@ -106,7 +148,15 @@ export const NewRequestPage: React.FC<NewRequestPageProps> = ({ tabId }) => {
   return (
     <div className="h-full bg-near-black flex flex-col items-center justify-center p-6">
       <div className="max-w-2xl w-full">
-        <h1 className="text-lg font-bold text-slate-200 mb-6 px-1">Select Request Type</h1>
+        <h1 className="text-lg font-bold text-slate-200 mb-2 px-1">Select Request Type</h1>
+
+        {collectionName && (
+          <div className="flex items-center gap-2 mb-6 px-1 text-xs text-slate-400">
+            <FolderOpen size={13} className="text-amber-500/80 shrink-0" />
+            <span>Adding to <span className="text-slate-200 font-medium">{collectionName}</span></span>
+          </div>
+        )}
+        {!collectionName && <div className="mb-6" />}
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <button 
