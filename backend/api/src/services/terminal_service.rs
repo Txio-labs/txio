@@ -435,6 +435,7 @@ where
 {
     stream.map(|mut reader| {
         tokio::spawn(async move {
+ fix/recipes-load-btn-#157
             let mut buffer = Vec::new();
             let mut chunk = [0_u8; 8192];
             let mut truncated = false;
@@ -452,6 +453,32 @@ where
 
             let output = String::from_utf8_lossy(&buffer).to_string();
             if truncated { format!("{output}\n[output truncated]") } else { output }
+
+            // Read at most MAX_OUTPUT_BYTES so a process with large output
+            // cannot exhaust process memory before cap_output runs.  Bytes
+            // beyond the cap are silently discarded so the child's pipe never
+            // blocks.  cap_output keeps the tail for post-mortem diagnosis;
+            // with the head already capped the tail is at worst MAX_OUTPUT_BYTES.
+            let mut buffer = Vec::with_capacity(MAX_OUTPUT_BYTES);
+            let mut chunk = [0u8; 8192];
+            loop {
+                match reader.read(&mut chunk).await {
+                    Ok(0) => break,
+                    Ok(n) => {
+                        if buffer.len() < MAX_OUTPUT_BYTES {
+                            let space = MAX_OUTPUT_BYTES - buffer.len();
+                            buffer.extend_from_slice(&chunk[..n.min(space)]);
+                        }
+                        // bytes beyond the cap are intentionally dropped here
+                        // so the child process does not block on a full pipe.
+                    }
+                    Err(error) => {
+                        return format!("Failed to read process output: {}", error);
+                    }
+                }
+            }
+            String::from_utf8_lossy(&buffer).to_string()
+
         })
     })
 }

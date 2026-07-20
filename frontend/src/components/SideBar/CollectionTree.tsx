@@ -137,7 +137,7 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
                   </button>
                 )}
                 <button 
-                  onClick={(e) => { e.stopPropagation(); appStore.showToast('Adding to collection not implemented', 'info'); }} 
+                  onClick={(e) => { e.stopPropagation(); appStore.openTab('new_request', { collectionId: node.id }); }} 
                   className="p-1 hover:bg-white/10 rounded text-slate-500 hover:text-white transition-colors"
                   title="Add Request"
                 >
@@ -159,6 +159,14 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
 
   return (
     <div className="flex-1 pb-4 px-2">
+      <button
+        type="button"
+        onClick={() => setIsAddingCollection(true)}
+        className="w-full flex items-center gap-1.5 px-2 py-1 mb-1 text-[11px] text-slate-500 hover:text-slate-200 hover:bg-white/5 rounded-lg transition-colors"
+      >
+        <Plus size={11} />
+        <span>New Collection</span>
+      </button>
       {isAddingCollection && (
         <div className="mb-2 px-1 animate-in slide-in-from-top-2 duration-200">
           <div className="flex items-center gap-2 bg-dark-indigo-glow/80 p-1.5 rounded-lg border border-sui-500/50 ring-1 ring-electric-violet/20 shadow-lg">
