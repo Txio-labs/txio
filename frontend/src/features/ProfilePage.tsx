@@ -17,6 +17,7 @@ import {
     AlertCircle,
 } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
+import { API_BASE } from '@/services/api';
 import { Avatar } from '../components/ui/Avatar';
 import type { UserProfile } from '../types';
 
@@ -479,7 +480,7 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
                                             <span className="truncate text-slate-500">Not connected</span>
                                             <button
                                                 type="button"
-                                                onClick={() => appStore.showToast('GitHub OAuth not implemented', 'info')}
+                                                onClick={() => window.location.href = `${API_BASE}/auth/github/login`}
                                                 className="ml-auto text-[11px] text-electric-violet hover:text-soft-purple font-medium transition-colors"
                                             >
                                                 Connect →

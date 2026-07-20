@@ -47,15 +47,21 @@ export const GetStartedPage: React.FC = () => {
         
         if (provider === 'Google') {
             window.location.href = `${API_BASE}/auth/google/login`;
-        } else {
-            setTimeout(() => {
-                appStore.showToast(
-                    `${provider} login is not connected yet`,
-                    'info'
-                );
-                setSocialLoading(null);
-            }, 2000);
+            return;
         }
+
+        if (provider === 'GitHub') {
+            window.location.href = `${API_BASE}/auth/github/login`;
+            return;
+        }
+
+        setTimeout(() => {
+            appStore.showToast(
+                `${provider} login is not connected yet`,
+                'info'
+            );
+            setSocialLoading(null);
+        }, 2000);
     };
 
     return (
