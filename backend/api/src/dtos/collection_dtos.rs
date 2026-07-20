@@ -44,9 +44,15 @@ pub struct UpdateSavedRequestRequest {
     pub name: Option<String>,
     pub method: Option<String>,
     pub params: Option<Value>,
-    pub network: Option<String>,
-    pub rpc_url: Option<String>,
-    pub last_response: Option<Value>,
+
+    #[serde(default, with = "serde_with::rust::double_option")]
+    pub network: Option<Option<String>>,
+
+    #[serde(default, with = "serde_with::rust::double_option")]
+    pub rpc_url: Option<Option<String>>,
+
+    #[serde(default, with = "serde_with::rust::double_option")]
+    pub last_response: Option<Option<Value>>,
 }
 
 // Responses could just use the Models directly since they are Serialize,
