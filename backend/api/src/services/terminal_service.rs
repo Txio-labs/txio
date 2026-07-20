@@ -427,12 +427,33 @@ impl TerminalService {
     }
 }
 
+const MAX_CAPTURED_OUTPUT_BYTES: usize = 1024 * 1024;
+
 fn spawn_output_reader<R>(stream: Option<R>) -> Option<JoinHandle<String>>
 where
     R: tokio::io::AsyncRead + Unpin + Send + 'static,
 {
     stream.map(|mut reader| {
         tokio::spawn(async move {
+ fix/recipes-load-btn-#157
+            let mut buffer = Vec::new();
+            let mut chunk = [0_u8; 8192];
+            let mut truncated = false;
+
+            loop {
+                let read = match reader.read(&mut chunk).await {
+                    Ok(0) => break,
+                    Ok(read) => read,
+                    Err(error) => return format!("Failed to read process output: {}", error),
+                };
+                let retained = read.min(MAX_CAPTURED_OUTPUT_BYTES.saturating_sub(buffer.len()));
+                truncated |= retained < read;
+                buffer.extend_from_slice(&chunk[..retained]);
+            }
+
+            let output = String::from_utf8_lossy(&buffer).to_string();
+            if truncated { format!("{output}\n[output truncated]") } else { output }
+
             // Read at most MAX_OUTPUT_BYTES so a process with large output
             // cannot exhaust process memory before cap_output runs.  Bytes
             // beyond the cap are silently discarded so the child's pipe never
@@ -457,6 +478,7 @@ where
                 }
             }
             String::from_utf8_lossy(&buffer).to_string()
+
         })
     })
 }
