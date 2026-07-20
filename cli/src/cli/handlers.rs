@@ -93,7 +93,7 @@ impl CommandHandler {
                 println!(
                     "  {} Network:        {}",
                     "»".dimmed(),
-                    format!("{:?}", cli.network).yellow()
+                    cli.network.to_string().yellow()
                 );
                 println!(
                     "  {} Authenticated:  {}",

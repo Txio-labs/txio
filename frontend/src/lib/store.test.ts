@@ -275,6 +275,13 @@ describe('appStore auth and session state', () => {
         apiService.getProfile.mockRejectedValue(
             new ApiError('Unauthorized', 401)
         );
+        // `initialize` kicks off the workspaces fetch alongside the profile
+        // fetch, so it must resolve to a promise even on the auth-failure path.
+        // Without this the mock returns `undefined` and the store throws before
+        // the session-clearing logic under test can run.
+        apiService.getWorkspaces.mockResolvedValue(
+            []
+        );
         vi.spyOn(
             console,
             'warn'

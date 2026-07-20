@@ -1,6 +1,6 @@
-use mongodb::{Collection, Database};
 use crate::model::rpc::RpcLog;
 use crate::utils::error::AppError;
+use mongodb::{Collection, Database};
 
 #[derive(Clone)]
 pub struct RpcRepository {
