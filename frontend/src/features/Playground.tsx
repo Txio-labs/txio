@@ -19,9 +19,9 @@ export const Playground: React.FC = () => {
     ];
 
     return (
-        <div className="h-full flex flex-col bg-[#050505] text-slate-300 font-sans overflow-hidden">
+        <div className="h-full flex flex-col bg-[#001B2E] text-slate-300 font-sans overflow-hidden">
             {/* Toolbar */}
-            <header className="h-14 border-b border-white/5 flex items-center justify-between px-6 bg-[#0a0a0c] relative z-10">
+            <header className="h-14 border-b border-white/5 flex items-center justify-between px-6 bg-[#003152] relative z-10">
                 <div className="flex items-center gap-6">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-electric-violet/10 flex items-center justify-center text-electric-violet">
@@ -61,10 +61,10 @@ export const Playground: React.FC = () => {
 
             <div className="flex-1 flex overflow-hidden">
                 {/* Main Sandbox */}
-                <main className="flex-1 flex flex-col border-r border-white/5 bg-[#050505]">
+                <main className="flex-1 flex flex-col border-r border-white/5 bg-[#001B2E]">
                     {/* Editor Mock */}
                     <div className="flex-1 p-8 space-y-6 overflow-y-auto custom-scrollbar">
-                        <div className="p-8 rounded-[2.5rem] bg-[#0c0c0e] border border-white/10 relative group">
+                        <div className="p-8 rounded-[2.5rem] bg-[#003152] border border-white/10 relative group">
                             <div className="absolute top-0 right-0 p-6 opacity-5"><Terminal size={80} /></div>
                             <div className="space-y-4 relative z-10">
                                 <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Active Script</div>
@@ -108,7 +108,7 @@ export const Playground: React.FC = () => {
                 </main>
 
                 {/* Right Sidebar - Toolbox */}
-                <aside className="w-80 bg-[#0a0a0c] p-6 space-y-8 flex flex-col">
+                <aside className="w-80 bg-[#003152] p-6 space-y-8 flex flex-col">
                     <div className="space-y-4">
                         <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-600">Snippet Library</h3>
                         <div className="space-y-2">

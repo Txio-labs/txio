@@ -48,6 +48,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [mode, setMode] = useState<SidebarMode>('collections');
   const [isWsDropdownOpen, setIsWsDropdownOpen] = useState(false);
+  const [isCollectionFilterOpen, setIsCollectionFilterOpen] = useState(false);
+  const [collectionFilter, setCollectionFilter] = useState('');
 
   const handleOpenFullHistory = () => {
     appStore.openTab('history');
@@ -61,6 +63,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const handleAddEnvVar = () => {
     onUpdateEnv([...envVariables, { key: '', value: '', enabled: true, network: 'all' }]);
+  };
+
+  const handleToggleCollectionFilter = () => {
+    if (isCollectionFilterOpen) {
+      setCollectionFilter('');
+    }
+
+    setIsCollectionFilterOpen(!isCollectionFilterOpen);
   };
 
   return (
@@ -89,6 +99,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           mode={mode}
           onAddCollection={handleAddCollection}
           onAddEnvVar={handleAddEnvVar}
+          filterQuery={collectionFilter}
+          isFilterOpen={isCollectionFilterOpen}
+          onFilterQueryChange={setCollectionFilter}
+          onToggleFilter={handleToggleCollectionFilter}
         />
 
         {/* Content */}
@@ -106,6 +120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <CollectionTree 
                   collections={collections}
+                  filterQuery={collectionFilter}
                   activeTabId={activeTabId}
                   onToggleExpand={onToggleExpand}
                   onSelectCollectionRequest={onSelectCollectionRequest}

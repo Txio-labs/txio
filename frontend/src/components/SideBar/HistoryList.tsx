@@ -58,7 +58,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({
               </span>
             </div>
             <div className="flex items-center gap-2 text-[10px] text-slate-500">
-              <span className={`uppercase font-bold tracking-wider ${isRpc ? 'text-blue-400/80' : 'text-violet-400/80'}`}>
+              <span className={`uppercase font-bold tracking-wider ${isRpc ? 'text-blue-400/80' : 'text-amber-400/80'}`}>
                 {isRpc ? 'RPC' : 'TX'}
               </span>
               <span className="w-0.5 h-0.5 bg-slate-600 rounded-full"></span>

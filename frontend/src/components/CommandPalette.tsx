@@ -62,7 +62,7 @@ export const CommandPalette: React.FC = () => {
             { id: 'new-ptb', title: 'New PTB', subtitle: 'Programmable Transaction Block Builder', icon: <Layers size={14} />, action: () => appStore.openTab('ptb'), keywords: ['new', 'create', 'ptb', 'transaction'] },
             { id: 'settings', title: 'Settings', icon: <Settings size={14} />, action: () => appStore.openTab('settings'), keywords: ['config', 'preferences'] },
             { id: 'profile', title: 'Profile', icon: <User size={14} />, action: () => appStore.openTab('profile'), keywords: ['account', 'user'] },
-            { id: 'switch-net', title: 'Switch Network', subtitle: 'Toggle between Mainnet/Testnet', icon: <RotateCcw size={14} />, action: () => appStore.setNetwork(appStore.getSnapshot().network === 'mainnet' ? 'testnet' : 'mainnet'), keywords: ['network', 'mainnet', 'testnet'] }
+            { id: 'switch-net', title: 'Switch Network', subtitle: 'Toggle between Mainnet/Testnet', icon: <RotateCcw size={14} />, action: () => appStore.requestNetworkSwitch(appStore.getSnapshot().network === 'mainnet' ? 'testnet' : 'mainnet'), keywords: ['network', 'mainnet', 'testnet'] }
         );
 
         // 2. Collection Requests (Scoped to Workspace)
@@ -151,7 +151,7 @@ export const CommandPalette: React.FC = () => {
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') appStore.setCommandPalette(false); }}
         >
             <div 
-                className="w-full max-w-2xl bg-[#0c0c0e] border border-white/10 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[60vh] relative animate-in zoom-in-95 duration-200"
+                className="w-full max-w-2xl bg-[#003152] border border-white/10 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[60vh] relative animate-in zoom-in-95 duration-200"
                 onClick={e => e.stopPropagation()}
                 role="dialog"
                 aria-label="Command palette"

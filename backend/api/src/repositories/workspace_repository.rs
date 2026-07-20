@@ -1,7 +1,7 @@
 use crate::model::workspace::Workspace;
 use crate::utils::error::AppError;
 use mongodb::bson::{doc, oid::ObjectId};
-use mongodb::{Client, Collection as MongoCollection};
+use mongodb::{Collection as MongoCollection, Database};
 
 #[derive(Clone)]
 pub struct WorkspaceRepository {
@@ -9,8 +9,8 @@ pub struct WorkspaceRepository {
 }
 
 impl WorkspaceRepository {
-    pub fn new(db: &Client) -> Self {
-        let collection = db.database("txio_db").collection("workspaces");
+    pub fn new(db: &Database) -> Self {
+        let collection = db.collection("workspaces");
         Self { collection }
     }
 
