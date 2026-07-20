@@ -14,7 +14,7 @@
   "dependencies": {},
   "devDependencies": {
     "electron": "^43.1.1",
-    "electron-builder": "^26.0.12",
+    "electron-builder": "^26.15.3",
     "@tailwindcss/cli": "^4.3.3",
     "autoprefixer": "^10.5.4",
     "postcss": "^8.5.20",
