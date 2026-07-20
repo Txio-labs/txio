@@ -275,9 +275,9 @@ impl CollectionService {
         name: Option<String>,
         method: Option<String>,
         params: Option<Value>,
-        network: Option<String>,
-        rpc_url: Option<String>,
-        last_response: Option<Value>, // Allow manual update of response (e.g. paste from UI)
+        network: Option<Option<String>>,
+        rpc_url: Option<Option<String>>,
+        last_response: Option<Option<Value>>, // Allow manual update of response (e.g. paste from UI) or clearing
     ) -> Result<SavedRequest, AppError> {
         let mut req = self.request_repo.find_by_id(request_id).await?;
         if req.user_id != user_id {
@@ -294,16 +294,17 @@ impl CollectionService {
             req.params = p;
         }
 
-        // Always update options if provided (even separate None vs Some(None) is tricky here, assuming override if Some)
-        // Simple merge strategy: if passed, update.
-        if network.is_some() {
-            req.network = network;
+        // Apply outer Option case: None means field was omitted (do not change existing field value).
+        // Some(None) means field was explicitly set to null (clear field back to None).
+        // Some(Some(val)) means field was explicitly set to val (overwrite with new value).
+        if let Some(net) = network {
+            req.network = net;
         }
-        if rpc_url.is_some() {
-            req.rpc_url = rpc_url;
+        if let Some(url) = rpc_url {
+            req.rpc_url = url;
         }
-        if last_response.is_some() {
-            req.last_response = last_response;
+        if let Some(resp) = last_response {
+            req.last_response = resp;
         }
 
         req.updated_at = chrono::Utc::now();
