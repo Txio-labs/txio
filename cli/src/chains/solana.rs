@@ -3,7 +3,7 @@ use crate::chains::validation::validate_solana_address;
 use crate::cli::parser::Network;
 use async_trait::async_trait;
 use serde_json::{json, Value};
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use reqwest::Client;
 
 pub struct SolanaAdapter {
