@@ -7,8 +7,8 @@ use crate::services::sui_service::SuiService;
 use crate::utils::error::AppError;
 use mongodb::bson::oid::ObjectId;
 use serde_json::Value;
-use url::Url;
 use std::net::IpAddr;
+use url::Url;
 
 #[derive(Clone)]
 pub struct CollectionService {
@@ -51,19 +51,32 @@ impl CollectionService {
 
         Ok(())
     }
-    
+
     fn validate_url(url_str: &str) -> Result<(), AppError> {
         // Parse URL
-        let url = Url::parse(url_str).map_err(|e| AppError::BadRequest(format!("Invalid RPC URL: {}", e)))?;
+        let url = Url::parse(url_str)
+            .map_err(|e| AppError::BadRequest(format!("Invalid RPC URL: {}", e)))?;
         // Only allow HTTPS scheme
         if url.scheme() != "https" {
-            return Err(AppError::BadRequest("Only HTTPS RPC URLs are allowed".into()));
+            return Err(AppError::BadRequest(
+                "Only HTTPS RPC URLs are allowed".into(),
+            ));
         }
         // Disallow localhost and loopback IPs
         if let Some(host) = url.host_str() {
             if host == "localhost" {
-                return Err(AppError::BadRequest("Localhost URLs are not allowed".into()));
+                return Err(AppError::BadRequest(
+                    "Localhost URLs are not allowed".into(),
+                ));
             }
+            // `host_str()` wraps IPv6 literals in brackets (e.g. "[::1]"), which
+            // do not parse as an `IpAddr`. Strip them so IPv6 loopback, ULA, and
+            // link-local addresses are actually caught rather than silently
+            // slipping past the private-range check (an SSRF bypass).
+            let host = host
+                .strip_prefix('[')
+                .and_then(|h| h.strip_suffix(']'))
+                .unwrap_or(host);
             // If host is an IP address, check for private ranges
             if let Ok(ip) = host.parse::<IpAddr>() {
                 let is_disallowed = match ip {
@@ -73,7 +86,9 @@ impl CollectionService {
                     }
                 };
                 if is_disallowed {
-                    return Err(AppError::BadRequest("Private or link‑local IP addresses are not allowed".into()));
+                    return Err(AppError::BadRequest(
+                        "Private or link‑local IP addresses are not allowed".into(),
+                    ));
                 }
             }
         }
@@ -263,18 +278,20 @@ impl CollectionService {
         let final_url = if let Some(ref url) = req.rpc_url {
             url.clone()
         } else {
-            let network_enum = if let Some(ref net_str) = req.network {
-                match net_str.to_lowercase().as_str() {
-                    "mainnet" => crate::model::user::SuiNetwork::Mainnet,
-                    "testnet" => crate::model::user::SuiNetwork::Testnet,
-                    "devnet" => crate::model::user::SuiNetwork::Devnet,
-                    _ => crate::model::user::SuiNetwork::Mainnet,
-                }
+            // Parse the request's network through the single canonical
+            // representation. An unknown value is rejected explicitly instead
+            // of silently falling back to Mainnet, which previously masked
+            // invalid selections. When the request pins no network we fall
+            // back to the user's configured default.
+            let network = if let Some(ref net_str) = req.network {
+                net_str
+                    .parse::<crate::model::network::Network>()
+                    .map_err(|e| AppError::BadRequest(e.to_string()))?
             } else {
                 let user = self.user_repo.find_by_id(&user_id).await?;
                 user.network
             };
-            network_enum.url().to_string()
+            network.sui_url().to_string()
         };
         Self::validate_url(&final_url)?;
         // 1. Resolve Parameters (SuiNS)
@@ -372,7 +389,7 @@ mod tests {
         assert!(CollectionService::validate_url("https://10.0.0.1").is_err());
         assert!(CollectionService::validate_url("https://172.16.0.1").is_err());
         assert!(CollectionService::validate_url("https://192.168.1.1").is_err());
-        
+
         // IPv6 unique local addresses (ULA)
         assert!(CollectionService::validate_url("https://[fc00::1]").is_err());
         assert!(CollectionService::validate_url("https://[fd00::1]").is_err());
@@ -390,4 +407,3 @@ mod tests {
         assert!(CollectionService::validate_url("https://").is_err());
     }
 }
-

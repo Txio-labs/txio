@@ -1,10 +1,10 @@
 use crate::chains::traits::ChainAdapter;
 use crate::chains::validation::{build_url, build_url_with_query, validate_aptos_address};
 use crate::cli::parser::Network;
-use async_trait::async_trait;
-use serde_json::{json, Value};
 use anyhow::{Result, anyhow};
+use async_trait::async_trait;
 use reqwest::Client;
+use serde_json::{Value, json};
 
 pub struct AptosAdapter {
     client: Client,

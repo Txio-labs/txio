@@ -9,7 +9,8 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     customRpc: {
         mainnet: '',
         testnet: '',
-        devnet: ''
+        devnet: '',
+        localnet: ''
     },
     explorer: 'suiscan'
 };

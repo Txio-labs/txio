@@ -7,13 +7,9 @@ use crate::dtos::{
     response::{AuthResponse, UserResponse},
 };
 use crate::services::auth_service::AuthService;
+use crate::services::otp_service::constant_time_eq;
 use crate::utils::error::AppError;
-use axum::{
-    Json,
-    extract::State,
-    http::header,
-    response::IntoResponse,
-};
+use axum::{Json, extract::State, http::header, response::IntoResponse};
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
 use hmac::{Hmac, Mac};
 use serde_json::{Value, json};
@@ -229,8 +225,8 @@ fn oauth_signing_key() -> Result<Vec<u8>, AppError> {
 fn generate_oauth_state() -> Result<String, AppError> {
     let nonce: Vec<u8> = (0..32).map(|_| rand::random::<u8>()).collect();
     let key = oauth_signing_key()?;
-    let mut mac =
-        HmacSha256::new_from_slice(&key).map_err(|_| AppError::InternalError("HMAC key error".into()))?;
+    let mut mac = HmacSha256::new_from_slice(&key)
+        .map_err(|_| AppError::InternalError("HMAC key error".into()))?;
     mac.update(&nonce);
     let signature = mac.finalize().into_bytes();
     let mut payload = nonce;
@@ -247,8 +243,8 @@ fn verify_oauth_state(state: &str) -> Result<(), AppError> {
     }
     let (nonce, signature) = decoded.split_at(decoded.len() - 32);
     let key = oauth_signing_key()?;
-    let mut mac =
-        HmacSha256::new_from_slice(&key).map_err(|_| AppError::InternalError("HMAC key error".into()))?;
+    let mut mac = HmacSha256::new_from_slice(&key)
+        .map_err(|_| AppError::InternalError("HMAC key error".into()))?;
     mac.update(nonce);
     mac.verify_slice(signature)
         .map_err(|_| AppError::BadRequest("Invalid or expired OAuth state parameter".into()))

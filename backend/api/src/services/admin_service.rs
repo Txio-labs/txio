@@ -12,7 +12,11 @@ pub struct AdminService {
 }
 
 impl AdminService {
-    pub fn new(user_repo: UserRepository, rpc_repo: RpcRepository, admin_emails: Vec<String>) -> Self {
+    pub fn new(
+        user_repo: UserRepository,
+        rpc_repo: RpcRepository,
+        admin_emails: Vec<String>,
+    ) -> Self {
         Self {
             user_repo,
             rpc_repo,
@@ -64,7 +68,11 @@ impl AdminService {
         })
     }
 
-    pub async fn list_logs(&self, claims: &Claims, limit: i64) -> Result<Vec<AdminLogEntry>, AppError> {
+    pub async fn list_logs(
+        &self,
+        claims: &Claims,
+        limit: i64,
+    ) -> Result<Vec<AdminLogEntry>, AppError> {
         self.require_admin(claims)?;
 
         let logs = self.rpc_repo.find_recent(limit).await?;
@@ -101,7 +109,9 @@ mod tests {
         let client = Client::with_uri_str("mongodb://localhost:27017")
             .await
             .expect("parsing a well-formed URI must not require a live connection");
-        let db = client.default_database().unwrap_or_else(|| client.database("txio_db"));
+        let db = client
+            .default_database()
+            .unwrap_or_else(|| client.database("txio_db"));
         let user_repo = UserRepository::new(&db);
         let rpc_repo = RpcRepository::new(&db);
         AdminService::new(user_repo, rpc_repo, admin_emails)

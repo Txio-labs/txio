@@ -56,7 +56,7 @@ pub struct UpdatePasswordRequest {
 
 #[derive(Debug, Deserialize, Validate)]
 pub struct SwitchNetworkRequest {
-    pub network: crate::model::user::SuiNetwork,
+    pub network: crate::model::network::Network,
 }
 #[derive(Debug, Deserialize, Validate)]
 pub struct TerminalCommandRequest {

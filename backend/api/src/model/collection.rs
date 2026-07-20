@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
-use mongodb::bson::oid::ObjectId;
 use chrono::{DateTime, Utc};
+use mongodb::bson::oid::ObjectId;
+use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 #[derive(Debug, Serialize, Deserialize, Validate, Clone)]
@@ -9,7 +9,7 @@ pub struct Collection {
     pub id: Option<ObjectId>,
 
     pub user_id: ObjectId,
-    
+
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_id: Option<ObjectId>,
 

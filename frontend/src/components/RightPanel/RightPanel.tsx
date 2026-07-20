@@ -112,7 +112,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           <div className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
             network === 'mainnet' ? 'bg-emerald-500/[0.12] text-emerald-400' :
             network === 'testnet' ? 'bg-amber-500/[0.12] text-amber-400' :
-            'bg-blue-500/[0.12] text-blue-400'
+            network === 'devnet' ? 'bg-blue-500/[0.12] text-blue-400' :
+            'bg-fuchsia-500/[0.12] text-fuchsia-400'
           }`}>
             {network}
           </div>

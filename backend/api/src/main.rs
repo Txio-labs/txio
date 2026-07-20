@@ -81,8 +81,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let user_repo = repositories::user_repository::UserRepository::new(&db);
     let otp_repo = repositories::otp_repository::OTPRepository::new(&db);
     let rpc_repo = repositories::rpc_repository::RpcRepository::new(&db);
-    let collection_repo =
-        repositories::collection_repository::CollectionRepository::new(&db);
+    let collection_repo = repositories::collection_repository::CollectionRepository::new(&db);
     let request_repo = repositories::request_repository::RequestRepository::new(&db);
     let workspace_repo = repositories::workspace_repository::WorkspaceRepository::new(&db);
 
@@ -93,8 +92,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let email_service = services::email_service::EmailService::new(config.brevo_api_key);
     let otp_service = services::otp_service::OTPService::new(otp_repo.clone());
 
-    // Default Mainnet URL for SuiService (can be overridden dynamically)
-    let default_sui_url = model::user::SuiNetwork::Mainnet.url().to_string();
+    // Default network URL for SuiService (can be overridden dynamically)
+    let default_sui_url = model::network::Network::default().sui_url().to_string();
     let sui_service = services::sui_service::SuiService::new(rpc_repo.clone(), default_sui_url);
 
     // 6. Initialize Services (Dependency Injection)

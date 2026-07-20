@@ -1,6 +1,8 @@
-use serde::{Deserialize, Serialize};
-use mongodb::bson::oid::ObjectId;
 use chrono::{DateTime, Utc};
+use mongodb::bson::oid::ObjectId;
+use serde::{Deserialize, Serialize};
+
+use crate::model::network::Network;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct User {
@@ -10,26 +12,8 @@ pub struct User {
     pub password_hash: String,
     pub tier: PlanTier,
     #[serde(default)]
-    pub network: SuiNetwork,
+    pub network: Network,
     pub created_at: DateTime<Utc>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, Default, clap::ValueEnum)]
-pub enum SuiNetwork {
-    #[default]
-    Mainnet,
-    Testnet,
-    Devnet,
-}
-
-impl SuiNetwork {
-    pub fn url(&self) -> &'static str {
-        match self {
-            SuiNetwork::Mainnet => "https://fullnode.mainnet.sui.io:443",
-            SuiNetwork::Testnet => "https://fullnode.testnet.sui.io:443",
-            SuiNetwork::Devnet => "https://fullnode.devnet.sui.io:443",
-        }
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -46,7 +30,7 @@ impl User {
             email,
             password_hash,
             tier: PlanTier::Free,
-            network: SuiNetwork::Mainnet,
+            network: Network::default(),
             created_at: Utc::now(),
         }
     }

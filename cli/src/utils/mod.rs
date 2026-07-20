@@ -1,7 +1,7 @@
-use std::fs;
-use std::path::{Path, PathBuf};
 use anyhow::{Result, anyhow};
 use serde_json;
+use std::fs;
+use std::path::{Path, PathBuf};
 
 /// Load environment overrides for the CLI.
 ///
@@ -104,7 +104,10 @@ pub fn save_config(key: &str, value: &str) -> Result<()> {
     } else {
         serde_json::Map::new()
     };
-    map.insert(key.to_string(), serde_json::Value::String(value.to_string()));
+    map.insert(
+        key.to_string(),
+        serde_json::Value::String(value.to_string()),
+    );
     fs::write(path, serde_json::to_string_pretty(&map)?)?;
     Ok(())
 }

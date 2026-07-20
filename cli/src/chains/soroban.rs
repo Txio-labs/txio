@@ -1,10 +1,10 @@
 use crate::chains::traits::ChainAdapter;
-use crate::chains::validation::{build_url_with_query, build_url, validate_soroban_address};
+use crate::chains::validation::{build_url, build_url_with_query, validate_soroban_address};
 use crate::cli::parser::Network;
-use async_trait::async_trait;
-use serde_json::{json, Value};
 use anyhow::{Result, anyhow};
+use async_trait::async_trait;
 use reqwest::Client;
+use serde_json::{Value, json};
 
 pub struct SorobanAdapter {
     client: Client,
@@ -60,14 +60,19 @@ impl ChainAdapter for SorobanAdapter {
             "params": params
         });
 
-        let response = self.client.post(&self.rpc_url)
+        let response = self
+            .client
+            .post(&self.rpc_url)
             .json(&payload)
             .send()
             .await?;
 
         let body: Value = response.json().await?;
         if let Some(error) = body.get("error") {
-            let msg = error.get("message").and_then(|m| m.as_str()).unwrap_or("Unknown RPC Error");
+            let msg = error
+                .get("message")
+                .and_then(|m| m.as_str())
+                .unwrap_or("Unknown RPC Error");
             let code = error.get("code").and_then(|c| c.as_i64()).unwrap_or(0);
             return Err(anyhow!("{} (Code: {})", msg, code));
         }
@@ -83,17 +88,17 @@ impl ChainAdapter for SorobanAdapter {
     }
 
     async fn get_transaction(&self, hash: &str) -> Result<Value> {
-        self.call_rpc("getTransaction", json!({ "hash": hash })).await
+        self.call_rpc("getTransaction", json!({ "hash": hash }))
+            .await
     }
 
     async fn get_block(&self, block: Option<u64>) -> Result<Value> {
         match block {
             Some(seq) => {
-                self.call_rpc("getLedgers", json!({ "startLedger": seq, "limit": 1 })).await
+                self.call_rpc("getLedgers", json!({ "startLedger": seq, "limit": 1 }))
+                    .await
             }
-            None => {
-                self.call_rpc("getLatestLedger", json!({})).await
-            }
+            None => self.call_rpc("getLatestLedger", json!({})).await,
         }
     }
 

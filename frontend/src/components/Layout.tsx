@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { PanelLeft, PanelRight, Settings, ChevronDown, Globe, Loader2, Key, LayoutGrid, User, LogOut, MoreVertical, Trash2, Save, RotateCcw, Bookmark, Plus, Layers, Command, Sparkles, Search, X, CheckCircle, AlertCircle, Info, Server, Check, Terminal } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { Tab } from './ui/Tabs';
-import { TabItem, Network, RPCHealthMetric } from '../types';
+import { ALL_NETWORKS, TabItem, Network, RPCHealthMetric } from '../types';
 import { NetworkSwitcherModal } from './NetworkSwitcherModal';
 import { Avatar } from './ui/Avatar';
 import { CommandPalette } from './CommandPalette';
@@ -180,7 +180,7 @@ export const Layout: React.FC<LayoutProps> = ({
                         {isNetworkMenuOpen && (
                             <div className="absolute top-full right-0 mt-2 w-48 bg-[#003152] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
                                 <div className="p-1">
-                                    {(['mainnet', 'testnet', 'devnet'] as Network[]).map((net) => (
+                                    {ALL_NETWORKS.map((net) => (
                                         <button
                                             key={net}
                                             onClick={() => handleNetworkSwitch(net)}

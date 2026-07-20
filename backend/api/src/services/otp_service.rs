@@ -69,7 +69,10 @@ impl OTPService {
     }
 }
 
-fn constant_time_eq(a: &str, b: &str) -> bool {
+/// Compares two strings in constant time relative to their length, so that
+/// early-exit timing cannot be used to learn how much of a secret matched.
+/// Shared by OTP verification and OAuth CSRF-state checks.
+pub(crate) fn constant_time_eq(a: &str, b: &str) -> bool {
     if a.len() != b.len() {
         return false;
     }
