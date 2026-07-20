@@ -5,13 +5,14 @@ use crate::repositories::{
 };
 use crate::services::sui_service::SuiService;
 use crate::utils::error::AppError;
-use mongodb::{Database, bson::oid::ObjectId};
+use mongodb::{Client, Database, bson::oid::ObjectId};
 use serde_json::Value;
 use std::net::IpAddr;
 use url::{Host, Url};
 
 #[derive(Clone)]
 pub struct CollectionService {
+    client: Client,
     db: Database,
     collection_repo: CollectionRepository,
     request_repo: RequestRepository,
@@ -22,6 +23,7 @@ pub struct CollectionService {
 
 impl CollectionService {
     pub fn new(
+        client: Client,
         db: Database,
         collection_repo: CollectionRepository,
         request_repo: RequestRepository,
@@ -30,6 +32,7 @@ impl CollectionService {
         sui_service: SuiService,
     ) -> Self {
         Self {
+            client,
             db,
             collection_repo,
             request_repo,
@@ -200,7 +203,7 @@ impl CollectionService {
         // the collection alive with its child requests permanently gone, or
         // (in the previous order) requests gone while the empty collection
         // remains — either state is unrecoverable without manual intervention.
-        let mut session = self.db.client().start_session(None).await?;
+        let mut session = self.client.start_session(None).await?;
         session.start_transaction(None).await?;
 
         let result = async {
