@@ -156,7 +156,7 @@ fn cap_output(s: Option<String>, max_bytes: usize) -> Option<String> {
 
 impl TerminalService {
     pub fn new() -> Self {
-        let executions = Arc::new(RwLock::new(HashMap::new()));
+        let executions = Arc::new(RwLock::new(HashMap::<String, CommandExecutionRecord>::new()));
 
         // Spawn a background task that periodically evicts stale records so the
         // in-memory map does not grow without bound during sustained use.
@@ -435,25 +435,6 @@ where
 {
     stream.map(|mut reader| {
         tokio::spawn(async move {
- fix/recipes-load-btn-#157
-            let mut buffer = Vec::new();
-            let mut chunk = [0_u8; 8192];
-            let mut truncated = false;
-
-            loop {
-                let read = match reader.read(&mut chunk).await {
-                    Ok(0) => break,
-                    Ok(read) => read,
-                    Err(error) => return format!("Failed to read process output: {}", error),
-                };
-                let retained = read.min(MAX_CAPTURED_OUTPUT_BYTES.saturating_sub(buffer.len()));
-                truncated |= retained < read;
-                buffer.extend_from_slice(&chunk[..retained]);
-            }
-
-            let output = String::from_utf8_lossy(&buffer).to_string();
-            if truncated { format!("{output}\n[output truncated]") } else { output }
-
             // Read at most MAX_OUTPUT_BYTES so a process with large output
             // cannot exhaust process memory before cap_output runs.  Bytes
             // beyond the cap are silently discarded so the child's pipe never

@@ -5,13 +5,14 @@ use crate::repositories::{
 };
 use crate::services::sui_service::SuiService;
 use crate::utils::error::AppError;
-use mongodb::{Database, bson::oid::ObjectId};
+use mongodb::{Client, Database, bson::oid::ObjectId};
 use serde_json::Value;
 use std::net::IpAddr;
 use url::{Host, Url};
 
 #[derive(Clone)]
 pub struct CollectionService {
+    client: Client,
     db: Database,
     collection_repo: CollectionRepository,
     request_repo: RequestRepository,
@@ -22,6 +23,7 @@ pub struct CollectionService {
 
 impl CollectionService {
     pub fn new(
+        client: Client,
         db: Database,
         collection_repo: CollectionRepository,
         request_repo: RequestRepository,
@@ -30,6 +32,7 @@ impl CollectionService {
         sui_service: SuiService,
     ) -> Self {
         Self {
+            client,
             db,
             collection_repo,
             request_repo,
@@ -200,7 +203,7 @@ impl CollectionService {
         // the collection alive with its child requests permanently gone, or
         // (in the previous order) requests gone while the empty collection
         // remains — either state is unrecoverable without manual intervention.
-        let mut session = self.db.client().start_session(None).await?;
+        let mut session = self.client.start_session(None).await?;
         session.start_transaction(None).await?;
 
         let result = async {
@@ -272,9 +275,9 @@ impl CollectionService {
         name: Option<String>,
         method: Option<String>,
         params: Option<Value>,
-        network: Option<String>,
-        rpc_url: Option<String>,
-        last_response: Option<Value>, // Allow manual update of response (e.g. paste from UI)
+        network: Option<Option<String>>,
+        rpc_url: Option<Option<String>>,
+        last_response: Option<Option<Value>>, // Allow manual update of response (e.g. paste from UI) or clearing
     ) -> Result<SavedRequest, AppError> {
         let mut req = self.request_repo.find_by_id(request_id).await?;
         if req.user_id != user_id {
@@ -291,16 +294,17 @@ impl CollectionService {
             req.params = p;
         }
 
-        // Always update options if provided (even separate None vs Some(None) is tricky here, assuming override if Some)
-        // Simple merge strategy: if passed, update.
-        if network.is_some() {
-            req.network = network;
+        // Apply outer Option case: None means field was omitted (do not change existing field value).
+        // Some(None) means field was explicitly set to null (clear field back to None).
+        // Some(Some(val)) means field was explicitly set to val (overwrite with new value).
+        if let Some(net) = network {
+            req.network = net;
         }
-        if rpc_url.is_some() {
-            req.rpc_url = rpc_url;
+        if let Some(url) = rpc_url {
+            req.rpc_url = url;
         }
-        if last_response.is_some() {
-            req.last_response = last_response;
+        if let Some(resp) = last_response {
+            req.last_response = resp;
         }
 
         req.updated_at = chrono::Utc::now();
