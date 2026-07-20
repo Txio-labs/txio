@@ -141,17 +141,27 @@ impl ChainAdapter for EthereumAdapter {
         let from = latest.saturating_sub(block_window);
         let padded = format!("0x{:0>64}", address.trim_start_matches("0x"));
 
-        let sent = self.call_rpc("eth_getLogs", json!([{
-            "fromBlock": format!("0x{:x}", from),
-            "toBlock": "latest",
-            "topics": [ERC20_TRANSFER_TOPIC, padded.clone()]
-        }])).await?;
+        let sent = self
+            .call_rpc(
+                "eth_getLogs",
+                json!([{
+                    "fromBlock": format!("0x{:x}", from),
+                    "toBlock": "latest",
+                    "topics": [ERC20_TRANSFER_TOPIC, padded.clone()]
+                }]),
+            )
+            .await?;
 
-        let received = self.call_rpc("eth_getLogs", json!([{
-            "fromBlock": format!("0x{:x}", from),
-            "toBlock": "latest",
-            "topics": [ERC20_TRANSFER_TOPIC, null, padded.clone()]
-        }])).await?;
+        let received = self
+            .call_rpc(
+                "eth_getLogs",
+                json!([{
+                    "fromBlock": format!("0x{:x}", from),
+                    "toBlock": "latest",
+                    "topics": [ERC20_TRANSFER_TOPIC, null, padded.clone()]
+                }]),
+            )
+            .await?;
 
         let mut logs = sent.as_array().cloned().unwrap_or_default();
         logs.extend(received.as_array().cloned().unwrap_or_default());

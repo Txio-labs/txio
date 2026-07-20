@@ -125,11 +125,7 @@ impl AuthService {
 
     /// Revoke (delete) a session by its document ID.
     /// Only sessions owned by `user_id` can be deleted.
-    pub async fn revoke_session(
-        &self,
-        user_id: &str,
-        session_id: &str,
-    ) -> Result<(), AppError> {
+    pub async fn revoke_session(&self, user_id: &str, session_id: &str) -> Result<(), AppError> {
         use mongodb::bson::oid::ObjectId;
         use std::str::FromStr;
 
@@ -170,10 +166,7 @@ impl AuthService {
         let new_user = User::new(req.email, password_hash);
         let saved_user = self.repo.save(&new_user).await?;
 
-        let user_id = saved_user
-            .id
-            .map(|id| id.to_string())
-            .unwrap_or_default();
+        let user_id = saved_user.id.map(|id| id.to_string()).unwrap_or_default();
 
         let (token, _jti) = self
             .jwt_helper
@@ -186,8 +179,7 @@ impl AuthService {
     }
 
     pub async fn login_user(&self, req: LoginRequest) -> Result<AuthResponse, AppError> {
-        const DUMMY_HASH: &str =
-            "$2b$12$K4IzU6d5TqmqRKFLJZdqOeVLqZJ3mJHvJZdqOeVLqZJ3mJHvJZdq.";
+        const DUMMY_HASH: &str = "$2b$12$K4IzU6d5TqmqRKFLJZdqOeVLqZJ3mJHvJZdqOeVLqZJ3mJHvJZdq.";
 
         let user_result = self.repo.find_by_email(&req.email).await;
 
@@ -212,10 +204,7 @@ impl AuthService {
         }
 
         let user = user_result.unwrap();
-        let user_id = user
-            .id
-            .map(|id| id.to_string())
-            .unwrap_or_default();
+        let user_id = user.id.map(|id| id.to_string()).unwrap_or_default();
 
         let (token, _jti) = self.jwt_helper.generate_token(&user_id, &user.email)?;
 
@@ -372,10 +361,7 @@ impl AuthService {
             }
         };
 
-        let user_id = user
-            .id
-            .map(|id| id.to_string())
-            .unwrap_or_default();
+        let user_id = user.id.map(|id| id.to_string()).unwrap_or_default();
 
         let (token, _jti) = self.jwt_helper.generate_token(&user_id, &user.email)?;
 

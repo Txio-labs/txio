@@ -1,7 +1,7 @@
-use mongodb::{Collection as MongoCollection, Database};
-use mongodb::bson::{doc, oid::ObjectId};
 use crate::model::collection::Collection;
 use crate::utils::error::AppError;
+use mongodb::bson::{doc, oid::ObjectId};
+use mongodb::{Collection as MongoCollection, Database};
 #[derive(Clone)]
 pub struct CollectionRepository {
     collection: MongoCollection<Collection>,
@@ -90,7 +90,8 @@ impl CollectionRepository {
         session: &mut mongodb::ClientSession,
     ) -> Result<(), AppError> {
         let filter = doc! { "_id": id };
-        let result = self.collection
+        let result = self
+            .collection
             .delete_one_with_session(filter, None, session)
             .await?;
         if result.deleted_count == 0 {

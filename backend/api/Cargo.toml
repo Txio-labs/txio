@@ -37,8 +37,4 @@ hmac = { workspace = true }
 sha2 = { workspace = true }
 urlencoding = { workspace = true }
 url = "2.5"
-base64 = "0.22"
-hmac = "0.12"
-sha2 = "0.10"
 serde_with = "3.8"
-urlencoding = "2.1"

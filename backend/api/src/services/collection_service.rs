@@ -53,15 +53,20 @@ impl CollectionService {
     }
     fn validate_url(url_str: &str) -> Result<(), AppError> {
         // Parse URL
-        let url = Url::parse(url_str).map_err(|e| AppError::BadRequest(format!("Invalid RPC URL: {e}")))?;
+        let url = Url::parse(url_str)
+            .map_err(|e| AppError::BadRequest(format!("Invalid RPC URL: {e}")))?;
         // Only allow HTTPS scheme
         if url.scheme() != "https" {
-            return Err(AppError::BadRequest("Only HTTPS RPC URLs are allowed".into()));
+            return Err(AppError::BadRequest(
+                "Only HTTPS RPC URLs are allowed".into(),
+            ));
         }
 
         match url.host() {
             Some(Host::Domain(host)) if host.eq_ignore_ascii_case("localhost") => {
-                return Err(AppError::BadRequest("Localhost URLs are not allowed".into()));
+                return Err(AppError::BadRequest(
+                    "Localhost URLs are not allowed".into(),
+                ));
             }
             Some(Host::Ipv4(v4)) => {
                 if v4.is_loopback() || v4.is_private() || v4.is_link_local() {
@@ -375,7 +380,7 @@ mod tests {
         assert!(CollectionService::validate_url("https://10.0.0.1").is_err());
         assert!(CollectionService::validate_url("https://172.16.0.1").is_err());
         assert!(CollectionService::validate_url("https://192.168.1.1").is_err());
-        
+
         // IPv6 unique local addresses (ULA)
         assert!(CollectionService::validate_url("https://[fc00::1]").is_err());
         assert!(CollectionService::validate_url("https://[fd00::1]").is_err());
@@ -393,4 +398,3 @@ mod tests {
         assert!(CollectionService::validate_url("https://").is_err());
     }
 }
-
