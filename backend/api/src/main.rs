@@ -96,7 +96,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let auth_service = services::auth_service::AuthService::new(
         user_repo.clone(),
         rpc_repo.clone(),
-        jwt_helper,
+        jwt_helper.clone(),
         otp_service,
         email_service,
     );
@@ -214,6 +214,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .layer(GovernorLayer {
             config: governor_conf,
         })
+        .layer(axum::Extension(jwt_helper))
         .layer(cors);
 
     // 8. Run Server
