@@ -1,0 +1,13 @@
+version: 2
+
+# GitHub Actions are pinned to full commit SHAs to prevent supply chain attacks.
+# Dependabot will open PRs to update these SHAs when new versions are released.
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

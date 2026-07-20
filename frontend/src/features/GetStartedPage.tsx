@@ -65,7 +65,7 @@ export const GetStartedPage: React.FC = () => {
             {/* Left Wing */}
             <div className="hidden lg:flex flex-1 relative bg-near-black border-r border-white/5 p-16 flex-col justify-between overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full opacity-30" style={{ 
-                    backgroundImage: 'linear-gradient(rgba(123, 63, 242, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(123, 63, 242, 0.05) 1px, transparent 1px)',
+                    backgroundImage: 'linear-gradient(rgba(173,223,241, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(173,223,241, 0.05) 1px, transparent 1px)',
                     backgroundSize: '50px 50px'
                 }}></div>
                 <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-electric-violet/10 blur-[120px] rounded-full"></div>
@@ -214,7 +214,7 @@ export const GetStartedPage: React.FC = () => {
                     <div className="mt-8 space-y-3">
                         <div className="relative flex items-center justify-center mb-6">
                             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200 dark:border-white/5"></div></div>
-                            <span className={`relative px-4 text-[10px] font-bold uppercase tracking-widest ${theme === 'dark' ? 'bg-[#0a0a0a] text-slate-600' : 'bg-white text-slate-400'}`}>Or continue with</span>
+                            <span className={`relative px-4 text-[10px] font-bold uppercase tracking-widest ${theme === 'dark' ? 'bg-[#001B2E] text-slate-600' : 'bg-white text-slate-400'}`}>Or continue with</span>
                         </div>
                         <button 
                             type="button"

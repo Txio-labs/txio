@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "serve out",
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -18,7 +18,7 @@
     "@mysten/dapp-kit": "^0.19.8",
     "@mysten/sui": "^1.44.0",
     "@stellar/freighter-api": "^6.0.1",
-    "@stellar/stellar-sdk": "^15.1.0",
+    "@stellar/stellar-sdk": "^16.0.1",
     "@tanstack/react-query": "^5.100.9",
     "buffer": "^6.0.3",
     "framer-motion": "^12.38.0",
@@ -27,7 +27,7 @@
     "next": "^16.2.6",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
-    "viem": "^2.50.4",
+    "viem": "^2.55.0",
     "wagmi": "^3.6.15"
   },
   "devDependencies": {
@@ -41,12 +41,20 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
     "autoprefixer": "^10.5.0",
+    "babel-plugin-react-compiler": "^1.0.0",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.6",
     "jsdom": "^29.1.1",
     "postcss": "^8.5.14",
     "tailwindcss": "^4.3.0",
+    "serve": "^14.2.4",
     "typescript": "5.8.3",
     "vitest": "^4.1.10"
+  },
+  "overrides": {
+    "axios": "^1.16.0",
+    "form-data": "^4.0.6",
+    "ws": "^8.20.2",
+    "postcss": "^8.5.14"
   }
 }

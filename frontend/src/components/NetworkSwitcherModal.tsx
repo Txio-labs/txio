@@ -31,11 +31,11 @@ export const NetworkSwitcherModal: React.FC<NetworkSwitcherModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-near-black/60 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-[#0c0c0e] border border-white/5 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative group">
+      <div className="bg-[#003152] border border-white/5 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative group">
           {/* Background Gradients */}
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-sui-500 to-transparent opacity-50"></div>
           <div className="absolute -top-20 -right-20 w-40 h-40 bg-electric-violet/10 blur-3xl rounded-full pointer-events-none"></div>
-          <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-purple-500/10 blur-3xl rounded-full pointer-events-none"></div>
+          <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-sky-500/10 blur-3xl rounded-full pointer-events-none"></div>
 
           <div className="p-8 relative z-10">
               <div className="text-center mb-8">

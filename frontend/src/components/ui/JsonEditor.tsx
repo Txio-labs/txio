@@ -164,17 +164,7 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
     ) => {
         if (readOnly) return;
 
-        // Cmd/Ctrl+F → search
-        if (
-            (e.metaKey || e.ctrlKey) &&
-            e.key.toLowerCase() === 'f'
-        ) {
-            e.preventDefault();
-            setSearchOpen(true);
-            return;
-        }
-
-        // Cmd/Ctrl+Shift+F → format
+        // Cmd/Ctrl+Shift+F → format (must be checked before plain Ctrl+F)
         if (
             (e.metaKey || e.ctrlKey) &&
             e.shiftKey &&
@@ -182,6 +172,16 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
         ) {
             e.preventDefault();
             handleFormat();
+            return;
+        }
+
+        // Cmd/Ctrl+F → search
+        if (
+            (e.metaKey || e.ctrlKey) &&
+            e.key.toLowerCase() === 'f'
+        ) {
+            e.preventDefault();
+            setSearchOpen(true);
             return;
         }
 
@@ -389,36 +389,55 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
         setError(null);
     };
 
-    const highlightJSON = (code: string) => {
-        if (!code) return '';
-        return code
+    const escapeHtml = (text: string) =>
+        text
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
-            .replace(
-                /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?|[\[\]\{\},])/g,
-                (match) => {
-                    let cls = 'text-violet-300';
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
 
-                    if (/^"/.test(match)) {
-                        if (/:$/.test(match)) {
-                            cls = 'text-sky-300';
-                        } else {
-                            cls = 'text-emerald-300';
-                        }
-                    } else if (/true|false/.test(match)) {
-                        cls = 'text-amber-300';
-                    } else if (/null/.test(match)) {
-                        cls = 'text-slate-500 italic';
-                    } else if (/^-?\d/.test(match)) {
-                        cls = 'text-fuchsia-300';
-                    } else if (/[\[\]\{\},]/.test(match)) {
-                        cls = 'text-slate-500';
-                    }
+    const highlightJSON = (code: string) => {
+        if (!code) return '';
 
-                    return `<span class="${cls}">${match}</span>`;
+        const tokenRegex = /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?|[\[\]\{\},])/g;
+        let lastIndex = 0;
+        const parts: string[] = [];
+        let match: RegExpExecArray | null;
+
+        while ((match = tokenRegex.exec(code)) !== null) {
+            if (lastIndex < match.index) {
+                parts.push(escapeHtml(code.slice(lastIndex, match.index)));
+            }
+
+            const token = match[0];
+            let cls = 'text-sky-300';
+
+            if (/^"/.test(token)) {
+                if (/:$/.test(token)) {
+                    cls = 'text-sky-300';
+                } else {
+                    cls = 'text-emerald-300';
                 }
-            );
+            } else if (/true|false/.test(token)) {
+                cls = 'text-amber-300';
+            } else if (/null/.test(token)) {
+                cls = 'text-slate-500 italic';
+            } else if (/^-?\d/.test(token)) {
+                cls = 'text-orange-300';
+            } else if (/[[\]\{\},]/.test(token)) {
+                cls = 'text-slate-500';
+            }
+
+            parts.push(`<span class="${cls}">${escapeHtml(token)}</span>`);
+            lastIndex = tokenRegex.lastIndex;
+        }
+
+        if (lastIndex < code.length) {
+            parts.push(escapeHtml(code.slice(lastIndex)));
+        }
+
+        return parts.join('');
     };
 
     const lines = value.split('\n');
@@ -500,8 +519,8 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
     }
 
     return (
-        <div className="flex flex-col h-full bg-[#0a0a0c] rounded-xl border border-white/10 overflow-hidden shadow-[0_24px_60px_-40px_rgba(0,0,0,0.85)] focus-within:border-electric-violet/30 transition-colors">
-            <div className="flex items-center justify-between px-3 py-2 bg-[#0c0c10] border-b border-white/5">
+        <div className="flex flex-col h-full bg-[#003152] rounded-xl border border-white/10 overflow-hidden shadow-[0_24px_60px_-40px_rgba(0,0,0,0.85)] focus-within:border-electric-violet/30 transition-colors">
+            <div className="flex items-center justify-between px-3 py-2 bg-[#003152] border-b border-white/5">
                 <div className="flex items-center gap-1.5">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.18em] mr-2">
                         JSON
@@ -560,7 +579,7 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
             </div>
 
             {searchOpen && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-[#0c0c10] border-b border-white/5">
+                <div className="flex items-center gap-2 px-3 py-2 bg-[#003152] border-b border-white/5">
                     <Search
                         size={12}
                         className="text-slate-500 shrink-0"
@@ -608,7 +627,7 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
             <div className="relative flex-1 min-h-0 flex">
                 <div
                     ref={lineGutterRef}
-                    className="shrink-0 w-12 bg-[#08080a] border-r border-white/5 overflow-hidden select-none pointer-events-none"
+                    className="shrink-0 w-12 bg-[#001B2E] border-r border-white/5 overflow-hidden select-none pointer-events-none"
                 >
                     <div className="py-4 pr-3 text-right font-mono text-[10px] leading-relaxed text-slate-700">
                         {Array.from(
@@ -642,7 +661,7 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
                 </div>
 
                 <div
-                    className="relative flex-1 overflow-auto custom-scrollbar bg-[#0a0a0c]"
+                    className="relative flex-1 overflow-auto custom-scrollbar bg-[#003152]"
                     onScroll={handleScroll}
                 >
                     <pre
@@ -675,7 +694,7 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
                 </div>
             </div>
 
-            <div className="flex items-center justify-between px-3 py-1.5 bg-[#08080a] border-t border-white/5 text-[10px] font-mono">
+            <div className="flex items-center justify-between px-3 py-1.5 bg-[#001B2E] border-t border-white/5 text-[10px] font-mono">
                 <div className="flex items-center gap-3 text-slate-600">
                     <span className="flex items-center gap-1">
                         <CornerDownLeft size={9} />

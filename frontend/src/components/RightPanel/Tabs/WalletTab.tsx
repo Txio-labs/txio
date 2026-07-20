@@ -58,10 +58,10 @@ export const WalletTab: React.FC<
     if (!currentWallet) {
         return (
             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-5">
-                <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(123,63,242,0.16),transparent_42%),linear-gradient(180deg,rgba(14,14,18,0.98),rgba(5,5,7,0.98))] p-5">
+                <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(173,223,241,0.16),transparent_42%),linear-gradient(180deg,rgba(0,49,82,0.98),rgba(0,27,46,0.98))] p-5">
                     <div className="absolute inset-0 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.04),transparent)] opacity-60" />
                     <div className="relative z-10">
-                        <div className="mb-4 inline-flex rounded-2xl border border-electric-violet/20 bg-electric-violet/10 p-3 text-electric-violet shadow-[0_20px_45px_rgba(123,63,242,0.18)]">
+                        <div className="mb-4 inline-flex rounded-2xl border border-electric-violet/20 bg-electric-violet/10 p-3 text-electric-violet shadow-[0_20px_45px_rgba(173,223,241,0.18)]">
                             <Wallet size={24} />
                         </div>
                         <div className="mb-2 text-sm font-bold text-white">
@@ -107,7 +107,7 @@ export const WalletTab: React.FC<
 
     return (
         <div className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-5">
-            <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(123,63,242,0.18),transparent_42%),linear-gradient(180deg,rgba(17,17,20,0.98),rgba(7,7,9,0.98))] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.4)]">
+            <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(173,223,241,0.18),transparent_42%),linear-gradient(180deg,rgba(0,49,82,0.98),rgba(0,27,46,0.98))] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.4)]">
                 <div className="absolute -right-8 top-0 h-32 w-32 rounded-full bg-electric-violet/10 blur-[48px]" />
                 <div className="relative z-10">
                     <div className="flex items-start justify-between gap-3">

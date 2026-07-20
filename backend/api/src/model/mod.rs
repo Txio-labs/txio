@@ -4,3 +4,4 @@ pub mod rpc;
 pub mod collection;
 pub mod request;
 pub mod workspace;
+pub mod session;
