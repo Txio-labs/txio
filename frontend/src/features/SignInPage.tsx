@@ -173,9 +173,14 @@ export const SignInPage: React.FC = () => {
             'info'
         );
 
-        // Google OAuth
+        // OAuth providers
         if (provider === 'Google') {
             window.location.href = `${API_BASE}/auth/google/login`;
+            return;
+        }
+
+        if (provider === 'GitHub') {
+            window.location.href = `${API_BASE}/auth/github/login`;
             return;
         }
 

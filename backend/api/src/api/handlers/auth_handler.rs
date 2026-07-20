@@ -298,3 +298,137 @@ pub async fn google_callback(
 
     Ok(axum::response::Redirect::temporary(&redirect_to))
 }
+
+pub async fn github_login() -> Result<axum::response::Redirect, AppError> {
+    let client_id = std::env::var("GITHUB_CLIENT_ID").unwrap_or_default();
+    let client_secret = std::env::var("GITHUB_CLIENT_SECRET").unwrap_or_default();
+    if client_id.trim().is_empty() || client_secret.trim().is_empty() {
+        return Err(AppError::BadRequest(
+            "GitHub OAuth is not configured. Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET.".into(),
+        ));
+    }
+
+    let redirect_uri = std::env::var("GITHUB_REDIRECT_URL")
+        .unwrap_or_else(|_| "http://localhost:8000/api/v1/auth/github/callback".to_string());
+
+    let url = format!(
+        "https://github.com/login/oauth/authorize?client_id={}&redirect_uri={}&scope=user:email&allow_signup=true",
+        client_id,
+        redirect_uri
+    );
+
+    Ok(axum::response::Redirect::temporary(&url))
+}
+
+pub async fn github_callback(
+    State(service): State<AuthService>,
+    axum::extract::Query(query): axum::extract::Query<OAuthCallbackQuery>,
+) -> Result<axum::response::Redirect, AppError> {
+    let client_id = std::env::var("GITHUB_CLIENT_ID").unwrap_or_default();
+    let client_secret = std::env::var("GITHUB_CLIENT_SECRET").unwrap_or_default();
+    if client_id.trim().is_empty() || client_secret.trim().is_empty() {
+        return Err(AppError::BadRequest(
+            "GitHub OAuth is not configured. Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET.".into(),
+        ));
+    }
+
+    let redirect_uri = std::env::var("GITHUB_REDIRECT_URL")
+        .unwrap_or_else(|_| "http://localhost:8000/api/v1/auth/github/callback".to_string());
+    let frontend_url = std::env::var("FRONTEND_URL")
+        .unwrap_or_else(|_| "http://localhost:3000".to_string());
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .unwrap_or_else(|_| reqwest::Client::new());
+
+    let token_res = client
+        .post("https://github.com/login/oauth/access_token")
+        .header("Accept", "application/json")
+        .form(&[
+            ("client_id", client_id.as_str()),
+            ("client_secret", client_secret.as_str()),
+            ("code", query.code.as_str()),
+            ("redirect_uri", redirect_uri.as_str()),
+        ])
+        .send()
+        .await
+        .map_err(|_| AppError::InternalError("Failed to get GitHub token".into()))?;
+
+    let token_data: Value = token_res
+        .json()
+        .await
+        .map_err(|_| AppError::InternalError("Failed to parse GitHub token".into()))?;
+    let access_token = token_data["access_token"]
+        .as_str()
+        .ok_or(AppError::InternalError("No access token".into()))?;
+
+    let user_res = client
+        .get("https://api.github.com/user")
+        .header("User-Agent", "txio")
+        .bearer_auth(access_token)
+        .send()
+        .await
+        .map_err(|_| AppError::InternalError("Failed to get GitHub user info".into()))?;
+
+    let user_data: Value = user_res
+        .json()
+        .await
+        .map_err(|_| AppError::InternalError("Failed to parse GitHub user info".into()))?;
+
+    let email = user_data["email"].as_str().map(|s| s.to_string());
+    let email = match email {
+        Some(email) => email,
+        None => {
+            let emails_res = client
+                .get("https://api.github.com/user/emails")
+                .header("User-Agent", "txio")
+                .bearer_auth(access_token)
+                .send()
+                .await
+                .map_err(|_| AppError::InternalError("Failed to get GitHub emails".into()))?;
+
+            let emails_value: Value = emails_res
+                .json()
+                .await
+                .map_err(|_| AppError::InternalError("Failed to parse GitHub emails".into()))?;
+
+            emails_value
+                .as_array()
+                .and_then(|emails| {
+                    emails.iter().find_map(|email| {
+                        let verified = email["verified"].as_bool().unwrap_or(false);
+                        let primary = email["primary"].as_bool().unwrap_or(false);
+                        if verified && primary {
+                            return email["email"].as_str().map(|s| s.to_string());
+                        }
+                        None
+                    })
+                })
+                .or_else(|| {
+                    emails_value.as_array().and_then(|emails| {
+                        emails.iter().find_map(|email| {
+                            let verified = email["verified"].as_bool().unwrap_or(false);
+                            if verified {
+                                return email["email"].as_str().map(|s| s.to_string());
+                            }
+                            None
+                        })
+                    })
+                })
+                .ok_or(AppError::InternalError(
+                    "No email address available from GitHub profile".into(),
+                ))?
+        }
+    };
+
+    let auth_res = service.oauth_login_or_register(email).await?;
+
+    let redirect_to = format!(
+        "{}/?token={}",
+        frontend_url.trim_end_matches('/'),
+        auth_res.token
+    );
+
+    Ok(axum::response::Redirect::temporary(&redirect_to))
+}
