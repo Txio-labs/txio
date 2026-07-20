@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 import { 
     Zap, Shield, Cpu, Globe, ArrowRight, Layers, Terminal, Sparkles, Code2, Rocket, Github, Twitter
 } from 'lucide-react';
@@ -56,57 +55,57 @@ export const LandingPage: React.FC = () => {
                 </button>
                 
                 <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-400">
-                    <Link 
-                        href="/features"
+                    <button 
+                        onClick={() => appStore.setViewMode('features')}
                         className="hover:text-white transition-colors"
                     >
                         Features
-                    </Link>
-                    <Link 
-                        href="/integrations"
+                    </button>
+                    <button 
+                        onClick={() => appStore.setViewMode('integrations')}
                         className="hover:text-white transition-colors"
                     >
                         Integrations
-                    </Link>
-                    <Link 
-                        href="/infrastructure"
+                    </button>
+                    <button 
+                        onClick={() => appStore.setViewMode('infrastructure')}
                         className="hover:text-white transition-colors"
                     >
                         Infrastructure
-                    </Link>
-                    <Link 
-                        href="/partners"
+                    </button>
+                    <button 
+                        onClick={() => appStore.setViewMode('partners')}
                         className="hover:text-white transition-colors"
                     >
                         Partners
-                    </Link>
-                    <Link 
-                        href="/ecosystem"
+                    </button>
+                    <button 
+                        onClick={() => appStore.setViewMode('ecosystem')}
                         className="hover:text-white transition-colors"
                     >
                         Ecosystem
-                    </Link>
-                    <Link 
-                        href="/docs"
+                    </button>
+                    <button 
+                        onClick={() => appStore.setViewMode('docs')}
                         className="hover:text-white transition-colors"
                     >
                         Docs
-                    </Link>
+                    </button>
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <Link 
-                        href="/signin"
+                    <button 
+                        onClick={() => appStore.setViewMode('signin')}
                         className="text-sm font-bold text-slate-300 hover:text-white transition-colors"
                     >
                         Sign In
-                    </Link>
-                    <Link 
-                        href="/signup"
+                    </button>
+                    <button 
+                        onClick={() => appStore.setViewMode('signup')}
                         className="px-5 py-2.5 bg-white text-near-black rounded-xl font-bold text-sm hover:bg-electric-violet hover:text-white transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-95"
                     >
                         Get Started
-                    </Link>
+                    </button>
                 </div>
             </nav>
 
@@ -138,15 +137,15 @@ export const LandingPage: React.FC = () => {
                     </motion.p>
 
                     <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                        <Link
-                            href="/signup"
-                            className="group relative px-10 py-5 bg-white text-near-black rounded-2xl font-bold text-lg hover:bg-electric-violet hover:text-white transition-all duration-500 hover:shadow-[0_0_50px_rgba(173,223,241,0.4)] active:scale-95 flex items-center justify-center"
+                        <button 
+                            onClick={() => appStore.setViewMode('signup')}
+                            className="group relative px-10 py-5 bg-white text-near-black rounded-2xl font-bold text-lg hover:bg-electric-violet hover:text-white transition-all duration-500 hover:shadow-[0_0_50px_rgba(123,63,242,0.4)] active:scale-95"
                         >
                             <span className="flex items-center gap-3">
                                 Start Building
                                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                             </span>
-                        </Link>
+                        </button>
                         <button
                             onClick={() => window.open("https://github.com/Kingvic300/txio/", "_blank")}
                             className="px-10 py-5 bg-near-black border border-white/10 rounded-2xl font-bold text-lg hover:border-white/20 transition-all flex items-center gap-3 group"
@@ -170,7 +169,7 @@ export const LandingPage: React.FC = () => {
                     {/* Purple Ambient Glow */}
                     <div className="absolute -inset-20 bg-electric-violet/20 blur-[120px] rounded-full opacity-50 group-hover:opacity-80 transition-opacity"></div>
                     
-                    <div className="relative bg-[#001B2E] border border-white/5 rounded-[2.5rem] overflow-hidden aspect-[16/9] shadow-[0_0_80px_rgba(173,223,241,0.15)] ring-1 ring-white/10">
+                    <div className="relative bg-[#0a0a0a] border border-white/5 rounded-[2.5rem] overflow-hidden aspect-[16/9] shadow-[0_0_80px_rgba(123,63,242,0.15)] ring-1 ring-white/10">
                         {/* Mock IDE UI */}
                         <div className="flex flex-col h-full">
                             {/* Window Header */}
@@ -225,7 +224,7 @@ export const LandingPage: React.FC = () => {
                                     </div>
 
                                     {/* Terminal Panel */}
-                                    <div className="rounded-[2rem] bg-[#001B2E] border border-white/5 overflow-hidden">
+                                    <div className="rounded-[2rem] bg-[#050505] border border-white/5 overflow-hidden">
                                         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
                                             <span className="text-xs uppercase tracking-[0.3em] text-slate-500">
                                                 txio terminal
