@@ -146,10 +146,15 @@ export const CommandPalette: React.FC = () => {
         <div 
             className="fixed inset-0 z-[9999] flex flex-col items-center pt-[20vh] bg-near-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
             onClick={() => appStore.setCommandPalette(false)}
+            role="button"
+            tabIndex={-1}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') appStore.setCommandPalette(false); }}
         >
             <div 
                 className="w-full max-w-2xl bg-[#003152] border border-white/10 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[60vh] relative animate-in zoom-in-95 duration-200"
                 onClick={e => e.stopPropagation()}
+                role="dialog"
+                aria-label="Command palette"
             >
                 <div className="flex items-center px-4 py-3 border-b border-white/5 bg-dark-indigo-glow/50">
                     <Search className="text-slate-500 mr-3" size={18} />

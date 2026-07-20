@@ -44,10 +44,10 @@ export const HistoryList: React.FC<HistoryListProps> = ({
         const isRpc = item.type === RequestType.RPC;
         const isSuccess = item.status && item.status < 400;
         return (
-          <div 
+          <button 
             key={item.id || i} 
             onClick={() => onSelectRequest(item)}
-            className="group p-3 rounded-lg hover:bg-white/5 border border-white/5 hover:border-white/10 cursor-pointer transition-all bg-white/[0.02]"
+            className="group p-3 rounded-lg hover:bg-white/5 border border-white/5 hover:border-white/10 cursor-pointer transition-all bg-white/[0.02] text-left w-full"
           >
             <div className="flex justify-between items-start mb-1">
               <span className={`text-xs font-bold truncate flex-1 ${isSuccess ? 'text-slate-300' : 'text-red-400'}`}>
@@ -64,7 +64,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({
               <span className="w-0.5 h-0.5 bg-slate-600 rounded-full"></span>
               <span>{new Date(item.timestamp || 0).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</span>
             </div>
-          </div>
+          </button>
         );
       })}
     </div>

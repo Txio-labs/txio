@@ -98,7 +98,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       variants={containerVariants}
       className="w-14 bg-near-black border-r border-white/[0.06] flex flex-col items-center py-4 gap-1 z-20 shrink-0 relative"
     >
-      <motion.div
+      <motion.button
         variants={itemVariants}
         className="mb-4 group cursor-pointer relative"
         onClick={() => appStore.setActiveTab(null)}
@@ -106,7 +106,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         <div className="relative z-10 p-1.5 rounded-xl bg-white/[0.02] border border-white/[0.06] group-hover:border-electric-violet/30 transition-colors duration-300">
           <TxioLogo />
         </div>
-      </motion.div>
+      </motion.button>
 
       <div className="w-6 h-px bg-white/[0.06] mb-2"></div>
 

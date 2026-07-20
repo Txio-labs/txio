@@ -36,13 +36,13 @@ export const AuthPage: React.FC = () => {
                 
                 <div className="relative z-10 w-full flex flex-col p-16 justify-between">
                     <div>
-                        <div 
+                        <button 
                             className="flex items-center gap-3 mb-12 cursor-pointer"
                             onClick={() => appStore.setViewMode('landing')}
                         >
                             <img src={logoDark.src} alt="txio" className="h-10 w-auto" />
                             <span className="text-2xl font-bold tracking-tighter text-white">txio</span>
-                        </div>
+                        </button>
 
                         <motion.div 
                             initial={{ opacity: 0, x: -20 }}

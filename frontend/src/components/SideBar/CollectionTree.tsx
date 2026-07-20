@@ -99,9 +99,9 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
             />
           )}
           
-          <div 
+          <button 
             className={`
-              group flex items-center gap-2 px-2 py-1.5 cursor-pointer rounded-lg transition-all duration-200
+              group flex items-center gap-2 px-2 py-1.5 cursor-pointer rounded-lg transition-all duration-200 text-left w-full
               ${node.type !== 'request' ? 'hover:bg-white/5 text-slate-400 hover:text-slate-200' : 
                 isActive ? 'bg-sui-900/20 text-sui-300 shadow-[inset_2px_0_0_0_#0ea5e9]' : 'hover:bg-white/5 text-slate-400 hover:text-slate-200'}
             `}
@@ -145,7 +145,7 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
                 </button>
               </div>
             )}
-          </div>
+          </button>
 
           {(isFiltering || node.isExpanded) && node.children && (
             <div className="relative animate-in slide-in-from-left-1 duration-200">

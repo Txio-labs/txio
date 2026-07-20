@@ -71,7 +71,7 @@ export const GetStartedPage: React.FC = () => {
                 <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-electric-violet/10 blur-[120px] rounded-full"></div>
                 
                 <div className="relative z-10">
-                    <div 
+                    <button 
                         className="flex items-center gap-3 mb-16 cursor-pointer"
                         onClick={() => {
                             appStore.setViewMode('landing');
@@ -80,7 +80,7 @@ export const GetStartedPage: React.FC = () => {
                     >
                         <img src={logoDark.src} alt="txio" className="h-10 w-auto" />
                         <span className="text-2xl font-bold tracking-tighter text-white">txio</span>
-                    </div>
+                    </button>
 
                     <div className="space-y-6">
                         <h1 className="text-6xl font-bold tracking-tight text-white leading-[1.1]">

@@ -152,7 +152,7 @@ export const Layout: React.FC<LayoutProps> = ({
 
             <header className="h-12 bg-near-black border-b border-white/10 flex items-center justify-between px-4 shrink-0 z-20">
                 <div className="flex items-center gap-4">
-                    <div 
+                    <button 
                         className="flex items-center gap-2 font-bold text-slate-100 group cursor-pointer"
                         onClick={() => appStore.setActiveTab(null)}
                     >
@@ -160,7 +160,7 @@ export const Layout: React.FC<LayoutProps> = ({
                             <TxioLogoSmall />
                         </div>
                         <span className="text-sm tracking-tight group-hover:text-sui-300 transition-colors">txio</span>
-                    </div>
+                    </button>
                     <div className="h-4 w-px bg-white/10 mx-2"></div>
                     <button onClick={() => appStore.toggleSidebar()} className={`p-1.5 rounded hover:bg-white/10 transition-colors ${isSidebarOpen ? 'text-electric-violet' : 'text-slate-500'}`}>
                         <PanelLeft size={16} />
@@ -283,19 +283,19 @@ export const Layout: React.FC<LayoutProps> = ({
             
             <footer className="h-7 bg-near-black border-t border-white/10 flex items-center justify-between px-3 text-[10px] text-slate-500 select-none z-20">
                 <div className="flex items-center gap-4">
-                    <span 
+                    <button 
                         onClick={() => appStore.openTab('settings')}
                         className="flex items-center gap-1 hover:text-electric-violet cursor-pointer transition-colors"
                     >
                         <Settings size={10} /> v2.6.0-beta
-                    </span>
-                    <span 
+                    </button>
+                    <button 
                         onClick={() => appStore.showToast('System operational. No errors.', 'success')}
                         className="hover:text-emerald-400 cursor-pointer transition-colors flex items-center gap-1"
                     >
                         <div className="w-1 h-1 bg-emerald-500 rounded-full"></div> System Optimal
-                    </span>
-                    <span
+                    </button>
+                    <button
                         onClick={() =>
                             appStore.toggleTerminal()
                         }
@@ -306,7 +306,7 @@ export const Layout: React.FC<LayoutProps> = ({
                         }`}
                     >
                         <Terminal size={10} /> Terminal
-                    </span>
+                    </button>
                 </div>
                 <div className="flex items-center gap-4">
                      <span className="font-mono text-slate-600">GAS: <span className="text-amber-500">AUTO</span></span>

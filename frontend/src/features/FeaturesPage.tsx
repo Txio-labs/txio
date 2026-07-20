@@ -112,10 +112,10 @@ export const FeaturesPage: React.FC<
                 theme === 'dark' ? 'bg-black/50 border-white/5' : 'bg-white/50 border-slate-200'
             }`}>
                 <div className="flex items-center gap-8">
-                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('landing')}>
+                    <button className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('landing')}>
                         <img src={logo.src} alt="txio" className="h-7 w-auto" />
                         <span className="font-black tracking-tighter text-lg">features</span>
-                    </div>
+                    </button>
                     <div className="hidden md:flex items-center gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
                         <button onClick={() => navigateTo('ecosystem')} className="hover:text-electric-violet transition-colors">Ecosystem</button>
                         <button onClick={() => navigateTo('docs')} className="hover:text-electric-violet transition-colors">Documentation</button>
