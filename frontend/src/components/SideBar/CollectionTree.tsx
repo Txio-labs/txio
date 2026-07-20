@@ -5,14 +5,53 @@ import { appStore } from '@/lib/store';
 
 interface CollectionTreeProps {
   collections: CollectionNode[];
+  filterQuery?: string;
   activeTabId: string | null;
   onToggleExpand: (nodeId: string) => void;
   onSelectCollectionRequest: (node: CollectionNode) => void;
   onCreateCollection: (name: string) => void;
 }
 
+const nodeMatchesQuery = (node: CollectionNode, query: string) => {
+  const searchableValues = [
+    node.name,
+    node.requestData?.name,
+    node.requestData?.rpcParams?.method
+  ];
+
+  return searchableValues.some((value) =>
+    value?.toLowerCase().includes(query)
+  );
+};
+
+export const filterCollectionTree = (
+  nodes: CollectionNode[],
+  filterQuery: string
+): CollectionNode[] => {
+  const query = filterQuery.trim().toLowerCase();
+
+  if (!query) {
+    return nodes;
+  }
+
+  return nodes.flatMap((node) => {
+    const selfMatches = nodeMatchesQuery(node, query);
+    const filteredChildren = filterCollectionTree(node.children ?? [], query);
+
+    if (!selfMatches && filteredChildren.length === 0) {
+      return [];
+    }
+
+    return [{
+      ...node,
+      children: selfMatches ? node.children : filteredChildren
+    }];
+  });
+};
+
 export const CollectionTree: React.FC<CollectionTreeProps> = ({
   collections,
+  filterQuery = '',
   activeTabId,
   onToggleExpand,
   onSelectCollectionRequest,
@@ -21,6 +60,8 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
   const [isAddingCollection, setIsAddingCollection] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState('');
   const createInputRef = useRef<HTMLInputElement>(null);
+  const isFiltering = filterQuery.trim().length > 0;
+  const visibleCollections = filterCollectionTree(collections, filterQuery);
 
   useEffect(() => {
     if (isAddingCollection && createInputRef.current) {
@@ -73,7 +114,7 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
                   node.isExpanded ? <ChevronDown size={10} className="text-slate-500 group-hover:text-slate-400" /> : <ChevronRight size={10} className="text-slate-500 group-hover:text-slate-400" />
                 ) : <div className="w-1 h-1 rounded-full bg-slate-700" />
               ) : (
-                <div className={`w-1.5 h-1.5 rounded-full ${node.name.includes('RPC') ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.4)]' : 'bg-violet-500 shadow-[0_0_5px_rgba(139,92,246,0.4)]'}`} />
+                <div className={`w-1.5 h-1.5 rounded-full ${node.name.includes('RPC') ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.4)]' : 'bg-amber-500 shadow-[0_0_5px_rgba(245,158,11,0.4)]'}`} />
               )}
             </div>
 
@@ -96,7 +137,7 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
                   </button>
                 )}
                 <button 
-                  onClick={(e) => { e.stopPropagation(); appStore.showToast('Adding to collection not implemented', 'info'); }} 
+                  onClick={(e) => { e.stopPropagation(); appStore.openTab('new_request', { collectionId: node.id }); }} 
                   className="p-1 hover:bg-white/10 rounded text-slate-500 hover:text-white transition-colors"
                   title="Add Request"
                 >
@@ -106,7 +147,7 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
             )}
           </button>
 
-          {node.isExpanded && node.children && (
+          {(isFiltering || node.isExpanded) && node.children && (
             <div className="relative animate-in slide-in-from-left-1 duration-200">
               {renderTree(node.children, depth + 1)}
             </div>
@@ -118,6 +159,14 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
 
   return (
     <div className="flex-1 pb-4 px-2">
+      <button
+        type="button"
+        onClick={() => setIsAddingCollection(true)}
+        className="w-full flex items-center gap-1.5 px-2 py-1 mb-1 text-[11px] text-slate-500 hover:text-slate-200 hover:bg-white/5 rounded-lg transition-colors"
+      >
+        <Plus size={11} />
+        <span>New Collection</span>
+      </button>
       {isAddingCollection && (
         <div className="mb-2 px-1 animate-in slide-in-from-top-2 duration-200">
           <div className="flex items-center gap-2 bg-dark-indigo-glow/80 p-1.5 rounded-lg border border-sui-500/50 ring-1 ring-electric-violet/20 shadow-lg">
@@ -136,7 +185,13 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
       )}
       
       <div className="pl-1 space-y-0.5">
-        {renderTree(collections)}
+        {visibleCollections.length > 0 ? (
+          renderTree(visibleCollections)
+        ) : isFiltering ? (
+          <p className="px-3 py-6 text-center text-[11px] text-slate-600">
+            No collections or requests match &ldquo;{filterQuery.trim()}&rdquo;.
+          </p>
+        ) : null}
       </div>
     </div>
   );

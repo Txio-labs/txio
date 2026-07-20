@@ -65,7 +65,7 @@ export const ApiKeysTab: React.FC<ApiKeysTabProps> = ({
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-      <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(145deg,rgba(123,63,242,0.15)_0%,rgba(10,10,14,0.96)_40%,rgba(6,6,8,1)_100%)] p-6">
+      <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(145deg,rgba(173,223,241,0.15)_0%,rgba(0,49,82,0.96)_40%,rgba(0,27,46,1)_100%)] p-6">
         <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-soft-purple/15 blur-3xl" />
 
         <div className="relative flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -87,7 +87,7 @@ export const ApiKeysTab: React.FC<ApiKeysTabProps> = ({
 
           <button
             onClick={() => setIsCreatingKey(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-electric-violet px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white shadow-[0_18px_35px_-20px_rgba(123,63,242,0.8)] transition-colors hover:bg-soft-purple"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-electric-violet px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white shadow-[0_18px_35px_-20px_rgba(173,223,241,0.8)] transition-colors hover:bg-soft-purple"
           >
             <Plus size={14} />
             Create Key
@@ -145,7 +145,7 @@ export const ApiKeysTab: React.FC<ApiKeysTabProps> = ({
             apiKeys.map((key) => (
               <div
                 key={key.id}
-                className="rounded-[1.75rem] border border-white/10 bg-[#0b0b10]/85 p-5"
+                className="rounded-[1.75rem] border border-white/10 bg-[#003152]/85 p-5"
               >
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div>
@@ -208,7 +208,7 @@ export const ApiKeysTab: React.FC<ApiKeysTabProps> = ({
           )}
         </section>
 
-        <section className="rounded-[1.75rem] border border-white/10 bg-[#0b0b10]/85 p-5">
+        <section className="rounded-[1.75rem] border border-white/10 bg-[#003152]/85 p-5">
           <div className="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-600">
             New token
           </div>

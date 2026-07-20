@@ -67,7 +67,7 @@ export function ConnectWalletButton({
     return (
         <button
             onClick={openModal}
-            className={`group inline-flex items-center justify-center gap-2 rounded-2xl border border-electric-violet/20 bg-gradient-to-r from-electric-violet via-[#8f54ff] to-soft-purple px-5 py-3 font-bold text-white shadow-[0_18px_40px_rgba(123,63,242,0.28)] transition-all hover:scale-[1.01] hover:shadow-[0_22px_50px_rgba(123,63,242,0.34)] ${fullWidth ? 'w-full' : ''} ${className}`}
+            className={`group inline-flex items-center justify-center gap-2 rounded-2xl border border-electric-violet/20 bg-gradient-to-r from-electric-violet via-[#93D3EC] to-soft-purple px-5 py-3 font-bold text-white shadow-[0_18px_40px_rgba(173,223,241,0.28)] transition-all hover:scale-[1.01] hover:shadow-[0_22px_50px_rgba(173,223,241,0.34)] ${fullWidth ? 'w-full' : ''} ${className}`}
         >
             <Wallet
                 size={16}

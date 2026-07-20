@@ -27,6 +27,14 @@ dotenvy = { workspace = true }
 validator = { workspace = true }
 bcrypt = { workspace = true }
 tower-http = { workspace = true }
+tower = { workspace = true }
+tower_governor = { workspace = true }
 brevo = { workspace = true }
 clap = { workspace = true }
 regex = { workspace = true }
+url = "2.5"
+base64 = "0.22"
+hmac = "0.12"
+sha2 = "0.10"
+serde_with = "3.8"
+urlencoding = "2.1"

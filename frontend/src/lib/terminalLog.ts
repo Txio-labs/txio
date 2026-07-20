@@ -8,6 +8,7 @@ export interface TerminalCommandPayload {
     status?: number;
     duration?: number;
     successLabel?: string;
+    isExecution?: boolean;
 }
 
 const formatBody = (body: unknown) => {
@@ -55,6 +56,10 @@ export const logCommandToTerminal = (
             ? '✗ failed'
             : `✓ ${payload.successLabel ?? 'ok'}`
     ];
+
+    if (payload.isExecution) {
+        summaryBits.push('[ON-CHAIN]');
+    }
 
     if (typeof payload.status === 'number') {
         summaryBits.push(`status ${payload.status}`);

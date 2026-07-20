@@ -1,4 +1,4 @@
-use mongodb::{Client, Collection as MongoCollection};
+use mongodb::{Collection as MongoCollection, Database};
 use mongodb::bson::{doc, oid::ObjectId};
 use crate::model::collection::Collection;
 use crate::utils::error::AppError;
@@ -8,8 +8,8 @@ pub struct CollectionRepository {
 }
 
 impl CollectionRepository {
-    pub fn new(db: &Client) -> Self {
-        let collection = db.database("txio_db").collection("collections");
+    pub fn new(db: &Database) -> Self {
+        let collection = db.collection("collections");
         Self { collection }
     }
 
@@ -75,6 +75,25 @@ impl CollectionRepository {
         
         if result.deleted_count == 0 {
             return Err(AppError::NotFound(format!("Collection not found for deletion: {}", id)));
+        }
+        Ok(())
+    }
+
+    /// Delete a collection document within an active MongoDB session/transaction.
+    pub async fn delete_with_session(
+        &self,
+        id: ObjectId,
+        session: &mut mongodb::ClientSession,
+    ) -> Result<(), AppError> {
+        let filter = doc! { "_id": id };
+        let result = self.collection
+            .delete_one_with_session(filter, None, session)
+            .await?;
+        if result.deleted_count == 0 {
+            return Err(AppError::NotFound(format!(
+                "Collection not found for deletion: {}",
+                id
+            )));
         }
         Ok(())
     }

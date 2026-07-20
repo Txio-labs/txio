@@ -194,7 +194,7 @@ export const OTPPage: React.FC = () => {
                                         onKeyDown={(e) => handleKeyDown(index, e)}
                                         className={`w-full aspect-square text-center text-3xl font-bold rounded-2xl border-2 outline-none transition-all duration-300 ${
                                             digit 
-                                                ? 'border-electric-violet bg-electric-violet/5 shadow-[0_0_20px_rgba(123,63,242,0.2)]' 
+                                                ? 'border-electric-violet bg-electric-violet/5 shadow-[0_0_20px_rgba(173,223,241,0.2)]' 
                                                 : theme === 'dark'
                                                     ? 'bg-white/[0.03] border-white/10 focus:border-electric-violet/50'
                                                     : 'bg-slate-50 border-slate-200 focus:border-electric-violet/30'
@@ -208,7 +208,7 @@ export const OTPPage: React.FC = () => {
                             <button 
                                 type="submit"
                                 disabled={isLoading || isVerified}
-                                className="w-full py-5 bg-electric-violet text-white rounded-2xl font-bold text-xl hover:bg-soft-purple transition-all shadow-[0_0_30px_rgba(123,63,242,0.3)] flex items-center justify-center gap-3 group disabled:opacity-50 relative overflow-hidden"
+                                className="w-full py-5 bg-electric-violet text-white rounded-2xl font-bold text-xl hover:bg-soft-purple transition-all shadow-[0_0_30px_rgba(173,223,241,0.3)] flex items-center justify-center gap-3 group disabled:opacity-50 relative overflow-hidden"
                             >
                                 <AnimatePresence mode="wait">
                                     {isLoading ? (

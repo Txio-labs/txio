@@ -102,6 +102,7 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
   // Debounced resolve when the candidate name changes
   const lastResolved = useRef<string | null>(null);
   useEffect(() => {
+    let cancelled = false;
     if (!candidateName) {
       lastResolved.current = null;
       return;
@@ -111,12 +112,11 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
       const requested = candidateName;
       try {
         const address = await resolveSuiAddress(network, requested);
-        // Drop if another resolve started in the meantime
-        if (requested !== candidateName) return;
+        if (cancelled) return;
         lastResolved.current = requested;
         setResolutionResult({ status: 'resolved', name: requested, address });
       } catch (err) {
-        if (requested !== candidateName) return;
+        if (cancelled) return;
         const message = err instanceof SuiRpcError || err instanceof Error
           ? err.message
           : 'Resolution failed.';
@@ -124,7 +124,10 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
       }
     }, RESOLVE_DEBOUNCE_MS);
 
-    return () => window.clearTimeout(handle);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(handle);
+    };
   }, [candidateName, network]);
 
   // Derive the displayed resolution state from the latest async outcome:
