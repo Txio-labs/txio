@@ -1,12 +1,17 @@
-use axum::{extract::Request, http::{header, StatusCode}, middleware::Next, response::IntoResponse};
-use jsonwebtoken::{decode, DecodingKey, Validation};
+use axum::{
+    body::Body,
+    http::{Request, StatusCode, header},
+    middleware::Next,
+    response::{IntoResponse, Response},
+};
+use jsonwebtoken::{DecodingKey, Validation, decode};
 use serde_json::Value;
 
 /// Simple JWT authentication middleware.
 /// Expects `Authorization: Bearer <token>` header.
 /// Validates the token using the secret in `JWT_SECRET` environment variable.
 /// If validation fails, returns `401 Unauthorized`.
-pub async fn auth_middleware(request: Request, next: Next) -> impl IntoResponse {
+pub async fn auth_middleware(request: Request<Body>, next: Next) -> Response {
     // Extract the Authorization header
     if let Some(auth_header) = request.headers().get(header::AUTHORIZATION) {
         if let Ok(auth_str) = auth_header.to_str() {
@@ -17,7 +22,7 @@ pub async fn auth_middleware(request: Request, next: Next) -> impl IntoResponse 
                     let validation = Validation::default();
                     if decode::<Value>(token, &decoding_key, &validation).is_ok() {
                         // Token valid – continue to handler
-                        return next.run(request).await.into_response();
+                        return next.run(request).await;
                     }
                 }
             }

@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /home/kingvic/Documents/drips/txio log --all --format='%H %an %ae %s')",
+      "Bash(git -C /home/kingvic/Documents/drips/txio log --all --format='%H|%an|%ae|%cn|%ce|%s')",
+      "Bash(git -C /home/kingvic/Documents/drips/txio log --all --format='%an <%ae>')",
+      "Bash(git -C /home/kingvic/Documents/drips/txio remote -v)",
+      "Bash(git -C /home/kingvic/Documents/drips/txio fetch --all)",
+      "Bash(git -C /home/kingvic/Documents/drips/txio branch -a)",
+      "Bash(git -C /home/kingvic/Documents/drips/txio log 74b9e4b..origin/main --format='%H|%an|%ae|%s')",
+      "Bash(git -C /home/kingvic/Documents/drips/txio log --all --format='COMMIT %H%n%B%n---END---')",
+      "Bash(git -C /home/kingvic/Documents/drips/txio log -1 --format='%B' 28bd9fea4e9231f46e977c5aeb3634ba99ff6419)",
+      "Bash(git -C /home/kingvic/Documents/drips/txio branch -a --contains 28bd9fea4e9231f46e977c5aeb3634ba99ff6419)",
+      "Bash(git -C /home/kingvic/Documents/drips/txio log --oneline 28bd9fea4e9231f46e977c5aeb3634ba99ff6419..origin/main)",
+      "Bash(git filter-repo *)",
+      "Bash(git --version)",
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f --msg-filter 'sed \"/Co-Authored-By:.*[Cc]laude/d;/Co-Authored-By:.*[Aa]nthropic/d\"' -- main)",
+      "Bash(xargs -I{} git log -1 --format='%H %B' {})",
+      "Bash(echo \"exit:$?\")",
+      "Bash(git update-ref *)",
+      "Bash(git reflog *)",
+      "Bash(git gc *)",
+      "Bash(gh label *)",
+      "Bash(gh repo *)",
+      "Bash(python3 -c ' *)",
+      "Bash(gh api *)",
+      "Bash(git ls-remote *)",
+      "Bash(git -C /home/kingvic/Documents/drips/txio log --oneline -1 main)",
+      "Bash(git remote *)",
+      "Bash(gh issue *)",
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f --msg-filter 'sed \"/Co-Authored-By:.*[Cc]laude/d;/Co-Authored-By:.*[Aa]nthropic/d\"' -- main Kingvic feat/ecosystem-gsap-otp-flow fix/25-compose-secrets fix/36-http-timeouts fix/37-remove-user-debug-log fix/40-frontend-docker-out fix/42-cli-version fix/44-gitignore fix/51-oauth-failfast fix/56-email-sender fix/60-unauthorized-message fix/62-auth-health-route)",
+      "Bash(xargs -r -n1 git update-ref -d)"
+    ]
+  }
+}

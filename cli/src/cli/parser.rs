@@ -1,9 +1,13 @@
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 
-/// The canonical network enum, shared with the backend API (and mirrored by
-/// the frontend). Re-exported here so CLI modules can keep referring to
-/// `crate::cli::parser::Network` without depending on a second definition.
-pub use txio_api::model::network::Network;
+#[derive(Clone, Debug, ValueEnum, Default, PartialEq)]
+pub enum Network {
+    #[default]
+    Mainnet,
+    Testnet,
+    Devnet,
+    Localnet,
+}
 
 #[derive(Parser)]
 #[command(name = "txio")]

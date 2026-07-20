@@ -1,5 +1,6 @@
 use crate::dtos::request::TerminalCommandRequest;
 use crate::services::terminal_service::{CommandExecutionResponse, TerminalService};
+use crate::utils::auth_jwt::Claims;
 use crate::utils::error::AppError;
 use axum::{
     Json,
@@ -8,9 +9,11 @@ use axum::{
 use validator::Validate;
 
 pub async fn execute(
+    claims: Claims,
     State(service): State<TerminalService>,
     Json(payload): Json<TerminalCommandRequest>,
 ) -> Result<Json<CommandExecutionResponse>, AppError> {
+    let _ = claims;
     payload
         .validate()
         .map_err(|error| AppError::ValidationError(error.to_string()))?;
@@ -24,9 +27,11 @@ pub async fn execute(
 }
 
 pub async fn get_execution(
+    claims: Claims,
     State(service): State<TerminalService>,
     Path(execution_id): Path<String>,
 ) -> Result<Json<CommandExecutionResponse>, AppError> {
+    let _ = claims;
     let result = service
         .get_execution(&execution_id)
         .await
@@ -36,9 +41,11 @@ pub async fn get_execution(
 }
 
 pub async fn cancel_execution(
+    claims: Claims,
     State(service): State<TerminalService>,
     Path(execution_id): Path<String>,
 ) -> Result<Json<CommandExecutionResponse>, AppError> {
+    let _ = claims;
     let result = service
         .cancel_execution(&execution_id)
         .await

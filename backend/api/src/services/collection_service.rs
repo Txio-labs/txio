@@ -8,7 +8,7 @@ use crate::utils::error::AppError;
 use mongodb::bson::oid::ObjectId;
 use serde_json::Value;
 use std::net::IpAddr;
-use url::Url;
+use url::{Host, Url};
 
 #[derive(Clone)]
 pub struct CollectionService {
@@ -51,47 +51,35 @@ impl CollectionService {
 
         Ok(())
     }
-
     fn validate_url(url_str: &str) -> Result<(), AppError> {
         // Parse URL
-        let url = Url::parse(url_str)
-            .map_err(|e| AppError::BadRequest(format!("Invalid RPC URL: {}", e)))?;
+        let url = Url::parse(url_str).map_err(|e| AppError::BadRequest(format!("Invalid RPC URL: {e}")))?;
         // Only allow HTTPS scheme
         if url.scheme() != "https" {
-            return Err(AppError::BadRequest(
-                "Only HTTPS RPC URLs are allowed".into(),
-            ));
+            return Err(AppError::BadRequest("Only HTTPS RPC URLs are allowed".into()));
         }
-        // Disallow localhost and loopback IPs
-        if let Some(host) = url.host_str() {
-            if host == "localhost" {
-                return Err(AppError::BadRequest(
-                    "Localhost URLs are not allowed".into(),
-                ));
+
+        match url.host() {
+            Some(Host::Domain(host)) if host.eq_ignore_ascii_case("localhost") => {
+                return Err(AppError::BadRequest("Localhost URLs are not allowed".into()));
             }
-            // `host_str()` wraps IPv6 literals in brackets (e.g. "[::1]"), which
-            // do not parse as an `IpAddr`. Strip them so IPv6 loopback, ULA, and
-            // link-local addresses are actually caught rather than silently
-            // slipping past the private-range check (an SSRF bypass).
-            let host = host
-                .strip_prefix('[')
-                .and_then(|h| h.strip_suffix(']'))
-                .unwrap_or(host);
-            // If host is an IP address, check for private ranges
-            if let Ok(ip) = host.parse::<IpAddr>() {
-                let is_disallowed = match ip {
-                    IpAddr::V4(v4) => v4.is_loopback() || v4.is_private() || v4.is_link_local(),
-                    IpAddr::V6(v6) => {
-                        v6.is_loopback() || v6.is_unique_local() || v6.is_unicast_link_local()
-                    }
-                };
-                if is_disallowed {
+            Some(Host::Ipv4(v4)) => {
+                if v4.is_loopback() || v4.is_private() || v4.is_link_local() {
                     return Err(AppError::BadRequest(
-                        "Private or link‑local IP addresses are not allowed".into(),
+                        "Private or link-local IP addresses are not allowed".into(),
                     ));
                 }
             }
+            Some(Host::Ipv6(v6)) => {
+                if v6.is_loopback() || v6.is_unique_local() || v6.is_unicast_link_local() {
+                    return Err(AppError::BadRequest(
+                        "Private or link-local IP addresses are not allowed".into(),
+                    ));
+                }
+            }
+            Some(Host::Domain(_)) | None => {}
         }
+
         Ok(())
     }
 
@@ -104,8 +92,7 @@ impl CollectionService {
         name: String,
         description: Option<String>,
     ) -> Result<Collection, AppError> {
-        self.ensure_workspace_owner(workspace_id.clone(), user_id.clone())
-            .await?;
+        self.ensure_workspace_owner(workspace_id, user_id).await?;
 
         let new_collection = Collection::new(user_id, Some(workspace_id), name, description);
         self.collection_repo.save(&new_collection).await
@@ -117,8 +104,7 @@ impl CollectionService {
         workspace_id: Option<ObjectId>,
     ) -> Result<Vec<Collection>, AppError> {
         if let Some(workspace_id) = workspace_id {
-            self.ensure_workspace_owner(workspace_id.clone(), user_id.clone())
-                .await?;
+            self.ensure_workspace_owner(workspace_id, user_id).await?;
 
             return self
                 .collection_repo
@@ -173,6 +159,7 @@ impl CollectionService {
 
     // --- Requests ---
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn add_request(
         &self,
         user_id: ObjectId,
@@ -210,6 +197,7 @@ impl CollectionService {
             .await
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn update_request(
         &self,
         request_id: ObjectId,
@@ -278,20 +266,18 @@ impl CollectionService {
         let final_url = if let Some(ref url) = req.rpc_url {
             url.clone()
         } else {
-            // Parse the request's network through the single canonical
-            // representation. An unknown value is rejected explicitly instead
-            // of silently falling back to Mainnet, which previously masked
-            // invalid selections. When the request pins no network we fall
-            // back to the user's configured default.
-            let network = if let Some(ref net_str) = req.network {
-                net_str
-                    .parse::<crate::model::network::Network>()
-                    .map_err(|e| AppError::BadRequest(e.to_string()))?
+            let network_enum = if let Some(ref net_str) = req.network {
+                match net_str.to_lowercase().as_str() {
+                    "mainnet" => crate::model::user::SuiNetwork::Mainnet,
+                    "testnet" => crate::model::user::SuiNetwork::Testnet,
+                    "devnet" => crate::model::user::SuiNetwork::Devnet,
+                    _ => crate::model::user::SuiNetwork::Mainnet,
+                }
             } else {
                 let user = self.user_repo.find_by_id(&user_id).await?;
                 user.network
             };
-            network.sui_url().to_string()
+            network_enum.url().to_string()
         };
         Self::validate_url(&final_url)?;
         // 1. Resolve Parameters (SuiNS)
@@ -322,7 +308,7 @@ impl CollectionService {
                                     // Synthesis: Return resolution error as JSON-RPC error
                                     let err_val = self.sui_service.error_response(
                                         -32002,
-                                        &format!("SuiNS Resolution Error for '{}': {}", name, e),
+                                        &format!("SuiNS Resolution Error for '{name}': {e}"),
                                     );
 
                                     // Update history before early return
@@ -389,7 +375,7 @@ mod tests {
         assert!(CollectionService::validate_url("https://10.0.0.1").is_err());
         assert!(CollectionService::validate_url("https://172.16.0.1").is_err());
         assert!(CollectionService::validate_url("https://192.168.1.1").is_err());
-
+        
         // IPv6 unique local addresses (ULA)
         assert!(CollectionService::validate_url("https://[fc00::1]").is_err());
         assert!(CollectionService::validate_url("https://[fd00::1]").is_err());
@@ -407,3 +393,4 @@ mod tests {
         assert!(CollectionService::validate_url("https://").is_err());
     }
 }
+

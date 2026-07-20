@@ -42,13 +42,12 @@ impl EmailService {
             .json(&body)
             .send()
             .await
-            .map_err(|e| AppError::ExternalService(format!("Failed to send email: {}", e)))?;
+            .map_err(|e| AppError::ExternalService(format!("Failed to send email: {e}")))?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
             return Err(AppError::ExternalService(format!(
-                "Brevo API error: {}",
-                error_text
+                "Brevo API error: {error_text}"
             )));
         }
 

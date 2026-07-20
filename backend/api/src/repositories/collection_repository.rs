@@ -1,7 +1,7 @@
+use mongodb::{Collection as MongoCollection, Database};
+use mongodb::bson::{doc, oid::ObjectId};
 use crate::model::collection::Collection;
 use crate::utils::error::AppError;
-use mongodb::bson::{doc, oid::ObjectId};
-use mongodb::{Collection as MongoCollection, Database};
 #[derive(Clone)]
 pub struct CollectionRepository {
     collection: MongoCollection<Collection>,
@@ -26,9 +26,7 @@ impl CollectionRepository {
 
         let mut collections = Vec::new();
         while cursor.advance().await? {
-            let c: Collection = cursor
-                .deserialize_current()
-                .map_err(|e| AppError::Database(e))?;
+            let c: Collection = cursor.deserialize_current().map_err(AppError::Database)?;
             collections.push(c);
         }
 
@@ -58,7 +56,7 @@ impl CollectionRepository {
     pub async fn find_by_id(&self, id: ObjectId) -> Result<Collection, AppError> {
         let filter = doc! { "_id": id };
         let result = self.collection.find_one(filter, None).await?;
-        result.ok_or_else(|| AppError::NotFound(format!("Collection not found with id: {}", id)))
+        result.ok_or_else(|| AppError::NotFound(format!("Collection not found with id: {id}")))
     }
 
     pub async fn update(&self, collection: &Collection) -> Result<Collection, AppError> {
@@ -79,8 +77,7 @@ impl CollectionRepository {
 
         if result.deleted_count == 0 {
             return Err(AppError::NotFound(format!(
-                "Collection not found for deletion: {}",
-                id
+                "Collection not found for deletion: {id}"
             )));
         }
         Ok(())

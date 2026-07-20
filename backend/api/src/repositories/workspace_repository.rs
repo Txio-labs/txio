@@ -41,6 +41,6 @@ impl WorkspaceRepository {
     pub async fn find_by_id(&self, id: ObjectId) -> Result<Workspace, AppError> {
         let result = self.collection.find_one(doc! { "_id": id }, None).await?;
 
-        result.ok_or_else(|| AppError::NotFound(format!("Workspace not found with id: {}", id)))
+        result.ok_or_else(|| AppError::NotFound(format!("Workspace not found with id: {id}")))
     }
 }

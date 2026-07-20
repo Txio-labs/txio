@@ -42,7 +42,7 @@ impl JwtHelper {
             &claims,
             &EncodingKey::from_secret(self.secret.as_bytes()),
         )
-        .map_err(|e| AppError::InternalError(format!("Failed to generate token: {}", e)))
+        .map_err(|e| AppError::InternalError(format!("Failed to generate token: {e}")))
     }
 
     pub fn verify_token(&self, token: &str) -> Result<Claims, AppError> {
