@@ -1,13 +1,16 @@
 import {
+    ActiveSession,
     CollectionNode,
     isNetwork,
     Network,
     RequestItem,
     RequestType,
     UserProfile,
+    NotificationPreferences,
     Workspace
 } from '../types';
 import { DEFAULT_MOVE_CALL } from '../lib/constants';
+import { normalizeNotificationPreferences } from '../lib/appConfig';
 
 const DEFAULT_API_BASE =
     process.env.NODE_ENV === 'development'
@@ -27,6 +30,40 @@ type MongoIdLike =
     | null
     | undefined;
 
+interface BackendNotificationPreferences {
+    emailDigests?: boolean;
+    emailSecurityAlerts?: boolean;
+    inAppActivityAlerts?: boolean;
+    inAppProductUpdates?: boolean;
+    email_digests?: boolean;
+    email_security_alerts?: boolean;
+    in_app_activity_alerts?: boolean;
+    in_app_product_updates?: boolean;
+}
+
+const normalizeBackendNotificationPreferences = (
+    preferences?: BackendNotificationPreferences | null
+): Partial<NotificationPreferences> | null => {
+    if (!preferences) {
+        return null;
+    }
+
+    return {
+        emailDigests:
+            preferences.emailDigests ??
+            preferences.email_digests,
+        emailSecurityAlerts:
+            preferences.emailSecurityAlerts ??
+            preferences.email_security_alerts,
+        inAppActivityAlerts:
+            preferences.inAppActivityAlerts ??
+            preferences.in_app_activity_alerts,
+        inAppProductUpdates:
+            preferences.inAppProductUpdates ??
+            preferences.in_app_product_updates
+    };
+};
+
 interface BackendUserProfile {
     id?: MongoIdLike;
     _id?: MongoIdLike;
@@ -34,6 +71,8 @@ interface BackendUserProfile {
     email: string;
     avatarUrl?: string | null;
     bannerUrl?: string | null;
+    notification_preferences?: BackendNotificationPreferences | null;
+    notificationPreferences?: BackendNotificationPreferences | null;
 }
 
 interface BackendAuthResponse {
@@ -194,7 +233,14 @@ const normalizeUserProfile = (
         bannerUrl:
             typeof user.bannerUrl === 'string'
                 ? user.bannerUrl
-                : undefined
+                : undefined,
+        notificationPreferences:
+            normalizeNotificationPreferences(
+                normalizeBackendNotificationPreferences(
+                    user.notificationPreferences ||
+                        user.notification_preferences
+                )
+            )
     };
 };
 
@@ -739,6 +785,32 @@ class ApiService {
         return normalizeUserProfile(data.user);
     }
 
+    async updateNotificationPreferences(
+        notificationPreferences: NotificationPreferences
+    ): Promise<UserProfile> {
+        const data =
+            await this.request<BackendWrappedUserResponse>(
+                '/auth/notification-preferences',
+                {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        notification_preferences: {
+                            email_digests:
+                                notificationPreferences.emailDigests,
+                            email_security_alerts:
+                                notificationPreferences.emailSecurityAlerts,
+                            in_app_activity_alerts:
+                                notificationPreferences.inAppActivityAlerts,
+                            in_app_product_updates:
+                                notificationPreferences.inAppProductUpdates
+                        }
+                    })
+                }
+            );
+
+        return normalizeUserProfile(data.user);
+    }
+
     async updatePassword(
         email: string,
         newPassword: string
@@ -1087,6 +1159,18 @@ class ApiService {
         }
 
         return response;
+    }
+
+    // Sessions
+    async getSessions(): Promise<ActiveSession[]> {
+        const data = await this.request<{ sessions: ActiveSession[] }>('/auth/sessions');
+        return data.sessions;
+    }
+
+    async revokeSession(sessionId: string): Promise<void> {
+        await this.request<void>(`/auth/sessions/${encodeURIComponent(sessionId)}`, {
+            method: 'DELETE',
+        });
     }
 
     async executeCommand(

@@ -1,4 +1,4 @@
-# txio
+﻿# txio
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
@@ -8,7 +8,7 @@
   <p align="center">
     <strong>One terminal. Every chain.</strong>
     <br />
-    A unified terminal interface for Sui, Ethereum, Solana, Aptos, and Soroban.
+    A unified CLI for Sui, Ethereum, Solana, Aptos, and Soroban.
   </p>
   <p align="center">
     <a href="https://crates.io/crates/txio"><img src="https://img.shields.io/crates/v/txio.svg?style=flat-square" alt="Crates.io"></a>
@@ -20,59 +20,57 @@
 
 ## What is txio?
 
-`txio` replaces five separate chain CLIs with one clean, consistent tool.
-It wraps Sui, Ethereum, Solana, Aptos, and Soroban behind a single command set so
-developers can move between ecosystems without learning a new CLI for each one.
+`txio` replaces five different chain CLIs with one elegant terminal experience. It brings Sui, Ethereum, Solana, Aptos, and Soroban together under shared commands, consistent flags, and a unified workflow.
 
-- Unified commands across chains
-- Shared flags and network switching
-- Human-readable names and output
+- Unified commands across all supported chains
+- Shared network flag semantics
+- Name resolution for `.sui`, `.eth`, and more
 - Built for CLI-first and full-stack development
 
 ---
 
 ## Why it matters
 
-Most chain tooling is fragmented:
+Developers should never need a separate terminal for every chain. Today’s multi-chain landscape is fragmented by:
 
-- Separate install flows for each chain CLI
-- Different flags for network selection
-- Chain-specific config files and runtime conventions
-- Raw addresses instead of readable names
+- different install flows for each CLI
+- inconsistent network flags and config formats
+- chain-specific runtime conventions
+- raw wallet addresses instead of readable names
 
-`txio` makes multi-chain work feel like one product instead of five.
-
----
-
-## Key Benefits
-
-- **One interface, five chains** — identical UX for Sui, Ethereum, Solana, Aptos, and Soroban.
-- **Instant network switching** — `--network testnet`, `mainnet`, or `devnet` works everywhere.
-- **Name resolution built in** — `.sui`, `.eth`, and other namespaces resolve before request execution.
-- **Readable by default** — terminal-friendly output with optional raw JSON via `--pretty`.
-- **Full-stack launch** — `docker-compose up` starts the API, dashboard, and database together.
+`txio` removes that friction and turns multi-chain development into one refined experience.
 
 ---
 
-## Features
+## Key benefits
+
+- **One interface, five chains** — same UX for Sui, Ethereum, Solana, Aptos, and Soroban
+- **Instant network switching** — `--network testnet`, `mainnet`, or `devnet` works everywhere
+- **Smart name resolution** — `.sui`, `.eth`, and other namespaces resolve automatically
+- **Readable output** — clean terminal tables with raw JSON available via `--pretty`
+- **Full-stack launch** — start API, dashboard, and database together with Docker Compose
+
+---
+
+## Highlights
 
 - Unified chain commands and shared flags
-- Automatic namespace-based address resolution
-- Dynamic network selection with no config file edits
-- Authenticated CLI workflows through `login`
-- Clean CLI tables and JSON fallback with `--pretty`
-- Backend + frontend + database orchestration via Docker Compose
+- Namespace-first address resolution
+- Dynamic network selection without config changes
+- CLI auth workflows via `login`
+- Polished terminal output with JSON fallback
+- Docker Compose orchestration for backend, frontend, and datastore
 
 ---
 
-## Repository Structure
+## Repository structure
 
-| Path                      | Purpose                                     | Tech Stack               |
-| :------------------------ | :------------------------------------------ | :----------------------- |
-| [`/cli`](./cli)           | Terminal interface and chain adapters       | Rust, Clap               |
-| [`/backend`](./backend)   | API routing, caching, and chain aggregation | Rust, Axum               |
-| [`/frontend`](./frontend) | Web dashboard and docs                      | Next.js, React, Tailwind |
-| [`/desktop`](./desktop)   | Desktop wrapper _(In Development)_          | Electron                 |
+| Path | Purpose | Tech Stack |
+| :--- | :--- | :--- |
+| [`/cli`](./cli) | Terminal interface and chain adapters | Rust, Clap |
+| [`/backend`](./backend) | API routing, caching, and chain aggregation | Rust, Axum |
+| [`/frontend`](./frontend) | Web dashboard and docs | Next.js, React, Tailwind |
+| [`/desktop`](./desktop) | Desktop wrapper *(In Development)* | Electron |
 
 ---
 
@@ -84,9 +82,9 @@ Most chain tooling is fragmented:
 
 ---
 
-## Getting Started
+## Quick start
 
-### Clone and install
+### 1. Clone the repo
 
 ```bash
 git clone https://github.com/Txio-labs/txio.git
@@ -94,7 +92,7 @@ cd txio
 npm install
 ```
 
-### Start the full stack
+### 2. Start the stack
 
 ```bash
 cp .env.example backend/api/.env
@@ -104,24 +102,16 @@ cp .env.example backend/api/.env
 docker-compose up -d
 ```
 
-This brings up MongoDB with auth enabled, the backend API, and the frontend dashboard.
-
-### Run the CLI
+### 3. Run the CLI
 
 ```bash
 cd cli
-
-# Authenticate your terminal:
 cargo run -- login
-
-# Resolve .sui names automatically:
 cargo run -- sui balance aliphatic.sui
-
-# Query another chain and network in one command:
 cargo run -- --network testnet eth balance 0x...
 ```
 
-Run `txio --help` to explore commands and flags.
+> Run `txio --help` to explore the full command surface.
 
 ---
 
@@ -133,10 +123,12 @@ Adding a new chain is intentionally simple:
 2. Add a file under `cli/src/chains/`.
 3. Register it in the adapter factory.
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full workflow.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
 
 ---
 
 ## License
 
 MIT — see [LICENSE](./LICENSE).
+
+[implement GitHub OAuth account linking (stubbed in two places)](https://contribute.grantfox.xyz/campaigns/org/Txio-labs/repo/txio/issue/153)

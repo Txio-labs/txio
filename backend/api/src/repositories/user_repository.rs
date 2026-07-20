@@ -12,7 +12,28 @@ pub struct UserRepository {
 impl UserRepository {
     pub fn new(db: &Database) -> Self {
         let collection = db.collection("users");
-        Self { collection }
+        let repo = Self { collection };
+        // Ensure unique index on email (ignore errors for now)
+        let index_model = mongodb::IndexModel::builder()
+            .keys(mongodb::bson::doc! { "email": 1 })
+            .options(mongodb::options::IndexOptions::builder().unique(true).build())
+            .build();
+        // Fire-and-forget index creation; errors are logged but not fatal
+        let _ = repo.collection.create_index(index_model, None);
+        repo
+    }
+
+    // Optional explicit async method to ensure indices (can be called in startup)
+    pub async fn ensure_indices(&self) -> Result<(), AppError> {
+        let index_model = mongodb::IndexModel::builder()
+            .keys(mongodb::bson::doc! { "email": 1 })
+            .options(mongodb::options::IndexOptions::builder().unique(true).build())
+            .build();
+        self.collection
+            .create_index(index_model, None)
+            .await
+            .map(|_| ())
+            .map_err(AppError::Database)
     }
 
     pub async fn save(&self, user: &User) -> Result<User, AppError> {
@@ -32,6 +53,18 @@ impl UserRepository {
             .find_one(doc! { "email": email }, None)
             .await?
             .ok_or(AppError::NotFound("User not found with email".to_string()))?;
+
+        Ok(user)
+    }
+
+    pub async fn find_by_google_sub(&self, google_sub: &str) -> Result<User, AppError> {
+        let user = self
+            .collection
+            .find_one(doc! { "google_sub": google_sub }, None)
+            .await?
+            .ok_or(AppError::NotFound(
+                "User not found with Google subject".to_string(),
+            ))?;
 
         Ok(user)
     }

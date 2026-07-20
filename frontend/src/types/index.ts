@@ -250,12 +250,20 @@ export interface TeamUser {
   status: 'online' | 'offline' | 'busy';
 }
 
+export interface NotificationPreferences {
+  emailDigests: boolean;
+  emailSecurityAlerts: boolean;
+  inAppActivityAlerts: boolean;
+  inAppProductUpdates: boolean;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
   email: string;
   avatarUrl?: string;
   bannerUrl?: string;
+  notificationPreferences?: NotificationPreferences;
 }
 
 export interface TeamMember {
@@ -282,4 +290,22 @@ export interface Comment {
   userAvatarColor?: string;
   content: string;
   timestamp: number;
+}
+
+// --- Session Tracking ---
+
+/** A live sign-in session returned by GET /auth/sessions. */
+export interface ActiveSession {
+  /** MongoDB ObjectId of the session document — used as the revocation key. */
+  id: string;
+  /** Human-readable device label, e.g. "Chrome on macOS". */
+  device_label: string;
+  /** IP address recorded at sign-in time. */
+  ip_address: string;
+  /** ISO-8601 timestamp of when the session was created. */
+  created_at: string;
+  /** ISO-8601 timestamp of the last known activity. */
+  last_active_at: string;
+  /** True when this entry corresponds to the currently active JWT. */
+  is_current: boolean;
 }

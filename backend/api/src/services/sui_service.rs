@@ -33,8 +33,15 @@ impl SuiService {
     pub fn new(rpc_repo: RpcRepository, _rpc_url: String) -> Self {
         Self {
             rpc_repo,
+            // Disable automatic redirect-following so a redirected RPC response
+            // cannot silently send the request to an internal network address
+            // that passed the initial URL validation but is reachable after a
+            // redirect (SSRF-via-redirect). If a legitimate endpoint ever needs
+            // a redirect, the operator should configure the canonical URL
+            // directly rather than relying on client-side redirect chasing.
             client: Client::builder()
                 .timeout(std::time::Duration::from_secs(30))
+                .redirect(reqwest::redirect::Policy::none())
                 .build()
                 .unwrap_or_else(|_| Client::new()),
         }

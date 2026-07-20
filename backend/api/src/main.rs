@@ -80,10 +80,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let user_repo = repositories::user_repository::UserRepository::new(&db);
     let otp_repo = repositories::otp_repository::OTPRepository::new(&db);
+    otp_repo.ensure_indexes().await?;
     let rpc_repo = repositories::rpc_repository::RpcRepository::new(&db);
     let collection_repo = repositories::collection_repository::CollectionRepository::new(&db);
     let request_repo = repositories::request_repository::RequestRepository::new(&db);
     let workspace_repo = repositories::workspace_repository::WorkspaceRepository::new(&db);
+    let session_repo = repositories::session_repository::SessionRepository::new(&db);
 
     // 5. Initialize JWT Helper
     let jwt_helper = utils::auth_jwt::JwtHelper::new(config.jwt_secret);
@@ -100,12 +102,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let auth_service = services::auth_service::AuthService::new(
         user_repo.clone(),
         rpc_repo.clone(),
+        session_repo,
         jwt_helper,
         otp_service,
         email_service,
     );
 
     let collection_service = services::collection_service::CollectionService::new(
+        db_client.clone(),
+        db.clone(),
         collection_repo.clone(),
         request_repo,
         user_repo.clone(),
