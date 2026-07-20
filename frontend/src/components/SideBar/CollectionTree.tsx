@@ -137,7 +137,7 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
                   </button>
                 )}
                 <button 
-                  onClick={(e) => { e.stopPropagation(); appStore.showToast('Adding to collection not implemented', 'info'); }} 
+                  onClick={(e) => { e.stopPropagation(); appStore.openTab('new_request', { collectionId: node.id }); }} 
                   className="p-1 hover:bg-white/10 rounded text-slate-500 hover:text-white transition-colors"
                   title="Add Request"
                 >
