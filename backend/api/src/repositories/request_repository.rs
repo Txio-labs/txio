@@ -43,8 +43,11 @@ impl RequestRepository {
     pub async fn update(&self, request: &SavedRequest) -> Result<SavedRequest, AppError> {
         let id = request.id.ok_or(AppError::InternalError("Cannot update request without ID".into()))?;
         let filter = doc! { "_id": id };
-        
-        self.collection.replace_one(filter, request, None).await?;
+
+        let result = self.collection.replace_one(filter, request, None).await?;
+        if result.matched_count == 0 {
+            return Err(AppError::NotFound(format!("Request not found with id: {}", id)));
+        }
         Ok(request.clone())
     }
 
@@ -61,6 +64,19 @@ impl RequestRepository {
     pub async fn delete_all_by_collection(&self, collection_id: ObjectId) -> Result<(), AppError> {
         let filter = doc! { "collection_id": collection_id };
         self.collection.delete_many(filter, None).await?;
+        Ok(())
+    }
+
+    /// Delete all requests for a collection within an active MongoDB session/transaction.
+    pub async fn delete_all_by_collection_with_session(
+        &self,
+        collection_id: ObjectId,
+        session: &mut mongodb::ClientSession,
+    ) -> Result<(), AppError> {
+        let filter = doc! { "collection_id": collection_id };
+        self.collection
+            .delete_many_with_session(filter, None, session)
+            .await?;
         Ok(())
     }
 }
