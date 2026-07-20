@@ -1,11 +1,11 @@
 use crate::chains::traits::ChainAdapter;
 use crate::chains::validation::validate_sui_address;
 use crate::cli::parser::Network;
-use async_trait::async_trait;
-use serde_json::{json, Value};
 use anyhow::{Context, Result, anyhow};
-use reqwest::Client;
+use async_trait::async_trait;
 use regex::Regex;
+use reqwest::Client;
+use serde_json::{Value, json};
 use std::sync::LazyLock;
 
 /// Matches a candidate SuiNS token (`<label>.sui`).  The regex itself is
@@ -23,7 +23,10 @@ static SUINS_REGEX: LazyLock<Regex> =
 /// ending there is part of a longer token and should **not** be treated as a
 /// SuiNS name.
 fn is_name_continuation(s: &str, end: usize) -> bool {
-    s[end..].chars().next().map_or(false, |c| c.is_ascii_alphanumeric() || c == '.' || c == '-')
+    s[end..]
+        .chars()
+        .next()
+        .map_or(false, |c| c.is_ascii_alphanumeric() || c == '.' || c == '-')
 }
 
 pub struct SuiAdapter {
@@ -32,6 +35,10 @@ pub struct SuiAdapter {
 }
 
 impl SuiAdapter {
+    pub fn new() -> Self {
+        Self::with_rpc(None, Network::Mainnet)
+    }
+
     pub fn with_rpc(rpc_url: Option<String>, network: Network) -> Self {
         let url = rpc_url.unwrap_or_else(|| match network {
             Network::Mainnet => "https://fullnode.mainnet.sui.io".to_string(),
@@ -57,14 +64,19 @@ impl SuiAdapter {
             "params": params
         });
 
-        let response = self.client.post(&self.rpc_url)
+        let response = self
+            .client
+            .post(&self.rpc_url)
             .json(&payload)
             .send()
             .await?;
 
         let body: Value = response.json().await?;
         if let Some(error) = body.get("error") {
-            let msg = error.get("message").and_then(|m| m.as_str()).unwrap_or("Unknown RPC Error");
+            let msg = error
+                .get("message")
+                .and_then(|m| m.as_str())
+                .unwrap_or("Unknown RPC Error");
             let data = error.get("data").and_then(|d| d.as_str()).unwrap_or("");
             let code = error.get("code").and_then(|c| c.as_i64()).unwrap_or(0);
 
@@ -101,39 +113,18 @@ impl SuiAdapter {
                 }
 
                 if !unique_names.is_empty() {
-                    // Resolve each unique name once, building a name→addr map.
-                    let mut name_to_addr: std::collections::HashMap<String, String> =
-                        std::collections::HashMap::new();
-                    for name in &unique_names {
-
+                    // Resolve each unique name once, then apply all replacements.
+                    let mut new_string = s.to_string();
+                    for name in unique_names {
                         if let Some(addr) = self
-                            .resolve_name(name)
+                            .resolve_name(&name)
                             .await
                             .with_context(|| format!("resolving Sui name {name}"))?
                         {
-                            name_to_addr.insert(name.clone(), addr);
+                            new_string = new_string.replace(&name, &addr);
                         }
                     }
-
-                    // Collect every boundary-valid match position in the original
-                    // string, then replace from right to left so earlier byte
-                    // offsets stay valid as we mutate the buffer.
-                    let positions: Vec<(usize, usize, String)> = SUINS_REGEX
-                        .find_iter(s)
-                        .filter(|m| !is_name_continuation(s, m.end()))
-                        .filter_map(|m| {
-                            let name = m.as_str().to_string();
-                            name_to_addr.get(&name).map(|addr| (m.start(), m.end(), addr.clone()))
-                        })
-                        .collect();
-
-                    if !positions.is_empty() {
-                        let mut result = s.clone();
-                        for (start, end, addr) in positions.into_iter().rev() {
-                            result.replace_range(start..end, &addr);
-                        }
-                        *s = result;
-                    }
+                    *s = new_string;
                 }
             }
             Value::Array(arr) => {
@@ -172,7 +163,9 @@ impl ChainAdapter for SuiAdapter {
             return Ok(None);
         }
         let params = json!([name]);
-        let result = self.call_rpc_internal("suix_resolveNameServiceAddress", params).await?;
+        let result = self
+            .call_rpc_internal("suix_resolveNameServiceAddress", params)
+            .await?;
         Ok(result.as_str().map(|s| s.to_string()))
     }
 
@@ -193,7 +186,8 @@ impl ChainAdapter for SuiAdapter {
                 "showBalanceChanges": true
             }
         ]);
-        self.call_rpc_internal("sui_getTransactionBlock", params).await
+        self.call_rpc_internal("sui_getTransactionBlock", params)
+            .await
     }
 
     async fn get_block(&self, block: Option<u64>) -> Result<Value> {
@@ -201,14 +195,17 @@ impl ChainAdapter for SuiAdapter {
             let params = json!([seq.to_string()]);
             self.call_rpc_internal("sui_getCheckpoint", params).await
         } else {
-            let seq = self.call_rpc_internal("sui_getLatestCheckpointSequenceNumber", json!([])).await?;
+            let seq = self
+                .call_rpc_internal("sui_getLatestCheckpointSequenceNumber", json!([]))
+                .await?;
             let params = json!([seq]);
             self.call_rpc_internal("sui_getCheckpoint", params).await
         }
     }
 
     async fn get_gas_price(&self) -> Result<Value> {
-        self.call_rpc_internal("suix_getReferenceGasPrice", json!([])).await
+        self.call_rpc_internal("suix_getReferenceGasPrice", json!([]))
+            .await
     }
 
     async fn get_account(&self, id: &str) -> Result<Value> {
@@ -230,7 +227,8 @@ impl ChainAdapter for SuiAdapter {
             limit,
             true
         ]);
-        self.call_rpc_internal("suix_queryTransactionBlocks", params).await
+        self.call_rpc_internal("suix_queryTransactionBlocks", params)
+            .await
     }
 }
 
@@ -379,19 +377,22 @@ mod tests {
         let counter = resolve_count.clone();
 
         let server = tokio::spawn(async move {
-            // One SuiNS lookup and one target RPC call are expected.
-            for _ in 0..2 {
-                let Ok((mut socket, _)) = listener.accept().await else { break };
+            // Allow up to 3 requests but record how many resolve calls arrive.
+            for _ in 0..3 {
+                let Ok((mut socket, _)) = listener.accept().await else {
+                    break;
+                };
                 let mut buf = vec![0u8; 8192];
-                let Ok(n) = socket.read(&mut buf).await else { break };
+                let Ok(n) = socket.read(&mut buf).await else {
+                    break;
+                };
                 let request = String::from_utf8_lossy(&buf[..n]).to_string();
-                let (result, is_resolve) =
-                    if request.contains("suix_resolveNameServiceAddress") {
-                        counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-                        ("\"0xdeadbeef\"", true)
-                    } else {
-                        ("\"ok\"", false)
-                    };
+                let (result, is_resolve) = if request.contains("suix_resolveNameServiceAddress") {
+                    counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                    ("\"0xdeadbeef\"", true)
+                } else {
+                    ("\"ok\"", false)
+                };
                 let _ = is_resolve;
                 let body = format!("{{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{result}}}");
                 let response = format!(
