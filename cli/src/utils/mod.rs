@@ -2,6 +2,9 @@ use anyhow::{Result, anyhow};
 use std::fs;
 use std::path::{Path, PathBuf};
 
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
+
 /// Load environment overrides for the CLI.
 ///
 /// Security: unlike the previous `dotenvy::dotenv()` call, this does NOT search
@@ -55,6 +58,8 @@ pub fn get_config_dir() -> PathBuf {
     path.push(".txio");
     if !path.exists() {
         fs::create_dir_all(&path).ok();
+        #[cfg(unix)]
+        let _ = fs::set_permissions(&path, fs::Permissions::from_mode(0o700));
     }
     path
 }
@@ -75,7 +80,9 @@ pub fn get_current_chain() -> Option<String> {
 pub fn save_token(token: &str) -> Result<()> {
     let mut path = get_config_dir();
     path.push("token");
-    fs::write(path, token)?;
+    fs::write(&path, token)?;
+    #[cfg(unix)]
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o600))?;
     Ok(())
 }
 
