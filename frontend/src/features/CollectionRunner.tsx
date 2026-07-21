@@ -261,7 +261,7 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                         </thead>
                         <tbody className="divide-y divide-slate-800 text-sm">
                             {runList.map((req, i) => (
-                                <tr key={i} className={`transition-colors ${i === currentReqIndex ? 'bg-sui-900/10' : 'hover:bg-white/5/30'}`}>
+                                <tr key={i} className={`transition-colors ${i === currentReqIndex ? 'bg-sui-900/10' : 'hover:bg-white/5'}`}>
                                     <td className="px-6 py-4 text-slate-600 font-mono text-xs">{i + 1}</td>
                                     <td className="px-6 py-4 font-bold text-slate-300 flex items-center gap-2">
                                         {req.name}

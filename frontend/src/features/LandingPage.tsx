@@ -147,7 +147,7 @@ export const LandingPage: React.FC = () => {
                             </span>
                         </button>
                         <button
-                            onClick={() => window.open("https://github.com/Kingvic300/txio/", "_blank")}
+                            onClick={() => window.open("https://github.com/Kingvic300/txio/", "_blank", "noopener,noreferrer")}
                             className="px-10 py-5 bg-near-black border border-white/10 rounded-2xl font-bold text-lg hover:border-white/20 transition-all flex items-center gap-3 group"
                             >
                             <Github

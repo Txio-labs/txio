@@ -33,8 +33,8 @@
 ### ⬜ Forgot / reset password
 - **Result:** Not fully testable without a valid `BREVO_API_KEY`. `POST /api/v1/auth/forgot-password` returns `{ "error": "External service unavailable" }`. The API endpoints for `forgot-password` and `reset-password` exist and validate input correctly.
 
-### ✅ Logout — session/token no longer authenticates further requests
-- **Result:** Works. `POST /api/v1/auth/logout` returns `{ "message": "Logged out successfully" }`. Note: the current API is stateless (JWT-based), so logout is a client-side token removal — but the endpoint responds correctly.
+### ✅ Logout — client-side token removal
+- **Result:** Works. `POST /api/v1/auth/logout` returns `{ "message": "Logged out successfully" }`. **Note:** The API is stateless (JWT-based) — logout only removes the token client-side. A retained JWT remains valid on the server until natural expiry because there is no server-side revocation mechanism. The endpoint removes the database session record, but the JWT itself cannot be invalidated early without implementing a token blocklist.
 
 ---
 
