@@ -586,9 +586,8 @@ interface AppState {
 
 // --- INITIAL STATE ---
 
-const hasToken =
-    typeof window !== 'undefined' &&
-    !!localStorage.getItem('txio_token');
+// Token is now managed via HttpOnly cookies; initial auth state will be determined via API call
+const hasToken = false;
 const initialSettings =
     readStoredSettings();
 const initialNetwork =
@@ -1501,27 +1500,13 @@ export const appStore = {
         pass: string
     ) {
         try {
-            const { user, token } =
+            const { user, token: _ } =
                 await apiService.login(
                     email,
                     pass
                 );
 
-            if (
-                typeof window !== 'undefined'
-            ) {
-                localStorage.setItem(
-                    'txio_token',
-                    token
-                );
-
-                localStorage.setItem(
-                    'txio_viewMode',
-                    'app'
-                );
-            }
-
-            apiService.setToken(token);
+            // Token is now managed via HttpOnly cookie
 
             const hydratedUser =
                 applyUserProfileOverrides(
@@ -1560,27 +1545,13 @@ export const appStore = {
         pass: string
     ) {
         try {
-            const { user, token } =
+            const { user, token: _ } =
                 await apiService.register(
                     email,
                     pass
                 );
 
-            if (
-                typeof window !== 'undefined'
-            ) {
-                localStorage.setItem(
-                    'txio_token',
-                    token
-                );
-
-                localStorage.setItem(
-                    'txio_viewMode',
-                    'app'
-                );
-            }
-
-            apiService.setToken(token);
+            // Token is now managed via HttpOnly cookie
 
             const hydratedUser =
                 applyUserProfileOverrides(
@@ -1614,18 +1585,7 @@ export const appStore = {
     },
 
     logout() {
-        apiService.setToken(null);
-
-        if (typeof window !== 'undefined') {
-            localStorage.removeItem(
-                'txio_token'
-            );
-
-            localStorage.removeItem(
-                'txio_viewMode'
-            );
-        }
-
+        // Token is now managed via HttpOnly cookie; no localStorage cleanup needed
         clearStoredUser();
         persistCurrentWorkspaceId('');
 

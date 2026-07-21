@@ -31,28 +31,6 @@ export const SignInPage: React.FC = () => {
     useEffect(() => {
         const initializeAuth = async () => {
             try {
-                // Read token from Google callback URL
-                const params = new URLSearchParams(window.location.search);
-                const urlToken = params.get('token');
-
-                // Read token from localStorage
-                const storedToken = localStorage.getItem('txio_token');
-
-                // Prefer Google callback token
-                const token = urlToken || storedToken;
-
-                // No token
-                if (!token) {
-                    setAuthChecking(false);
-                    return;
-                }
-
-                // Save token
-                localStorage.setItem('txio_token', token);
-
-                // Set token in API service
-                apiService.setToken(token);
-
                 // IMPORTANT:
                 // Switch app mode BEFORE profile request
                 // prevents redirect back to landing page
@@ -89,16 +67,14 @@ export const SignInPage: React.FC = () => {
                         );
                     }
 
-                    // Success toast only after OAuth redirect
-                    if (urlToken) {
-                        appStore.showToast(
-                            'Successfully signed in with Google',
-                            'success'
-                        );
-                    }
+                    // Success toast after successful auth
+                    appStore.showToast(
+                        'Successfully signed in',
+                        'success'
+                    );
 
-                    // Remove token from URL
-                    if (urlToken) {
+                    // Clean up URL query params
+                    if (window.location.search) {
                         window.history.replaceState(
                             {},
                             '',
@@ -111,10 +87,6 @@ export const SignInPage: React.FC = () => {
                     console.error('Profile fetch failed:', profileError);
 
                     // Invalid token/session cleanup
-                    localStorage.removeItem('txio_token');
-
-                    apiService.setToken(null);
-
                     appStore.updateUser(null);
 
                     appStore.setViewMode('landing');
@@ -126,10 +98,6 @@ export const SignInPage: React.FC = () => {
                 }
             } catch (error) {
                 console.error('Auth initialization failed:', error);
-
-                localStorage.removeItem('txio_token');
-
-                apiService.setToken(null);
 
                 appStore.updateUser(null);
 

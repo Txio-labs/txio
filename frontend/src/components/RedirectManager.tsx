@@ -107,31 +107,11 @@ export function RedirectManager() {
     }, [searchParams]);
 
     // Only redirect after initialization is complete.
-    // Additionally, if OAuth token param is present, don't route based on
-    // current viewMode (it may still be 'landing' during state hydration).
     useEffect(() => {
         if (!initialized) return;
 
-        const token = searchParams.get('token');
-        const hasStoredToken =
-            typeof window !== 'undefined' &&
-            !!localStorage.getItem('txio_token');
-
-        // OAuth callback: handle token-based redirects deterministically
-        if (token) {
-            // Ensure we don't get bounced back to landing due to transient
-            // viewMode values during hydration.
-            appStore.setViewMode('app');
-
-            const targetPath = '/workspace';
-            if (pathname !== targetPath) {
-                router.replace(targetPath);
-            }
-            return;
-        }
-
         // If authenticated, always stay on workspace.
-        if (user || hasStoredToken) {
+        if (user) {
             const workspaceTab =
                 workspacePathToTab[pathname] ||
                 workspaceViewModeToTab[

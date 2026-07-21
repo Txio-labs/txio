@@ -341,7 +341,7 @@ pub async fn google_callback(
     State(service): State<AuthService>,
     axum::extract::Query(query): axum::extract::Query<OAuthCallbackQuery>,
     headers: axum::http::HeaderMap,
-) -> Result<axum::response::Redirect, AppError> {
+) -> Result<impl IntoResponse, AppError> {
     let cookie_state = get_cookie(&headers, "oauth_state")
         .ok_or(AppError::BadRequest("Missing OAuth state cookie".into()))?;
 
@@ -426,10 +426,16 @@ pub async fn google_callback(
         .await?;
 
     let redirect_to = format!(
-        "{}/?token={}",
-        frontend_url.trim_end_matches('/'),
-        auth_res.token
+        "{}/",
+        frontend_url.trim_end_matches('/')
     );
 
-    Ok(axum::response::Redirect::temporary(&redirect_to))
+    let mut response_headers = axum::http::HeaderMap::new();
+    let cookie = format!(
+        "txio_token={}; Path=/; Max-Age=86400; SameSite=Strict; HttpOnly; Secure",
+        auth_res.token
+    );
+    response_headers.append(header::SET_COOKIE, cookie.parse().unwrap());
+
+    Ok((response_headers, axum::response::Redirect::temporary(&redirect_to)))
 }

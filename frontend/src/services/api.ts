@@ -473,32 +473,8 @@ const sleep = (ms: number) =>
     );
 
 class ApiService {
-    private token: string | null =
-        typeof window !==
-        'undefined'
-            ? localStorage.getItem(
-                  'txio_token'
-              )
-            : null;
-
-    setToken(token: string | null) {
-        this.token = token;
-
-        if (
-            typeof window !==
-            'undefined'
-        ) {
-            if (token) {
-                localStorage.setItem(
-                    'txio_token',
-                    token
-                );
-            } else {
-                localStorage.removeItem(
-                    'txio_token'
-                );
-            }
-        }
+    setToken(_token: string | null) {
+        // Token is now managed via HttpOnly cookies; this method is kept for compatibility
     }
 
     private async request<T>(
@@ -508,13 +484,6 @@ class ApiService {
         const headers = new Headers(
             options.headers || {}
         );
-
-        if (this.token) {
-            headers.set(
-                'Authorization',
-                `Bearer ${this.token}`
-            );
-        }
 
         if (
             options.body &&
@@ -535,6 +504,7 @@ class ApiService {
                 `${API_BASE}${path}`,
                 {
                     ...options,
+                    credentials: 'include',
                     headers
                 }
             );
