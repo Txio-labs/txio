@@ -66,7 +66,7 @@ where
 {
     type Rejection = AppError;
 
-    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         // Extract the token from the authorization header
         let auth_header = parts
             .headers
@@ -80,8 +80,18 @@ where
             ));
         }
 
-        let token = &auth_header[7..];
+        let token = auth_header[7..].to_string();
 
+<<<<<<< HEAD
+        // JwtHelper is built once in main.rs and shared via an Extension
+        // layer on the whole app, so this no longer reloads Config/env
+        // on every request.
+        let Extension(helper) = Extension::<JwtHelper>::from_request_parts(parts, state)
+            .await
+            .map_err(|_| AppError::InternalError("JWT helper not configured".into()))?;
+
+        helper.verify_token(&token)
+=======
         // We need the secret to verify the token.
         // In a real app, you might want to get this from the state.
         // For simplicity, we'll try to get it from environment/config if possible,
@@ -96,5 +106,6 @@ where
         let helper = JwtHelper::new(config.jwt_secret);
 
         helper.verify_token(token)
+>>>>>>> origin/main
     }
 }
