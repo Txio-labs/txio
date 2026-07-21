@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAppStore, appStore } from '@/lib/store';
 import { apiService } from '@/services/api';
 import { FeatureId } from '@/types';
@@ -44,7 +44,6 @@ export function RedirectManager() {
     const { viewMode, user } = useAppStore();
     const router = useRouter();
     const pathname = usePathname();
-    const searchParams = useSearchParams();
     const [initialized, setInitialized] = useState(false);
 
     // Restore session state BEFORE any redirect logic runs
@@ -76,6 +75,7 @@ export function RedirectManager() {
         }
     }, [pathname, initialized, viewMode]);
 
+    // Clean up URL if there are any query params left over
     useEffect(() => {
         const token = consumeOAuthCookie();
         if (!token) return;
@@ -111,39 +111,17 @@ export function RedirectManager() {
             appStore.showToast('Authentication successful!', 'success');
 
             const url = new URL(window.location.href);
-            url.searchParams.delete('token');
+            url.search = '';
             window.history.replaceState({}, '', url.toString());
-        } catch (e) {
-            console.error('Failed to parse token', e);
         }
-    }, [searchParams]);
+    }, [initialized]);
 
     // Only redirect after initialization is complete.
-    // Additionally, if OAuth token param is present, don't route based on
-    // current viewMode (it may still be 'landing' during state hydration).
     useEffect(() => {
         if (!initialized) return;
 
-        const token = null; // OAuth token is consumed in the dedicated useEffect above
-        const hasStoredToken =
-            typeof window !== 'undefined' &&
-            !!localStorage.getItem('txio_token');
-
-        // OAuth callback: handle token-based redirects deterministically
-        if (token) {
-            // Ensure we don't get bounced back to landing due to transient
-            // viewMode values during hydration.
-            appStore.setViewMode('app');
-
-            const targetPath = '/workspace';
-            if (pathname !== targetPath) {
-                router.replace(targetPath);
-            }
-            return;
-        }
-
         // If authenticated, always stay on workspace.
-        if (user || hasStoredToken) {
+        if (user) {
             const workspaceTab =
                 workspacePathToTab[pathname] ||
                 workspaceViewModeToTab[

@@ -9,7 +9,12 @@ use crate::dtos::{
 };
 use crate::services::auth_service::AuthService;
 use crate::utils::error::AppError;
-use axum::{Json, extract::State, http::header, response::{IntoResponse, Response}};
+use axum::{
+    Json,
+    extract::State,
+    http::header,
+    response::{IntoResponse, Response},
+};
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
 use hmac::{Hmac, Mac};
 use serde_json::{Value, json};
@@ -434,11 +439,11 @@ pub async fn google_callback(
     let redirect_to = format!("{}/", frontend_url.trim_end_matches('/'));
 
     let mut response = axum::response::Redirect::temporary(&redirect_to).into_response();
-    response
-        .headers_mut()
-        .append(
-            axum::http::header::SET_COOKIE,
-            oauth_cookie.parse().expect("cookie header is always valid ASCII"),
-        );
+    response.headers_mut().append(
+        axum::http::header::SET_COOKIE,
+        oauth_cookie
+            .parse()
+            .expect("cookie header is always valid ASCII"),
+    );
     Ok(response)
 }
