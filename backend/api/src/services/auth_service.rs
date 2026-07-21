@@ -168,7 +168,7 @@ impl AuthService {
 
         let user_id = saved_user.id.map(|id| id.to_string()).unwrap_or_default();
 
-        let (token, _jti) = self
+        let token = self
             .jwt_helper
             .generate_token(&user_id, &saved_user.email)?;
 
@@ -206,7 +206,7 @@ impl AuthService {
         let user = user_result.unwrap();
         let user_id = user.id.map(|id| id.to_string()).unwrap_or_default();
 
-        let (token, _jti) = self.jwt_helper.generate_token(&user_id, &user.email)?;
+        let token = self.jwt_helper.generate_token(&user_id, &user.email)?;
 
         Ok(AuthResponse {
             token,
@@ -363,7 +363,7 @@ impl AuthService {
 
         let user_id = user.id.map(|id| id.to_string()).unwrap_or_default();
 
-        let (token, _jti) = self.jwt_helper.generate_token(&user_id, &user.email)?;
+        let token = self.jwt_helper.generate_token(&user_id, &user.email)?;
 
         Ok(AuthResponse {
             token,
@@ -437,16 +437,14 @@ mod oauth_tests {
     use chrono::Utc;
     use mongodb::bson::oid::ObjectId;
 
-    fn sample_user(email: &str, google_sub: Option<&str>) -> User {
+    fn sample_user(email: &str, _google_sub: Option<&str>) -> User {
         User {
             id: Some(ObjectId::new()),
             email: email.to_string(),
             password_hash: "hash".to_string(),
-            google_sub: google_sub.map(str::to_string),
             tier: crate::model::user::PlanTier::Free,
-            network: crate::model::user::SuiNetwork::Mainnet,
+            network: crate::model::user::Network::Mainnet,
             created_at: Utc::now(),
-            notification_preferences: crate::model::user::NotificationPreferences::default(),
         }
     }
 
