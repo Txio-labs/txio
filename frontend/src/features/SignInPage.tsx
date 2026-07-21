@@ -16,6 +16,16 @@ import { appStore, useAppStore } from '@/lib/store';
 import { API_BASE, apiService } from '@/services/api';
 import logoDark from '../assets/txio2.png';
 
+
+// Read and clear the short-lived OAuth token cookie set by the backend callback.
+function consumeOAuthCookie(): string | null {
+    if (typeof document === 'undefined') return null;
+    const match = document.cookie.match(/(?:^|;\s*)txio_oauth_token=([^;]+)/);
+    if (!match) return null;
+    document.cookie = 'txio_oauth_token=; Path=/; Max-Age=0; SameSite=Lax; Secure';
+    return decodeURIComponent(match[1]);
+}
+
 export const SignInPage: React.FC = () => {
     const { theme } = useAppStore();
     const router = useRouter();
@@ -31,15 +41,15 @@ export const SignInPage: React.FC = () => {
     useEffect(() => {
         const initializeAuth = async () => {
             try {
-                // Read token from Google callback URL
-                const params = new URLSearchParams(window.location.search);
-                const urlToken = params.get('token');
+                // Read OAuth token from cookie (backend sets it on OAuth callback;
+                // using a cookie avoids the JWT appearing in browser history and logs).
+                const cookieToken = consumeOAuthCookie();
 
                 // Read token from localStorage
                 const storedToken = localStorage.getItem('txio_token');
 
-                // Prefer Google callback token
-                const token = urlToken || storedToken;
+                // Prefer OAuth cookie token over stored token
+                const token = cookieToken || storedToken;
 
                 // No token
                 if (!token) {
@@ -89,20 +99,11 @@ export const SignInPage: React.FC = () => {
                         );
                     }
 
-                    // Success toast only after OAuth redirect
-                    if (urlToken) {
+                    // Success toast only after OAuth redirect (token arrived via cookie)
+                    if (cookieToken) {
                         appStore.showToast(
                             'Successfully signed in with Google',
                             'success'
-                        );
-                    }
-
-                    // Remove token from URL
-                    if (urlToken) {
-                        window.history.replaceState(
-                            {},
-                            '',
-                            window.location.pathname
                         );
                     }
 

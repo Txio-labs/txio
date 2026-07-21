@@ -58,4 +58,5 @@ installStorage('sessionStorage');
 afterEach(() => {
     cleanup();
     localStorage.clear();
+    sessionStorage.clear();
 });

@@ -424,7 +424,7 @@ export const TerminalPanel: React.FC = () => {
     return (
         <AnimatePresence>
             {isTerminalOpen && (
-                <motion.button
+                <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: terminalHeight, opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
@@ -629,7 +629,7 @@ export const TerminalPanel: React.FC = () => {
 
                     {/* Subtle bottom glow */}
                     <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-electric-violet/30 to-transparent"></div>
-                </motion.button>
+                </motion.div>
             )}
         </AnimatePresence>
     );

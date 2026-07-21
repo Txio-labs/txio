@@ -95,36 +95,48 @@ impl SuiAdapter {
     async fn resolve_names_in_value(&self, value: &mut Value) -> Result<()> {
         match value {
             Value::String(s) => {
-                // Collect the unique, boundary-checked SuiNS names present in
-                // this string.  Using a Vec (with dedup) rather than a HashSet
-                // preserves a stable iteration order for deterministic tests
-                // while still preventing duplicate RPC round-trips.
-                let mut unique_names: Vec<String> = Vec::new();
-                for m in SUINS_REGEX.find_iter(s) {
-                    // Post-match boundary check: reject matches that are
-                    // immediately followed by a name-continuation character
-                    // (e.g. `alice.sui2` → skip, `alice.sui.evil.com` → skip).
-                    if is_name_continuation(s, m.end()) {
-                        continue;
-                    }
-                    let name = m.as_str().to_string();
-                    if !unique_names.contains(&name) {
-                        unique_names.push(name);
-                    }
-                }
+                // Collect boundary-validated match spans.  Tracking spans (not
+                // just name strings) lets us rebuild the output by substituting
+                // only the exact regex-matched positions, which prevents the
+                // String::replace bug where replacing "alice.sui" also rewrites
+                // the prefix inside "alice.sui2".
+                let spans: Vec<(usize, usize, String)> = SUINS_REGEX
+                    .find_iter(s)
+                    .filter(|m| !is_name_continuation(s, m.end()))
+                    .map(|m| (m.start(), m.end(), m.as_str().to_string()))
+                    .collect();
 
-                if !unique_names.is_empty() {
-                    // Resolve each unique name once, then apply all replacements.
-                    let mut new_string = s.to_string();
-                    for name in unique_names {
-                        if let Some(addr) = self
-                            .resolve_name(&name)
-                            .await
-                            .with_context(|| format!("resolving Sui name {name}"))?
-                        {
-                            new_string = new_string.replace(&name, &addr);
+                if !spans.is_empty() {
+                    // Resolve each unique name exactly once (dedup for RPC
+                    // efficiency — a name that appears multiple times in the
+                    // same string value should only trigger one resolution call).
+                    let mut name_to_addr: std::collections::HashMap<String, Option<String>> =
+                        std::collections::HashMap::new();
+                    for (_, _, name) in &spans {
+                        if !name_to_addr.contains_key(name) {
+                            let addr = self
+                                .resolve_name(name)
+                                .await
+                                .with_context(|| format!("resolving Sui name {name}"))?;
+                            name_to_addr.insert(name.clone(), addr);
                         }
                     }
+
+                    // Rebuild the string from validated span positions only,
+                    // leaving any non-matched content (including longer names
+                    // like alice.sui2) completely unchanged.
+                    let original = s.clone();
+                    let mut new_string = String::with_capacity(original.len());
+                    let mut last_end = 0usize;
+                    for (start, end, name) in spans {
+                        new_string.push_str(&original[last_end..start]);
+                        match name_to_addr.get(&name) {
+                            Some(Some(addr)) => new_string.push_str(addr),
+                            _ => new_string.push_str(&original[start..end]),
+                        }
+                        last_end = end;
+                    }
+                    new_string.push_str(&original[last_end..]);
                     *s = new_string;
                 }
             }
@@ -368,7 +380,6 @@ mod tests {
     /// A string containing the same SuiNS name twice must only trigger a
     /// single resolution RPC (the memo/dedup path).
     #[tokio::test]
-    #[ignore = "hangs indefinitely on some environments — dedup logic looks correct on read but the mock-server round trip never completes; needs investigation"]
     async fn duplicate_name_triggers_single_resolution_rpc() {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
         use tokio::net::TcpListener;
@@ -379,8 +390,8 @@ mod tests {
         let counter = resolve_count.clone();
 
         let server = tokio::spawn(async move {
-            // Allow up to 3 requests but record how many resolve calls arrive.
-            for _ in 0..3 {
+            // Accept exactly two requests: one resolve call and one final RPC call.
+            for _ in 0..2 {
                 let Ok((mut socket, _)) = listener.accept().await else {
                     break;
                 };

@@ -149,7 +149,8 @@ export const MoveBuilder: React.FC = () => {
                             <label className="text-[10px] font-black text-slate-600 uppercase">Contract Name</label>
                             <input 
                                 type="text" 
-                                value="AssetBridge" 
+                                value="AssetBridge"
+                                readOnly
                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm font-bold focus:border-electric-violet/40 transition-all outline-none"
                             />
                         </div>
