@@ -46,7 +46,10 @@ impl ChainAdapter for AptosAdapter {
     }
 
     async fn call_rpc(&self, method: &str, params: Value) -> Result<Value> {
-        if params != Value::Null && params != Value::Array(vec![]) && params != Value::Object(serde_json::Map::new()) {
+        if params != Value::Null
+            && params != Value::Array(vec![])
+            && params != Value::Object(serde_json::Map::new())
+        {
             return Err(anyhow::anyhow!(
                 "Aptos REST API does not support params in raw RPC calls. Use chain-specific subcommands instead."
             ));
