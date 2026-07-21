@@ -7,7 +7,7 @@ import {
   BuilderArg,
   RPCHealthMetric,
 } from '../types';
- 
+
 const RPC_TIMEOUT_MS = 10000;
 const DEGRADED_RPC_LATENCY_MS = 1500;
 
@@ -59,7 +59,7 @@ export const executeSuiRpc = async (
       () => controller.abort(),
       RPC_TIMEOUT_MS
     );
-    
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -215,8 +215,13 @@ export const looksLikeSuiAddress = (value: string): boolean =>
 export const looksLikeSuiNs = (value: string): boolean =>
     SUI_NS_RE.test(value.trim());
 
-const suiNsCache = new Map<string, string>();
+const SUI_NS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+type SuiNsCacheEntry = { address: string; expiresAt: number };
+
+const suiNsCache = new Map<string, SuiNsCacheEntry>();
 const cacheKey = (network: Network, name: string) => `${network}:${name.trim().toLowerCase()}`;
+
 
 /**
  * Resolve a Sui address or SuiNS name to a raw 0x address.
@@ -236,7 +241,13 @@ export const resolveSuiAddress = async (
 
     const key = cacheKey(network, value);
     const cached = suiNsCache.get(key);
-    if (cached) return cached;
+    if (cached) {
+        if (cached.expiresAt > Date.now()) {
+            return cached.address;
+        }
+
+        suiNsCache.delete(key);
+    }
 
     const { result } = await executeSuiRpc(network, 'suix_resolveNameServiceAddress', [value]);
     if (typeof result !== 'string' || !looksLikeSuiAddress(result)) {
@@ -247,7 +258,7 @@ export const resolveSuiAddress = async (
         });
     }
 
-    suiNsCache.set(key, result);
+    suiNsCache.set(key, { address: result, expiresAt: Date.now() + SUI_NS_CACHE_TTL_MS });
     return result;
 };
 
