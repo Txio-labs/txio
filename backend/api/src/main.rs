@@ -223,6 +223,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .layer(GovernorLayer {
             config: governor_conf,
         })
+        .layer(axum::Extension(jwt_helper))
         .layer(cors);
 
     // 8. Run Server
