@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, Check, Github, LogOut, Mail, User as UserIcon } from 'lucide-react';
 
 import { appStore, useAppStore } from '@/lib/store';
+import { API_BASE } from '@/services/api';
 import { CollectionNode } from '@/types';
 import { TabProps } from './types';
 
@@ -155,7 +156,7 @@ export const GeneralTab: React.FC<TabProps & { onLogout: () => void }> = ({ user
                                 <span className="truncate">Not connected</span>
                                 <button
                                     type="button"
-                                    onClick={() => appStore.showToast('GitHub OAuth not implemented', 'info')}
+                                    onClick={() => window.location.href = `${process.env.NEXT_PUBLIC_API_BASE ?? ''}/auth/github/login`}
                                     className="ml-auto text-[11px] text-electric-violet hover:text-soft-purple font-medium transition-colors"
                                 >
                                     Connect →

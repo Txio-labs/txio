@@ -54,5 +54,13 @@ pub fn router(service: AuthService) -> Router {
             "/google/callback",
             axum::routing::get(auth_handler::google_callback),
         )
+        .route(
+            "/github/login",
+            axum::routing::get(auth_handler::github_login),
+        )
+        .route(
+            "/github/callback",
+            axum::routing::get(auth_handler::github_callback),
+        )
         .with_state(service)
 }
