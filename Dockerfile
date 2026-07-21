@@ -23,6 +23,9 @@ WORKDIR /app
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates libssl3 && rm -rf /var/lib/apt/lists/*
 
+# Create non-root user
+RUN useradd -m -u 10001 appuser
+
 # Copy backend binary
 COPY --from=builder /app/target/release/txio-api /app/api
 
@@ -32,11 +35,17 @@ COPY --from=builder /app/target/release/txio /usr/local/bin/txio
 # Create a temporary directory for cargo operations if needed
 RUN mkdir -p /app/temp
 
+# Set directory ownership
+RUN chown -R appuser:appuser /app
+
 # Set environment variables
 ENV RUST_LOG=info
 ENV MONGO_URI=mongodb://mongodb:27017/txio
 
 EXPOSE 8000
+
+# Run as non-root user
+USER appuser
 
 # The entrypoint is the backend API
 CMD ["./api"]

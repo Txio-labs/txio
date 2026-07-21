@@ -14,15 +14,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-      
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
-      
+
+      - name: Run tests
+        run: cargo test --workspace
+
+      - name: Verify package contents
+        run: cargo publish --dry-run --package txio-api && cargo publish --dry-run --package txio
+
       - name: Publish txio-api
         run: cargo publish --package txio-api
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-          
+
+      - name: Wait for txio-api to be available in registry
+        run: |
+          for attempt in {1..30}; do
+            if cargo search txio-api --limit 1 | grep -q "txio-api"; then
+              echo "txio-api is now available in the registry"
+              exit 0
+            fi
+            echo "Attempt $attempt: Waiting for txio-api to be available..."
+            sleep 5
+          done
+          echo "Warning: txio-api did not appear in registry after 150 seconds"
+
       - name: Publish txio
         run: cargo publish --package txio
         env:
