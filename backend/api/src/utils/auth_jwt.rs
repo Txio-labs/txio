@@ -56,11 +56,8 @@ impl JwtHelper {
     }
 }
 
-use axum::{
-    async_trait,
-    extract::{Extension, FromRequestParts},
-    http::request::Parts,
-};
+use crate::utils::config::Config;
+use axum::{async_trait, extract::FromRequestParts, http::request::Parts};
 
 #[async_trait]
 impl<S> FromRequestParts<S> for Claims
@@ -85,6 +82,7 @@ where
 
         let token = auth_header[7..].to_string();
 
+<<<<<<< HEAD
         // JwtHelper is built once in main.rs and shared via an Extension
         // layer on the whole app, so this no longer reloads Config/env
         // on every request.
@@ -93,5 +91,21 @@ where
             .map_err(|_| AppError::InternalError("JWT helper not configured".into()))?;
 
         helper.verify_token(&token)
+=======
+        // We need the secret to verify the token.
+        // In a real app, you might want to get this from the state.
+        // For simplicity, we'll try to get it from environment/config if possible,
+        // but it's better to use state.
+
+        // Since we don't have easy access to state here without specific types,
+        // and JwtHelper is usually in the state, let's assume we can get it from Config for now
+        // OR we can make a dedicated extractor that uses State.
+
+        let config =
+            Config::from_env().map_err(|_| AppError::InternalError("Config error".into()))?;
+        let helper = JwtHelper::new(config.jwt_secret);
+
+        helper.verify_token(token)
+>>>>>>> origin/main
     }
 }

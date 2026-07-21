@@ -3,18 +3,18 @@
 
 @layer base {
   :root {
-    --background: 0 0% 0%;
+    --background: 205 100% 9%;
     --foreground: 240 5% 91%;
   }
 
   :root {
-    --surface-0: #000000;
-    --surface-1: #0a0a0c;
-    --surface-2: #111114;
-    --surface-hover: rgba(255, 255, 255, 0.04);
-    --border-subtle: rgba(255, 255, 255, 0.06);
-    --border-default: rgba(255, 255, 255, 0.09);
-    --border-strong: rgba(255, 255, 255, 0.14);
+    --surface-0: #001B2E;
+    --surface-1: #003152;
+    --surface-2: #0A3D63;
+    --surface-hover: rgba(173, 223, 241, 0.05);
+    --border-subtle: rgba(173, 223, 241, 0.06);
+    --border-default: rgba(173, 223, 241, 0.09);
+    --border-strong: rgba(173, 223, 241, 0.14);
   }
 
   html {
@@ -22,7 +22,7 @@
   }
 
   body {
-    background-color: #000000;
+    background-color: #001B2E;
     color: #e4e4e7;
     font-family: 'Space Grotesk', 'Inter', sans-serif;
     overflow: hidden;
@@ -46,24 +46,24 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(173, 223, 241, 0.10);
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.16);
+    background: rgba(173, 223, 241, 0.20);
   }
 }
 
 .dot-grid {
-  background-image: radial-gradient(#27272a 1px, transparent 1px);
+  background-image: radial-gradient(#0a3d63 1px, transparent 1px);
 }
 
 /* Dark theme overrides for @mysten/dapp-kit wallet modal */
 [data-dapp-kit] [data-radix-popper-content-wrapper],
 [data-dapp-kit] dialog,
 [data-dapp-kit] [role="dialog"] {
-  --dapp-kit-bg: #0a0a0c !important;
-  --dapp-kit-border: rgba(255,255,255,0.08) !important;
+  --dapp-kit-bg: #003152 !important;
+  --dapp-kit-border: rgba(173,223,241,0.08) !important;
 }
 
 /* Modal overlay & container */
@@ -77,8 +77,8 @@
 [data-dapp-kit] [class*="Content"],
 [data-dapp-kit] [class*="modal"],
 [data-dapp-kit] [class*="Modal"] {
-  background-color: #0a0a0c !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background-color: #003152 !important;
+  border: 1px solid rgba(173, 223, 241, 0.08) !important;
   color: #e4e4e7 !important;
   border-radius: 1.5rem !important;
 }
@@ -114,7 +114,7 @@
 /* Connected button styling */
 [data-dapp-kit] [class*="connected"],
 [data-dapp-kit] [class*="Connected"] {
-  background-color: rgba(123, 63, 242, 0.1) !important;
-  border: 1px solid rgba(123, 63, 242, 0.2) !important;
+  background-color: rgba(173, 223, 241, 0.1) !important;
+  border: 1px solid rgba(173, 223, 241, 0.2) !important;
   color: #e4e4e7 !important;
 }

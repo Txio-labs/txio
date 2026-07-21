@@ -155,6 +155,9 @@ export function WalletModal() {
                     exit={{ opacity: 0 }}
                     className="fixed inset-0 z-[80] bg-black/75 backdrop-blur-xl"
                     onClick={closeModal}
+                    role="button"
+                    tabIndex={-1}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') closeModal(); }}
                 >
                     <motion.div
                         initial={{
@@ -180,6 +183,8 @@ export function WalletModal() {
                         onClick={(event) =>
                             event.stopPropagation()
                         }
+                        role="dialog"
+                        aria-label="Connect wallet"
                         className="mx-auto mt-6 flex max-h-[calc(100vh-3rem)] w-[min(980px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(123,63,242,0.16),transparent_38%),linear-gradient(180deg,rgba(17,17,19,0.98),rgba(6,6,8,0.98))] shadow-[0_40px_140px_rgba(0,0,0,0.55)]"
                     >
                         <div className="border-b border-white/10 px-5 py-4 sm:px-6">

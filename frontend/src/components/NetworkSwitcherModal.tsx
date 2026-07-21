@@ -25,17 +25,18 @@ export const NetworkSwitcherModal: React.FC<NetworkSwitcherModalProps> = ({
           case 'mainnet': return 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
           case 'testnet': return 'text-amber-400 bg-amber-400/10 border-amber-400/20';
           case 'devnet': return 'text-blue-400 bg-blue-400/10 border-blue-400/20';
+          case 'localnet': return 'text-fuchsia-400 bg-fuchsia-400/10 border-fuchsia-400/20';
           default: return 'text-slate-400 bg-slate-400/10 border-slate-400/20';
       }
   };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-near-black/60 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-[#0c0c0e] border border-white/5 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative group">
+      <div className="bg-[#003152] border border-white/5 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative group">
           {/* Background Gradients */}
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-sui-500 to-transparent opacity-50"></div>
           <div className="absolute -top-20 -right-20 w-40 h-40 bg-electric-violet/10 blur-3xl rounded-full pointer-events-none"></div>
-          <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-purple-500/10 blur-3xl rounded-full pointer-events-none"></div>
+          <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-sky-500/10 blur-3xl rounded-full pointer-events-none"></div>
 
           <div className="p-8 relative z-10">
               <div className="text-center mb-8">
@@ -71,7 +72,7 @@ export const NetworkSwitcherModal: React.FC<NetworkSwitcherModalProps> = ({
                   {/* To Node */}
                   <div className="flex flex-col items-center gap-3 w-24">
                       <div className={`w-14 h-14 rounded-2xl border-2 border-dashed flex items-center justify-center ${getNetworkColor(to).replace('bg-', 'hover:bg-')}`}>
-                           <Activity size={24} className={to === 'mainnet' ? 'text-emerald-400' : to === 'testnet' ? 'text-amber-400' : 'text-blue-400'} />
+                           <Activity size={24} className={to === 'mainnet' ? 'text-emerald-400' : to === 'testnet' ? 'text-amber-400' : to === 'devnet' ? 'text-blue-400' : 'text-fuchsia-400'} />
                       </div>
                       <div className="text-center">
                           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Target</div>

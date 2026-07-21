@@ -62,6 +62,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   return (
     <div
       onClick={onClose}
+      role="button"
+      tabIndex={-1}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClose(); }}
       className={`fixed inset-0 z-50 bg-near-black/70 backdrop-blur-sm animate-in fade-in duration-200 font-sans ${
         isProfileDrawer
           ? 'flex justify-end p-0'
@@ -75,6 +78,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             : 'max-w-md h-auto rounded-xl'
         }`}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-label="Authentication modal"
       >
         <button 
           onClick={onClose}
@@ -96,8 +101,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               onLogout={onLogout}
             />
             
-            <div className="relative min-w-0 flex-1 overflow-hidden bg-[linear-gradient(180deg,#070709_0%,#0b0b10_52%,#060608_100%)]">
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(123,63,242,0.14),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(167,139,250,0.1),transparent_30%)]" />
+            <div className="relative min-w-0 flex-1 overflow-hidden bg-[linear-gradient(180deg,#070709_0%,#003152_52%,#060608_100%)]">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(173,223,241,0.14),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(127,196,227,0.1),transparent_30%)]" />
               <div className="relative h-full overflow-y-auto p-5 md:p-8 custom-scrollbar">
                 {renderTabContent()}
               </div>

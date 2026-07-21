@@ -59,14 +59,29 @@ export const SignInPage: React.FC = () => {
                 appStore.setViewMode('app');
 
                 try {
+                    const profilePromise =
+                        apiService.getProfile();
+                    const workspacesPromise =
+                        apiService.getWorkspaces();
+
+                    void workspacesPromise.catch(
+                        () => undefined
+                    );
+
                     // Fetch authenticated user
-                    const user = await apiService.getProfile();
+                    const user = await profilePromise;
 
                     // Save user
                     appStore.updateUser(user);
 
                     try {
-                        await appStore.fetchWorkspaces();
+                        const workspaces =
+                            await workspacesPromise;
+
+                        await appStore.fetchWorkspaces(
+                            undefined,
+                            workspaces
+                        );
                     } catch (workspaceError) {
                         console.error(
                             'Workspace fetch failed:',
@@ -202,7 +217,7 @@ export const SignInPage: React.FC = () => {
                     className="absolute inset-0 opacity-20"
                     style={{
                         backgroundImage:
-                            'radial-gradient(circle at 2px 2px, #7b3ff2 1px, transparent 0)',
+                            'radial-gradient(circle at 2px 2px, #ADDFF1 1px, transparent 0)',
                         backgroundSize: '30px 30px'
                     }}
                 />
@@ -210,7 +225,7 @@ export const SignInPage: React.FC = () => {
                 <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-electric-violet/10 blur-[150px] rounded-full"></div>
 
                 <div className="relative z-10">
-                    <div
+                    <button
                         className="flex items-center gap-3 mb-16 cursor-pointer"
                         onClick={() => {
                             appStore.setViewMode('landing');
@@ -226,7 +241,7 @@ export const SignInPage: React.FC = () => {
                         <span className="text-2xl font-bold tracking-tighter text-white">
                             txio
                         </span>
-                    </div>
+                    </button>
 
                     <div className="space-y-6">
                         <h1 className="text-6xl font-bold tracking-tight text-white leading-[1.1]">
@@ -415,7 +430,7 @@ export const SignInPage: React.FC = () => {
                             <span
                                 className={`relative px-4 text-[10px] font-bold uppercase tracking-widest ${
                                     theme === 'dark'
-                                        ? 'bg-[#0a0a0a] text-slate-600'
+                                        ? 'bg-[#001B2E] text-slate-600'
                                         : 'bg-white text-slate-400'
                                 }`}
                             >

@@ -1,137 +1,304 @@
-import React from 'react';
-import {
-  KeyRound,
-  Shield,
-  Smartphone,
-  Sparkles,
-  RefreshCcw
-} from 'lucide-react';
-import { appStore } from '@/lib/store';
+import React, { useState } from 'react';
+import { useAppStore } from '../../../store/appStore';
+import { apiClient } from '../../../lib/api';
+
+interface PasswordFormData {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
 
 export const SecurityTab: React.FC = () => {
+  const { showToast } = useAppStore();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPasswordFormVisible, setIsPasswordFormVisible] = useState(false);
+  const [formData, setFormData] = useState<PasswordFormData>({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [errors, setErrors] = useState<Partial<PasswordFormData>>({});
+
+  const validatePasswordForm = (): boolean => {
+    const newErrors: Partial<PasswordFormData> = {};
+
+    if (!formData.currentPassword) {
+      newErrors.currentPassword = 'Current password is required';
+    }
+    if (!formData.newPassword) {
+      newErrors.newPassword = 'New password is required';
+    } else if (formData.newPassword.length < 8) {
+      newErrors.newPassword = 'New password must be at least 8 characters';
+    }
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password';
+    } else if (formData.newPassword !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handlePasswordRotation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validatePasswordForm()) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await apiClient.post('/api/auth/update-password', {
+        current_password: formData.currentPassword,
+        new_password: formData.newPassword,
+        confirm_password: formData.confirmPassword,
+      });
+
+      if (response.data.success) {
+        showToast('Password rotated successfully!', 'success');
+        // Reset form
+        setFormData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        });
+        setIsPasswordFormVisible(false);
+      }
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 'Failed to rotate password';
+      showToast(errorMessage, 'error');
+      setErrors({
+        currentPassword: errorMessage,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleInputChange = (field: keyof PasswordFormData) => (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+    // Clear error for this field when user starts typing
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-      <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(145deg,rgba(167,139,250,0.12)_0%,rgba(10,10,14,0.96)_40%,rgba(6,6,8,1)_100%)] p-6">
-        <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-electric-violet/15 blur-3xl" />
-
-        <div className="relative">
-          <div className="inline-flex items-center gap-2 rounded-full border border-electric-violet/20 bg-electric-violet/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.28em] text-electric-violet">
-            <Shield size={12} />
-            Security Layer
-          </div>
-
-          <h2 className="mt-4 text-3xl font-bold tracking-tight text-white">
-            Harden the account surface.
-          </h2>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">
-            Review identity protection, recovery posture, and session handling
-            before they become problems in production.
+    <div className="security-tab">
+      {/* Password Rotation Card */}
+      <div className="security-card">
+        <div className="security-card-header">
+          <h3>Password Rotation</h3>
+          <p className="security-card-description">
+            Keep credential lifetime short and rotate keys before your environment becomes sticky.
           </p>
         </div>
-      </section>
 
-      <div className="grid gap-6 xl:grid-cols-3">
-        <div className="rounded-[1.75rem] border border-white/10 bg-[#0b0b10]/85 p-5">
-          <div className="flex items-start gap-3">
-            <div className="rounded-2xl bg-amber-500/10 p-3 text-amber-400">
-              <Smartphone size={18} />
-            </div>
-            <div>
-              <div className="text-sm font-semibold text-white">
-                Two-factor authentication
-              </div>
-              <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                2FA is currently disabled. Enable a second checkpoint before
-                expanding access to more operators.
-              </p>
-            </div>
-          </div>
-
+        {!isPasswordFormVisible ? (
           <button
-            onClick={() =>
-              appStore.showToast('2FA setup not implemented yet', 'info')
-            }
-            className="mt-5 w-full rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] text-amber-300 transition-colors hover:bg-amber-500/15"
-          >
-            Enable 2FA
-          </button>
-        </div>
-
-        <div className="rounded-[1.75rem] border border-white/10 bg-[#0b0b10]/85 p-5">
-          <div className="flex items-start gap-3">
-            <div className="rounded-2xl bg-electric-violet/10 p-3 text-electric-violet">
-              <KeyRound size={18} />
-            </div>
-            <div>
-              <div className="text-sm font-semibold text-white">
-                Password rotation
-              </div>
-              <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                Keep credential lifetime short and rotate keys before your
-                environment becomes sticky.
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={() =>
-              appStore.showToast(
-                'Password rotation flow not implemented yet',
-                'info'
-              )
-            }
-            className="mt-5 w-full rounded-2xl bg-electric-violet px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white shadow-[0_18px_35px_-20px_rgba(123,63,242,0.8)] transition-colors hover:bg-soft-purple"
+            onClick={() => setIsPasswordFormVisible(true)}
+            className="btn btn-primary"
           >
             Rotate Password
           </button>
-        </div>
-
-        <div className="rounded-[1.75rem] border border-white/10 bg-[#0b0b10]/85 p-5">
-          <div className="flex items-start gap-3">
-            <div className="rounded-2xl bg-emerald-500/10 p-3 text-emerald-400">
-              <RefreshCcw size={18} />
+        ) : (
+          <form onSubmit={handlePasswordRotation} className="password-form">
+            <div className="form-group">
+              <label htmlFor="currentPassword">Current Password</label>
+              <input
+                id="currentPassword"
+                type="password"
+                value={formData.currentPassword}
+                onChange={handleInputChange('currentPassword')}
+                className={`form-input ${errors.currentPassword ? 'error' : ''}`}
+                placeholder="Enter your current password"
+                disabled={isLoading}
+              />
+              {errors.currentPassword && (
+                <span className="error-message">{errors.currentPassword}</span>
+              )}
             </div>
-            <div>
-              <div className="text-sm font-semibold text-white">
-                Session review
-              </div>
-              <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                Audit active surfaces and revoke stale sessions when operators
-                or devices change.
-              </p>
-            </div>
-          </div>
 
-          <button
-            onClick={() =>
-              appStore.showToast(
-                'Session review not implemented yet',
-                'info'
-              )
-            }
-            className="mt-5 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] text-slate-300 transition-colors hover:bg-white/[0.07]"
-          >
-            Review Sessions
-          </button>
-        </div>
+            <div className="form-group">
+              <label htmlFor="newPassword">New Password</label>
+              <input
+                id="newPassword"
+                type="password"
+                value={formData.newPassword}
+                onChange={handleInputChange('newPassword')}
+                className={`form-input ${errors.newPassword ? 'error' : ''}`}
+                placeholder="Enter your new password (min 8 characters)"
+                disabled={isLoading}
+              />
+              {errors.newPassword && (
+                <span className="error-message">{errors.newPassword}</span>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="confirmPassword">Confirm New Password</label>
+              <input
+                id="confirmPassword"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={handleInputChange('confirmPassword')}
+                className={`form-input ${errors.confirmPassword ? 'error' : ''}`}
+                placeholder="Confirm your new password"
+                disabled={isLoading}
+              />
+              {errors.confirmPassword && (
+                <span className="error-message">{errors.confirmPassword}</span>
+              )}
+            </div>
+
+            <div className="form-actions">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsPasswordFormVisible(false);
+                  setFormData({
+                    currentPassword: '',
+                    newPassword: '',
+                    confirmPassword: '',
+                  });
+                  setErrors({});
+                }}
+                className="btn btn-secondary"
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Updating...' : 'Update Password'}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
 
-      <section className="rounded-[1.75rem] border border-white/10 bg-[#0b0b10]/85 p-5">
-        <div className="flex items-start gap-3">
-          <div className="rounded-2xl bg-soft-purple/10 p-3 text-soft-purple">
-            <Sparkles size={18} />
-          </div>
-          <div>
-            <div className="text-sm font-semibold text-white">
-              Recommended next step
-            </div>
-            <p className="mt-1 text-sm leading-relaxed text-slate-400">
-              Turn on 2FA first. It gives the biggest security gain with the
-              least friction for this workspace state.
-            </p>
-          </div>
-        </div>
-      </section>
+      <style>{`
+        .security-tab {
+          padding: 20px;
+        }
+
+        .security-card {
+          background: var(--bg-card, #fff);
+          border-radius: 8px;
+          padding: 24px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          margin-bottom: 20px;
+        }
+
+        .security-card-header {
+          margin-bottom: 16px;
+        }
+
+        .security-card-header h3 {
+          margin: 0 0 8px 0;
+          font-size: 18px;
+          font-weight: 600;
+        }
+
+        .security-card-description {
+          margin: 0;
+          color: var(--text-secondary, #666);
+          font-size: 14px;
+        }
+
+        .password-form {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .form-group {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .form-group label {
+          font-size: 14px;
+          font-weight: 500;
+          color: var(--text-primary, #333);
+        }
+
+        .form-input {
+          padding: 10px 12px;
+          border: 1px solid var(--border-color, #ddd);
+          border-radius: 4px;
+          font-size: 14px;
+          transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+          outline: none;
+          border-color: var(--primary-color, #0066cc);
+          box-shadow: 0 0 0 2px rgba(0,102,204,0.1);
+        }
+
+        .form-input.error {
+          border-color: var(--error-color, #dc3545);
+        }
+
+        .form-input:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .error-message {
+          color: var(--error-color, #dc3545);
+          font-size: 12px;
+          margin-top: 4px;
+        }
+
+        .form-actions {
+          display: flex;
+          gap: 12px;
+          justify-content: flex-end;
+          margin-top: 8px;
+        }
+
+        .btn {
+          padding: 10px 20px;
+          border: none;
+          border-radius: 4px;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .btn-primary {
+          background: var(--primary-color, #0066cc);
+          color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+          background: var(--primary-hover, #0052a3);
+        }
+
+        .btn-secondary {
+          background: var(--bg-secondary, #f0f0f0);
+          color: var(--text-primary, #333);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+          background: var(--bg-hover, #e0e0e0);
+        }
+      `}</style>
     </div>
   );
 };

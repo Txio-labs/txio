@@ -1,6 +1,7 @@
-pub mod user;
-pub mod otp;
-pub mod rpc;
 pub mod collection;
+pub mod otp;
 pub mod request;
+pub mod rpc;
+pub mod session;
+pub mod user;
 pub mod workspace;

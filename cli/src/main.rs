@@ -1,13 +1,11 @@
-mod cli;
 mod chains;
-
-
+mod cli;
 
 mod rpc;
 mod utils;
 
-use cli::{Cli, handlers::CommandHandler};
 use clap::Parser;
+use cli::{Cli, handlers::CommandHandler};
 use colored::*;
 
 #[tokio::main]
@@ -24,13 +22,13 @@ async fn main() {
 
     if let Err(e) = CommandHandler::handle(cli).await {
         eprintln!("{} {}", "Error:".bold().red(), e);
-        
+
         // Suggest corrections for common mistakes if possible
         let err_str = e.to_string();
         if err_str.contains("Unknown chain") {
             // strsim could be used here for fuzzy matching if we had more context
         }
-        
+
         std::process::exit(1);
     }
 }

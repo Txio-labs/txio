@@ -1,5 +1,12 @@
-import { AppSettings, Network } from '../types';
+import { AppSettings, Network, NotificationPreferences } from '../types';
 import { NETWORKS } from './constants';
+
+export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
+    emailDigests: true,
+    emailSecurityAlerts: true,
+    inAppActivityAlerts: true,
+    inAppProductUpdates: false
+};
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
     theme: 'dark',
@@ -9,10 +16,18 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     customRpc: {
         mainnet: '',
         testnet: '',
-        devnet: ''
+        devnet: '',
+        localnet: ''
     },
     explorer: 'suiscan'
 };
+
+export const normalizeNotificationPreferences = (
+    preferences?: Partial<NotificationPreferences> | null
+): NotificationPreferences => ({
+    ...DEFAULT_NOTIFICATION_PREFERENCES,
+    ...(preferences || {})
+});
 
 export const normalizeAppSettings = (
     settings?: Partial<AppSettings> | null

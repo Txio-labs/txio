@@ -29,11 +29,7 @@ pub struct Workspace {
 }
 
 impl Workspace {
-    pub fn new(
-        user_id: ObjectId,
-        name: String,
-        workspace_type: WorkspaceType,
-    ) -> Self {
+    pub fn new(user_id: ObjectId, name: String, workspace_type: WorkspaceType) -> Self {
         Self {
             id: None,
             user_id,

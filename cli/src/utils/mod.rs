@@ -1,7 +1,6 @@
+use anyhow::{Result, anyhow};
 use std::fs;
 use std::path::{Path, PathBuf};
-use anyhow::{Result, anyhow};
-use serde_json;
 
 /// Load environment overrides for the CLI.
 ///
@@ -104,7 +103,10 @@ pub fn save_config(key: &str, value: &str) -> Result<()> {
     } else {
         serde_json::Map::new()
     };
-    map.insert(key.to_string(), serde_json::Value::String(value.to_string()));
+    map.insert(
+        key.to_string(),
+        serde_json::Value::String(value.to_string()),
+    );
     fs::write(path, serde_json::to_string_pretty(&map)?)?;
     Ok(())
 }
@@ -196,7 +198,7 @@ mod tests {
         let _g = ENV_LOCK.lock().unwrap();
         let dir = unique_dir("trusted");
         let key = unique_key("TRUSTED");
-        let trusted = write_file(&dir, ".env", &format!("{}=from_trusted\n", key));
+        let trusted = write_file(&dir, ".env", &format!("{key}=from_trusted\n"));
         let missing_cwd = dir.join("nope.env");
 
         load_env_files(None, &trusted, &missing_cwd).unwrap();
@@ -213,7 +215,7 @@ mod tests {
         let dir = unique_dir("cwd");
         let key = unique_key("CWD");
         // A ".env" sitting where the CWD file would be must never be read for values.
-        let cwd_env = write_file(&dir, ".env", &format!("{}=planted\n", key));
+        let cwd_env = write_file(&dir, ".env", &format!("{key}=planted\n"));
         let missing_trusted = dir.join("trusted.env");
 
         load_env_files(None, &missing_trusted, &cwd_env).unwrap();
@@ -229,7 +231,7 @@ mod tests {
         let _g = ENV_LOCK.lock().unwrap();
         let dir = unique_dir("explicit");
         let key = unique_key("EXPLICIT");
-        let explicit = write_file(&dir, "custom.env", &format!("{}=from_explicit\n", key));
+        let explicit = write_file(&dir, "custom.env", &format!("{key}=from_explicit\n"));
         let missing_trusted = dir.join("trusted.env");
         let missing_cwd = dir.join("nope.env");
 
@@ -261,8 +263,8 @@ mod tests {
         let _g = ENV_LOCK.lock().unwrap();
         let dir = unique_dir("precedence");
         let key = unique_key("PRECEDENCE");
-        let explicit = write_file(&dir, "explicit.env", &format!("{}=from_explicit\n", key));
-        let trusted = write_file(&dir, ".env", &format!("{}=from_trusted\n", key));
+        let explicit = write_file(&dir, "explicit.env", &format!("{key}=from_explicit\n"));
+        let trusted = write_file(&dir, ".env", &format!("{key}=from_trusted\n"));
         let missing_cwd = dir.join("nope.env");
 
         load_env_files(Some(&explicit), &trusted, &missing_cwd).unwrap();
@@ -286,8 +288,8 @@ mod tests {
             std::env::set_var(&key, "real_value");
         }
 
-        let explicit = write_file(&dir, "explicit.env", &format!("{}=from_explicit\n", key));
-        let trusted = write_file(&dir, ".env", &format!("{}=from_trusted\n", key));
+        let explicit = write_file(&dir, "explicit.env", &format!("{key}=from_explicit\n"));
+        let trusted = write_file(&dir, ".env", &format!("{key}=from_trusted\n"));
         let missing_cwd = dir.join("nope.env");
 
         load_env_files(Some(&explicit), &trusted, &missing_cwd).unwrap();

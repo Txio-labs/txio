@@ -1,3 +1,4 @@
+use crate::model::user::NotificationPreferences;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -41,25 +42,27 @@ pub struct ResetPasswordWithOTPRequest {
     pub new_password: String,
 }
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Validate, Serialize, Deserialize)]
 pub struct UpdateEmailRequest {
-    #[validate(email)]
-    pub old_email: String,
     #[validate(email)]
     pub new_email: String,
 }
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Validate, Serialize, Deserialize)]
 pub struct UpdatePasswordRequest {
-    #[validate(email)]
-    pub email: String,
+    pub current_password: String,
     #[validate(length(min = 8))]
     pub new_password: String,
 }
 
 #[derive(Debug, Deserialize, Validate)]
 pub struct SwitchNetworkRequest {
-    pub network: crate::model::user::SuiNetwork,
+    pub network: crate::model::network::Network,
+}
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct UpdateNotificationPreferencesRequest {
+    pub notification_preferences: NotificationPreferences,
 }
 #[derive(Debug, Deserialize, Validate)]
 pub struct TerminalCommandRequest {

@@ -36,13 +36,13 @@ export const AuthPage: React.FC = () => {
                 
                 <div className="relative z-10 w-full flex flex-col p-16 justify-between">
                     <div>
-                        <div 
+                        <button 
                             className="flex items-center gap-3 mb-12 cursor-pointer"
                             onClick={() => appStore.setViewMode('landing')}
                         >
                             <img src={logoDark.src} alt="txio" className="h-10 w-auto" />
                             <span className="text-2xl font-bold tracking-tighter text-white">txio</span>
-                        </div>
+                        </button>
 
                         <motion.div 
                             initial={{ opacity: 0, x: -20 }}
@@ -188,7 +188,7 @@ export const AuthPage: React.FC = () => {
                         <button 
                             type="submit"
                             disabled={isLoading}
-                            className="w-full py-4 bg-electric-violet text-white rounded-2xl font-bold text-lg hover:bg-soft-purple transition-all shadow-[0_0_20px_rgba(123,63,242,0.3)] flex items-center justify-center gap-2 group disabled:opacity-50"
+                            className="w-full py-4 bg-electric-violet text-white rounded-2xl font-bold text-lg hover:bg-soft-purple transition-all shadow-[0_0_20px_rgba(173,223,241,0.3)] flex items-center justify-center gap-2 group disabled:opacity-50"
                         >
                             {isLoading ? (
                                 <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>

@@ -19,7 +19,7 @@ const TxioLogo = () => {
     <img
       src={logo.src}
       alt="txio"
-      className="w-6 h-6 object-contain drop-shadow-[0_0_6px_rgba(123,63,242,0.35)]"
+      className="w-6 h-6 object-contain drop-shadow-[0_0_6px_rgba(173,223,241,0.35)]"
     />
   );
 };
@@ -51,7 +51,7 @@ const NavItem: React.FC<NavItemProps> = ({
         {isActive && (
           <motion.div
             layoutId="nav-pill"
-            className="absolute left-0 w-[2px] h-6 bg-electric-violet rounded-r-full shadow-[0_0_10px_rgba(123,63,242,0.6)]"
+            className="absolute left-0 w-[2px] h-6 bg-electric-violet rounded-r-full shadow-[0_0_10px_rgba(173,223,241,0.6)]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -98,7 +98,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       variants={containerVariants}
       className="w-14 bg-near-black border-r border-white/[0.06] flex flex-col items-center py-4 gap-1 z-20 shrink-0 relative"
     >
-      <motion.div
+      <motion.button
         variants={itemVariants}
         className="mb-4 group cursor-pointer relative"
         onClick={() => appStore.setActiveTab(null)}
@@ -106,7 +106,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         <div className="relative z-10 p-1.5 rounded-xl bg-white/[0.02] border border-white/[0.06] group-hover:border-electric-violet/30 transition-colors duration-300">
           <TxioLogo />
         </div>
-      </motion.div>
+      </motion.button>
 
       <div className="w-6 h-px bg-white/[0.06] mb-2"></div>
 

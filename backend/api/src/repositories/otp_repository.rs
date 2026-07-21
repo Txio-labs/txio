@@ -1,7 +1,7 @@
-use mongodb::{Client, Collection};
 use crate::model::otp::OTP;
 use crate::utils::error::AppError;
 use mongodb::bson::doc;
+use mongodb::{Collection, Database};
 
 #[derive(Clone)]
 pub struct OTPRepository {
@@ -9,21 +9,19 @@ pub struct OTPRepository {
 }
 
 impl OTPRepository {
-    pub fn new(db: &Client) -> Self {
-        let collection = db.database("txio_db").collection("otps");
+    pub fn new(db: &Database) -> Self {
+        let collection = db.collection("otps");
         Self { collection }
     }
 
     pub async fn save(&self, otp: &OTP) -> Result<OTP, AppError> {
-        let result = self.collection
-            .insert_one(otp, None)
-            .await?;
-        
+        let result = self.collection.insert_one(otp, None).await?;
+
         let mut otp_with_id = otp.clone();
         if let Some(inserted_id) = result.inserted_id.as_object_id() {
-             otp_with_id.id = Some(inserted_id);
+            otp_with_id.id = Some(inserted_id);
         }
-        
+
         Ok(otp_with_id)
     }
 
@@ -36,7 +34,21 @@ impl OTPRepository {
 
         Ok(otp)
     }
-    
+
+    pub async fn update_failed_attempts(
+        &self,
+        email: &str,
+        failed_attempts: i32,
+    ) -> Result<(), AppError> {
+        self.collection
+            .update_one(
+                doc! { "email": email },
+                doc! { "$set": { "failed_attempts": failed_attempts } },
+                None,
+            )
+            .await?;
+        Ok(())
+    }
 
     pub async fn delete_by_email(&self, email: &str) -> Result<(), AppError> {
         self.collection
