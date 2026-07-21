@@ -146,15 +146,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
         Box::new(e) as Box<dyn std::error::Error>
     })?;
-    let allowed_origins = vec![
-        cors_origin,
-        HeaderValue::from_static("http://localhost:3000"),
-        HeaderValue::from_static("http://127.0.0.1:3000"),
-    ];
+    let mut allowed_origins = vec![cors_origin];
+
+    // Add localhost origins only in development
+    if cfg!(debug_assertions) || std::env::var("DEV_MODE").is_ok() {
+        allowed_origins.push(HeaderValue::from_static("http://localhost:3000"));
+        allowed_origins.push(HeaderValue::from_static("http://127.0.0.1:3000"));
+    }
     let cors = CorsLayer::new()
         .allow_origin(allowed_origins)
-        .allow_methods(Any)
-        .allow_headers(Any);
+        .allow_methods([
+            http::Method::GET,
+            http::Method::POST,
+            http::Method::PUT,
+            http::Method::DELETE,
+            http::Method::OPTIONS,
+        ])
+        .allow_headers([
+            http::header::AUTHORIZATION,
+            http::header::CONTENT_TYPE,
+            http::header::ACCEPT,
+        ]);
 
     tracing::info!(
         frontend_origin = %frontend_origin,
