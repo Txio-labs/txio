@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAppStore, appStore } from '@/lib/store';
 import { apiService } from '@/services/api';
 import { FeatureId } from '@/types';
@@ -32,7 +32,6 @@ export function RedirectManager() {
     const { viewMode, user } = useAppStore();
     const router = useRouter();
     const pathname = usePathname();
-    const searchParams = useSearchParams();
     const [initialized, setInitialized] = useState(false);
 
     // Restore session state BEFORE any redirect logic runs
@@ -64,47 +63,14 @@ export function RedirectManager() {
         }
     }, [pathname, initialized, viewMode]);
 
+    // Clean up URL if there are any query params left over
     useEffect(() => {
-        const token = searchParams.get('token');
-        if (!token) return;
-
-        // OAuth callback: treat this as the source of truth and
-        // prevent generic viewMode redirects from taking over.
-        apiService.setToken(token);
-        void appStore.initialize();
-
-        try {
-            const payloadSegment = token
-                .split('.')[1]
-                ?.replace(/-/g, '+')
-                .replace(/_/g, '/');
-            const normalizedPayload =
-                (payloadSegment || '').padEnd(
-                    Math.ceil(
-                        (payloadSegment || '')
-                            .length / 4
-                    ) * 4,
-                    '='
-                );
-            const payload = JSON.parse(
-                atob(normalizedPayload)
-            );
-            appStore.updateUser({
-                id: payload.sub,
-                email: payload.email,
-                name: payload.email.split('@')[0]
-            });
-
-            appStore.setViewMode('app');
-            appStore.showToast('Authentication successful!', 'success');
-
+        if (initialized && window.location.search) {
             const url = new URL(window.location.href);
-            url.searchParams.delete('token');
+            url.search = '';
             window.history.replaceState({}, '', url.toString());
-        } catch (e) {
-            console.error('Failed to parse token', e);
         }
-    }, [searchParams]);
+    }, [initialized]);
 
     // Only redirect after initialization is complete.
     useEffect(() => {
@@ -161,8 +127,7 @@ export function RedirectManager() {
         user,
         router,
         pathname,
-        initialized,
-        searchParams
+        initialized
     ]);
 
     return null;
