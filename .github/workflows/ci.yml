@@ -55,7 +55,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: cargo fmt --check
-        run: cargo fmt --check
+        run: cargo fmt --workspace --check
 
       - name: cargo clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
@@ -68,7 +68,8 @@ jobs:
 
   build:
     name: Build Apps
-    needs: [lint, test]
+    needs: [lint, test, rust]
+    if: ${{ always() && needs.lint.result == 'success' && needs.test.result == 'success' && needs.rust.result == 'success' }}
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read

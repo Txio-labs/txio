@@ -3747,6 +3747,7 @@ version = "0.1.2"
 dependencies = [
  "anyhow",
  "async-trait",
+ "bs58",
  "clap",
  "clap_complete",
  "colored",
