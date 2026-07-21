@@ -99,20 +99,11 @@ export const SignInPage: React.FC = () => {
                         );
                     }
 
-                    // Success toast only after OAuth redirect
-                    if (urlToken) {
+                    // Success toast only after OAuth redirect (token arrived via cookie)
+                    if (cookieToken) {
                         appStore.showToast(
                             'Successfully signed in with Google',
                             'success'
-                        );
-                    }
-
-                    // Remove token from URL
-                    if (urlToken) {
-                        window.history.replaceState(
-                            {},
-                            '',
-                            window.location.pathname
                         );
                     }
 
