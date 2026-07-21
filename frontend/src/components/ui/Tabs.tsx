@@ -56,7 +56,7 @@ export const Tab: React.FC<TabProps> = ({ title, isActive, onSelect, onClose, on
     };
 
     return (
-        <button
+        <div
             className={`
                 group flex items-center gap-2 px-3 py-2 text-xs cursor-pointer border-r border-white/[0.06]
                 transition-colors select-none min-w-[120px] max-w-[220px] relative
@@ -68,6 +68,8 @@ export const Tab: React.FC<TabProps> = ({ title, isActive, onSelect, onClose, on
             onDoubleClick={handleDoubleClick}
             role="tab"
             aria-selected={isActive}
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(); }}
         >
             {icon && <span className={`flex-shrink-0 transition-colors ${isActive ? 'text-electric-violet' : 'text-slate-600 group-hover:text-slate-500'}`}>{icon}</span>}
 
@@ -94,6 +96,6 @@ export const Tab: React.FC<TabProps> = ({ title, isActive, onSelect, onClose, on
             </button>
 
             {isActive && <div className="absolute bottom-0 left-0 right-0 h-px bg-electric-violet"></div>}
-        </button>
+        </div>
     );
 };

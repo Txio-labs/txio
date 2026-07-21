@@ -35,9 +35,10 @@ pub fn validate_soroban_address(address: &str) -> Result<String> {
 pub fn validate_ethereum_address(address: &str) -> Result<String> {
     let address = address.trim();
     let stripped = address.strip_prefix("0x").unwrap_or(address);
-    if stripped.is_empty() || stripped.len() > 40 {
+    // Ethereum account addresses are exactly 20 bytes (40 hex characters).
+    if stripped.len() != 40 {
         return Err(anyhow!(
-            "Invalid Ethereum address: must be 1-40 hex characters, optionally prefixed with 0x"
+            "Invalid Ethereum address: must be exactly 40 hex characters (20 bytes), optionally prefixed with 0x"
         ));
     }
     if !stripped.chars().all(|c| c.is_ascii_hexdigit()) {
@@ -53,12 +54,23 @@ pub fn validate_solana_address(address: &str) -> Result<String> {
     if address.is_empty() {
         return Err(anyhow!("Invalid Solana address: cannot be empty"));
     }
+    // Reject characters outside the base58 alphabet before decoding.
     if !address
         .chars()
         .all(|c| matches!(c, '1'..='9' | 'A'..='H' | 'J'..='N' | 'P'..='Z' | 'a'..='k' | 'm'..='z'))
     {
         return Err(anyhow!(
             "Invalid Solana address: must be a base58-encoded public key"
+        ));
+    }
+    // Decode and verify the address produces exactly 32 bytes (Ed25519 public key).
+    let decoded = bs58::decode(address)
+        .into_vec()
+        .map_err(|e| anyhow!("Invalid Solana address: base58 decode failed: {e}"))?;
+    if decoded.len() != 32 {
+        return Err(anyhow!(
+            "Invalid Solana address: expected 32-byte public key, got {} bytes",
+            decoded.len()
         ));
     }
     Ok(address.to_string())
@@ -114,7 +126,16 @@ mod tests {
 
     #[test]
     fn validate_ethereum_address_accepts_0x_prefixed() {
-        assert_eq!(validate_ethereum_address("0xabc").unwrap(), "0xabc");
+        // Ethereum addresses must be exactly 40 hex chars (20 bytes).
+        assert_eq!(
+            validate_ethereum_address("0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045").unwrap(),
+            "0xd8da6bf26964af9d7eed9e03e53415d37aa96045"
+        );
+    }
+
+    #[test]
+    fn validate_ethereum_address_rejects_short() {
+        assert!(validate_ethereum_address("0xabc").is_err());
     }
 
     #[test]

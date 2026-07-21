@@ -6,6 +6,18 @@ import { useAppStore, appStore } from '@/lib/store';
 import { apiService } from '@/services/api';
 import { FeatureId } from '@/types';
 
+// Read and clear the short-lived OAuth token cookie set by the backend.
+// Using a cookie (instead of a URL query param) keeps the JWT out of
+// browser history, server access logs, and Referer headers.
+function consumeOAuthCookie(): string | null {
+    if (typeof document === 'undefined') return null;
+    const match = document.cookie.match(/(?:^|;\s*)txio_oauth_token=([^;]+)/);
+    if (!match) return null;
+    // Immediately expire the cookie so it is consumed exactly once.
+    document.cookie = 'txio_oauth_token=; Path=/; Max-Age=0; SameSite=Lax; Secure';
+    return decodeURIComponent(match[1]);
+}
+
 const workspaceViewModeToTab: Partial<
     Record<string, FeatureId>
 > = {
@@ -65,7 +77,7 @@ export function RedirectManager() {
     }, [pathname, initialized, viewMode]);
 
     useEffect(() => {
-        const token = searchParams.get('token');
+        const token = consumeOAuthCookie();
         if (!token) return;
 
         // OAuth callback: treat this as the source of truth and
@@ -112,7 +124,7 @@ export function RedirectManager() {
     useEffect(() => {
         if (!initialized) return;
 
-        const token = searchParams.get('token');
+        const token = null; // OAuth token is consumed in the dedicated useEffect above
         const hasStoredToken =
             typeof window !== 'undefined' &&
             !!localStorage.getItem('txio_token');
@@ -176,14 +188,7 @@ export function RedirectManager() {
         if (targetPath && pathname !== targetPath) {
             router.replace(targetPath);
         }
-    }, [
-        viewMode,
-        user,
-        router,
-        pathname,
-        initialized,
-        searchParams
-    ]);
+    }, [viewMode, user, router, pathname, initialized]);
 
     return null;
 }

@@ -9,7 +9,7 @@ use crate::dtos::{
 };
 use crate::services::auth_service::AuthService;
 use crate::utils::error::AppError;
-use axum::{Json, extract::State, http::header, response::IntoResponse};
+use axum::{Json, extract::State, http::header, response::{IntoResponse, Response}};
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
 use hmac::{Hmac, Mac};
 use serde_json::{Value, json};
@@ -336,7 +336,7 @@ pub async fn google_callback(
     State(service): State<AuthService>,
     axum::extract::Query(query): axum::extract::Query<OAuthCallbackQuery>,
     headers: axum::http::HeaderMap,
-) -> Result<axum::response::Redirect, AppError> {
+) -> Result<axum::response::Response, AppError> {
     let cookie_state = get_cookie(&headers, "oauth_state")
         .ok_or(AppError::BadRequest("Missing OAuth state cookie".into()))?;
 
@@ -420,11 +420,25 @@ pub async fn google_callback(
         .oauth_login_or_register(google_sub.to_string(), email.to_string())
         .await?;
 
-    let redirect_to = format!(
-        "{}/?token={}",
-        frontend_url.trim_end_matches('/'),
+    // Set the JWT as a short-lived, readable (non-HttpOnly) cookie.  A
+    // cookie avoids exposing the token in the URL, which would leak it via
+    // browser history, access logs, analytics, and Referer headers.  The
+    // cookie is intentionally readable by JS so the frontend can consume it
+    // once on page load, store it in memory/localStorage, and then delete it.
+    // SameSite=Lax prevents CSRF on the callback endpoint itself.
+    let oauth_cookie = format!(
+        "txio_oauth_token={}; Path=/; Max-Age=120; SameSite=Lax; Secure",
         auth_res.token
     );
 
-    Ok(axum::response::Redirect::temporary(&redirect_to))
+    let redirect_to = format!("{}/", frontend_url.trim_end_matches('/'));
+
+    let mut response = axum::response::Redirect::temporary(&redirect_to).into_response();
+    response
+        .headers_mut()
+        .append(
+            axum::http::header::SET_COOKIE,
+            oauth_cookie.parse().expect("cookie header is always valid ASCII"),
+        );
+    Ok(response)
 }
