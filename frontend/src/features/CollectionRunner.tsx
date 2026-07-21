@@ -132,7 +132,9 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                         args,
                     );
                     setRunList((prev) =>
-                        prev.map((r, i) => (i === idx ? { ...r, status: 'success' as const, duration, httpStatus: status } : r)),
+                        abortRef.current
+                            ? prev
+                            : prev.map((r, i) => (i === idx ? { ...r, status: 'success' as const, duration, httpStatus: status } : r)),
                     );
                 } else {
                     const { result, status, duration } = await executeSuiRpc(
@@ -141,9 +143,11 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                         resolved.rpcParams.params,
                     );
                     setRunList((prev) =>
-                        prev.map((r, i) =>
-                            i === idx ? { ...r, status: 'success' as const, duration, httpStatus: status, response: result } : r,
-                        ),
+                        abortRef.current
+                            ? prev
+                            : prev.map((r, i) =>
+                                i === idx ? { ...r, status: 'success' as const, duration, httpStatus: status, response: result } : r,
+                              ),
                     );
                 }
             } catch (error) {
@@ -151,17 +155,19 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                 const rpcError = error instanceof SuiRpcError ? error : null;
                 const errorMessage = error instanceof Error && error.message.trim() ? error.message : 'Request failed';
                 setRunList((prev) =>
-                    prev.map((r, i) =>
-                        i === idx
-                            ? {
-                                  ...r,
-                                  status: 'error' as const,
-                                  duration,
-                                  httpStatus: rpcError?.status ?? 0,
-                                  errorMessage,
-                              }
-                            : r,
-                    ),
+                    abortRef.current
+                        ? prev
+                        : prev.map((r, i) =>
+                            i === idx
+                                ? {
+                                      ...r,
+                                      status: 'error' as const,
+                                      duration,
+                                      httpStatus: rpcError?.status ?? 0,
+                                      errorMessage,
+                                  }
+                                : r,
+                          ),
                 );
             }
 
@@ -255,7 +261,7 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                         </thead>
                         <tbody className="divide-y divide-slate-800 text-sm">
                             {runList.map((req, i) => (
-                                <tr key={i} className={`transition-colors ${i === currentReqIndex ? 'bg-sui-900/10' : 'hover:bg-white/5/30'}`}>
+                                <tr key={i} className={`transition-colors ${i === currentReqIndex ? 'bg-sui-900/10' : 'hover:bg-white/5'}`}>
                                     <td className="px-6 py-4 text-slate-600 font-mono text-xs">{i + 1}</td>
                                     <td className="px-6 py-4 font-bold text-slate-300 flex items-center gap-2">
                                         {req.name}

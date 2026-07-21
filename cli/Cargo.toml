@@ -25,3 +25,4 @@ colored = { workspace = true }
 indicatif = { workspace = true }
 dirs-next = { workspace = true }
 dialoguer = { workspace = true }
+bs58 = { workspace = true }

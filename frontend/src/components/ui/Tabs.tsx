@@ -66,6 +66,10 @@ export const Tab: React.FC<TabProps> = ({ title, isActive, onSelect, onClose, on
             `}
             onClick={onSelect}
             onDoubleClick={handleDoubleClick}
+            role="tab"
+            aria-selected={isActive}
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(); }}
         >
             {icon && <span className={`flex-shrink-0 transition-colors ${isActive ? 'text-electric-violet' : 'text-slate-600 group-hover:text-slate-500'}`}>{icon}</span>}
 

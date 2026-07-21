@@ -1,4 +1,26 @@
-export type Network = 'mainnet' | 'testnet' | 'devnet';
+// Canonical network identifiers. These lowercase strings are the wire
+// contract shared with the backend `Network` enum (see
+// backend/api/src/model/network.rs) and the CLI. Keep this union,
+// `ALL_NETWORKS`, and `isNetwork` in sync — they are the frontend's single
+// source of truth.
+export type Network = 'mainnet' | 'testnet' | 'devnet' | 'localnet';
+
+// Every supported network, in canonical order. Iterate this instead of
+// hardcoding string arrays so new networks flow through the UI automatically.
+export const ALL_NETWORKS: readonly Network[] = [
+  'mainnet',
+  'testnet',
+  'devnet',
+  'localnet'
+];
+
+// Runtime guard that narrows an untrusted string to `Network`. Used at the
+// API boundary so unknown values are rejected rather than silently accepted.
+export const isNetwork = (
+  value: string | null | undefined
+): value is Network =>
+  typeof value === 'string' &&
+  (ALL_NETWORKS as readonly string[]).includes(value);
 
 export type FeatureId = 'dashboard' | 'rpc' | 'ptb' | 'move' | 'playground' | 'history' | 'settings' | 'new_request' | 'profile' | 'ai_chat' | 'runner' | 'docs' | 'ecosystem' | 'features' | 'integrations' | 'infrastructure' | 'partners';
 
@@ -268,4 +290,22 @@ export interface Comment {
   userAvatarColor?: string;
   content: string;
   timestamp: number;
+}
+
+// --- Session Tracking ---
+
+/** A live sign-in session returned by GET /auth/sessions. */
+export interface ActiveSession {
+  /** MongoDB ObjectId of the session document — used as the revocation key. */
+  id: string;
+  /** Human-readable device label, e.g. "Chrome on macOS". */
+  device_label: string;
+  /** IP address recorded at sign-in time. */
+  ip_address: string;
+  /** ISO-8601 timestamp of when the session was created. */
+  created_at: string;
+  /** ISO-8601 timestamp of the last known activity. */
+  last_active_at: string;
+  /** True when this entry corresponds to the currently active JWT. */
+  is_current: boolean;
 }

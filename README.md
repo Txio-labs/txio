@@ -45,7 +45,7 @@ Developers should never need a separate terminal for every chain. Today’s mult
 ## Key benefits
 
 - **One interface, five chains** — same UX for Sui, Ethereum, Solana, Aptos, and Soroban
-- **Instant network switching** — `--network testnet`, `mainnet`, or `devnet` works everywhere
+- **Instant network switching** — `--network testnet`, `mainnet`, or `devnet` works across most supported chains (see [ROADMAP.md](./ROADMAP.md) for known inconsistencies — issue #23 tracks remaining network-enum gaps)
 - **Smart name resolution** — `.sui`, `.eth`, and other namespaces resolve automatically
 - **Readable output** — clean terminal tables with raw JSON available via `--pretty`
 - **Full-stack launch** — start API, dashboard, and database together with Docker Compose

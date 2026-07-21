@@ -1,5 +1,7 @@
 import {
+    ActiveSession,
     CollectionNode,
+    isNetwork,
     Network,
     RequestItem,
     RequestType,
@@ -107,13 +109,6 @@ interface BackendSavedRequest {
     last_response?: unknown;
     last_executed_at?: string | null;
 }
-
-const isNetwork = (
-    value: string | null | undefined
-): value is Network =>
-    value === 'mainnet' ||
-    value === 'testnet' ||
-    value === 'devnet';
 
 interface BackendMessageResponse {
     message: string;
@@ -1134,6 +1129,18 @@ class ApiService {
         }
 
         return response;
+    }
+
+    // Sessions
+    async getSessions(): Promise<ActiveSession[]> {
+        const data = await this.request<{ sessions: ActiveSession[] }>('/auth/sessions');
+        return data.sessions;
+    }
+
+    async revokeSession(sessionId: string): Promise<void> {
+        await this.request<void>(`/auth/sessions/${encodeURIComponent(sessionId)}`, {
+            method: 'DELETE',
+        });
     }
 
     async executeCommand(

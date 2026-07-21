@@ -70,20 +70,30 @@ export const RightPanel: React.FC<RightPanelProps> = ({
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
+  // A monotonically-increasing counter lets each fetch "tag" its own result.
+  // If a newer fetch starts (or dependencies change) while an earlier one is
+  // still in-flight, the stale result is discarded when it eventually resolves,
+  // preventing it from overwriting the current wallet's object list.
+  const fetchGenerationRef = useRef(0);
   const fetchObjects = useCallback(async () => {
     if (!connectedAddress) return;
+    const generation = ++fetchGenerationRef.current;
     setLoadingObjects(true);
     try {
       const res = await getOwnedObjects(network, connectedAddress);
+      if (fetchGenerationRef.current !== generation) return; // stale — discard
       if (res.result && res.result.data) {
         setObjects(res.result.data);
       } else {
         setObjects([]);
       }
-    } catch (e) {
+    } catch {
+      if (fetchGenerationRef.current !== generation) return; // stale — discard
       setObjects([]);
     } finally {
-      setLoadingObjects(false);
+      if (fetchGenerationRef.current === generation) {
+        setLoadingObjects(false);
+      }
     }
   }, [connectedAddress, network]);
 
@@ -112,7 +122,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           <div className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
             network === 'mainnet' ? 'bg-emerald-500/[0.12] text-emerald-400' :
             network === 'testnet' ? 'bg-amber-500/[0.12] text-amber-400' :
-            'bg-blue-500/[0.12] text-blue-400'
+            network === 'devnet' ? 'bg-blue-500/[0.12] text-blue-400' :
+            'bg-fuchsia-500/[0.12] text-fuchsia-400'
           }`}>
             {network}
           </div>

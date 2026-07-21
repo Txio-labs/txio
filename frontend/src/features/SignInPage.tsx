@@ -16,6 +16,16 @@ import { appStore, useAppStore } from '@/lib/store';
 import { API_BASE, apiService } from '@/services/api';
 import logoDark from '../assets/txio2.png';
 
+
+// Read and clear the short-lived OAuth token cookie set by the backend callback.
+function consumeOAuthCookie(): string | null {
+    if (typeof document === 'undefined') return null;
+    const match = document.cookie.match(/(?:^|;\s*)txio_oauth_token=([^;]+)/);
+    if (!match) return null;
+    document.cookie = 'txio_oauth_token=; Path=/; Max-Age=0; SameSite=Lax; Secure';
+    return decodeURIComponent(match[1]);
+}
+
 export const SignInPage: React.FC = () => {
     const { theme } = useAppStore();
     const router = useRouter();
@@ -31,6 +41,28 @@ export const SignInPage: React.FC = () => {
     useEffect(() => {
         const initializeAuth = async () => {
             try {
+                // Read OAuth token from cookie (backend sets it on OAuth callback;
+                // using a cookie avoids the JWT appearing in browser history and logs).
+                const cookieToken = consumeOAuthCookie();
+
+                // Read token from localStorage
+                const storedToken = localStorage.getItem('txio_token');
+
+                // Prefer OAuth cookie token over stored token
+                const token = cookieToken || storedToken;
+
+                // No token
+                if (!token) {
+                    setAuthChecking(false);
+                    return;
+                }
+
+                // Save token
+                localStorage.setItem('txio_token', token);
+
+                // Set token in API service
+                apiService.setToken(token);
+
                 // IMPORTANT:
                 // Switch app mode BEFORE profile request
                 // prevents redirect back to landing page
@@ -67,18 +99,11 @@ export const SignInPage: React.FC = () => {
                         );
                     }
 
-                    // Success toast after successful auth
-                    appStore.showToast(
-                        'Successfully signed in',
-                        'success'
-                    );
-
-                    // Clean up URL query params
-                    if (window.location.search) {
-                        window.history.replaceState(
-                            {},
-                            '',
-                            window.location.pathname
+                    // Success toast only after OAuth redirect (token arrived via cookie)
+                    if (cookieToken) {
+                        appStore.showToast(
+                            'Successfully signed in with Google',
+                            'success'
                         );
                     }
 
@@ -87,6 +112,10 @@ export const SignInPage: React.FC = () => {
                     console.error('Profile fetch failed:', profileError);
 
                     // Invalid token/session cleanup
+                    localStorage.removeItem('txio_token');
+
+                    apiService.setToken(null);
+
                     appStore.updateUser(null);
 
                     appStore.setViewMode('landing');
@@ -98,6 +127,10 @@ export const SignInPage: React.FC = () => {
                 }
             } catch (error) {
                 console.error('Auth initialization failed:', error);
+
+                localStorage.removeItem('txio_token');
+
+                apiService.setToken(null);
 
                 appStore.updateUser(null);
 
@@ -141,9 +174,14 @@ export const SignInPage: React.FC = () => {
             'info'
         );
 
-        // Google OAuth
+        // OAuth providers
         if (provider === 'Google') {
             window.location.href = `${API_BASE}/auth/google/login`;
+            return;
+        }
+
+        if (provider === 'GitHub') {
+            window.location.href = `${API_BASE}/auth/github/login`;
             return;
         }
 
@@ -193,7 +231,7 @@ export const SignInPage: React.FC = () => {
                 <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-electric-violet/10 blur-[150px] rounded-full"></div>
 
                 <div className="relative z-10">
-                    <div
+                    <button
                         className="flex items-center gap-3 mb-16 cursor-pointer"
                         onClick={() => {
                             appStore.setViewMode('landing');
@@ -209,7 +247,7 @@ export const SignInPage: React.FC = () => {
                         <span className="text-2xl font-bold tracking-tighter text-white">
                             txio
                         </span>
-                    </div>
+                    </button>
 
                     <div className="space-y-6">
                         <h1 className="text-6xl font-bold tracking-tight text-white leading-[1.1]">

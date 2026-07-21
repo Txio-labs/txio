@@ -7,7 +7,7 @@ import {
   BuilderArg,
   RPCHealthMetric,
 } from '../types';
- 
+
 const RPC_TIMEOUT_MS = 10000;
 const DEGRADED_RPC_LATENCY_MS = 1500;
 
@@ -59,7 +59,7 @@ export const executeSuiRpc = async (
       () => controller.abort(),
       RPC_TIMEOUT_MS
     );
-    
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -215,8 +215,13 @@ export const looksLikeSuiAddress = (value: string): boolean =>
 export const looksLikeSuiNs = (value: string): boolean =>
     SUI_NS_RE.test(value.trim());
 
-const suiNsCache = new Map<string, string>();
+const SUI_NS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+type SuiNsCacheEntry = { address: string; expiresAt: number };
+
+const suiNsCache = new Map<string, SuiNsCacheEntry>();
 const cacheKey = (network: Network, name: string) => `${network}:${name.trim().toLowerCase()}`;
+
 
 /**
  * Resolve a Sui address or SuiNS name to a raw 0x address.
@@ -236,7 +241,13 @@ export const resolveSuiAddress = async (
 
     const key = cacheKey(network, value);
     const cached = suiNsCache.get(key);
-    if (cached) return cached;
+    if (cached) {
+        if (cached.expiresAt > Date.now()) {
+            return cached.address;
+        }
+
+        suiNsCache.delete(key);
+    }
 
     const { result } = await executeSuiRpc(network, 'suix_resolveNameServiceAddress', [value]);
     if (typeof result !== 'string' || !looksLikeSuiAddress(result)) {
@@ -247,7 +258,7 @@ export const resolveSuiAddress = async (
         });
     }
 
-    suiNsCache.set(key, result);
+    suiNsCache.set(key, { address: result, expiresAt: Date.now() + SUI_NS_CACHE_TTL_MS });
     return result;
 };
 
@@ -327,31 +338,47 @@ export const signAndExecuteMoveCall = async (
   args: BuilderArg[],
   signAndExecuteTransaction: (transactionBlock: any) => Promise<any>
 ) => {
-    // Convert BuilderArgs to raw arguments for the transaction
-    const rawArgs = args.map(arg => {
-        if (arg.type === 'u64' || arg.type === 'u128' || arg.type === 'u256') {
-            return arg.value; // Passed as string to avoid precision loss
-        }
-        if (arg.type === 'u8' || arg.type === 'u16' || arg.type === 'u32') {
-            return parseInt(arg.value);
-        }
-        if (arg.type === 'bool') {
-            return arg.value === 'true';
-        }
-        // Address, String, Object ID, etc.
-        return arg.value;
-    });
-
     const resolvedSender = await resolveSuiAddress(network, sender);
 
-    // Import TransactionBlock dynamically to avoid circular dependencies
-    const { TransactionBlock } = await import('@mysten/sui');
+    // Import Transaction dynamically to avoid circular dependencies
+    const { Transaction } = await import('@mysten/sui/transactions');
 
-    const txb = new TransactionBlock();
+    const txb = new Transaction();
+
+    // Convert BuilderArgs into typed transaction arguments
+    const txArgs = args.map(arg => {
+        switch (arg.type) {
+            case 'u8':
+                return txb.pure.u8(parseInt(arg.value, 10));
+            case 'u16':
+                return txb.pure.u16(parseInt(arg.value, 10));
+            case 'u32':
+                return txb.pure.u32(parseInt(arg.value, 10));
+            case 'u64':
+                return txb.pure.u64(arg.value); // Passed as string to avoid precision loss
+            case 'u128':
+                return txb.pure.u128(arg.value);
+            case 'u256':
+                return txb.pure.u256(arg.value);
+            case 'bool':
+                return txb.pure.bool(arg.value === 'true');
+            case 'address':
+                return txb.pure.address(arg.value);
+            case 'object':
+                return txb.object(arg.value);
+            case 'vector<u8>':
+                return txb.pure.vector('u8', arg.value.split(',').map(v => parseInt(v.trim(), 10)));
+            case 'vector<address>':
+                return txb.pure.vector('address', arg.value.split(',').map(v => v.trim()));
+            default:
+                return txb.pure.string(arg.value);
+        }
+    });
+
     txb.moveCall({
         target: `${packageId}::${module}::${func}`,
         typeArguments: typeArgs,
-        arguments: rawArgs.map(arg => txb.pure(arg))
+        arguments: txArgs
     });
 
     try {

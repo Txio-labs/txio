@@ -99,6 +99,7 @@ mod tests {
             email: email.to_string(),
             exp: 0,
             iat: 0,
+            jti: None,
         }
     }
 
@@ -109,7 +110,9 @@ mod tests {
         let client = Client::with_uri_str("mongodb://localhost:27017")
             .await
             .expect("parsing a well-formed URI must not require a live connection");
-        let db = client.default_database().unwrap_or_else(|| client.database("txio_db"));
+        let db = client
+            .default_database()
+            .unwrap_or_else(|| client.database("txio_db"));
         let user_repo = UserRepository::new(&db);
         let rpc_repo = RpcRepository::new(&db);
         AdminService::new(user_repo, rpc_repo, admin_emails)

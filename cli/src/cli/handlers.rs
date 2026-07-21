@@ -56,11 +56,23 @@ impl CommandHandler {
                     println!("  - {}", chain.green());
                 }
             }
-            Commands::Switch { chain: _ } => {
-                println!(
-                    "{} 'txio switch' is not yet implemented. For now, specify the chain explicitly:\n  txio sui balance <address>",
-                    "⚠️".yellow()
-                );
+            Commands::Switch { chain } => {
+                if ChainFactory::list_chains().contains(&chain.to_lowercase().as_str()) {
+                    utils::save_current_chain(&chain.to_lowercase())?;
+                    println!(
+                        "{} Switched default chain to {}",
+                        "✔".green(),
+                        chain.bold().cyan()
+                    );
+                } else {
+                    let msg = format!("Unknown chain '{chain}'");
+                    let suggestion = ChainFactory::suggest_chain(&chain);
+                    if let Some(s) = suggestion {
+                        println!("{} {} \n\nDid you mean:\n  {}", "✖".red(), msg, s.green());
+                    } else {
+                        println!("{} {}", "✖".red(), msg);
+                    }
+                }
             }
             Commands::Login => {
                 Self::handle_login().await?;
@@ -81,7 +93,7 @@ impl CommandHandler {
                 println!(
                     "  {} Network:        {}",
                     "»".dimmed(),
-                    format!("{:?}", cli.network).yellow()
+                    cli.network.to_string().yellow()
                 );
                 println!(
                     "  {} Authenticated:  {}",
@@ -492,12 +504,7 @@ impl CommandHandler {
                                 let short_coin = if coin_type.len() > 30 {
                                     let parts: Vec<&str> = coin_type.split("::").collect();
                                     if parts.len() >= 3 {
-                                        let pkg_short = if parts[0].len() > 10 {
-                                            format!("{}…{}", &parts[0][0..6], &parts[0][parts[0].len()-4..])
-                                        } else {
-                                            parts[0].to_string()
-                                        };
-                                        format!("{}::{}::{}", pkg_short.dimmed(), parts[1].blue(), parts[2].cyan())
+                                        format!("{}::{}", parts[1].blue(), parts[2].cyan())
                                     } else {
                                         truncate_utf8_for_display(coin_type, 10, 10)
                                             .cyan()
@@ -594,32 +601,13 @@ impl CommandHandler {
                 Self::print_value(&result, pretty)?;
             }
             ChainCommand::History { address, limit } => {
-                let resolved_address = if let Some(addr) = adapter.resolve_name(&address).await? {
-                    println!(
-                        "{} Resolved {} to {}\n",
-                        "🔍".blue(),
-                        address.yellow(),
-                        addr.cyan()
-                    );
-                    addr
-                } else {
-                    if address.ends_with(".sui") || address.ends_with(".eth") {
-                        println!(
-                            "{} {} could not be resolved! Proceeding with raw input...\n",
-                            "⚠️".yellow(),
-                            address.yellow()
-                        );
-                    }
-                    address
-                };
-
                 let chain = adapter.name();
                 if chain == "Ethereum" {
                     println!(
                         "{} Fetching up to {} recent ERC-20 transfer logs for {} on {}...\n",
                         "📜".bold(),
                         limit,
-                        resolved_address.dimmed(),
+                        address.dimmed(),
                         chain.green()
                     );
                 } else {
@@ -627,11 +615,11 @@ impl CommandHandler {
                         "{} Fetching {} recent transactions for {} on {}...\n",
                         "📜".bold(),
                         limit,
-                        resolved_address.dimmed(),
+                        address.dimmed(),
                         chain.green()
                     );
                 }
-                let result = adapter.get_history(&resolved_address, limit).await?;
+                let result = adapter.get_history(&address, limit).await?;
                 Self::print_value(&result, pretty)?;
             }
             ChainCommand::Gas => {

@@ -18,6 +18,9 @@ RUN cargo build --release --package txio-api --package txio
 # Runtime stage
 FROM debian:bookworm-slim
 
+# Add a non-root system user so the process never runs as root.
+RUN useradd --system --uid 10001 txio
+
 WORKDIR /app
 
 # Install runtime dependencies
@@ -32,8 +35,13 @@ COPY --from=builder /app/target/release/txio-api /app/api
 # Copy CLI binary to system PATH so TerminalService can find it
 COPY --from=builder /app/target/release/txio /usr/local/bin/txio
 
-# Create a temporary directory for cargo operations if needed
-RUN mkdir -p /app/temp
+# Create a dedicated non-root user and grant it access to runtime paths.
+# Using a numeric UID avoids relying on /etc/passwd inside the minimal image.
+RUN install -d -o 10001 -g 10001 /app/temp
+
+# Transfer ownership to the non-root user before switching to it.
+RUN chown -R txio:txio /app
+USER 10001:10001
 
 # Set directory ownership
 RUN chown -R appuser:appuser /app

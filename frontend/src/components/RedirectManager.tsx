@@ -6,6 +6,18 @@ import { useAppStore, appStore } from '@/lib/store';
 import { apiService } from '@/services/api';
 import { FeatureId } from '@/types';
 
+// Read and clear the short-lived OAuth token cookie set by the backend.
+// Using a cookie (instead of a URL query param) keeps the JWT out of
+// browser history, server access logs, and Referer headers.
+function consumeOAuthCookie(): string | null {
+    if (typeof document === 'undefined') return null;
+    const match = document.cookie.match(/(?:^|;\s*)txio_oauth_token=([^;]+)/);
+    if (!match) return null;
+    // Immediately expire the cookie so it is consumed exactly once.
+    document.cookie = 'txio_oauth_token=; Path=/; Max-Age=0; SameSite=Lax; Secure';
+    return decodeURIComponent(match[1]);
+}
+
 const workspaceViewModeToTab: Partial<
     Record<string, FeatureId>
 > = {
@@ -65,7 +77,39 @@ export function RedirectManager() {
 
     // Clean up URL if there are any query params left over
     useEffect(() => {
-        if (initialized && window.location.search) {
+        const token = consumeOAuthCookie();
+        if (!token) return;
+
+        // OAuth callback: treat this as the source of truth and
+        // prevent generic viewMode redirects from taking over.
+        apiService.setToken(token);
+        void appStore.initialize();
+
+        try {
+            const payloadSegment = token
+                .split('.')[1]
+                ?.replace(/-/g, '+')
+                .replace(/_/g, '/');
+            const normalizedPayload =
+                (payloadSegment || '').padEnd(
+                    Math.ceil(
+                        (payloadSegment || '')
+                            .length / 4
+                    ) * 4,
+                    '='
+                );
+            const payload = JSON.parse(
+                atob(normalizedPayload)
+            );
+            appStore.updateUser({
+                id: payload.sub,
+                email: payload.email,
+                name: payload.email.split('@')[0]
+            });
+
+            appStore.setViewMode('app');
+            appStore.showToast('Authentication successful!', 'success');
+
             const url = new URL(window.location.href);
             url.search = '';
             window.history.replaceState({}, '', url.toString());
@@ -122,13 +166,7 @@ export function RedirectManager() {
         if (targetPath && pathname !== targetPath) {
             router.replace(targetPath);
         }
-    }, [
-        viewMode,
-        user,
-        router,
-        pathname,
-        initialized
-    ]);
+    }, [viewMode, user, router, pathname, initialized]);
 
     return null;
 }

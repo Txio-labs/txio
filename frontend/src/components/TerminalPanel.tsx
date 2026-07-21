@@ -18,7 +18,11 @@ const getInitialTerminalHeight = (): number => {
     if (!stored) return DEFAULT_TERMINAL_HEIGHT;
     const parsed = Number.parseInt(stored, 10);
     if (!Number.isFinite(parsed) || parsed < MIN_TERMINAL_HEIGHT) return DEFAULT_TERMINAL_HEIGHT;
-    return parsed;
+    const maxHeight = Math.max(
+        MIN_TERMINAL_HEIGHT,
+        window.innerHeight - MAX_TERMINAL_HEIGHT_INSET
+    );
+    return Math.min(parsed, maxHeight);
 };
 
 export const TerminalPanel: React.FC = () => {
@@ -430,7 +434,7 @@ export const TerminalPanel: React.FC = () => {
                             : { type: 'spring', damping: 25, stiffness: 200 }
                     }
                     onClick={focusInput}
-                    className="bg-near-black border-t border-white/[0.06] flex flex-col font-mono text-xs shadow-2xl relative z-40 overflow-hidden"
+                    className="bg-near-black border-t border-white/[0.06] flex flex-col font-mono text-xs shadow-2xl relative z-40 overflow-hidden text-left"
                 >
                     {/* Resize handle */}
                     <div
@@ -440,6 +444,8 @@ export const TerminalPanel: React.FC = () => {
                         onPointerCancel={handleResizeEnd}
                         onClick={(e) => e.stopPropagation()}
                         role="separator"
+                        tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}
                         aria-orientation="horizontal"
                         aria-label="Resize terminal"
                         className={`shrink-0 h-1.5 cursor-row-resize flex items-center justify-center group transition-colors ${
