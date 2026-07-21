@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { PanelLeft, PanelRight, Settings, ChevronDown, Globe, Loader2, Key, LayoutGrid, User, LogOut, MoreVertical, Trash2, Save, RotateCcw, Bookmark, Plus, Layers, Command, Sparkles, Search, X, CheckCircle, AlertCircle, Info, Server, Check, Terminal } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { Tab } from './ui/Tabs';
-import { TabItem, Network, RPCHealthMetric } from '../types';
+import { ALL_NETWORKS, TabItem, Network, RPCHealthMetric } from '../types';
 import { NetworkSwitcherModal } from './NetworkSwitcherModal';
 import { Avatar } from './ui/Avatar';
 import { CommandPalette } from './CommandPalette';
@@ -65,7 +65,8 @@ export const Layout: React.FC<LayoutProps> = ({
         isSyncing,
         scanStep,
         notifications,
-        isTerminalOpen
+        isTerminalOpen,
+        pendingNetworkSwitch
     } = useAppStore();
     const [rpcHealth, setRpcHealth] =
         useState<RPCHealthMetric | null>(
@@ -103,13 +104,24 @@ export const Layout: React.FC<LayoutProps> = ({
     }, []);
 
     const handleNetworkSwitch = (newNetwork: Network) => {
-        appStore.setNetwork(newNetwork);
+        if (newNetwork === network) {
+            setIsNetworkMenuOpen(false);
+            return;
+        }
+        appStore.requestNetworkSwitch(newNetwork);
         setIsNetworkMenuOpen(false);
     };
 
     return (
         <div className="flex flex-col h-screen bg-near-black text-slate-200 overflow-hidden font-sans relative selection:bg-electric-violet/30">
             <CommandPalette />
+            <NetworkSwitcherModal
+                isOpen={pendingNetworkSwitch !== null}
+                onClose={() => appStore.cancelNetworkSwitch()}
+                onConfirm={() => appStore.confirmNetworkSwitch()}
+                from={network}
+                to={pendingNetworkSwitch || network}
+            />
 
             {/* Top Energy Line */}
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-cyan-400 via-blue-500 to-sky-500 z-50 shadow-[0_0_15px_rgba(14,165,233,0.6)]"></div>
@@ -140,7 +152,7 @@ export const Layout: React.FC<LayoutProps> = ({
 
             <header className="h-12 bg-near-black border-b border-white/10 flex items-center justify-between px-4 shrink-0 z-20">
                 <div className="flex items-center gap-4">
-                    <div 
+                    <button 
                         className="flex items-center gap-2 font-bold text-slate-100 group cursor-pointer"
                         onClick={() => appStore.setActiveTab(null)}
                     >
@@ -148,7 +160,7 @@ export const Layout: React.FC<LayoutProps> = ({
                             <TxioLogoSmall />
                         </div>
                         <span className="text-sm tracking-tight group-hover:text-sui-300 transition-colors">txio</span>
-                    </div>
+                    </button>
                     <div className="h-4 w-px bg-white/10 mx-2"></div>
                     <button onClick={() => appStore.toggleSidebar()} className={`p-1.5 rounded hover:bg-white/10 transition-colors ${isSidebarOpen ? 'text-electric-violet' : 'text-slate-500'}`}>
                         <PanelLeft size={16} />
@@ -180,7 +192,7 @@ export const Layout: React.FC<LayoutProps> = ({
                         {isNetworkMenuOpen && (
                             <div className="absolute top-full right-0 mt-2 w-48 bg-[#003152] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
                                 <div className="p-1">
-                                    {(['mainnet', 'testnet', 'devnet'] as Network[]).map((net) => (
+                                    {ALL_NETWORKS.map((net) => (
                                         <button
                                             key={net}
                                             onClick={() => handleNetworkSwitch(net)}
@@ -271,19 +283,19 @@ export const Layout: React.FC<LayoutProps> = ({
             
             <footer className="h-7 bg-near-black border-t border-white/10 flex items-center justify-between px-3 text-[10px] text-slate-500 select-none z-20">
                 <div className="flex items-center gap-4">
-                    <span 
+                    <button 
                         onClick={() => appStore.openTab('settings')}
                         className="flex items-center gap-1 hover:text-electric-violet cursor-pointer transition-colors"
                     >
                         <Settings size={10} /> v2.6.0-beta
-                    </span>
-                    <span 
+                    </button>
+                    <button 
                         onClick={() => appStore.showToast('System operational. No errors.', 'success')}
                         className="hover:text-emerald-400 cursor-pointer transition-colors flex items-center gap-1"
                     >
                         <div className="w-1 h-1 bg-emerald-500 rounded-full"></div> System Optimal
-                    </span>
-                    <span
+                    </button>
+                    <button
                         onClick={() =>
                             appStore.toggleTerminal()
                         }
@@ -294,7 +306,7 @@ export const Layout: React.FC<LayoutProps> = ({
                         }`}
                     >
                         <Terminal size={10} /> Terminal
-                    </span>
+                    </button>
                 </div>
                 <div className="flex items-center gap-4">
                      <span className="font-mono text-slate-600">GAS: <span className="text-amber-500">AUTO</span></span>

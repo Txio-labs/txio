@@ -164,17 +164,7 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
     ) => {
         if (readOnly) return;
 
-        // Cmd/Ctrl+F → search
-        if (
-            (e.metaKey || e.ctrlKey) &&
-            e.key.toLowerCase() === 'f'
-        ) {
-            e.preventDefault();
-            setSearchOpen(true);
-            return;
-        }
-
-        // Cmd/Ctrl+Shift+F → format
+        // Cmd/Ctrl+Shift+F → format (must be checked before plain Ctrl+F)
         if (
             (e.metaKey || e.ctrlKey) &&
             e.shiftKey &&
@@ -182,6 +172,16 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
         ) {
             e.preventDefault();
             handleFormat();
+            return;
+        }
+
+        // Cmd/Ctrl+F → search
+        if (
+            (e.metaKey || e.ctrlKey) &&
+            e.key.toLowerCase() === 'f'
+        ) {
+            e.preventDefault();
+            setSearchOpen(true);
             return;
         }
 
@@ -389,36 +389,55 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
         setError(null);
     };
 
-    const highlightJSON = (code: string) => {
-        if (!code) return '';
-        return code
+    const escapeHtml = (text: string) =>
+        text
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
-            .replace(
-                /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?|[\[\]\{\},])/g,
-                (match) => {
-                    let cls = 'text-sky-300';
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
 
-                    if (/^"/.test(match)) {
-                        if (/:$/.test(match)) {
-                            cls = 'text-sky-300';
-                        } else {
-                            cls = 'text-emerald-300';
-                        }
-                    } else if (/true|false/.test(match)) {
-                        cls = 'text-amber-300';
-                    } else if (/null/.test(match)) {
-                        cls = 'text-slate-500 italic';
-                    } else if (/^-?\d/.test(match)) {
-                        cls = 'text-orange-300';
-                    } else if (/[\[\]\{\},]/.test(match)) {
-                        cls = 'text-slate-500';
-                    }
+    const highlightJSON = (code: string) => {
+        if (!code) return '';
 
-                    return `<span class="${cls}">${match}</span>`;
+        const tokenRegex = /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?|[\[\]\{\},])/g;
+        let lastIndex = 0;
+        const parts: string[] = [];
+        let match: RegExpExecArray | null;
+
+        while ((match = tokenRegex.exec(code)) !== null) {
+            if (lastIndex < match.index) {
+                parts.push(escapeHtml(code.slice(lastIndex, match.index)));
+            }
+
+            const token = match[0];
+            let cls = 'text-sky-300';
+
+            if (/^"/.test(token)) {
+                if (/:$/.test(token)) {
+                    cls = 'text-sky-300';
+                } else {
+                    cls = 'text-emerald-300';
                 }
-            );
+            } else if (/true|false/.test(token)) {
+                cls = 'text-amber-300';
+            } else if (/null/.test(token)) {
+                cls = 'text-slate-500 italic';
+            } else if (/^-?\d/.test(token)) {
+                cls = 'text-orange-300';
+            } else if (/[[\]\{\},]/.test(token)) {
+                cls = 'text-slate-500';
+            }
+
+            parts.push(`<span class="${cls}">${escapeHtml(token)}</span>`);
+            lastIndex = tokenRegex.lastIndex;
+        }
+
+        if (lastIndex < code.length) {
+            parts.push(escapeHtml(code.slice(lastIndex)));
+        }
+
+        return parts.join('');
     };
 
     const lines = value.split('\n');

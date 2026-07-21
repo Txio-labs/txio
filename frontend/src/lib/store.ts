@@ -10,6 +10,7 @@ import {
     UserProfile,
     ActivityLog,
     Comment,
+    isNetwork,
     Network,
     AppSettings,
     Notification
@@ -288,8 +289,7 @@ const readStoredNetwork = () => {
             networkStorageKey
         );
 
-    return storedNetwork === 'testnet' ||
-        storedNetwork === 'devnet'
+    return isNetwork(storedNetwork)
         ? storedNetwork
         : 'mainnet';
 };
@@ -1659,15 +1659,22 @@ export const appStore = {
 
             emit();
 
+            // Kick off the workspaces fetch before the try/catch so its promise
+            // is in scope for both the success path and the profile-refresh
+            // fallback in the catch block below. Declaring it inside the try
+            // left it block-scoped, so the catch referenced an undefined
+            // binding and threw `ReferenceError: workspacesPromise is not
+            // defined`, losing the cached-user fallback entirely.
+            const workspacesPromise =
+                apiService.getWorkspaces();
+
+            void workspacesPromise.catch(
+                () => undefined
+            );
+
             try {
                 const profilePromise =
                     apiService.getProfile();
-                const workspacesPromise =
-                    apiService.getWorkspaces();
-
-                void workspacesPromise.catch(
-                    () => undefined
-                );
 
                 const user =
                     await profilePromise;

@@ -62,6 +62,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   return (
     <div
       onClick={onClose}
+      role="button"
+      tabIndex={-1}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClose(); }}
       className={`fixed inset-0 z-50 bg-near-black/70 backdrop-blur-sm animate-in fade-in duration-200 font-sans ${
         isProfileDrawer
           ? 'flex justify-end p-0'
@@ -75,6 +78,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             : 'max-w-md h-auto rounded-xl'
         }`}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-label="Authentication modal"
       >
         <button 
           onClick={onClose}

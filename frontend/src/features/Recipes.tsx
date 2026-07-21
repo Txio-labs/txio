@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { FileCode, Play, Plus } from 'lucide-react';
 import { appStore } from '@/lib/store';
+import { FeatureId } from '@/types';
 
 const RECIPE_TEMPLATES = [
     { id: 1, title: "Transfer Coins", type: "PTB" },
@@ -11,6 +11,16 @@ const RECIPE_TEMPLATES = [
     { id: 5, title: "Stake to Validator", type: "MoveCall" },
     { id: 6, title: "Batch Operations", type: "PTB" },
 ];
+
+function recipeTypeToTabType(type: string): FeatureId {
+    switch (type) {
+        case 'MoveCall':
+        case 'Publish':
+        case 'PTB':
+        default:
+            return 'ptb';
+    }
+}
 
 export const Recipes: React.FC = () => {
     return (
@@ -33,7 +43,13 @@ export const Recipes: React.FC = () => {
                                     <div className="text-[10px] text-slate-500 font-mono">{recipe.type}</div>
                                 </div>
                             </div>
-                            <button onClick={() => appStore.showToast(`Loaded template: ${recipe.title}`, 'success')} className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
+                            <button
+                                onClick={() => {
+                                    appStore.openTab(recipeTypeToTabType(recipe.type));
+                                    appStore.showToast(`Opening "${recipe.title}" as a new tab`, 'info');
+                                }}
+                                className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2"
+                            >
                                 <Play size={10} /> Load
                             </button>
                         </div>

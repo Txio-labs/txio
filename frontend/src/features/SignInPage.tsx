@@ -230,7 +230,7 @@ export const SignInPage: React.FC = () => {
                 <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-electric-violet/10 blur-[150px] rounded-full"></div>
 
                 <div className="relative z-10">
-                    <div
+                    <button
                         className="flex items-center gap-3 mb-16 cursor-pointer"
                         onClick={() => {
                             appStore.setViewMode('landing');
@@ -246,7 +246,7 @@ export const SignInPage: React.FC = () => {
                         <span className="text-2xl font-bold tracking-tighter text-white">
                             txio
                         </span>
-                    </div>
+                    </button>
 
                     <div className="space-y-6">
                         <h1 className="text-6xl font-bold tracking-tight text-white leading-[1.1]">

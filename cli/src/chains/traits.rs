@@ -1,6 +1,6 @@
+use anyhow::{Result, anyhow};
 use async_trait::async_trait;
 use serde_json::Value;
-use anyhow::{Result, anyhow};
 
 #[async_trait]
 pub trait ChainAdapter: Send + Sync {
