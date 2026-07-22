@@ -113,6 +113,8 @@ export function RedirectManager() {
             const url = new URL(window.location.href);
             url.search = '';
             window.history.replaceState({}, '', url.toString());
+        } catch (e) {
+            console.error('Failed to parse token', e);
         }
     }, [initialized]);
 

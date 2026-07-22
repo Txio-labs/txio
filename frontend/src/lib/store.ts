@@ -19,7 +19,8 @@ import {
 import { DEFAULT_MOVE_CALL } from './constants';
 import {
     DEFAULT_APP_SETTINGS,
-    normalizeAppSettings
+    normalizeAppSettings,
+    normalizeNotificationPreferences
 } from './appConfig';
 import {
     ApiError,
@@ -110,6 +111,10 @@ const applyUserProfileOverrides = (
 ): UserProfile => {
     return {
         ...user,
+        notificationPreferences:
+            normalizeNotificationPreferences(
+                user.notificationPreferences
+            ),
         ...readUserProfileOverrides(user)
     };
 };
@@ -557,8 +562,9 @@ interface AppState {
 
 // --- INITIAL STATE ---
 
-// Token is now managed via HttpOnly cookies; initial auth state will be determined via API call
-const hasToken = false;
+const hasToken =
+    typeof window !== 'undefined' &&
+    !!localStorage.getItem('txio_token');
 const initialSettings =
     readStoredSettings();
 const initialNetwork =
@@ -1439,13 +1445,27 @@ export const appStore = {
         pass: string
     ) {
         try {
-            const { user, token: _ } =
+            const { user, token } =
                 await apiService.login(
                     email,
                     pass
                 );
 
-            // Token is now managed via HttpOnly cookie
+            if (
+                typeof window !== 'undefined'
+            ) {
+                localStorage.setItem(
+                    'txio_token',
+                    token
+                );
+
+                localStorage.setItem(
+                    'txio_viewMode',
+                    'app'
+                );
+            }
+
+            apiService.setToken(token);
 
             const hydratedUser =
                 applyUserProfileOverrides(
@@ -1484,13 +1504,27 @@ export const appStore = {
         pass: string
     ) {
         try {
-            const { user, token: _ } =
+            const { user, token } =
                 await apiService.register(
                     email,
                     pass
                 );
 
-            // Token is now managed via HttpOnly cookie
+            if (
+                typeof window !== 'undefined'
+            ) {
+                localStorage.setItem(
+                    'txio_token',
+                    token
+                );
+
+                localStorage.setItem(
+                    'txio_viewMode',
+                    'app'
+                );
+            }
+
+            apiService.setToken(token);
 
             const hydratedUser =
                 applyUserProfileOverrides(
@@ -1524,7 +1558,18 @@ export const appStore = {
     },
 
     logout() {
-        // Token is now managed via HttpOnly cookie; no localStorage cleanup needed
+        apiService.setToken(null);
+
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem(
+                'txio_token'
+            );
+
+            localStorage.removeItem(
+                'txio_viewMode'
+            );
+        }
+
         clearStoredUser();
         persistCurrentWorkspaceId('');
 
@@ -1605,6 +1650,12 @@ export const appStore = {
                           restoredUser
                       )
                     : null;
+
+            if (hydratedRestoredUser) {
+                persistStoredUser(
+                    hydratedRestoredUser
+                );
+            }
 
             apiService.setToken(token);
 

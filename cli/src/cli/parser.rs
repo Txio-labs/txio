@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand, ValueEnum};
+use std::fmt;
 
 #[derive(Clone, Debug, ValueEnum, Default, PartialEq)]
 pub enum Network {
@@ -7,6 +8,18 @@ pub enum Network {
     Testnet,
     Devnet,
     Localnet,
+}
+
+impl fmt::Display for Network {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            Network::Mainnet => "mainnet",
+            Network::Testnet => "testnet",
+            Network::Devnet => "devnet",
+            Network::Localnet => "localnet",
+        };
+        f.write_str(s)
+    }
 }
 
 #[derive(Parser)]

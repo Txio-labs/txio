@@ -108,7 +108,7 @@ impl AuthService {
         let responses = sessions
             .into_iter()
             .map(|s| {
-                let is_current = current_jti.map_or(false, |jti| s.jti == jti);
+                let is_current = current_jti.is_some_and(|jti| s.jti == jti);
                 SessionResponse {
                     id: s.id.map(|id| id.to_string()).unwrap_or_default(),
                     device_label: s.device_label,
@@ -444,7 +444,7 @@ mod oauth_tests {
             password_hash: "hash".to_string(),
             google_sub: google_sub.map(str::to_string),
             tier: crate::model::user::PlanTier::Free,
-            network: crate::model::user::SuiNetwork::Mainnet,
+            network: crate::model::network::Network::Mainnet,
             created_at: Utc::now(),
             notification_preferences: crate::model::user::NotificationPreferences::default(),
         }
