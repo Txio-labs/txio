@@ -54,7 +54,7 @@ impl SuiService {
         params: &Value,
     ) -> Result<Value, AppError> {
         self.call_rpc_direct(
-            user.network.url(),
+            user.network.sui_url(),
             user.id.unwrap_or_default(),
             method,
             params,

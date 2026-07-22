@@ -7,7 +7,6 @@ use crate::services::sui_service::SuiService;
 use crate::utils::error::AppError;
 use mongodb::bson::oid::ObjectId;
 use serde_json::Value;
-use std::net::IpAddr;
 use url::{Host, Url};
 
 #[derive(Clone)]
@@ -210,9 +209,11 @@ impl CollectionService {
         name: Option<String>,
         method: Option<String>,
         params: Option<Value>,
-        network: Option<String>,
-        rpc_url: Option<String>,
-        last_response: Option<Value>, // Allow manual update of response (e.g. paste from UI)
+        // `Some(None)` means "clear this field"; `Some(Some(v))` means "set it to v";
+        // `None` means the field was omitted from the request and should be left untouched.
+        network: Option<Option<String>>,
+        rpc_url: Option<Option<String>>,
+        last_response: Option<Option<Value>>, // Allow manual update of response (e.g. paste from UI)
     ) -> Result<SavedRequest, AppError> {
         let mut req = self.request_repo.find_by_id(request_id).await?;
         if req.user_id != user_id {
@@ -229,15 +230,13 @@ impl CollectionService {
             req.params = p;
         }
 
-        // Always update options if provided (even separate None vs Some(None) is tricky here, assuming override if Some)
-        // Simple merge strategy: if passed, update.
-        if network.is_some() {
+        if let Some(network) = network {
             req.network = network;
         }
-        if rpc_url.is_some() {
+        if let Some(rpc_url) = rpc_url {
             req.rpc_url = rpc_url;
         }
-        if last_response.is_some() {
+        if let Some(last_response) = last_response {
             req.last_response = last_response;
         }
 
@@ -273,16 +272,16 @@ impl CollectionService {
         } else {
             let network_enum = if let Some(ref net_str) = req.network {
                 match net_str.to_lowercase().as_str() {
-                    "mainnet" => crate::model::user::SuiNetwork::Mainnet,
-                    "testnet" => crate::model::user::SuiNetwork::Testnet,
-                    "devnet" => crate::model::user::SuiNetwork::Devnet,
-                    _ => crate::model::user::SuiNetwork::Mainnet,
+                    "mainnet" => crate::model::network::Network::Mainnet,
+                    "testnet" => crate::model::network::Network::Testnet,
+                    "devnet" => crate::model::network::Network::Devnet,
+                    _ => crate::model::network::Network::Mainnet,
                 }
             } else {
                 let user = self.user_repo.find_by_id(&user_id).await?;
                 user.network
             };
-            network_enum.url().to_string()
+            network_enum.sui_url().to_string()
         };
         Self::validate_url(&final_url)?;
         // 1. Resolve Parameters (SuiNS)

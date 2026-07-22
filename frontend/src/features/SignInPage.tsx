@@ -6,7 +6,7 @@ import {
     Lock,
     ArrowRight,
     Github,
-    Twitter,
+    X as Twitter,
     ArrowLeft,
     ShieldCheck,
     Zap

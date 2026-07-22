@@ -96,8 +96,7 @@ impl CollectionRepository {
             .await?;
         if result.deleted_count == 0 {
             return Err(AppError::NotFound(format!(
-                "Collection not found for deletion: {}",
-                id
+                "Collection not found for deletion: {id}"
             )));
         }
         Ok(())

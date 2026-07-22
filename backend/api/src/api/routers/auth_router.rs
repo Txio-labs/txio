@@ -23,9 +23,8 @@ pub fn router(service: AuthService) -> Router {
         .route("/login", post(auth_handler::login))
         .route(
             "/request-otp",
-            post(auth_handler::request_otp).layer(GovernorLayer {
-                config: otp_send_rate_limiter.clone(),
-            }),
+            post(auth_handler::request_otp)
+                .layer(GovernorLayer::new(otp_send_rate_limiter.clone())),
         )
         .route("/verify-otp", post(auth_handler::verify_otp))
         .route("/profile", axum::routing::get(auth_handler::profile))
@@ -35,9 +34,8 @@ pub fn router(service: AuthService) -> Router {
         .route("/delete-user", post(auth_handler::delete_user))
         .route(
             "/forgot-password",
-            post(auth_handler::forgot_password).layer(GovernorLayer {
-                config: otp_send_rate_limiter.clone(),
-            }),
+            post(auth_handler::forgot_password)
+                .layer(GovernorLayer::new(otp_send_rate_limiter.clone())),
         )
         .route(
             "/reset-password",

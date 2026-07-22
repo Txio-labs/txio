@@ -198,7 +198,7 @@ fn log_sort_key(log: &Value) -> (u64, u64) {
 }
 
 fn sort_logs_by_recency(logs: &mut [Value]) {
-    logs.sort_by(|a, b| log_sort_key(b).cmp(&log_sort_key(a)));
+    logs.sort_by_key(|b| std::cmp::Reverse(log_sort_key(b)));
 }
 
 #[cfg(test)]
