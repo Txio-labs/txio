@@ -1,5 +1,5 @@
 use crate::dtos::{
-    admin_dtos::RpcLogRequest,
+    admin_dtos::{MAX_RPC_LOG_PARAMS_BYTES, RpcLogRequest},
     request::{
         LoginRequest, OTPRequest, RegisterUserRequest, ResetPasswordWithOTPRequest,
         SwitchNetworkRequest, UpdateEmailRequest, UpdateNotificationPreferencesRequest,
@@ -202,6 +202,13 @@ pub async fn log_rpc_call(
     payload
         .validate()
         .map_err(|e| AppError::ValidationError(e.to_string()))?;
+
+    let params_size = serde_json::to_vec(&payload.params)
+        .map(|bytes| bytes.len())
+        .unwrap_or(usize::MAX);
+    if params_size > MAX_RPC_LOG_PARAMS_BYTES {
+        return Err(AppError::ValidationError("RPC params too large".into()));
+    }
 
     let user_id = ObjectId::from_str(&claims.sub)
         .map_err(|_| AppError::InternalError("Invalid user ID in token".into()))?;
