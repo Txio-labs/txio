@@ -20,8 +20,6 @@ pub fn router(service: AiService) -> Router {
             "/chat",
             post(ai_handler::chat).route_layer(axum::middleware::from_fn(auth::auth_middleware)),
         )
-        .layer(GovernorLayer {
-            config: governor_cfg,
-        })
+        .layer(GovernorLayer::new(governor_cfg))
         .with_state(service)
 }

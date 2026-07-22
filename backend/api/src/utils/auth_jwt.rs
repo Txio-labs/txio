@@ -2,6 +2,7 @@ use crate::utils::error::AppError;
 use chrono::{Duration, Utc};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
@@ -9,6 +10,12 @@ pub struct Claims {
     pub email: String,
     pub exp: i64, // expiration timestamp
     pub iat: i64, // issued at
+    /// JWT ID — a UUID v4 that uniquely identifies this token and is used
+    /// as the session identifier in the sessions collection.
+    /// `Option` keeps backward-compatibility with tokens issued before this
+    /// field was added.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub jti: Option<String>,
 }
 
 #[derive(Clone)]
@@ -21,7 +28,10 @@ impl JwtHelper {
         Self { secret }
     }
 
-    pub fn generate_token(&self, user_id: &str, email: &str) -> Result<String, AppError> {
+    /// Generate a signed JWT. A fresh UUID v4 is embedded as `jti` so every
+    /// issued token has a unique, stable session identifier. Returns
+    /// `(token_string, jti)` so callers can persist the session.
+    pub fn generate_token(&self, user_id: &str, email: &str) -> Result<(String, String), AppError> {
         let now = Utc::now();
         let expiration = now + Duration::hours(24);
 
@@ -30,19 +40,24 @@ impl JwtHelper {
             return Err(AppError::InternalError("Invalid token expiration".into()));
         }
 
+        let jti = Uuid::new_v4().to_string();
+
         let claims = Claims {
             sub: user_id.to_string(),
             email: email.to_string(),
             exp: expiration.timestamp(),
             iat: now.timestamp(),
+            jti: Some(jti.clone()),
         };
 
-        encode(
+        let token = encode(
             &Header::default(),
             &claims,
             &EncodingKey::from_secret(self.secret.as_bytes()),
         )
-        .map_err(|e| AppError::InternalError(format!("Failed to generate token: {e}")))
+        .map_err(|e| AppError::InternalError(format!("Failed to generate token: {e}")))?;
+
+        Ok((token, jti))
     }
 
     pub fn verify_token(&self, token: &str) -> Result<Claims, AppError> {
@@ -56,9 +71,8 @@ impl JwtHelper {
     }
 }
 
-use axum::{Extension, async_trait, extract::FromRequestParts, http::request::Parts};
+use axum::{Extension, extract::FromRequestParts, http::request::Parts};
 
-#[async_trait]
 impl<S> FromRequestParts<S> for Claims
 where
     S: Send + Sync,

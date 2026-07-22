@@ -9,14 +9,9 @@ use crate::dtos::{
 };
 use crate::services::auth_service::AuthService;
 use crate::utils::error::AppError;
-use axum::{
-    Json,
-    extract::State,
-    http::header,
-    response::{IntoResponse, Response},
-};
+use axum::{Json, extract::State, http::header, response::IntoResponse};
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use serde_json::{Value, json};
 use sha2::Sha256;
 
@@ -284,10 +279,7 @@ fn constant_time_eq(a: &str, b: &str) -> bool {
 }
 
 fn set_cookie(headers: &mut axum::http::HeaderMap, name: &str, value: &str) {
-    let cookie = format!(
-        "{}={}; Path=/; Max-Age=600; SameSite=Lax; HttpOnly",
-        name, value
-    );
+    let cookie = format!("{name}={value}; Path=/; Max-Age=600; SameSite=Lax; HttpOnly");
     headers.append(header::SET_COOKIE, cookie.parse().unwrap());
 }
 
@@ -431,6 +423,164 @@ pub async fn google_callback(
     // cookie is intentionally readable by JS so the frontend can consume it
     // once on page load, store it in memory/localStorage, and then delete it.
     // SameSite=Lax prevents CSRF on the callback endpoint itself.
+    let oauth_cookie = format!(
+        "txio_oauth_token={}; Path=/; Max-Age=120; SameSite=Lax; Secure",
+        auth_res.token
+    );
+
+    let redirect_to = format!("{}/", frontend_url.trim_end_matches('/'));
+
+    let mut response = axum::response::Redirect::temporary(&redirect_to).into_response();
+    response.headers_mut().append(
+        axum::http::header::SET_COOKIE,
+        oauth_cookie
+            .parse()
+            .expect("cookie header is always valid ASCII"),
+    );
+    Ok(response)
+}
+
+pub async fn github_login() -> Result<axum::response::Response, AppError> {
+    let client_id = std::env::var("GITHUB_CLIENT_ID").unwrap_or_default();
+    if client_id.trim().is_empty() {
+        return Err(AppError::BadRequest(
+            "GitHub OAuth is not configured. Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET.".into(),
+        ));
+    }
+    let redirect_uri = std::env::var("GITHUB_REDIRECT_URL")
+        .unwrap_or_else(|_| "http://localhost:8000/api/v1/auth/github/callback".to_string());
+
+    let state = generate_oauth_state()?;
+
+    let mut headers = axum::http::HeaderMap::new();
+    set_cookie(&mut headers, "oauth_state", &state);
+
+    let url = format!(
+        "https://github.com/login/oauth/authorize?client_id={}&redirect_uri={}&scope=read:user+user:email&state={}",
+        urlencoding::encode(&client_id),
+        urlencoding::encode(&redirect_uri),
+        urlencoding::encode(&state),
+    );
+
+    let mut response = axum::response::Redirect::temporary(&url).into_response();
+    response.headers_mut().extend(headers);
+    Ok(response)
+}
+
+pub async fn github_callback(
+    State(service): State<AuthService>,
+    axum::extract::Query(query): axum::extract::Query<OAuthCallbackQuery>,
+    headers: axum::http::HeaderMap,
+) -> Result<axum::response::Response, AppError> {
+    let cookie_state = get_cookie(&headers, "oauth_state")
+        .ok_or(AppError::BadRequest("Missing OAuth state cookie".into()))?;
+
+    let query_state = query
+        .state
+        .as_deref()
+        .ok_or(AppError::BadRequest("Missing OAuth state parameter".into()))?;
+
+    if !constant_time_eq(&cookie_state, query_state) {
+        return Err(AppError::BadRequest(
+            "OAuth state mismatch — possible CSRF attack".into(),
+        ));
+    }
+
+    verify_oauth_state(query_state)?;
+
+    let client_id = std::env::var("GITHUB_CLIENT_ID").unwrap_or_default();
+    let client_secret = std::env::var("GITHUB_CLIENT_SECRET").unwrap_or_default();
+    if client_id.trim().is_empty() || client_secret.trim().is_empty() {
+        return Err(AppError::BadRequest(
+            "GitHub OAuth is not configured. Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET.".into(),
+        ));
+    }
+    let redirect_uri = std::env::var("GITHUB_REDIRECT_URL")
+        .unwrap_or_else(|_| "http://localhost:8000/api/v1/auth/github/callback".to_string());
+    let frontend_url =
+        std::env::var("FRONTEND_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .unwrap_or_else(|_| reqwest::Client::new());
+
+    let token_res = client
+        .post("https://github.com/login/oauth/access_token")
+        .header(header::ACCEPT, "application/json")
+        .form(&[
+            ("client_id", client_id.as_str()),
+            ("client_secret", client_secret.as_str()),
+            ("code", query.code.as_str()),
+            ("redirect_uri", redirect_uri.as_str()),
+        ])
+        .send()
+        .await
+        .map_err(|_| AppError::InternalError("Failed to get GitHub token".into()))?;
+
+    let token_data: Value = token_res
+        .json()
+        .await
+        .map_err(|_| AppError::InternalError("Failed to parse GitHub token".into()))?;
+    let access_token = token_data["access_token"]
+        .as_str()
+        .ok_or(AppError::InternalError("No access token".into()))?;
+
+    // GitHub requires a User-Agent header on all API requests.
+    let user_res = client
+        .get("https://api.github.com/user")
+        .header(header::USER_AGENT, "txio")
+        .bearer_auth(access_token)
+        .send()
+        .await
+        .map_err(|_| AppError::InternalError("Failed to get GitHub user info".into()))?;
+
+    let user_data: Value = user_res
+        .json()
+        .await
+        .map_err(|_| AppError::InternalError("Failed to parse GitHub user info".into()))?;
+
+    let github_id = user_data["id"].as_i64().ok_or(AppError::InternalError(
+        "No GitHub subject in profile".into(),
+    ))?;
+
+    // The primary email may be private, in which case `/user` omits it and
+    // it must be looked up via the dedicated emails endpoint instead.
+    let email = if let Some(email) = user_data["email"].as_str() {
+        email.to_string()
+    } else {
+        let emails_res = client
+            .get("https://api.github.com/user/emails")
+            .header(header::USER_AGENT, "txio")
+            .bearer_auth(access_token)
+            .send()
+            .await
+            .map_err(|_| AppError::InternalError("Failed to get GitHub email".into()))?;
+
+        let emails: Value = emails_res
+            .json()
+            .await
+            .map_err(|_| AppError::InternalError("Failed to parse GitHub email".into()))?;
+
+        emails
+            .as_array()
+            .and_then(|entries| {
+                entries.iter().find(|entry| {
+                    entry["primary"].as_bool().unwrap_or(false)
+                        && entry["verified"].as_bool().unwrap_or(false)
+                })
+            })
+            .and_then(|entry| entry["email"].as_str())
+            .ok_or(AppError::Unauthorized(
+                "No verified primary email on GitHub account".into(),
+            ))?
+            .to_string()
+    };
+
+    let auth_res = service
+        .oauth_login_or_register(github_id.to_string(), email)
+        .await?;
+
     let oauth_cookie = format!(
         "txio_oauth_token={}; Path=/; Max-Age=120; SameSite=Lax; Secure",
         auth_res.token
