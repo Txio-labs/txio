@@ -3,6 +3,8 @@ import {
     CollectionNode,
     isNetwork,
     Network,
+    RecipeTemplate,
+    RecipeTemplateType,
     RequestItem,
     RequestType,
     UserProfile,
@@ -112,6 +114,24 @@ interface BackendSavedRequest {
 
 interface BackendMessageResponse {
     message: string;
+}
+
+interface BackendRecipeTemplate {
+    id: string;
+    title: string;
+    template_type: RecipeTemplateType;
+    created_at: string;
+}
+
+function normalizeRecipeTemplate(
+    template: BackendRecipeTemplate
+): RecipeTemplate {
+    return {
+        id: template.id,
+        title: template.title,
+        type: template.template_type,
+        createdAt: template.created_at
+    };
 }
 
 interface BackendWrappedUserResponse {
@@ -981,6 +1001,49 @@ class ApiService {
         await this.request<
             BackendMessageResponse
         >(`/collections/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
+    // Recipe templates
+    async getRecipeTemplates(): Promise<
+        RecipeTemplate[]
+    > {
+        const data =
+            await this.request<{
+                templates: BackendRecipeTemplate[];
+            }>('/templates');
+
+        return data.templates.map(
+            normalizeRecipeTemplate
+        );
+    }
+
+    async createRecipeTemplate(
+        title: string,
+        templateType: RecipeTemplateType
+    ): Promise<RecipeTemplate> {
+        const data =
+            await this.request<BackendRecipeTemplate>(
+                '/templates',
+                {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        title,
+                        template_type: templateType
+                    })
+                }
+            );
+
+        return normalizeRecipeTemplate(data);
+    }
+
+    async deleteRecipeTemplate(
+        id: string
+    ): Promise<void> {
+        await this.request<
+            BackendMessageResponse
+        >(`/templates/${id}`, {
             method: 'DELETE'
         });
     }
