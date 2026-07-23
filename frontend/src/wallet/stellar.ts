@@ -60,6 +60,29 @@ const STELLAR_NETWORKS: Record<
 const getChainConfig = () =>
     STELLAR_NETWORKS[stellarNetwork];
 
+const unsupportedStellarWalletNames: Partial<Record<WalletId, string>> = {
+    albedo: 'Albedo',
+    xbull: 'xBull',
+    rabet: 'Rabet',
+    'hana-wallet': 'Hana'
+};
+
+const assertSupportedStellarWallet = (
+    walletId: WalletId
+) => {
+    const walletName =
+        unsupportedStellarWalletNames[
+            walletId
+        ];
+
+    if (!walletName) {
+        return;
+    }
+
+    throw new Error(
+        `${walletName} Stellar wallet support is not implemented yet. Connect with Freighter or LOBSTR for now.`
+    );
+};
 const buildWallet = (
     walletId: WalletId,
     address: string
@@ -148,6 +171,10 @@ export const connectStellarWallet =
             );
         }
 
+        if (walletId !== 'freighter') {
+            assertSupportedStellarWallet(walletId);
+        }
+
         const access =
             await requestAccess();
 
@@ -190,6 +217,10 @@ export const restoreStellarWallet =
                       address
                   )
                 : null;
+        }
+
+        if (walletId !== 'freighter') {
+            return null;
         }
 
         const installed =
