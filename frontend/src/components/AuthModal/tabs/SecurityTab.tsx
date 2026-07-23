@@ -48,7 +48,7 @@ export const SecurityTab: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const response = await apiClient.post('/api/auth/update-password', {
+      const response = await apiClient.post('/auth/update-password', {
         current_password: formData.currentPassword,
         new_password: formData.newPassword,
         confirm_password: formData.confirmPassword,
