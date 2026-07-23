@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, Check, LogOut, Mail, User as UserIcon } from 'lucide-react';
+import { AlertCircle, Check, FileText, FolderOpen, LogOut, Mail, Terminal, User as UserIcon } from 'lucide-react';
 import { Github } from '@/components/icons/BrandIcons';
 
 import { appStore, useAppStore } from '@/lib/store';
@@ -22,10 +22,15 @@ interface StatProps {
     value: number;
 }
 
-const Stat: React.FC<StatProps> = ({ label, value }) => (
-    <div className="flex-1 min-w-0">
-        <div className="text-xs text-slate-500">{label}</div>
-        <div className="text-xl font-semibold text-white tracking-tight mt-0.5">{value}</div>
+const Stat: React.FC<StatProps> = ({ icon, label, value }) => (
+    <div className="flex flex-1 min-w-0 items-center gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400">
+            {icon}
+        </div>
+        <div className="min-w-0">
+            <div className="text-xs text-slate-500">{label}</div>
+            <div className="mt-0.5 text-xl font-semibold tracking-tight text-white">{value}</div>
+        </div>
     </div>
 );
 
@@ -104,9 +109,9 @@ export const GeneralTab: React.FC<TabProps & { onLogout: () => void }> = ({ user
             {/* Workspace stats — single compact row */}
             <section className="rounded-xl border border-white/[0.08] bg-dark-indigo-glow px-5 py-4">
                 <div className="flex items-center divide-x divide-white/[0.06]">
-                    <Stat label="Calls" value={history.length} />
-                    <div className="px-5"><Stat label="Collections" value={collections.length} /></div>
-                    <Stat label="Requests" value={savedRequestCount} />
+                    <Stat icon={<Terminal size={16} />} label="Calls" value={history.length} />
+                    <div className="px-5"><Stat icon={<FolderOpen size={16} />} label="Collections" value={collections.length} /></div>
+                    <Stat icon={<FileText size={16} />} label="Requests" value={savedRequestCount} />
                 </div>
             </section>
 
