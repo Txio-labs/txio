@@ -12,22 +12,10 @@ pub struct UserRepository {
 impl UserRepository {
     pub fn new(db: &Database) -> Self {
         let collection = db.collection("users");
-        let repo = Self { collection };
-        // Ensure unique index on email (ignore errors for now)
-        let index_model = mongodb::IndexModel::builder()
-            .keys(mongodb::bson::doc! { "email": 1 })
-            .options(
-                mongodb::options::IndexOptions::builder()
-                    .unique(true)
-                    .build(),
-            )
-            .build();
-        // Fire-and-forget index creation; errors are logged but not fatal
-        let _ = repo.collection.create_index(index_model, None);
-        repo
+        Self { collection }
     }
 
-    // Optional explicit async method to ensure indices (can be called in startup)
+    // Ensures the unique email index exists; called once during startup.
     pub async fn ensure_indices(&self) -> Result<(), AppError> {
         let index_model = mongodb::IndexModel::builder()
             .keys(mongodb::bson::doc! { "email": 1 })

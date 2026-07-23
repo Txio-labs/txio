@@ -1,12 +1,12 @@
 use axum::{
-    BoxError, Router, error_handling::HandleErrorLayer, http::HeaderValue, http::StatusCode,
+    BoxError, Router, error_handling::HandleErrorLayer, http, http::HeaderValue, http::StatusCode,
     routing::get,
 };
 use dotenvy::{dotenv, from_path_override};
 use std::{net::SocketAddr, path::PathBuf, sync::Arc, time::Duration};
 use tower::ServiceBuilder;
 use tower_governor::{GovernorLayer, governor::GovernorConfigBuilder};
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::CorsLayer;
 use tower_http::limit::RequestBodyLimitLayer;
 
 use ::txio_api::{
@@ -79,6 +79,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 4. Initialize Repositories
 
     let user_repo = repositories::user_repository::UserRepository::new(&db);
+    user_repo.ensure_indices().await?;
     let otp_repo = repositories::otp_repository::OTPRepository::new(&db);
     otp_repo.ensure_indexes().await?;
     let rpc_repo = repositories::rpc_repository::RpcRepository::new(&db);
@@ -103,14 +104,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         user_repo.clone(),
         rpc_repo.clone(),
         session_repo,
-        jwt_helper,
+        jwt_helper.clone(),
         otp_service,
         email_service,
     );
 
     let collection_service = services::collection_service::CollectionService::new(
-        db_client.clone(),
-        db.clone(),
         collection_repo.clone(),
         request_repo,
         user_repo.clone(),
@@ -233,9 +232,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .timeout(REQUEST_TIMEOUT),
         )
         .layer(RequestBodyLimitLayer::new(MAX_REQUEST_BODY_BYTES))
-        .layer(GovernorLayer {
-            config: governor_conf,
-        })
+        .layer(GovernorLayer::new(governor_conf))
         .layer(axum::Extension(jwt_helper))
         .layer(cors);
 
