@@ -754,6 +754,10 @@ export const appStore = {
                     title = 'Create Request';
                     break;
 
+                case 'new_collection':
+                    title = 'New Collection';
+                    break;
+
                 case 'history':
                     title = 'History';
                     break;
@@ -1349,7 +1353,7 @@ export const appStore = {
         emit();
     },
 
-    async createCollection(name: string) {
+    async createCollection(name: string, description?: string) {
         if (!state.currentWorkspaceId) {
             appStore.showToast(
                 'Create a workspace first',
@@ -1362,7 +1366,8 @@ export const appStore = {
             const newColl =
                 await apiService.createCollection(
                     state.currentWorkspaceId,
-                    name || 'New Collection'
+                    name || 'New Collection',
+                    description
                 );
 
             state = {
@@ -1374,6 +1379,7 @@ export const appStore = {
             };
 
             emit();
+            return newColl;
         } catch (error: any) {
             appStore.showToast(
                 error.message,
