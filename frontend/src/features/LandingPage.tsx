@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-    Zap, Shield, Cpu, Globe, ArrowRight, Layers, Terminal, Sparkles, Code2, Rocket, Github, Twitter
+import {
+    Zap, Shield, Cpu, Globe, ArrowRight, Layers, Terminal, Sparkles, Code2, Rocket
 } from 'lucide-react';
+import { Github, Twitter } from '@/components/icons/BrandIcons';
 import { appStore, useAppStore } from '@/lib/store';
 import logoDark from '@/assets/txio2.png';
 import logoLight from '@/assets/txio3.png';

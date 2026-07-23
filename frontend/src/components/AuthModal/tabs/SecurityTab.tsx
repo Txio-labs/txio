@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAppStore } from '../../../store/appStore';
+import { appStore } from '../../../lib/store';
 import { apiClient } from '../../../lib/api';
 
 interface PasswordFormData {
@@ -9,7 +9,6 @@ interface PasswordFormData {
 }
 
 export const SecurityTab: React.FC = () => {
-  const { showToast } = useAppStore();
   const [isLoading, setIsLoading] = useState(false);
   const [isPasswordFormVisible, setIsPasswordFormVisible] = useState(false);
   const [formData, setFormData] = useState<PasswordFormData>({
@@ -56,7 +55,7 @@ export const SecurityTab: React.FC = () => {
       });
 
       if (response.data.success) {
-        showToast('Password rotated successfully!', 'success');
+        appStore.showToast('Password rotated successfully!', 'success');
         // Reset form
         setFormData({
           currentPassword: '',
@@ -67,7 +66,7 @@ export const SecurityTab: React.FC = () => {
       }
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || 'Failed to rotate password';
-      showToast(errorMessage, 'error');
+      appStore.showToast(errorMessage, 'error');
       setErrors({
         currentPassword: errorMessage,
       });

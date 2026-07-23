@@ -70,10 +70,14 @@ export function RedirectManager() {
         };
 
         const expectedMode = pathToMode[pathname];
-        if (expectedMode && viewMode !== expectedMode) {
+        if (expectedMode && appStore.getSnapshot().viewMode !== expectedMode) {
             appStore.setViewMode(expectedMode as any);
         }
-    }, [pathname, initialized, viewMode]);
+        // Only react to real URL navigation (pathname), not to viewMode
+        // changes this effect itself may have caused — otherwise this races
+        // with the viewMode -> URL effect below and the two fight forever.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pathname, initialized]);
 
     // Clean up URL if there are any query params left over
     useEffect(() => {

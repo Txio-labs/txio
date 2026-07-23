@@ -15,7 +15,7 @@ import { normalizeNotificationPreferences } from '../lib/appConfig';
 const DEFAULT_API_BASE =
     process.env.NODE_ENV === 'development'
         ? 'http://localhost:8000/api/v1'
-        : 'https://txio.onrender.com/api/v1';
+        : 'https://txio-oyac.onrender.com/api/v1';
 
 export const API_BASE =
     process.env.NEXT_PUBLIC_API_URL ||

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, Check, Github, LogOut, Mail, User as UserIcon } from 'lucide-react';
+import { AlertCircle, Check, LogOut, Mail, User as UserIcon } from 'lucide-react';
+import { Github } from '@/components/icons/BrandIcons';
 
 import { appStore, useAppStore } from '@/lib/store';
 import { API_BASE } from '@/services/api';

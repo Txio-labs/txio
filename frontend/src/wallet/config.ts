@@ -2,7 +2,7 @@ import {
     coinbaseWallet,
     metaMask,
     walletConnect
-} from '@wagmi/connectors';
+} from 'wagmi/connectors';
 import {
     createConfig,
     http

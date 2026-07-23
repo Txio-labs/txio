@@ -153,7 +153,7 @@ export const PTBBuilder: React.FC = () => {
             }
         });
 
-        const paths: JSX.Element[] = [];
+        const paths: React.JSX.Element[] = [];
         nodes.forEach(n => {
             if (n.inputs) {
                 n.inputs.forEach(inId => {
