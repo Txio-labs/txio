@@ -15,6 +15,7 @@ import { RPCBuilder } from "@/features/RPCBuilder";
 import { PTBBuilder } from "@/features/PTBBuilder";
 import { HistoryFeature } from "@/features/History";
 import { NewRequestPage } from "@/features/NewRequestPage";
+import { NewCollectionPage } from "@/features/NewCollectionPage";
 import { ProfilePage } from "@/features/ProfilePage";
 import { SettingsPage } from "@/features/SettingsPage";
 import { AIChat } from "@/features/AIChat";
@@ -56,6 +57,8 @@ const WorkspaceContent: React.FC = () => {
             return <AIChat />;
         case 'new_request':
             return <NewRequestPage tabId={activeTab.id} initialData={activeTab.data} />;
+        case 'new_collection':
+            return <NewCollectionPage tabId={activeTab.id} />;
         case 'runner':
             return <CollectionRunner collectionId={activeTab.data?.collectionId} />;
         case 'move':
@@ -181,7 +184,6 @@ export default function WorkspacePage() {
                             }
                             onUpdateEnv={appStore.updateEnv}
                             onToggleExpand={appStore.toggleCollectionExpand}
-                            onCreateCollection={appStore.createCollection}
                             onCreateWorkspace={appStore.createWorkspace}
                         />
                     }
