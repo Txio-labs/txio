@@ -57,7 +57,6 @@ const renderTree = (filterQuery: string) => render(
     activeTabId={null}
     onToggleExpand={vi.fn()}
     onSelectCollectionRequest={vi.fn()}
-    onCreateCollection={vi.fn()}
   />
 );
 
