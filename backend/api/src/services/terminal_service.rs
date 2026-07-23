@@ -517,20 +517,6 @@ fn validate_txio_command(parts: &[String]) -> Result<(), String> {
             Some(action) => Err(format!("Unsupported config action: {action}")),
             None => Err("Usage: txio config list|get <key>".to_string()),
         },
-        "profile" => {
-            if args.len() == 2 && args[1] == "list" {
-                Ok(())
-            } else {
-                Err("Usage: txio profile list".to_string())
-            }
-        }
-        "wallet" => {
-            if args.len() == 2 && args[1] == "list" {
-                Ok(())
-            } else {
-                Err("Usage: txio wallet list".to_string())
-            }
-        }
         "completion" => {
             if args.len() != 2 || !is_supported_shell(&args[1]) {
                 return Err("Usage: txio completion <bash|zsh|fish|powershell|elvish>".to_string());
