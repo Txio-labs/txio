@@ -278,6 +278,20 @@ fn constant_time_eq(a: &str, b: &str) -> bool {
     diff == 0
 }
 
+// GOOGLE_REDIRECT_URL / GITHUB_REDIRECT_URL are easy to forget when
+// provisioning a new deployment; falling back to localhost there means
+// OAuth silently redirects users to a dead address in production. Only
+// default to localhost in debug builds (`cargo build`, not the `--release`
+// build every Docker/Render deploy uses) — otherwise fall back to the
+// current production backend.
+fn default_oauth_redirect_uri(provider: &str) -> String {
+    if cfg!(debug_assertions) {
+        format!("http://localhost:8000/api/v1/auth/{provider}/callback")
+    } else {
+        format!("https://txio-oyac.onrender.com/api/v1/auth/{provider}/callback")
+    }
+}
+
 fn set_cookie(headers: &mut axum::http::HeaderMap, name: &str, value: &str) {
     let cookie = format!("{name}={value}; Path=/; Max-Age=600; SameSite=Lax; HttpOnly");
     headers.append(header::SET_COOKIE, cookie.parse().unwrap());
@@ -310,7 +324,7 @@ pub async fn google_login() -> Result<axum::response::Response, AppError> {
         ));
     }
     let redirect_uri = std::env::var("GOOGLE_REDIRECT_URL")
-        .unwrap_or_else(|_| "http://localhost:8000/api/v1/auth/google/callback".to_string());
+        .unwrap_or_else(|_| default_oauth_redirect_uri("google"));
 
     let state = generate_oauth_state()?;
 
@@ -358,7 +372,7 @@ pub async fn google_callback(
         ));
     }
     let redirect_uri = std::env::var("GOOGLE_REDIRECT_URL")
-        .unwrap_or_else(|_| "http://localhost:8000/api/v1/auth/google/callback".to_string());
+        .unwrap_or_else(|_| default_oauth_redirect_uri("google"));
     let frontend_url =
         std::env::var("FRONTEND_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
 
@@ -448,7 +462,7 @@ pub async fn github_login() -> Result<axum::response::Response, AppError> {
         ));
     }
     let redirect_uri = std::env::var("GITHUB_REDIRECT_URL")
-        .unwrap_or_else(|_| "http://localhost:8000/api/v1/auth/github/callback".to_string());
+        .unwrap_or_else(|_| default_oauth_redirect_uri("github"));
 
     let state = generate_oauth_state()?;
 
@@ -496,7 +510,7 @@ pub async fn github_callback(
         ));
     }
     let redirect_uri = std::env::var("GITHUB_REDIRECT_URL")
-        .unwrap_or_else(|_| "http://localhost:8000/api/v1/auth/github/callback".to_string());
+        .unwrap_or_else(|_| default_oauth_redirect_uri("github"));
     let frontend_url =
         std::env::var("FRONTEND_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
 
