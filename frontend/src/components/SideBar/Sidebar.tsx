@@ -29,14 +29,14 @@ interface SidebarProps {
 
 type SidebarMode = 'collections' | 'history' | 'env';
 
-export const Sidebar: React.FC<SidebarProps> = ({ 
+export const Sidebar: React.FC<SidebarProps> = ({
   currentWorkspace,
   workspaces,
-  collections, 
+  collections,
   history,
   envVariables,
   onSwitchWorkspace,
-  onSelectRequest, 
+  onSelectRequest,
   onSelectCollectionRequest,
   onNewRequest,
   onUpdateEnv,
@@ -74,9 +74,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <div className="flex h-full bg-near-black border-r border-white/[0.06] font-sans select-none">
+    <div className="flex h-full bg-white border-r border-slate-200 dark:bg-near-black dark:border-white/[0.06] font-sans select-none">
       {/* Navigation Rail */}
-      <SidebarNav 
+      <SidebarNav
         activeMode={mode}
         onModeChange={(m) => setMode(m as SidebarMode)}
         activeTabType={activeTabType}
@@ -85,7 +85,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Main Content Panel */}
       <div className="flex-1 flex flex-col min-w-0 bg-transparent relative">
         {/* Workspace Header */}
-        <WorkspaceHeader 
+        <WorkspaceHeader
           currentWorkspace={currentWorkspace}
           workspaces={workspaces}
           isDropdownOpen={isWsDropdownOpen}
@@ -95,7 +95,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
 
         {/* Context Toolbar */}
-        <ContextToolbar 
+        <ContextToolbar
           mode={mode}
           onAddCollection={handleAddCollection}
           onAddEnvVar={handleAddEnvVar}
@@ -106,7 +106,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col min-h-0 bg-near-black relative">
+        <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col min-h-0 bg-white dark:bg-near-black relative">
           <AnimatePresence mode="wait">
             {/* COLLECTIONS */}
             {mode === 'collections' && (
@@ -118,7 +118,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 transition={{ duration: 0.15 }}
                 className="flex-1 flex flex-col"
               >
-                <CollectionTree 
+                <CollectionTree
                   collections={collections}
                   filterQuery={collectionFilter}
                   activeTabId={activeTabId}
@@ -128,7 +128,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 />
               </motion.div>
             )}
-            
+
             {/* HISTORY */}
             {mode === 'history' && (
               <motion.div
@@ -139,7 +139,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 transition={{ duration: 0.15 }}
                 className="flex-1 flex flex-col"
               >
-                <HistoryList 
+                <HistoryList
                   history={history}
                   currentWorkspace={currentWorkspace}
                   onSelectRequest={onSelectRequest}
@@ -158,7 +158,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 transition={{ duration: 0.15 }}
                 className="flex-1 flex flex-col"
               >
-                <EnvironmentList 
+                <EnvironmentList
                   envVariables={envVariables}
                   onUpdateEnv={onUpdateEnv}
                 />

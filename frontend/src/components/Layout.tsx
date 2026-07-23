@@ -46,9 +46,9 @@ const TxioLogoSmall = () => (
   </svg>
 );
 
-export const Layout: React.FC<LayoutProps> = ({ 
-    sidebar, 
-    workspace, 
+export const Layout: React.FC<LayoutProps> = ({
+    sidebar,
+    workspace,
     inspector,
     tabs = [],
     activeTabId,
@@ -113,7 +113,7 @@ export const Layout: React.FC<LayoutProps> = ({
     };
 
     return (
-        <div className="flex flex-col h-screen bg-near-black text-slate-200 overflow-hidden font-sans relative selection:bg-electric-violet/30">
+        <div className="flex flex-col h-screen bg-slate-50 text-slate-800 dark:bg-near-black dark:text-slate-200 overflow-hidden font-sans relative selection:bg-electric-violet/30">
             <CommandPalette />
             <NetworkSwitcherModal
                 isOpen={pendingNetworkSwitch !== null}
@@ -130,7 +130,7 @@ export const Layout: React.FC<LayoutProps> = ({
             <div className="fixed top-16 right-6 z-[120] flex flex-col gap-3 pointer-events-none">
                 {notifications.map(n => (
                     <div key={n.id} className="animate-in slide-in-from-right-10 fade-in duration-300 pointer-events-auto">
-                        <div className="bg-dark-indigo-glow border border-white/10 text-slate-200 px-4 py-3 rounded-lg shadow-2xl flex items-center gap-3 min-w-[300px]">
+                        <div className="bg-white border border-slate-200 text-slate-800 dark:bg-dark-indigo-glow dark:border-white/10 dark:text-slate-200 px-4 py-3 rounded-lg shadow-2xl flex items-center gap-3 min-w-[300px]">
                             {n.type === 'success' && <CheckCircle size={16} className="text-emerald-400" />}
                             {n.type === 'error' && <AlertCircle size={16} className="text-red-400" />}
                             {n.type === 'info' && <Info size={16} className="text-blue-400" />}
@@ -141,19 +141,19 @@ export const Layout: React.FC<LayoutProps> = ({
             </div>
 
             {isSyncing && (
-                <div className="fixed inset-0 z-[110] bg-near-black/90 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in duration-300">
+                <div className="fixed inset-0 z-[110] bg-white/90 dark:bg-near-black/90 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in duration-300">
                     <div className="relative">
                         <Loader2 className="text-electric-violet animate-spin mb-4 drop-shadow-[0_0_10px_rgba(56,189,248,0.8)]" size={48} />
                         <div className="absolute inset-0 bg-electric-violet/20 blur-xl rounded-full animate-pulse"></div>
                     </div>
-                    <p className="text-white text-sm font-mono tracking-wider font-bold">{scanStep || 'Syncing...'}</p>
+                    <p className="text-slate-950 dark:text-white text-sm font-mono tracking-wider font-bold">{scanStep || 'Syncing...'}</p>
                 </div>
             )}
 
-            <header className="h-12 bg-near-black border-b border-white/10 flex items-center justify-between px-4 shrink-0 z-20">
+            <header className="h-12 bg-white border-b border-slate-200 dark:bg-near-black dark:border-white/10 flex items-center justify-between px-4 shrink-0 z-20">
                 <div className="flex items-center gap-4">
-                    <button 
-                        className="flex items-center gap-2 font-bold text-slate-100 group cursor-pointer"
+                    <button
+                        className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100 group cursor-pointer"
                         onClick={() => appStore.setActiveTab(null)}
                     >
                         <div className="w-6 h-6 rounded flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
@@ -161,51 +161,51 @@ export const Layout: React.FC<LayoutProps> = ({
                         </div>
                         <span className="text-sm tracking-tight group-hover:text-sui-300 transition-colors">txio</span>
                     </button>
-                    <div className="h-4 w-px bg-white/10 mx-2"></div>
-                    <button onClick={() => appStore.toggleSidebar()} className={`p-1.5 rounded hover:bg-white/10 transition-colors ${isSidebarOpen ? 'text-electric-violet' : 'text-slate-500'}`}>
+                    <div className="h-4 w-px bg-slate-200 dark:bg-white/10 mx-2"></div>
+                    <button onClick={() => appStore.toggleSidebar()} className={`p-1.5 rounded hover:bg-slate-100 dark:hover:bg-white/10 transition-colors ${isSidebarOpen ? 'text-electric-violet' : 'text-slate-500'}`}>
                         <PanelLeft size={16} />
                     </button>
-                    <button 
+                    <button
                         onClick={() => appStore.setCommandPalette(true)}
-                        className="flex items-center gap-2 bg-dark-indigo-glow border border-white/5 hover:border-white/20 hover:bg-[#111] px-3 py-1.5 rounded-full text-xs text-slate-400 w-64 transition-all group shadow-inner"
+                        className="flex items-center gap-2 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:bg-dark-indigo-glow dark:border-white/5 dark:hover:border-white/20 dark:hover:bg-[#111] px-3 py-1.5 rounded-full text-xs text-slate-500 dark:text-slate-400 w-64 transition-all group shadow-inner"
                     >
                         <Search size={12} className="group-hover:text-electric-violet" />
                         <span>Search commands...</span>
                         <div className="ml-auto flex items-center gap-1">
-                            <span className="bg-white/5 px-1 rounded text-[10px] text-slate-500 group-hover:text-slate-300">⌘</span>
-                            <span className="bg-white/5 px-1 rounded text-[10px] text-slate-500 group-hover:text-slate-300">K</span>
+                            <span className="bg-slate-100 dark:bg-white/5 px-1 rounded text-[10px] text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300">⌘</span>
+                            <span className="bg-slate-100 dark:bg-white/5 px-1 rounded text-[10px] text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300">K</span>
                         </div>
                     </button>
                 </div>
 
                 <div className="flex items-center gap-3">
                     <div className="relative" ref={networkMenuRef}>
-                        <button 
+                        <button
                             onClick={() => setIsNetworkMenuOpen(!isNetworkMenuOpen)}
-                            className={`flex items-center gap-2 px-3 py-1 rounded-full bg-dark-indigo-glow border border-white/10 text-xs hover:bg-[#111] transition-all hover:border-white/20 shadow-sm ${isNetworkMenuOpen ? 'border-slate-600 bg-slate-800' : ''}`}
+                            className={`flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-slate-200 text-xs hover:bg-slate-50 transition-all hover:border-slate-300 dark:bg-dark-indigo-glow dark:border-white/10 dark:hover:bg-[#111] dark:hover:border-white/20 shadow-sm ${isNetworkMenuOpen ? 'border-slate-400 bg-slate-100 dark:border-slate-600 dark:bg-slate-800' : ''}`}
                         >
                             <div className={`w-2 h-2 rounded-full ${rpcHealth?.status === 'healthy' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' : rpcHealth?.status === 'degraded' ? 'bg-amber-500' : 'bg-red-500'} animate-pulse`}></div>
-                            <span className="text-slate-300 capitalize font-medium">{network}</span>
+                            <span className="text-slate-700 dark:text-slate-300 capitalize font-medium">{network}</span>
                             <ChevronDown size={10} className={`text-slate-500 transition-transform duration-200 ${isNetworkMenuOpen ? 'rotate-180' : ''}`}/>
                         </button>
 
                         {isNetworkMenuOpen && (
-                            <div className="absolute top-full right-0 mt-2 w-48 bg-[#18181b] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
+                            <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-slate-200 dark:bg-[#18181b] dark:border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
                                 <div className="p-1">
                                     {ALL_NETWORKS.map((net) => (
                                         <button
                                             key={net}
                                             onClick={() => handleNetworkSwitch(net)}
                                             className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold capitalize transition-colors ${
-                                                network === net 
-                                                ? 'bg-white/10 text-white' 
-                                                : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                                                network === net
+                                                ? 'bg-slate-100 text-slate-950 dark:bg-white/10 dark:text-white'
+                                                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-200'
                                             }`}
                                         >
                                             <div className="flex items-center gap-2">
                                                 <div className={`w-1.5 h-1.5 rounded-full ${
-                                                    net === 'mainnet' ? 'bg-emerald-500' : 
-                                                    net === 'testnet' ? 'bg-amber-500' : 
+                                                    net === 'mainnet' ? 'bg-emerald-500' :
+                                                    net === 'testnet' ? 'bg-amber-500' :
                                                     'bg-blue-500'
                                                 }`}></div>
                                                 {net}
@@ -214,7 +214,7 @@ export const Layout: React.FC<LayoutProps> = ({
                                         </button>
                                     ))}
                                 </div>
-                                <div className="border-t border-white/10 p-2 bg-near-black/20">
+                                <div className="border-t border-slate-200 dark:border-white/10 p-2 bg-slate-50 dark:bg-near-black/20">
                                     <div className="flex justify-between text-[9px] text-slate-500 font-mono">
                                         <span>Latency</span>
                                         <span className={rpcHealth?.status === 'healthy' ? 'text-emerald-500' : rpcHealth?.status === 'degraded' ? 'text-amber-500' : 'text-red-400'}>
@@ -227,11 +227,11 @@ export const Layout: React.FC<LayoutProps> = ({
                             </div>
                         )}
                     </div>
-                    
-                    <button onClick={() => appStore.toggleInspector()} className={`p-1.5 rounded hover:bg-white/10 transition-colors ${isInspectorOpen ? 'text-electric-violet' : 'text-slate-500'}`}>
+
+                    <button onClick={() => appStore.toggleInspector()} className={`p-1.5 rounded hover:bg-slate-100 dark:hover:bg-white/10 transition-colors ${isInspectorOpen ? 'text-electric-violet' : 'text-slate-500'}`}>
                         <PanelRight size={16} />
                     </button>
-                    
+
                     <button onClick={() => appStore.setAuthModal(true)} className="w-8 h-8 cursor-pointer hover:ring-2 ring-electric-violet/50 rounded-xl transition-all">
                         <Avatar size="sm" src={user?.avatarUrl} />
                     </button>
@@ -240,15 +240,15 @@ export const Layout: React.FC<LayoutProps> = ({
 
             <div className="flex-1 flex overflow-hidden">
                 {isSidebarOpen && (
-                    <aside className="w-64 flex flex-col shrink-0 z-10 bg-near-black">
+                    <aside className="w-64 flex flex-col shrink-0 z-10 bg-white dark:bg-near-black">
                         {sidebar}
                     </aside>
                 )}
 
-                <main className="flex-1 flex flex-col min-w-0 bg-near-black relative">
-                    <div className="h-9 bg-near-black border-b border-white/10 flex items-center overflow-x-auto no-scrollbar">
+                <main className="flex-1 flex flex-col min-w-0 bg-slate-50 dark:bg-near-black relative">
+                    <div className="h-9 bg-white border-b border-slate-200 dark:bg-near-black dark:border-white/10 flex items-center overflow-x-auto no-scrollbar">
                         {tabs.map(tab => (
-                            <Tab 
+                            <Tab
                                 key={tab.id}
                                 id={tab.id}
                                 title={tab.title}
@@ -259,37 +259,37 @@ export const Layout: React.FC<LayoutProps> = ({
                                 icon={tab.type === 'ptb' ? <Layers size={12}/> : tab.type === 'rpc' ? <Command size={12}/> : tab.type === 'ai_chat' ? <Sparkles size={12} className="text-electric-violet"/> : undefined}
                             />
                         ))}
-                        <button 
+                        <button
                             onClick={onNewTab}
-                            className="p-2 text-slate-500 hover:text-electric-violet hover:bg-white/5 transition-colors"
+                            className="p-2 text-slate-500 hover:text-electric-violet hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
                         >
                             <Plus size={14} />
                         </button>
                     </div>
-                    
+
                     <div className="flex-1 overflow-hidden relative">
                         {workspace}
                     </div>
                 </main>
 
                 {isInspectorOpen && (
-                    <aside className="w-80 bg-near-black border-l border-white/10 flex flex-col shrink-0 z-10 shadow-2xl">
+                    <aside className="w-80 bg-white border-l border-slate-200 dark:bg-near-black dark:border-white/10 flex flex-col shrink-0 z-10 shadow-2xl">
                         {inspector}
                     </aside>
                 )}
             </div>
 
             <TerminalPanel />
-            
-            <footer className="h-7 bg-near-black border-t border-white/10 flex items-center justify-between px-3 text-[10px] text-slate-500 select-none z-20">
+
+            <footer className="h-7 bg-white border-t border-slate-200 dark:bg-near-black dark:border-white/10 flex items-center justify-between px-3 text-[10px] text-slate-500 select-none z-20">
                 <div className="flex items-center gap-4">
-                    <button 
+                    <button
                         onClick={() => appStore.openTab('settings')}
                         className="flex items-center gap-1 hover:text-electric-violet cursor-pointer transition-colors"
                     >
                         <Settings size={10} /> v2.6.0-beta
                     </button>
-                    <button 
+                    <button
                         onClick={() => appStore.showToast('System operational. No errors.', 'success')}
                         className="hover:text-emerald-400 cursor-pointer transition-colors flex items-center gap-1"
                     >
@@ -302,7 +302,7 @@ export const Layout: React.FC<LayoutProps> = ({
                         className={`flex items-center gap-1 cursor-pointer transition-colors ${
                             isTerminalOpen
                                 ? 'text-electric-violet'
-                                : 'hover:text-slate-300'
+                                : 'hover:text-slate-700 dark:hover:text-slate-300'
                         }`}
                     >
                         <Terminal size={10} /> Terminal

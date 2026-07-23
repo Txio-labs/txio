@@ -93,17 +93,17 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
       return (
         <div key={node.id} className="relative select-none">
           {depth > 0 && (
-            <div 
+            <div
               className="absolute left-0 w-px bg-white/10"
               style={{ left: `${(depth * 12) + 7}px`, top: '-4px', height: isLast ? '18px' : '100%' }}
             />
           )}
-          
-          <button 
+
+          <button
             className={`
               group flex items-center gap-2 px-2 py-1.5 cursor-pointer rounded-lg transition-all duration-200 text-left w-full
-              ${node.type !== 'request' ? 'hover:bg-white/5 text-slate-400 hover:text-slate-200' : 
-                isActive ? 'bg-sui-900/20 text-sui-300 shadow-[inset_2px_0_0_0_#0ea5e9]' : 'hover:bg-white/5 text-slate-400 hover:text-slate-200'}
+              ${node.type !== 'request' ? 'hover:bg-slate-100 text-slate-500 hover:text-slate-900 dark:hover:bg-white/5 dark:text-slate-400 dark:hover:text-slate-200' :
+                isActive ? 'bg-sui-100 text-sui-700 shadow-[inset_2px_0_0_0_#0ea5e9] dark:bg-sui-900/20 dark:text-sui-300' : 'hover:bg-slate-100 text-slate-500 hover:text-slate-900 dark:hover:bg-white/5 dark:text-slate-400 dark:hover:text-slate-200'}
             `}
             style={{ paddingLeft: `${depth * 12 + 4}px` }}
             onClick={() => node.type !== 'request' ? onToggleExpand(node.id) : onSelectCollectionRequest(node)}
@@ -130,15 +130,15 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
                 {node.type === 'collection' && (
                   <button
                     onClick={(e) => { e.stopPropagation(); appStore.openTab('runner', { collectionId: node.id }); }}
-                    className="p-1 hover:bg-white/10 rounded text-slate-500 hover:text-green-400 transition-colors"
+                    className="p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded text-slate-500 hover:text-green-400 transition-colors"
                     title="Run Collection"
                   >
                     <Play size={10} />
                   </button>
                 )}
-                <button 
-                  onClick={(e) => { e.stopPropagation(); appStore.openTab('new_request', { collectionId: node.id }); }} 
-                  className="p-1 hover:bg-white/10 rounded text-slate-500 hover:text-white transition-colors"
+                <button
+                  onClick={(e) => { e.stopPropagation(); appStore.openTab('new_request', { collectionId: node.id }); }}
+                  className="p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
                   title="Add Request"
                 >
                   <Plus size={10} />
@@ -162,28 +162,28 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
       <button
         type="button"
         onClick={() => setIsAddingCollection(true)}
-        className="w-full flex items-center gap-1.5 px-2 py-1 mb-1 text-[11px] text-slate-500 hover:text-slate-200 hover:bg-white/5 rounded-lg transition-colors"
+        className="w-full flex items-center gap-1.5 px-2 py-1 mb-1 text-[11px] text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-white/5 rounded-lg transition-colors"
       >
         <Plus size={11} />
         <span>New Collection</span>
       </button>
       {isAddingCollection && (
         <div className="mb-2 px-1 animate-in slide-in-from-top-2 duration-200">
-          <div className="flex items-center gap-2 bg-dark-indigo-glow/80 p-1.5 rounded-lg border border-sui-500/50 ring-1 ring-electric-violet/20 shadow-lg">
+          <div className="flex items-center gap-2 bg-white p-1.5 rounded-lg border border-sui-500/50 ring-1 ring-electric-violet/20 shadow-lg dark:bg-dark-indigo-glow/80">
             <Folder size={14} className="text-electric-violet shrink-0" />
-            <input 
-              ref={createInputRef} 
-              className="bg-transparent text-xs text-white outline-none flex-1 min-w-0 placeholder:text-slate-500 font-medium" 
-              placeholder="Collection Name..." 
-              value={newCollectionName} 
-              onChange={(e) => setNewCollectionName(e.target.value)} 
-              onKeyDown={handleKeyDown} 
-              onBlur={() => setTimeout(() => { if (newCollectionName.trim() === '') setIsAddingCollection(false); }, 150)} 
+            <input
+              ref={createInputRef}
+              className="bg-transparent text-xs text-slate-950 dark:text-white outline-none flex-1 min-w-0 placeholder:text-slate-500 font-medium"
+              placeholder="Collection Name..."
+              value={newCollectionName}
+              onChange={(e) => setNewCollectionName(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onBlur={() => setTimeout(() => { if (newCollectionName.trim() === '') setIsAddingCollection(false); }, 150)}
             />
           </div>
         </div>
       )}
-      
+
       <div className="pl-1 space-y-0.5">
         {visibleCollections.length > 0 ? (
           renderTree(visibleCollections)

@@ -32,15 +32,15 @@ interface NavItemProps {
   onModeChange: (mode: string) => void;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ 
-  mode, 
-  icon: Icon, 
+const NavItem: React.FC<NavItemProps> = ({
+  mode,
+  icon: Icon,
   label,
   activeMode,
   onModeChange
 }) => {
   const isActive = activeMode === mode;
-  
+
   return (
     <button
       onClick={() => onModeChange(mode)}
@@ -64,7 +64,7 @@ const NavItem: React.FC<NavItemProps> = ({
         relative p-2 rounded-xl transition-colors duration-200
         ${isActive
           ? 'text-electric-violet bg-electric-violet/[0.08]'
-          : 'text-slate-500 hover:text-slate-200 hover:bg-white/[0.04]'}
+          : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-white/[0.04]'}
       `}>
         <Icon size={18} strokeWidth={isActive ? 2 : 1.75} className="relative z-10" />
       </div>
@@ -79,8 +79,8 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
 }) => {
   const containerVariants = {
     hidden: { opacity: 0, x: -20 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       x: 0,
       transition: { staggerChildren: 0.05, delayChildren: 0.1 }
     }
@@ -96,14 +96,14 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       initial="hidden"
       animate="visible"
       variants={containerVariants}
-      className="w-14 bg-near-black border-r border-white/[0.06] flex flex-col items-center py-4 gap-1 z-20 shrink-0 relative"
+      className="w-14 bg-white border-r border-slate-200 dark:bg-near-black dark:border-white/[0.06] flex flex-col items-center py-4 gap-1 z-20 shrink-0 relative"
     >
       <motion.button
         variants={itemVariants}
         className="mb-4 group cursor-pointer relative"
         onClick={() => appStore.setActiveTab(null)}
       >
-        <div className="relative z-10 p-1.5 rounded-xl bg-white/[0.02] border border-white/[0.06] group-hover:border-electric-violet/30 transition-colors duration-300">
+        <div className="relative z-10 p-1.5 rounded-xl bg-slate-50 border border-slate-200 dark:bg-white/[0.02] dark:border-white/[0.06] group-hover:border-electric-violet/30 transition-colors duration-300">
           <TxioLogo />
         </div>
       </motion.button>
@@ -111,37 +111,37 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       <div className="w-6 h-px bg-white/[0.06] mb-2"></div>
 
       <motion.div variants={itemVariants} className="w-full">
-        <NavItem 
-          mode="collections" 
-          icon={LayoutGrid} 
-          label="Collections" 
+        <NavItem
+          mode="collections"
+          icon={LayoutGrid}
+          label="Collections"
           activeMode={activeMode}
           onModeChange={onModeChange}
         />
       </motion.div>
-      
+
       <motion.div variants={itemVariants} className="w-full">
-        <NavItem 
-          mode="history" 
-          icon={Activity} 
-          label="History" 
+        <NavItem
+          mode="history"
+          icon={Activity}
+          label="History"
           activeMode={activeMode}
           onModeChange={onModeChange}
         />
       </motion.div>
-      
+
       <motion.div variants={itemVariants} className="w-full">
-        <NavItem 
-          mode="env" 
-          icon={Database} 
-          label="Environments" 
+        <NavItem
+          mode="env"
+          icon={Database}
+          label="Environments"
           activeMode={activeMode}
           onModeChange={onModeChange}
         />
       </motion.div>
 
       <div className="flex-1" />
-      
+
       <motion.div variants={itemVariants} className="w-full flex justify-center pb-1">
         <button
           onClick={() => appStore.openTab('settings')}
@@ -149,7 +149,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
             relative p-2 transition-colors duration-200 rounded-xl group
             ${activeTabType === 'settings'
               ? 'text-electric-violet bg-electric-violet/[0.08]'
-              : 'text-slate-500 hover:text-slate-200 hover:bg-white/[0.04]'}
+              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-white/[0.04]'}
           `}
           title="Settings"
         >
