@@ -18,6 +18,7 @@ const countRequests = (nodes: CollectionNode[]): number =>
     }, 0);
 
 interface StatProps {
+    icon: React.ReactNode;
     label: string;
     value: number;
 }
