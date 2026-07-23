@@ -431,27 +431,23 @@ pub async fn google_callback(
         .oauth_login_or_register(google_sub.to_string(), email.to_string())
         .await?;
 
-    // Set the JWT as a short-lived, readable (non-HttpOnly) cookie.  A
-    // cookie avoids exposing the token in the URL, which would leak it via
-    // browser history, access logs, analytics, and Referer headers.  The
-    // cookie is intentionally readable by JS so the frontend can consume it
-    // once on page load, store it in memory/localStorage, and then delete it.
-    // SameSite=Lax prevents CSRF on the callback endpoint itself.
-    let oauth_cookie = format!(
-        "txio_oauth_token={}; Path=/; Max-Age=120; SameSite=Lax; Secure",
-        auth_res.token
+    // Hand the JWT to the frontend via a URL fragment, not a cookie: the
+    // backend (this Render service) and the frontend (Vercel, a different
+    // eTLD+1) are different sites, so a cookie this response sets via
+    // Set-Cookie is scoped to *this* domain and is never visible to
+    // document.cookie on the frontend's origin after the redirect — the
+    // browser simply has no shared storage to bridge them. A URL fragment
+    // (`#...`) is never sent to any server (not this one on the redirect,
+    // not the frontend's on page load) and is stripped from Referer
+    // headers, so it keeps most of the leakage protection a cookie would
+    // have given if the two apps shared a parent domain.
+    let redirect_to = format!(
+        "{}/#token={}",
+        frontend_url.trim_end_matches('/'),
+        urlencoding::encode(&auth_res.token)
     );
 
-    let redirect_to = format!("{}/", frontend_url.trim_end_matches('/'));
-
-    let mut response = axum::response::Redirect::temporary(&redirect_to).into_response();
-    response.headers_mut().append(
-        axum::http::header::SET_COOKIE,
-        oauth_cookie
-            .parse()
-            .expect("cookie header is always valid ASCII"),
-    );
-    Ok(response)
+    Ok(axum::response::Redirect::temporary(&redirect_to).into_response())
 }
 
 pub async fn github_login() -> Result<axum::response::Response, AppError> {
@@ -595,19 +591,14 @@ pub async fn github_callback(
         .oauth_login_or_register(github_id.to_string(), email)
         .await?;
 
-    let oauth_cookie = format!(
-        "txio_oauth_token={}; Path=/; Max-Age=120; SameSite=Lax; Secure",
-        auth_res.token
+    // See the matching comment in google_callback: a cookie can't bridge
+    // the backend's and frontend's separate domains, so the token goes in
+    // a URL fragment instead, which never reaches any server.
+    let redirect_to = format!(
+        "{}/#token={}",
+        frontend_url.trim_end_matches('/'),
+        urlencoding::encode(&auth_res.token)
     );
 
-    let redirect_to = format!("{}/", frontend_url.trim_end_matches('/'));
-
-    let mut response = axum::response::Redirect::temporary(&redirect_to).into_response();
-    response.headers_mut().append(
-        axum::http::header::SET_COOKIE,
-        oauth_cookie
-            .parse()
-            .expect("cookie header is always valid ASCII"),
-    );
-    Ok(response)
+    Ok(axum::response::Redirect::temporary(&redirect_to).into_response())
 }

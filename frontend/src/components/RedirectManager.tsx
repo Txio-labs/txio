@@ -6,15 +6,22 @@ import { useAppStore, appStore } from '@/lib/store';
 import { apiService } from '@/services/api';
 import { FeatureId } from '@/types';
 
-// Read and clear the short-lived OAuth token cookie set by the backend.
-// Using a cookie (instead of a URL query param) keeps the JWT out of
-// browser history, server access logs, and Referer headers.
-function consumeOAuthCookie(): string | null {
-    if (typeof document === 'undefined') return null;
-    const match = document.cookie.match(/(?:^|;\s*)txio_oauth_token=([^;]+)/);
+// Read and clear the short-lived OAuth token the backend hands off via a
+// URL fragment. A cookie can't be used here: the backend and frontend are
+// different sites (different eTLD+1), so a cookie the backend's redirect
+// response sets is scoped to the backend's own origin and is never visible
+// to document.cookie here. A fragment is never sent to any server (this
+// one included) and is stripped from Referer headers, so it's read once
+// on load and immediately stripped from the URL.
+function consumeOAuthFragmentToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    const hash = window.location.hash;
+    const match = hash.match(/(?:^#|&)token=([^&]+)/);
     if (!match) return null;
-    // Immediately expire the cookie so it is consumed exactly once.
-    document.cookie = 'txio_oauth_token=; Path=/; Max-Age=0; SameSite=Lax; Secure';
+    const remainingHash = hash.replace(/(?:^#|&)token=[^&]+/, '').replace(/^#&/, '#');
+    const url = new URL(window.location.href);
+    url.hash = remainingHash === '#' ? '' : remainingHash;
+    window.history.replaceState({}, '', url.toString());
     return decodeURIComponent(match[1]);
 }
 
@@ -81,7 +88,7 @@ export function RedirectManager() {
 
     // Clean up URL if there are any query params left over
     useEffect(() => {
-        const token = consumeOAuthCookie();
+        const token = consumeOAuthFragmentToken();
         if (!token) return;
 
         // OAuth callback: treat this as the source of truth and
