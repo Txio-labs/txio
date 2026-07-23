@@ -124,7 +124,7 @@ export const InfrastructurePage: React.FC<
                     onClick={() =>
                         navigateTo('app')
                     }
-                    className="px-6 py-2.5 bg-electric-violet text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-soft-purple transition-all shadow-[0_10px_20px_-5px_rgba(173,223,241,0.4)] active:scale-95"
+                    className="px-6 py-2.5 bg-electric-violet text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-soft-purple transition-all shadow-[0_10px_20px_-5px_rgba(163,163,163,0.4)] active:scale-95"
                 >
                     {embedded
                         ? 'New Request'

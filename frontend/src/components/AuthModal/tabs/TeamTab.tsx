@@ -19,7 +19,7 @@ export const TeamTab: React.FC<TeamTabProps> = ({
 }) => {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-      <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(145deg,rgba(173,223,241,0.14)_0%,rgba(0,49,82,0.96)_42%,rgba(0,27,46,1)_100%)] p-6">
+      <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(145deg,rgba(163,163,163,0.14)_0%,rgba(24,24,27,0.96)_42%,rgba(10,10,10,1)_100%)] p-6">
         <div className="absolute -right-10 top-0 h-32 w-32 rounded-full bg-soft-purple/15 blur-3xl" />
 
         <div className="relative flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -43,7 +43,7 @@ export const TeamTab: React.FC<TeamTabProps> = ({
             onClick={() =>
               appStore.showToast('Invite flow not implemented yet', 'info')
             }
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-electric-violet px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white shadow-[0_18px_35px_-20px_rgba(173,223,241,0.8)] transition-colors hover:bg-soft-purple"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-electric-violet px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white shadow-[0_18px_35px_-20px_rgba(163,163,163,0.8)] transition-colors hover:bg-soft-purple"
           >
             <Plus size={14} />
             Invite Member

@@ -11,10 +11,10 @@
     --surface-0: #0a0a0a;
     --surface-1: #18181b;
     --surface-2: #0A3D63;
-    --surface-hover: rgba(173, 223, 241, 0.05);
-    --border-subtle: rgba(173, 223, 241, 0.06);
-    --border-default: rgba(173, 223, 241, 0.09);
-    --border-strong: rgba(173, 223, 241, 0.14);
+    --surface-hover: rgba(163,163,163, 0.05);
+    --border-subtle: rgba(163,163,163, 0.06);
+    --border-default: rgba(163,163,163, 0.09);
+    --border-strong: rgba(163,163,163, 0.14);
   }
 
   html {
@@ -46,11 +46,11 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(173, 223, 241, 0.10);
+    background: rgba(163,163,163, 0.10);
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(173, 223, 241, 0.20);
+    background: rgba(163,163,163, 0.20);
   }
 }
 
@@ -63,7 +63,7 @@
 [data-dapp-kit] dialog,
 [data-dapp-kit] [role="dialog"] {
   --dapp-kit-bg: #18181b !important;
-  --dapp-kit-border: rgba(173,223,241,0.08) !important;
+  --dapp-kit-border: rgba(163,163,163,0.08) !important;
 }
 
 /* Modal overlay & container */
@@ -78,7 +78,7 @@
 [data-dapp-kit] [class*="modal"],
 [data-dapp-kit] [class*="Modal"] {
   background-color: #18181b !important;
-  border: 1px solid rgba(173, 223, 241, 0.08) !important;
+  border: 1px solid rgba(163,163,163, 0.08) !important;
   color: #e4e4e7 !important;
   border-radius: 1.5rem !important;
 }
@@ -114,7 +114,7 @@
 /* Connected button styling */
 [data-dapp-kit] [class*="connected"],
 [data-dapp-kit] [class*="Connected"] {
-  background-color: rgba(173, 223, 241, 0.1) !important;
-  border: 1px solid rgba(173, 223, 241, 0.2) !important;
+  background-color: rgba(163,163,163, 0.1) !important;
+  border: 1px solid rgba(163,163,163, 0.2) !important;
   color: #e4e4e7 !important;
 }
