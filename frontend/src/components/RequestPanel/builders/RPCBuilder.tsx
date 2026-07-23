@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { AlertCircle, Search, Loader2, Check, ArrowRight, FileCode } from 'lucide-react';
-import { ADDRESS_FIRST_PARAM_METHODS, COMMON_RPC_METHODS, RPC_METHOD_TEMPLATES } from '@/lib/constants';
+import { ADDRESS_FIRST_PARAM_METHODS, RPC_CHAIN_LABELS, RPC_METHODS_BY_CHAIN, RPC_METHOD_TEMPLATES_BY_CHAIN, type RpcChain } from '@/lib/constants';
 import { useAppStore } from '@/lib/store';
 import { looksLikeSuiNs, resolveSuiAddress, SuiRpcError } from '@/services/suiService';
 import { JsonEditor } from '../../ui/JsonEditor';
@@ -24,6 +24,10 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [rawJson, setRawJson] = useState<string | null>(null);
   const [resolutionResult, setResolutionResult] = useState<NsResolutionState>({ status: 'idle', name: '' });
+  const [rpcChain, setRpcChain] = useState<RpcChain>('sui');
+
+  const methodOptions = useMemo(() => RPC_METHODS_BY_CHAIN[rpcChain], [rpcChain]);
+  const methodTemplates = useMemo(() => RPC_METHOD_TEMPLATES_BY_CHAIN[rpcChain], [rpcChain]);
 
   const displayJson =
     rawJson !== null
@@ -49,7 +53,7 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
 
   const applyParamsTemplate = useCallback(
     (method: string) => {
-      const template = RPC_METHOD_TEMPLATES[method];
+      const template = methodTemplates[method];
       if (!template) return;
       const nextParams = template.map((v) =>
         v && typeof v === 'object' ? structuredClone(v) : v,
@@ -61,19 +65,19 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
         rpcParams: { ...request.rpcParams, params: nextParams },
       });
     },
-    [onChange, request],
+    [methodTemplates, onChange, request],
   );
 
   const methodHasTemplate = useMemo(
-    () => Boolean(request.rpcParams.method) && request.rpcParams.method in RPC_METHOD_TEMPLATES,
-    [request.rpcParams.method],
+    () => Boolean(request.rpcParams.method) && request.rpcParams.method in methodTemplates,
+    [methodTemplates, request.rpcParams.method],
   );
 
   // Auto-fill template when method changes and params are empty.
   const lastAutofilledMethod = useRef<string | null>(null);
   useEffect(() => {
     const method = request.rpcParams.method;
-    if (!method || !(method in RPC_METHOD_TEMPLATES)) return;
+    if (!method || !(method in methodTemplates)) return;
     if (lastAutofilledMethod.current === method) return;
 
     const current = request.rpcParams.params;
@@ -86,18 +90,18 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
 
     lastAutofilledMethod.current = method;
     queueMicrotask(() => applyParamsTemplate(method));
-  }, [request.rpcParams.method, request.rpcParams.params, applyParamsTemplate]);
+  }, [request.rpcParams.method, request.rpcParams.params, methodTemplates, applyParamsTemplate]);
 
   // First-param name detection: only when method is in the address-first set
   // AND params[0] is a string that looks like a .sui name.
   const candidateName = useMemo(() => {
     const method = request.rpcParams.method;
-    if (!method || !ADDRESS_FIRST_PARAM_METHODS.has(method)) return null;
+    if (rpcChain !== 'sui' || !method || !ADDRESS_FIRST_PARAM_METHODS.has(method)) return null;
     const first = request.rpcParams.params?.[0];
     if (typeof first !== 'string') return null;
     const trimmed = first.trim();
     return looksLikeSuiNs(trimmed) ? trimmed : null;
-  }, [request.rpcParams.method, request.rpcParams.params]);
+  }, [rpcChain, request.rpcParams.method, request.rpcParams.params]);
 
   // Debounced resolve when the candidate name changes
   const lastResolved = useRef<string | null>(null);
@@ -139,6 +143,29 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
     return { status: 'resolving', name: candidateName };
   }, [candidateName, resolutionResult]);
 
+
+  const updateRpcChain = useCallback(
+    (nextChain: RpcChain) => {
+      setRpcChain(nextChain);
+      setJsonError(null);
+      setRawJson(null);
+      setResolutionResult({ status: 'idle', name: '' });
+      lastAutofilledMethod.current = null;
+
+      const nextMethod = RPC_METHODS_BY_CHAIN[nextChain][0] || '';
+      const nextTemplate = RPC_METHOD_TEMPLATES_BY_CHAIN[nextChain][nextMethod] || [];
+      const nextParams = nextTemplate.map((v) =>
+        v && typeof v === 'object' ? structuredClone(v) : v,
+      );
+
+      onChange({
+        ...request,
+        rpcParams: { ...request.rpcParams, method: nextMethod, params: nextParams },
+        name: nextMethod || 'New Request'
+      });
+    },
+    [onChange, request],
+  );
   const applyResolution = useCallback(() => {
     if (resolution.status !== 'resolved' || !resolution.address) return;
     const params = Array.isArray(request.rpcParams.params)
@@ -161,27 +188,44 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
           <div className="w-1.5 h-6 bg-emerald-500 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.4)]"></div>
           <h3 className="text-xs font-bold text-slate-200 uppercase tracking-[0.2em]">RPC Method</h3>
         </div>
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={16} />
-          <input
-            list="rpc-methods-builder"
-            type="text"
-            className="w-full bg-near-black border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-sm text-white focus:border-electric-violet focus:outline-none transition-all font-mono"
-            placeholder="e.g. suix_getOwnedObjects"
-            value={request.rpcParams.method}
-            onChange={(e) =>
-              onChange({
-                ...request,
-                rpcParams: { ...request.rpcParams, method: e.target.value },
-                name: e.target.value || 'New Request'
-              })
-            }
-          />
-          <datalist id="rpc-methods-builder">
-            {COMMON_RPC_METHODS.map((m) => (
-              <option key={m} value={m} />
-            ))}
-          </datalist>
+        <div className="grid gap-4 md:grid-cols-[180px_1fr]">
+          <label className="space-y-2">
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em]">Chain</span>
+            <select
+              value={rpcChain}
+              onChange={(e) => updateRpcChain(e.target.value as RpcChain)}
+              className="w-full bg-near-black border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white focus:border-electric-violet focus:outline-none transition-all"
+            >
+              {(Object.keys(RPC_CHAIN_LABELS) as RpcChain[]).map((chain) => (
+                <option key={chain} value={chain}>{RPC_CHAIN_LABELS[chain]}</option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-2">
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em]">Method</span>
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={16} />
+              <input
+                list={`rpc-methods-builder-${rpcChain}`}
+                type="text"
+                className="w-full bg-near-black border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-sm text-white focus:border-electric-violet focus:outline-none transition-all font-mono"
+                placeholder={rpcChain === 'sui' ? 'e.g. suix_getOwnedObjects' : rpcChain === 'evm' ? 'e.g. eth_getBalance' : 'e.g. getLatestLedger'}
+                value={request.rpcParams.method}
+                onChange={(e) =>
+                  onChange({
+                    ...request,
+                    rpcParams: { ...request.rpcParams, method: e.target.value },
+                    name: e.target.value || 'New Request'
+                  })
+                }
+              />
+              <datalist id={`rpc-methods-builder-${rpcChain}`}>
+                {methodOptions.map((m) => (
+                  <option key={m} value={m} />
+                ))}
+              </datalist>
+            </div>
+          </label>
         </div>
       </div>
 
