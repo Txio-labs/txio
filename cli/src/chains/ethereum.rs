@@ -5,6 +5,7 @@ use anyhow::{Result, anyhow};
 use async_trait::async_trait;
 use reqwest::Client;
 use serde_json::{Value, json};
+use sha3::{Digest, Keccak256};
 
 /// Default `eth_getLogs` block span when `TXIO_ETH_HISTORY_BLOCK_WINDOW` is unset.
 const DEFAULT_HISTORY_BLOCK_WINDOW: u64 = 2000;
@@ -12,6 +13,52 @@ const DEFAULT_HISTORY_BLOCK_WINDOW: u64 = 2000;
 /// ERC-20 Transfer(address,address,uint256) topic0.
 const ERC20_TRANSFER_TOPIC: &str =
     "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+
+/// ENS registry contract — the same address on mainnet and every major testnet.
+const ENS_REGISTRY: &str = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e";
+
+/// `resolver(bytes32)` function selector.
+const SELECTOR_RESOLVER: &str = "0178b8bf";
+
+/// `addr(bytes32)` function selector.
+const SELECTOR_ADDR: &str = "3b3b57de";
+
+const ZERO_ADDRESS: &str = "0x0000000000000000000000000000000000000000";
+
+fn to_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
+}
+
+/// Computes the ENS namehash of a dotted name, per EIP-137:
+/// `namehash("") = 0x00..00`, `namehash(label.rest) = keccak256(namehash(rest) ++ keccak256(label))`.
+fn namehash(name: &str) -> [u8; 32] {
+    // `"".split('.')` yields one empty-string label rather than none, which
+    // would otherwise run one spurious hash iteration for the empty name.
+    if name.is_empty() {
+        return [0u8; 32];
+    }
+
+    let mut node = [0u8; 32];
+    for label in name.split('.').rev() {
+        let label_hash = Keccak256::digest(label.as_bytes());
+        let mut hasher = Keccak256::new();
+        hasher.update(node);
+        hasher.update(label_hash);
+        node = hasher.finalize().into();
+    }
+    node
+}
+
+/// Extracts the low 20 bytes (an ABI-encoded `address`) from a 32-byte
+/// `eth_call` return word.
+fn extract_address(result: &Value) -> Option<String> {
+    let hex_word = result.as_str()?;
+    let stripped = hex_word.strip_prefix("0x").unwrap_or(hex_word);
+    if stripped.len() < 64 {
+        return None;
+    }
+    Some(format!("0x{}", &stripped[stripped.len() - 40..]))
+}
 
 pub struct EthereumAdapter {
     client: Client,
@@ -84,8 +131,39 @@ impl ChainAdapter for EthereumAdapter {
         if !name.ends_with(".eth") {
             return Ok(None);
         }
-        // ENS resolution would go here
-        Ok(None)
+
+        let node_hex = to_hex(&namehash(name));
+
+        let resolver_result = self
+            .call_rpc(
+                "eth_call",
+                json!([
+                    { "to": ENS_REGISTRY, "data": format!("0x{SELECTOR_RESOLVER}{node_hex}") },
+                    "latest"
+                ]),
+            )
+            .await?;
+        let Some(resolver) = extract_address(&resolver_result) else {
+            return Ok(None);
+        };
+        if resolver.eq_ignore_ascii_case(ZERO_ADDRESS) {
+            return Ok(None);
+        }
+
+        let addr_result = self
+            .call_rpc(
+                "eth_call",
+                json!([
+                    { "to": resolver, "data": format!("0x{SELECTOR_ADDR}{node_hex}") },
+                    "latest"
+                ]),
+            )
+            .await?;
+
+        match extract_address(&addr_result) {
+            Some(addr) if !addr.eq_ignore_ascii_case(ZERO_ADDRESS) => Ok(Some(addr)),
+            _ => Ok(None),
+        }
     }
 
     async fn get_balance(&self, address: &str) -> Result<Value> {
@@ -204,6 +282,35 @@ fn sort_logs_by_recency(logs: &mut [Value]) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // Reference vectors from EIP-137.
+    #[test]
+    fn namehash_matches_eip137_reference_vectors() {
+        assert_eq!(to_hex(&namehash("")), "0".repeat(64));
+        assert_eq!(
+            to_hex(&namehash("eth")),
+            "93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae"
+        );
+        assert_eq!(
+            to_hex(&namehash("foo.eth")),
+            "de9b09fd7c5f901e23a3f19fecc54828e9c848539801e86591bd9801b019f84f"
+        );
+    }
+
+    #[test]
+    fn extract_address_reads_low_20_bytes_of_a_return_word() {
+        let word = format!("0x{}{}", "0".repeat(24), "a".repeat(40));
+        assert_eq!(
+            extract_address(&Value::String(word)),
+            Some(format!("0x{}", "a".repeat(40)))
+        );
+    }
+
+    #[test]
+    fn extract_address_rejects_short_or_non_string_values() {
+        assert_eq!(extract_address(&Value::String("0x1234".to_string())), None);
+        assert_eq!(extract_address(&Value::Null), None);
+    }
 
     fn sample_log(block: &str, index: &str) -> Value {
         json!({
