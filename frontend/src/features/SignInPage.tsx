@@ -5,12 +5,11 @@ import {
     Mail,
     Lock,
     ArrowRight,
-    Github,
-    Twitter,
     ArrowLeft,
     ShieldCheck,
     Zap
 } from 'lucide-react';
+import { Github, Twitter } from '@/components/icons/BrandIcons';
 
 import { appStore, useAppStore } from '@/lib/store';
 import { API_BASE, apiService } from '@/services/api';

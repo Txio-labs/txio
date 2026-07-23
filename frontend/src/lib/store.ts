@@ -523,6 +523,8 @@ interface AppState {
 
     network: Network;
 
+    pendingNetworkSwitch: Network | null;
+
     isSyncing: boolean;
     scanStep: string;
 
@@ -598,6 +600,8 @@ let state: AppState = {
     theme: initialSettings.theme,
 
     network: initialNetwork,
+
+    pendingNetworkSwitch: null,
 
     isSyncing: false,
 
@@ -1055,6 +1059,36 @@ export const appStore = {
             persistNetwork(network);
             emit();
         }, 2000);
+    },
+
+    requestNetworkSwitch(network: Network) {
+        if (state.network === network) return;
+        state = {
+            ...state,
+            pendingNetworkSwitch: network
+        };
+        emit();
+    },
+
+    cancelNetworkSwitch() {
+        state = {
+            ...state,
+            pendingNetworkSwitch: null
+        };
+        emit();
+    },
+
+    confirmNetworkSwitch() {
+        const target = state.pendingNetworkSwitch;
+        if (!target) return;
+
+        state = {
+            ...state,
+            pendingNetworkSwitch: null
+        };
+        emit();
+
+        appStore.setNetwork(target);
     },
 
     async fetchWorkspaces(

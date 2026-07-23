@@ -12,13 +12,13 @@ import {
     Image as ImageIcon,
     Check,
     ChevronRight,
-    Github,
     Sparkles,
     AlertCircle,
     Laptop,
     LogOut,
     Loader2,
 } from 'lucide-react';
+import { Github } from '@/components/icons/BrandIcons';
 import { useAppStore, appStore } from '@/lib/store';
 import { normalizeNotificationPreferences } from '@/lib/appConfig';
 import { apiService } from '@/services/api';

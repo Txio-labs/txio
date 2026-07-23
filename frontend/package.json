@@ -48,7 +48,7 @@
     "postcss": "^8.5.20",
     "tailwindcss": "^4.3.3",
     "serve": "^14.2.4",
-    "typescript": "7.0.2",
+    "typescript": "5.9.3",
     "vitest": "^4.1.10"
   },
   "overrides": {
