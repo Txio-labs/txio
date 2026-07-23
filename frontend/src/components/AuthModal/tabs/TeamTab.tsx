@@ -53,7 +53,7 @@ export const TeamTab: React.FC<TeamTabProps> = ({
 
       {teamMembers.length === 0 ? (
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_320px]">
-          <div className="rounded-[1.75rem] border border-white/10 bg-[#003152]/85 p-6">
+          <div className="rounded-[1.75rem] border border-white/10 bg-[#18181b]/85 p-6">
             <div className="rounded-[1.5rem] border border-dashed border-white/10 bg-white/[0.02] p-8 text-center">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-electric-violet/10 text-electric-violet">
                 <Users size={28} />
@@ -70,7 +70,7 @@ export const TeamTab: React.FC<TeamTabProps> = ({
           </div>
 
           <div className="space-y-4">
-            <div className="rounded-[1.75rem] border border-white/10 bg-[#003152]/85 p-5">
+            <div className="rounded-[1.75rem] border border-white/10 bg-[#18181b]/85 p-5">
               <div className="flex items-start gap-3">
                 <div className="rounded-2xl bg-electric-violet/10 p-3 text-electric-violet">
                   <Shield size={18} />
@@ -87,7 +87,7 @@ export const TeamTab: React.FC<TeamTabProps> = ({
               </div>
             </div>
 
-            <div className="rounded-[1.75rem] border border-white/10 bg-[#003152]/85 p-5">
+            <div className="rounded-[1.75rem] border border-white/10 bg-[#18181b]/85 p-5">
               <div className="flex items-start gap-3">
                 <div className="rounded-2xl bg-soft-purple/10 p-3 text-soft-purple">
                   <Sparkles size={18} />
@@ -110,7 +110,7 @@ export const TeamTab: React.FC<TeamTabProps> = ({
           {teamMembers.map((member) => (
             <div
               key={member.id}
-              className="rounded-[1.75rem] border border-white/10 bg-[#003152]/85 p-5"
+              className="rounded-[1.75rem] border border-white/10 bg-[#18181b]/85 p-5"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3 min-w-0">

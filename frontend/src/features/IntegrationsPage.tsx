@@ -91,7 +91,7 @@ export const IntegrationsPage: React.FC<
 
     return (
         <div className={`${embedded ? 'h-full overflow-y-auto custom-scrollbar' : 'min-h-screen'} font-sans selection:bg-electric-violet/30 ${
-            theme === 'dark' ? 'bg-[#001B2E] text-white' : 'bg-slate-50 text-slate-900'
+            theme === 'dark' ? 'bg-[#0a0a0a] text-white' : 'bg-slate-50 text-slate-900'
         }`}>
             {/* Nav */}
             <nav className={`${embedded ? 'sticky top-0' : 'fixed top-0 left-0 right-0'} h-20 border-b z-50 px-6 md:px-12 flex items-center justify-between backdrop-blur-xl ${
@@ -138,7 +138,7 @@ export const IntegrationsPage: React.FC<
                     >
                         <h1 className="text-5xl md:text-7xl font-black tracking-tight">
                             Every chain we <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet to-soft-purple">actually speak.</span>
+                            <span className="text-electric-violet">actually speak.</span>
                         </h1>
                         <p className="text-xl text-slate-400 max-w-2xl leading-relaxed">
                             Direct connections to every major chain — not just an RPC URL. Schema, names, gas estimation, the whole thing.

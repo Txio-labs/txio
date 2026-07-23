@@ -145,7 +145,7 @@ export const ApiKeysTab: React.FC<ApiKeysTabProps> = ({
             apiKeys.map((key) => (
               <div
                 key={key.id}
-                className="rounded-[1.75rem] border border-white/10 bg-[#003152]/85 p-5"
+                className="rounded-[1.75rem] border border-white/10 bg-[#18181b]/85 p-5"
               >
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div>
@@ -208,7 +208,7 @@ export const ApiKeysTab: React.FC<ApiKeysTabProps> = ({
           )}
         </section>
 
-        <section className="rounded-[1.75rem] border border-white/10 bg-[#003152]/85 p-5">
+        <section className="rounded-[1.75rem] border border-white/10 bg-[#18181b]/85 p-5">
           <div className="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-600">
             New token
           </div>

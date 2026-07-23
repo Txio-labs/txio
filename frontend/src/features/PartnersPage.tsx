@@ -96,7 +96,7 @@ export const PartnersPage: React.FC<
 
     return (
         <div className={`${embedded ? 'h-full overflow-y-auto custom-scrollbar' : 'min-h-screen'} font-sans selection:bg-electric-violet/30 ${
-            theme === 'dark' ? 'bg-[#001B2E] text-white' : 'bg-slate-50 text-slate-900'
+            theme === 'dark' ? 'bg-[#0a0a0a] text-white' : 'bg-slate-50 text-slate-900'
         }`}>
             {/* Nav */}
             <nav className={`${embedded ? 'sticky top-0' : 'fixed top-0 left-0 right-0'} h-20 border-b z-50 px-6 md:px-12 flex items-center justify-between backdrop-blur-xl ${
@@ -163,7 +163,7 @@ export const PartnersPage: React.FC<
                                 transition={{ delay: i * 0.1 }}
                                 whileHover={{ y: -10 }}
                                 className={`p-12 rounded-[4rem] border group transition-all partner-card ${
-                                    theme === 'dark' ? 'bg-[#003152] border-white/5 hover:border-electric-violet/30' : 'bg-white border-slate-200 shadow-lg'
+                                    theme === 'dark' ? 'bg-[#18181b] border-white/5 hover:border-electric-violet/30' : 'bg-white border-slate-200 shadow-lg'
                                 }`}
                             >
                                 <div className="mb-10 text-electric-violet group-hover:scale-110 transition-transform duration-500">{p.logo}</div>

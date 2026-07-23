@@ -53,7 +53,7 @@ export const AuthPage: React.FC = () => {
                         >
                             <h1 className="text-5xl font-bold tracking-tight leading-[1.1] text-white">
                                 One workspace. <br />
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet to-soft-purple">Every chain.</span>
+                                <span className="text-electric-violet">Every chain.</span>
                             </h1>
                             <p className="text-lg text-slate-400 leading-relaxed">
                                 Thousands of devs already build, debug, and ship on txio. You&apos;re a signup away from joining them.
@@ -222,7 +222,7 @@ export const AuthPage: React.FC = () => {
                             <button className={`flex items-center justify-center gap-2 py-3 rounded-xl border transition-all ${
                                 theme === 'dark' ? 'bg-white/5 border-white/5 hover:bg-white/10' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
                             }`}>
-                                <Twitter size={18} className="text-sky-400" />
+                                <Twitter size={18} className="text-slate-300" />
                                 <span className="text-sm font-bold">Twitter</span>
                             </button>
                         </div>

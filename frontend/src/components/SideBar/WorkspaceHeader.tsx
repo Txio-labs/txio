@@ -74,7 +74,7 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
       </button>
 
       {isDropdownOpen && (
-        <div className="absolute top-[calc(100%-4px)] left-3 right-3 bg-[#003152] border border-white/[0.09] rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute top-[calc(100%-4px)] left-3 right-3 bg-[#18181b] border border-white/[0.09] rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="p-1.5 max-h-64 overflow-y-auto custom-scrollbar space-y-0.5">
             {workspaces.map(ws => (
               <button
