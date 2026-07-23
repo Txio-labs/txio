@@ -9,16 +9,66 @@ use crate::dtos::{
 };
 use crate::services::auth_service::AuthService;
 use crate::utils::error::AppError;
-use axum::{Json, extract::State, http::header, response::IntoResponse};
+use axum::{
+    Json,
+    extract::{ConnectInfo, Path, State},
+    http::{HeaderMap, header},
+    response::IntoResponse,
+};
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
 use hmac::{Hmac, KeyInit, Mac};
 use serde_json::{Value, json};
 use sha2::Sha256;
+use std::net::SocketAddr;
 
 type HmacSha256 = Hmac<Sha256>;
 
+/// Turns a User-Agent header into a short human-readable label, e.g.
+/// "Chrome on macOS", for display in the "Active sessions" UI.
+fn device_label_from_user_agent(user_agent: &str) -> String {
+    let os = if user_agent.contains("Windows") {
+        "Windows"
+    } else if user_agent.contains("Mac OS X") || user_agent.contains("Macintosh") {
+        "macOS"
+    } else if user_agent.contains("Android") {
+        "Android"
+    } else if user_agent.contains("iPhone") || user_agent.contains("iPad") {
+        "iOS"
+    } else if user_agent.contains("Linux") {
+        "Linux"
+    } else {
+        "an unknown OS"
+    };
+
+    let browser = if user_agent.contains("Edg/") {
+        "Edge"
+    } else if user_agent.contains("OPR/") || user_agent.contains("Opera") {
+        "Opera"
+    } else if user_agent.contains("Chrome/") {
+        "Chrome"
+    } else if user_agent.contains("Firefox/") {
+        "Firefox"
+    } else if user_agent.contains("Safari/") {
+        "Safari"
+    } else {
+        "an unknown browser"
+    };
+
+    format!("{browser} on {os}")
+}
+
+fn device_context(headers: &HeaderMap, addr: &SocketAddr) -> (String, String) {
+    let user_agent = headers
+        .get(header::USER_AGENT)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    (device_label_from_user_agent(user_agent), addr.ip().to_string())
+}
+
 pub async fn register(
     State(service): State<AuthService>,
+    headers: HeaderMap,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Json(payload): Json<RegisterUserRequest>,
 ) -> Result<Json<AuthResponse>, AppError> {
     use validator::Validate;
@@ -26,13 +76,18 @@ pub async fn register(
         .validate()
         .map_err(|e| AppError::ValidationError(e.to_string()))?;
 
-    let response = service.register_user(payload).await?;
+    let (device_label, ip_address) = device_context(&headers, &addr);
+    let response = service
+        .register_user(payload, &device_label, &ip_address)
+        .await?;
 
     Ok(Json(response))
 }
 
 pub async fn login(
     State(service): State<AuthService>,
+    headers: HeaderMap,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Json(payload): Json<LoginRequest>,
 ) -> Result<Json<AuthResponse>, AppError> {
     use validator::Validate;
@@ -40,7 +95,10 @@ pub async fn login(
         .validate()
         .map_err(|e| AppError::ValidationError(e.to_string()))?;
 
-    let response = service.login_user(payload).await?;
+    let (device_label, ip_address) = device_context(&headers, &addr);
+    let response = service
+        .login_user(payload, &device_label, &ip_address)
+        .await?;
 
     Ok(Json(response))
 }
@@ -232,6 +290,27 @@ pub async fn switch_network(
     })))
 }
 
+pub async fn list_sessions(
+    State(service): State<AuthService>,
+    claims: crate::utils::auth_jwt::Claims,
+) -> Result<Json<Value>, AppError> {
+    let sessions = service
+        .list_sessions(&claims.sub, claims.jti.as_deref())
+        .await?;
+
+    Ok(Json(json!({ "sessions": sessions })))
+}
+
+pub async fn revoke_session(
+    State(service): State<AuthService>,
+    claims: crate::utils::auth_jwt::Claims,
+    Path(session_id): Path<String>,
+) -> Result<Json<Value>, AppError> {
+    service.revoke_session(&claims.sub, &session_id).await?;
+
+    Ok(Json(json!({ "message": "Session revoked" })))
+}
+
 fn oauth_signing_key() -> Result<Vec<u8>, AppError> {
     let secret = std::env::var("JWT_SECRET")
         .map_err(|_| AppError::InternalError("JWT_SECRET not set".into()))?;
@@ -332,7 +411,8 @@ pub async fn google_login() -> Result<axum::response::Response, AppError> {
 pub async fn google_callback(
     State(service): State<AuthService>,
     axum::extract::Query(query): axum::extract::Query<OAuthCallbackQuery>,
-    headers: axum::http::HeaderMap,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
 ) -> Result<axum::response::Response, AppError> {
     let cookie_state = get_cookie(&headers, "oauth_state")
         .ok_or(AppError::BadRequest("Missing OAuth state cookie".into()))?;
@@ -413,8 +493,14 @@ pub async fn google_callback(
         .as_str()
         .ok_or(AppError::InternalError("No email in Google profile".into()))?;
 
+    let (device_label, ip_address) = device_context(&headers, &addr);
     let auth_res = service
-        .oauth_login_or_register(google_sub.to_string(), email.to_string())
+        .oauth_login_or_register(
+            google_sub.to_string(),
+            email.to_string(),
+            &device_label,
+            &ip_address,
+        )
         .await?;
 
     // Set the JWT as a short-lived, readable (non-HttpOnly) cookie.  A
@@ -470,7 +556,8 @@ pub async fn github_login() -> Result<axum::response::Response, AppError> {
 pub async fn github_callback(
     State(service): State<AuthService>,
     axum::extract::Query(query): axum::extract::Query<OAuthCallbackQuery>,
-    headers: axum::http::HeaderMap,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
 ) -> Result<axum::response::Response, AppError> {
     let cookie_state = get_cookie(&headers, "oauth_state")
         .ok_or(AppError::BadRequest("Missing OAuth state cookie".into()))?;
@@ -577,8 +664,9 @@ pub async fn github_callback(
             .to_string()
     };
 
+    let (device_label, ip_address) = device_context(&headers, &addr);
     let auth_res = service
-        .oauth_login_or_register(github_id.to_string(), email)
+        .oauth_login_or_register(github_id.to_string(), email, &device_label, &ip_address)
         .await?;
 
     let oauth_cookie = format!(

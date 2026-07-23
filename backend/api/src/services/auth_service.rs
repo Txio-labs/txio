@@ -153,7 +153,12 @@ impl AuthService {
 
     // ── Auth ─────────────────────────────────────────────────────────────────
 
-    pub async fn register_user(&self, req: RegisterUserRequest) -> Result<AuthResponse, AppError> {
+    pub async fn register_user(
+        &self,
+        req: RegisterUserRequest,
+        device_label: &str,
+        ip_address: &str,
+    ) -> Result<AuthResponse, AppError> {
         match self.repo.find_by_email(&req.email).await {
             Ok(_) => return Err(AppError::BadRequest("Email already registered".into())),
             Err(AppError::NotFound(_)) => (),
@@ -168,9 +173,12 @@ impl AuthService {
 
         let user_id = saved_user.id.map(|id| id.to_string()).unwrap_or_default();
 
-        let (token, _jti) = self
+        let (token, jti) = self
             .jwt_helper
             .generate_token(&user_id, &saved_user.email)?;
+
+        self.create_session(&user_id, &jti, device_label, ip_address)
+            .await?;
 
         Ok(AuthResponse {
             token,
@@ -178,7 +186,12 @@ impl AuthService {
         })
     }
 
-    pub async fn login_user(&self, req: LoginRequest) -> Result<AuthResponse, AppError> {
+    pub async fn login_user(
+        &self,
+        req: LoginRequest,
+        device_label: &str,
+        ip_address: &str,
+    ) -> Result<AuthResponse, AppError> {
         const DUMMY_HASH: &str = "$2b$12$K4IzU6d5TqmqRKFLJZdqOeVLqZJ3mJHvJZdqOeVLqZJ3mJHvJZdq.";
 
         let user_result = self.repo.find_by_email(&req.email).await;
@@ -206,7 +219,10 @@ impl AuthService {
         let user = user_result.unwrap();
         let user_id = user.id.map(|id| id.to_string()).unwrap_or_default();
 
-        let (token, _jti) = self.jwt_helper.generate_token(&user_id, &user.email)?;
+        let (token, jti) = self.jwt_helper.generate_token(&user_id, &user.email)?;
+
+        self.create_session(&user_id, &jti, device_label, ip_address)
+            .await?;
 
         Ok(AuthResponse {
             token,
@@ -332,6 +348,8 @@ impl AuthService {
         &self,
         google_sub: String,
         email: String,
+        device_label: &str,
+        ip_address: &str,
     ) -> Result<AuthResponse, AppError> {
         // Treat NotFound as absence but propagate every other error.
         // .ok() would silently turn a database outage into "user not found",
@@ -363,7 +381,10 @@ impl AuthService {
 
         let user_id = user.id.map(|id| id.to_string()).unwrap_or_default();
 
-        let (token, _jti) = self.jwt_helper.generate_token(&user_id, &user.email)?;
+        let (token, jti) = self.jwt_helper.generate_token(&user_id, &user.email)?;
+
+        self.create_session(&user_id, &jti, device_label, ip_address)
+            .await?;
 
         Ok(AuthResponse {
             token,
