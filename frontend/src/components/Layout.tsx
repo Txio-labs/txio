@@ -9,6 +9,8 @@ import { Avatar } from './ui/Avatar';
 import { CommandPalette } from './CommandPalette';
 import { TerminalPanel } from './TerminalPanel';
 import { getSuiRpcHealth } from '../services/suiService';
+import logoDark from '@/assets/txio2.png';
+import logoLight from '@/assets/txio3.png';
 
 interface LayoutProps {
     sidebar: React.ReactNode;
@@ -21,30 +23,6 @@ interface LayoutProps {
     onRenameTab?: (id: string, title: string) => void;
     onNewTab?: () => void;
 }
-
-const TxioLogoSmall = () => (
-  <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-[0_0_5px_rgba(56,189,248,0.5)]">
-    <defs>
-      <linearGradient id="swirl1-small" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#67e8f9" />
-        <stop offset="100%" stopColor="#22d3ee" />
-      </linearGradient>
-      <linearGradient id="swirl2-small" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#38bdf8" />
-        <stop offset="100%" stopColor="#0ea5e9" />
-      </linearGradient>
-      <linearGradient id="swirl3-small" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#3b82f6" />
-        <stop offset="100%" stopColor="#2563eb" />
-      </linearGradient>
-    </defs>
-    <g transform="translate(50, 20) scale(0.55)">
-        <path d="M100 0 C 100 0 60 50 40 90 C 20 130 40 160 60 170 C 50 150 40 110 100 0 Z" fill="url(#swirl1-small)" />
-        <path d="M100 10 C 100 10 50 70 30 120 C 20 150 40 180 80 190 C 60 170 50 120 100 10 Z" fill="url(#swirl2-small)" opacity="0.9" />
-        <path d="M100 25 C 100 25 70 80 60 130 C 50 170 90 200 140 180 C 110 180 90 120 100 25 Z" fill="url(#swirl3-small)" opacity="0.9" />
-    </g>
-  </svg>
-);
 
 export const Layout: React.FC<LayoutProps> = ({ 
     sidebar, 
@@ -66,7 +44,8 @@ export const Layout: React.FC<LayoutProps> = ({
         scanStep,
         notifications,
         isTerminalOpen,
-        pendingNetworkSwitch
+        pendingNetworkSwitch,
+        theme
     } = useAppStore();
     const [rpcHealth, setRpcHealth] =
         useState<RPCHealthMetric | null>(
@@ -74,6 +53,7 @@ export const Layout: React.FC<LayoutProps> = ({
         );
     const [isNetworkMenuOpen, setIsNetworkMenuOpen] = useState(false);
     const networkMenuRef = useRef<HTMLDivElement>(null);
+    const logo = theme === 'dark' ? logoDark : logoLight;
 
     useEffect(() => {
         let mounted = true;
@@ -151,13 +131,13 @@ export const Layout: React.FC<LayoutProps> = ({
             )}
 
             <header className="h-12 bg-near-black border-b border-white/10 flex items-center justify-between px-4 shrink-0 z-20">
-                <div className="flex items-center gap-4">
+                <div className="flex flex-1 items-center gap-4 min-w-0">
                     <button 
                         className="flex items-center gap-2 font-bold text-slate-100 group cursor-pointer"
                         onClick={() => appStore.setActiveTab(null)}
                     >
                         <div className="w-6 h-6 rounded flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                            <TxioLogoSmall />
+                            <img src={logo.src} alt="txio" className="w-full h-full object-contain" />
                         </div>
                         <span className="text-sm tracking-tight group-hover:text-sui-300 transition-colors">txio</span>
                     </button>
@@ -167,10 +147,10 @@ export const Layout: React.FC<LayoutProps> = ({
                     </button>
                     <button 
                         onClick={() => appStore.setCommandPalette(true)}
-                        className="flex items-center gap-2 bg-dark-indigo-glow border border-white/5 hover:border-white/20 hover:bg-[#111] px-3 py-1.5 rounded-full text-xs text-slate-400 w-64 transition-all group shadow-inner"
+                        className="flex flex-1 items-center gap-2 min-w-0 max-w-xl bg-dark-indigo-glow border border-white/5 hover:border-white/20 hover:bg-[#111] px-3 py-1.5 rounded-full text-xs text-slate-400 transition-all group shadow-inner"
                     >
                         <Search size={12} className="group-hover:text-electric-violet" />
-                        <span>Search commands...</span>
+                        <span className="truncate">Search commands...</span>
                         <div className="ml-auto flex items-center gap-1">
                             <span className="bg-white/5 px-1 rounded text-[10px] text-slate-500 group-hover:text-slate-300">⌘</span>
                             <span className="bg-white/5 px-1 rounded text-[10px] text-slate-500 group-hover:text-slate-300">K</span>
@@ -282,7 +262,7 @@ export const Layout: React.FC<LayoutProps> = ({
             <TerminalPanel />
             
             <footer className="h-7 bg-near-black border-t border-white/10 flex items-center justify-between px-3 text-[10px] text-slate-500 select-none z-20">
-                <div className="flex items-center gap-4">
+                <div className="flex flex-1 items-center gap-4 min-w-0">
                     <button 
                         onClick={() => appStore.openTab('settings')}
                         className="flex items-center gap-1 hover:text-electric-violet cursor-pointer transition-colors"
@@ -308,7 +288,7 @@ export const Layout: React.FC<LayoutProps> = ({
                         <Terminal size={10} /> Terminal
                     </button>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-1 items-center gap-4 min-w-0">
                      <span className="font-mono text-slate-600">GAS: <span className="text-amber-500">AUTO</span></span>
                 </div>
             </footer>
