@@ -74,7 +74,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       <div 
         className={`bg-dark-indigo-glow border border-white/10 shadow-2xl w-full overflow-hidden relative transition-all duration-300 flex flex-col ${
           isProfileDrawer
-            ? 'h-full max-w-full sm:max-w-[820px] md:max-w-[1080px] rounded-none border-y-0 border-r-0 border-l-white/10 animate-in slide-in-from-right-8 duration-300'
+            ? 'max-h-[100dvh] max-w-full sm:max-w-[820px] md:max-w-[1080px] rounded-none border-y-0 border-r-0 border-l-white/10 animate-in slide-in-from-right-8 duration-300'
             : 'max-w-md h-auto rounded-xl'
         }`}
         onClick={(e) => e.stopPropagation()}
@@ -93,7 +93,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </button>
 
         {user ? (
-          <div className="flex h-full flex-col md:flex-row">
+          <div className="flex max-h-[100dvh] min-h-0 flex-col md:flex-row">
             <ProfileSidebar 
               user={user}
               activeTab={activeTab}
@@ -103,7 +103,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             
             <div className="relative min-w-0 flex-1 overflow-hidden bg-[linear-gradient(180deg,#070709_0%,#18181b_52%,#060608_100%)]">
               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(163,163,163,0.14),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(163,163,163,0.1),transparent_30%)]" />
-              <div className="relative h-full overflow-y-auto p-5 md:p-8 custom-scrollbar">
+              <div className="relative min-h-0 overflow-y-auto p-5 md:p-8 custom-scrollbar">
                 {renderTabContent()}
               </div>
             </div>
