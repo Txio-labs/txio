@@ -323,6 +323,9 @@ const normalizeCollectionNode = (
         name:
             collection.name?.trim() ||
             'Untitled Collection',
+        description:
+            collection.description?.trim() ||
+            undefined,
         isExpanded: true,
         workspaceId: extractId(
             collection.workspace_id
