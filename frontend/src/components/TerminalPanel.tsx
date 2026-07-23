@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Terminal, X, Filter, Trash2, Command, Square } from 'lucide-react';
+import { Terminal, X, Filter, Trash2, Command, Square, Copy } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { apiService, CommandExecutionResponse } from '@/services/api';
 
@@ -110,6 +110,42 @@ export const TerminalPanel: React.FC = () => {
         .slice()
         // The store prepends new logs, but the terminal should still read top-to-bottom.
         .reverse();
+
+    const formatLogForClipboard = (log: (typeof visibleLogs)[number]) => {
+        const timestamp = new Date(log.timestamp).toLocaleTimeString();
+        const target = log.target ? ` (${log.target})` : '';
+        return `[${timestamp}] ${log.type.toUpperCase()} ${log.userName}${target}\n${log.action}`;
+    };
+
+    const copyTextToClipboard = async (text: string, successMessage: string) => {
+        if (typeof navigator === 'undefined' || !navigator.clipboard) {
+            appStore.showToast('Clipboard is unavailable', 'error');
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(text);
+            appStore.showToast(successMessage, 'success');
+        } catch {
+            appStore.showToast('Could not copy to clipboard', 'error');
+        }
+    };
+
+    const copyVisibleLogs = async () => {
+        if (visibleLogs.length === 0) {
+            appStore.showToast('No terminal logs to copy', 'info');
+            return;
+        }
+
+        await copyTextToClipboard(
+            visibleLogs.map(formatLogForClipboard).join('\n\n'),
+            showErrorsOnly ? 'Copied visible error logs' : 'Copied terminal logs',
+        );
+    };
+
+    const copyLogEntry = async (log: (typeof visibleLogs)[number]) => {
+        await copyTextToClipboard(formatLogForClipboard(log), 'Copied log entry');
+    };
 
     const clearLogs = () => {
         appStore.clearActivityLogs();
@@ -512,6 +548,17 @@ export const TerminalPanel: React.FC = () => {
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
+                                    void copyVisibleLogs();
+                                }}
+                                className="p-1.5 rounded-md text-slate-500 hover:text-slate-200 hover:bg-white/[0.05] transition-colors disabled:opacity-40 disabled:hover:text-slate-500 disabled:hover:bg-transparent"
+                                title={showErrorsOnly ? 'Copy visible error logs' : 'Copy visible logs'}
+                                disabled={visibleLogs.length === 0}
+                            >
+                                <Copy size={13} />
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
                                     clearLogs();
                                 }}
                                 className="p-1.5 rounded-md text-slate-500 hover:text-slate-200 hover:bg-white/[0.05] transition-colors"
@@ -579,6 +626,17 @@ export const TerminalPanel: React.FC = () => {
                                             {typeBadge}
                                             <span className="text-slate-500 font-bold">{log.userName}</span>
                                             {log.target && <span className="text-electric-violet/60 italic text-[10px]">({log.target})</span>}
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    void copyLogEntry(log);
+                                                }}
+                                                className="ml-auto opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 rounded text-slate-600 hover:text-slate-200 hover:bg-white/[0.05] transition"
+                                                title="Copy log entry"
+                                                aria-label="Copy log entry"
+                                            >
+                                                <Copy size={11} />
+                                            </button>
                                         </div>
                                         <pre className="text-white/90 whitespace-pre-wrap break-words ml-4 border-l border-white/5 pl-3">
                                             {log.action}
@@ -596,12 +654,23 @@ export const TerminalPanel: React.FC = () => {
                                 >
                                     {timestamp}
                                     {typeBadge}
-                                    <span className="text-slate-300">
+                                    <span className="text-slate-300 flex-1">
                                         <span className="text-slate-500 font-bold">{log.userName}</span>
                                         <span className="mx-2 text-slate-600">→</span>
                                         <span className="text-white/90 whitespace-pre-wrap break-words">{log.action}</span>
                                         {log.target && <span className="ml-2 text-electric-violet/60 italic">({log.target})</span>}
                                     </span>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            void copyLogEntry(log);
+                                        }}
+                                        className="opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 rounded text-slate-600 hover:text-slate-200 hover:bg-white/[0.05] transition"
+                                        title="Copy log entry"
+                                        aria-label="Copy log entry"
+                                    >
+                                        <Copy size={11} />
+                                    </button>
                                 </motion.div>
                             );
                         })}
