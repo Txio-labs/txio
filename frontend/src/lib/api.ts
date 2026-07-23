@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { API_BASE } from '../services/api';
 
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
+  baseURL: API_BASE,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -22,7 +23,7 @@ export const updatePassword = async (data: {
   new_password: string;
   confirm_password: string;
 }) => {
-  return apiClient.post('/api/auth/update-password', data);
+  return apiClient.post('/auth/update-password', data);
 };
 
 // ... rest of the API functions

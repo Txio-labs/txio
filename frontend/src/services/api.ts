@@ -17,9 +17,20 @@ const DEFAULT_API_BASE =
         ? 'http://localhost:8000/api/v1'
         : 'https://txio-oyac.onrender.com/api/v1';
 
-export const API_BASE =
-    process.env.NEXT_PUBLIC_API_URL ||
-    DEFAULT_API_BASE;
+// NEXT_PUBLIC_API_URL is set per-environment (e.g. in Vercel) and is easy to
+// configure as just the backend origin, without the /api/v1 prefix every
+// backend route is actually mounted under. Normalize defensively so a
+// trailing slash or a missing /api/v1 doesn't silently 404 every request.
+const normalizeApiBase = (base: string): string => {
+    const trimmed = base.replace(/\/+$/, '');
+    return trimmed.endsWith('/api/v1')
+        ? trimmed
+        : `${trimmed}/api/v1`;
+};
+
+export const API_BASE = normalizeApiBase(
+    process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_BASE
+);
 
 const COMMAND_POLL_INTERVAL_MS = 500;
 
