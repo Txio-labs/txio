@@ -130,7 +130,7 @@ export const LandingPage: React.FC = () => {
 
                     <motion.h1 variants={itemVariants} className="text-6xl md:text-8xl font-bold tracking-tighter leading-[0.9] mb-8">
                         Stop juggling <br /> chains. <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-soft-purple/50">Just ship.</span>
+                        <span className="text-white">Just ship.</span>
                     </motion.h1>
 
                     <motion.p variants={itemVariants} className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed">
@@ -140,7 +140,7 @@ export const LandingPage: React.FC = () => {
                     <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-6">
                         <button 
                             onClick={() => appStore.setViewMode('signup')}
-                            className="group relative px-10 py-5 bg-white text-near-black rounded-2xl font-bold text-lg hover:bg-electric-violet hover:text-white transition-all duration-500 hover:shadow-[0_0_50px_rgba(123,63,242,0.4)] active:scale-95"
+                            className="group relative px-10 py-5 bg-white text-near-black rounded-2xl font-bold text-lg hover:bg-electric-violet hover:text-white transition-all duration-500 hover:shadow-[0_0_50px_rgba(163,163,163,0.4)] active:scale-95"
                         >
                             <span className="flex items-center gap-3">
                                 Start Building
@@ -170,7 +170,7 @@ export const LandingPage: React.FC = () => {
                     {/* Purple Ambient Glow */}
                     <div className="absolute -inset-20 bg-electric-violet/20 blur-[120px] rounded-full opacity-50 group-hover:opacity-80 transition-opacity"></div>
                     
-                    <div className="relative bg-[#0a0a0a] border border-white/5 rounded-[2.5rem] overflow-hidden aspect-[16/9] shadow-[0_0_80px_rgba(123,63,242,0.15)] ring-1 ring-white/10">
+                    <div className="relative bg-[#0a0a0a] border border-white/5 rounded-[2.5rem] overflow-hidden aspect-[16/9] shadow-[0_0_80px_rgba(163,163,163,0.15)] ring-1 ring-white/10">
                         {/* Mock IDE UI */}
                         <div className="flex flex-col h-full">
                             {/* Window Header */}

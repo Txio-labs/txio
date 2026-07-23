@@ -112,7 +112,7 @@ export const EcosystemPage: React.FC<
                         onClick={() =>
                             navigateTo('signup')
                         }
-                        className="px-6 py-2.5 bg-electric-violet text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-soft-purple transition-all shadow-[0_10px_20px_-5px_rgba(123,63,242,0.4)] active:scale-95"
+                        className="px-6 py-2.5 bg-electric-violet text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-soft-purple transition-all shadow-[0_10px_20px_-5px_rgba(163,163,163,0.4)] active:scale-95"
                     >
                         {embedded ? 'New Request' : 'Launch'}
                     </button>
@@ -268,7 +268,7 @@ export const EcosystemPage: React.FC<
                                 <motion.div 
                                     animate={{ scale: [1, 1.1, 1] }}
                                     transition={{ duration: 4, repeat: Infinity }}
-                                    className="w-32 h-32 rounded-[2.5rem] bg-electric-violet shadow-[0_0_50px_rgba(123,63,242,0.4)] flex items-center justify-center z-10"
+                                    className="w-32 h-32 rounded-[2.5rem] bg-electric-violet shadow-[0_0_50px_rgba(163,163,163,0.4)] flex items-center justify-center z-10"
                                 >
                                     <img src={logoDark.src} alt="txio" className="h-10 w-auto mx-auto" />
                                 </motion.div>

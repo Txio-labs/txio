@@ -229,7 +229,7 @@ export const SignInPage: React.FC = () => {
                     className="absolute inset-0 opacity-20"
                     style={{
                         backgroundImage:
-                            'radial-gradient(circle at 2px 2px, #ADDFF1 1px, transparent 0)',
+                            'radial-gradient(circle at 2px 2px, #a3a3a3 1px, transparent 0)',
                         backgroundSize: '30px 30px'
                     }}
                 />
@@ -258,7 +258,7 @@ export const SignInPage: React.FC = () => {
                     <div className="space-y-6">
                         <h1 className="text-6xl font-bold tracking-tight text-white leading-[1.1]">
                             Welcome back. <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet to-soft-purple">
+                            <span className="text-electric-violet">
                                 Let&apos;s get to it.
                             </span>
                         </h1>
@@ -442,7 +442,7 @@ export const SignInPage: React.FC = () => {
                             <span
                                 className={`relative px-4 text-[10px] font-bold uppercase tracking-widest ${
                                     theme === 'dark'
-                                        ? 'bg-[#001B2E] text-slate-600'
+                                        ? 'bg-[#0a0a0a] text-slate-600'
                                         : 'bg-white text-slate-400'
                                 }`}
                             >
@@ -535,7 +535,7 @@ export const SignInPage: React.FC = () => {
                                 ) : (
                                     <Twitter
                                         size={18}
-                                        className="text-sky-400"
+                                        className="text-slate-300"
                                     />
                                 )}
 

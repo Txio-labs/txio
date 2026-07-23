@@ -72,7 +72,7 @@ export const GetStartedPage: React.FC = () => {
             {/* Left Wing */}
             <div className="hidden lg:flex flex-1 relative bg-near-black border-r border-white/5 p-16 flex-col justify-between overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full opacity-30" style={{ 
-                    backgroundImage: 'linear-gradient(rgba(173,223,241, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(173,223,241, 0.05) 1px, transparent 1px)',
+                    backgroundImage: 'linear-gradient(rgba(163,163,163, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(163,163,163, 0.05) 1px, transparent 1px)',
                     backgroundSize: '50px 50px'
                 }}></div>
                 <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-electric-violet/10 blur-[120px] rounded-full"></div>
@@ -92,7 +92,7 @@ export const GetStartedPage: React.FC = () => {
                     <div className="space-y-6">
                         <h1 className="text-6xl font-bold tracking-tight text-white leading-[1.1]">
                             One signup. <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet to-soft-purple">Every chain.</span>
+                            <span className="text-electric-violet">Every chain.</span>
                         </h1>
                         <p className="text-lg text-slate-400 max-w-md leading-relaxed">
                             You&apos;re a few fields away from a working multi-chain workspace. No card, no upgrade pitch.
@@ -110,7 +110,7 @@ export const GetStartedPage: React.FC = () => {
                         <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Connect</div>
                     </div>
                     <div className="space-y-2 text-center">
-                        <div className="w-10 h-10 mx-auto rounded-xl bg-white/5 flex items-center justify-center text-amber-400"><Zap size={20}/></div>
+                        <div className="w-10 h-10 mx-auto rounded-xl bg-white/5 flex items-center justify-center text-slate-300"><Zap size={20}/></div>
                         <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Scale</div>
                     </div>
                 </div>
@@ -221,7 +221,7 @@ export const GetStartedPage: React.FC = () => {
                     <div className="mt-8 space-y-3">
                         <div className="relative flex items-center justify-center mb-6">
                             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200 dark:border-white/5"></div></div>
-                            <span className={`relative px-4 text-[10px] font-bold uppercase tracking-widest ${theme === 'dark' ? 'bg-[#001B2E] text-slate-600' : 'bg-white text-slate-400'}`}>Or continue with</span>
+                            <span className={`relative px-4 text-[10px] font-bold uppercase tracking-widest ${theme === 'dark' ? 'bg-[#0a0a0a] text-slate-600' : 'bg-white text-slate-400'}`}>Or continue with</span>
                         </div>
                         <button 
                             type="button"
@@ -252,7 +252,7 @@ export const GetStartedPage: React.FC = () => {
                                 disabled={socialLoading !== null}
                                 onClick={() => handleSocialLogin('Twitter')}
                                 className={`flex items-center justify-center gap-2 py-3 rounded-xl border transition-all ${theme === 'dark' ? 'border-white/5 bg-white/5 hover:bg-white/10 disabled:opacity-50' : 'border-slate-200 bg-white hover:bg-slate-50 shadow-sm disabled:opacity-50'}`}>
-                                {socialLoading === 'Twitter' ? <div className="w-4 h-4 border-2 border-slate-500 border-t-electric-violet rounded-full animate-spin"></div> : <Twitter size={16} className="text-sky-400" />}
+                                {socialLoading === 'Twitter' ? <div className="w-4 h-4 border-2 border-slate-500 border-t-electric-violet rounded-full animate-spin"></div> : <Twitter size={16} className="text-slate-300" />}
                                 <span className="text-sm font-bold">Twitter</span>
                             </button>
                         </div>

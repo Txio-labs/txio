@@ -94,7 +94,7 @@ export const InfrastructurePage: React.FC<
 
     return (
         <div className={`${embedded ? 'h-full overflow-y-auto custom-scrollbar' : 'min-h-screen'} font-sans selection:bg-electric-violet/30 ${
-            theme === 'dark' ? 'bg-[#001B2E] text-white' : 'bg-slate-50 text-slate-900'
+            theme === 'dark' ? 'bg-[#0a0a0a] text-white' : 'bg-slate-50 text-slate-900'
         }`}>
             {/* Nav */}
             <nav className={`${embedded ? 'sticky top-0' : 'fixed top-0 left-0 right-0'} h-20 border-b z-50 px-6 md:px-12 flex items-center justify-between backdrop-blur-xl ${
@@ -159,7 +159,7 @@ export const InfrastructurePage: React.FC<
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: i * 0.1 }}
                                         className={`p-10 rounded-[3rem] border infra-card ${
-                                            theme === 'dark' ? 'bg-[#003152]/80 border-white/5' : 'bg-white border-slate-200 shadow-xl'
+                                            theme === 'dark' ? 'bg-[#18181b]/80 border-white/5' : 'bg-white border-slate-200 shadow-xl'
                                         }`}
                                     >
                                         <div className={`mb-6 text-emerald-400`}>{tier.icon}</div>
