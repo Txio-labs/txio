@@ -23,7 +23,6 @@ interface SidebarProps {
   onNewRequest: () => void;
   onUpdateEnv: (vars: EnvironmentVariable[]) => void;
   onToggleExpand: (nodeId: string) => void;
-  onCreateCollection: (name: string) => void;
   onCreateWorkspace: (name: string) => void;
 }
 
@@ -41,7 +40,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onNewRequest,
   onUpdateEnv,
   onToggleExpand,
-  onCreateCollection,
   onCreateWorkspace,
   activeTabId,
   activeTabType
@@ -56,9 +54,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const handleAddCollection = () => {
-    // This will be handled by the CollectionTree component's internal state
-    // For now, we can trigger the creation txio
-    onCreateCollection('New Collection');
+    appStore.openTab('new_collection');
   };
 
   const handleAddEnvVar = () => {
@@ -124,7 +120,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   activeTabId={activeTabId}
                   onToggleExpand={onToggleExpand}
                   onSelectCollectionRequest={onSelectCollectionRequest}
-                  onCreateCollection={onCreateCollection}
                 />
               </motion.div>
             )}
