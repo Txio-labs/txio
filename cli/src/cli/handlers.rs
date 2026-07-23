@@ -182,9 +182,6 @@ impl CommandHandler {
                 let mut cmd = Cli::command();
                 clap_complete::generate(shell, &mut cmd, "txio", &mut std::io::stdout());
             }
-            _ => {
-                println!("{}", "Feature coming soon!".yellow());
-            }
         }
         Ok(())
     }

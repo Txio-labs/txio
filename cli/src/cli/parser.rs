@@ -75,23 +75,8 @@ pub enum Commands {
         action: ConfigAction,
     },
 
-    /// Manage user profiles
-    Profile {
-        #[command(subcommand)]
-        action: ProfileAction,
-    },
-
-    /// Manage wallets
-    Wallet {
-        #[command(subcommand)]
-        action: WalletAction,
-    },
-
     /// Generate shell completion scripts
     Completion { shell: clap_complete::Shell },
-
-    /// Launch interactive console
-    Console,
 
     /// Sui blockchain commands
     Sui {
@@ -177,20 +162,6 @@ pub enum ConfigAction {
     Set { key: String, value: String },
     /// Remove a configuration key
     Unset { key: String },
-}
-
-#[derive(Subcommand)]
-pub enum ProfileAction {
-    Add,
-    List,
-    Remove { name: String },
-}
-
-#[derive(Subcommand)]
-pub enum WalletAction {
-    Import,
-    List,
-    New,
 }
 
 #[derive(Subcommand)]
