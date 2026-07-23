@@ -8,8 +8,8 @@
   }
 
   :root {
-    --surface-0: #001B2E;
-    --surface-1: #003152;
+    --surface-0: #0a0a0a;
+    --surface-1: #18181b;
     --surface-2: #0A3D63;
     --surface-hover: rgba(173, 223, 241, 0.05);
     --border-subtle: rgba(173, 223, 241, 0.06);
@@ -22,7 +22,7 @@
   }
 
   body {
-    background-color: #001B2E;
+    background-color: #0a0a0a;
     color: #e4e4e7;
     font-family: 'Space Grotesk', 'Inter', sans-serif;
     overflow: hidden;
@@ -62,7 +62,7 @@
 [data-dapp-kit] [data-radix-popper-content-wrapper],
 [data-dapp-kit] dialog,
 [data-dapp-kit] [role="dialog"] {
-  --dapp-kit-bg: #003152 !important;
+  --dapp-kit-bg: #18181b !important;
   --dapp-kit-border: rgba(173,223,241,0.08) !important;
 }
 
@@ -77,7 +77,7 @@
 [data-dapp-kit] [class*="Content"],
 [data-dapp-kit] [class*="modal"],
 [data-dapp-kit] [class*="Modal"] {
-  background-color: #003152 !important;
+  background-color: #18181b !important;
   border: 1px solid rgba(173, 223, 241, 0.08) !important;
   color: #e4e4e7 !important;
   border-radius: 1.5rem !important;
