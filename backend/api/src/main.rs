@@ -87,6 +87,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let request_repo = repositories::request_repository::RequestRepository::new(&db);
     let workspace_repo = repositories::workspace_repository::WorkspaceRepository::new(&db);
     let session_repo = repositories::session_repository::SessionRepository::new(&db);
+    let recipe_template_repo =
+        repositories::recipe_template_repository::RecipeTemplateRepository::new(&db);
 
     // 5. Initialize JWT Helper
     let jwt_helper = utils::auth_jwt::JwtHelper::new(config.jwt_secret);
@@ -119,6 +121,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let workspace_service =
         services::workspace_service::WorkspaceService::new(workspace_repo, collection_repo);
+
+    let recipe_template_service =
+        services::recipe_template_service::RecipeTemplateService::new(recipe_template_repo);
 
     let admin_service = services::admin_service::AdminService::new(
         user_repo.clone(),
@@ -216,6 +221,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nest(
             "/api/v1/workspaces",
             api::routers::workspace_router::router(workspace_service),
+        )
+        .nest(
+            "/api/v1/templates",
+            api::routers::recipe_template_router::router(recipe_template_service),
         )
         .nest(
             "/api/v1/terminal",

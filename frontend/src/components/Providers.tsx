@@ -29,7 +29,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             Object.fromEntries(
                 ALL_NETWORKS.map((net) => [
                     net,
-                    { url: resolveRpcUrl(net, settings) }
+                    { network: net, url: resolveRpcUrl(net, settings) }
                 ])
             ),
         [settings]

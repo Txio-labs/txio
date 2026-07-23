@@ -1,6 +1,7 @@
 pub mod collection;
 pub mod network;
 pub mod otp;
+pub mod recipe_template;
 pub mod request;
 pub mod rpc;
 pub mod session;

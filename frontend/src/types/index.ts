@@ -309,3 +309,14 @@ export interface ActiveSession {
   /** True when this entry corresponds to the currently active JWT. */
   is_current: boolean;
 }
+
+export type RecipeTemplateType = 'PTB' | 'MoveCall' | 'Publish';
+
+export interface RecipeTemplate {
+  /** MongoDB ObjectId of the template document. */
+  id: string;
+  title: string;
+  type: RecipeTemplateType;
+  /** ISO-8601 timestamp of when the template was created. */
+  createdAt: string;
+}
