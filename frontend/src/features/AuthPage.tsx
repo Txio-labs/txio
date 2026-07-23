@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    Mail, Lock, User, ArrowRight, Github, Twitter, Code2, Sparkles, 
+import {
+    Mail, Lock, User, ArrowRight, Code2, Sparkles,
     ChevronRight, ShieldCheck, Zap, Globe, ArrowLeft
 } from 'lucide-react';
+import { Github, Twitter } from '@/components/icons/BrandIcons';
 import { appStore, useAppStore } from '@/lib/store';
 import logoDark from '../assets/txio2.png';
 import logoLight from '../assets/txio3.png';
