@@ -98,8 +98,8 @@ export const SettingsPage: React.FC = () => {
                     </div>
 
                     <div className="bg-dark-indigo-glow border border-white/5 rounded-xl p-6 space-y-4">
-                        <h3 className="text-sm font-bold text-slate-200">Preferred Explorer</h3>
-                        <p className="text-xs text-slate-500">Choose the block explorer used for external links.</p>
+                        <h3 className="text-sm font-bold text-slate-200">Preferred Sui Explorer</h3>
+                        <p className="text-xs text-slate-500">Choose the Sui block explorer used for Sui wallet external links.</p>
                         <div className="grid grid-cols-3 gap-3">
                              {['suiscan', 'suiexplorer', 'suivision'].map((exp) => (
                                  <button 
