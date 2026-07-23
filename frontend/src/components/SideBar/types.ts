@@ -27,7 +27,6 @@ export interface CollectionTreeProps {
   activeTabId: string | null;
   onToggleExpand: (nodeId: string) => void;
   onSelectCollectionRequest: (node: CollectionNode) => void;
-  onCreateCollection: (name: string) => void;
 }
 
 export interface HistoryListProps {
