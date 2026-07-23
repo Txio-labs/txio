@@ -26,3 +26,4 @@ indicatif = { workspace = true }
 dirs-next = { workspace = true }
 dialoguer = { workspace = true }
 bs58 = { workspace = true }
+sha3 = { workspace = true }

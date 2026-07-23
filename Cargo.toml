@@ -46,6 +46,7 @@ validator = { version = "0.20", features = ["derive"] }
 bcrypt = "0.19"
 hmac = "0.13"
 sha2 = "0.11"
+sha3 = "0.10"
 base64 = "0.22"
 urlencoding = "2.1"
 brevo = "1.0.0"
