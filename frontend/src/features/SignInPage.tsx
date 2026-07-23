@@ -16,12 +16,19 @@ import { API_BASE, apiService } from '@/services/api';
 import logoDark from '../assets/txio2.png';
 
 
-// Read and clear the short-lived OAuth token cookie set by the backend callback.
-function consumeOAuthCookie(): string | null {
-    if (typeof document === 'undefined') return null;
-    const match = document.cookie.match(/(?:^|;\s*)txio_oauth_token=([^;]+)/);
+// Read and clear the short-lived OAuth token the backend hands off via a URL
+// fragment. A cookie can't be used: the backend and frontend are different
+// sites, so a cookie the backend's redirect response sets is never visible
+// to document.cookie on the frontend's origin.
+function consumeOAuthFragmentToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    const hash = window.location.hash;
+    const match = hash.match(/(?:^#|&)token=([^&]+)/);
     if (!match) return null;
-    document.cookie = 'txio_oauth_token=; Path=/; Max-Age=0; SameSite=Lax; Secure';
+    const remainingHash = hash.replace(/(?:^#|&)token=[^&]+/, '').replace(/^#&/, '#');
+    const url = new URL(window.location.href);
+    url.hash = remainingHash === '#' ? '' : remainingHash;
+    window.history.replaceState({}, '', url.toString());
     return decodeURIComponent(match[1]);
 }
 
@@ -40,15 +47,15 @@ export const SignInPage: React.FC = () => {
     useEffect(() => {
         const initializeAuth = async () => {
             try {
-                // Read OAuth token from cookie (backend sets it on OAuth callback;
-                // using a cookie avoids the JWT appearing in browser history and logs).
-                const cookieToken = consumeOAuthCookie();
+                // Read OAuth token from the URL fragment (backend appends it on
+                // OAuth callback redirect).
+                const fragmentToken = consumeOAuthFragmentToken();
 
                 // Read token from localStorage
                 const storedToken = localStorage.getItem('txio_token');
 
-                // Prefer OAuth cookie token over stored token
-                const token = cookieToken || storedToken;
+                // Prefer the freshly-issued OAuth token over a stored one
+                const token = fragmentToken || storedToken;
 
                 // No token
                 if (!token) {
@@ -98,8 +105,8 @@ export const SignInPage: React.FC = () => {
                         );
                     }
 
-                    // Success toast only after OAuth redirect (token arrived via cookie)
-                    if (cookieToken) {
+                    // Success toast only after OAuth redirect (token arrived via fragment)
+                    if (fragmentToken) {
                         appStore.showToast(
                             'Successfully signed in with Google',
                             'success'
