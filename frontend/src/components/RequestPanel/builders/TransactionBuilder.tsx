@@ -52,16 +52,16 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div className="bg-near-black/40 backdrop-blur-sm p-6 rounded-2xl border border-white/10 shadow-xl">
+      <div className="bg-slate-100 dark:bg-near-black/40 backdrop-blur-sm p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="w-1.5 h-6 bg-sky-500 rounded-full"></div>
-            <h3 className="text-xs font-bold text-slate-200 uppercase tracking-[0.2em]">
+            <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-[0.2em]">
               Smart Contract Configuration
             </h3>
           </div>
           {activeAddress && (
-            <div className="flex items-center gap-2 px-3 py-1 bg-near-black border border-white/10 rounded-full text-[10px] font-mono text-emerald-400">
+            <div className="flex items-center gap-2 px-3 py-1 bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-full text-[10px] font-mono text-emerald-400">
               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
               Signer: {activeAddress.slice(0,6)}...{activeAddress.slice(-4)}
             </div>
@@ -73,7 +73,7 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
               Contract ID
             </label>
             <VariableInput 
-              className="w-full bg-near-black border border-white/10 rounded-xl px-4 py-3 text-xs font-mono focus:border-sky-500 outline-none"
+              className="w-full bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-mono focus:border-sky-500 outline-none"
               value={request.moveParams.packageId}
               onChange={(v) => updateMoveParam('packageId', v)}
               placeholder="0x..."
@@ -89,7 +89,7 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
                 Module
               </label>
               <VariableInput 
-                className="w-full bg-near-black border border-white/10 rounded-xl px-4 py-3 text-xs font-mono focus:border-sky-500 outline-none"
+                className="w-full bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-mono focus:border-sky-500 outline-none"
                 value={request.moveParams.module}
                 onChange={(v) => updateMoveParam('module', v)}
                 placeholder="module_name"
@@ -103,7 +103,7 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
                 Function
               </label>
               <VariableInput 
-                className="w-full bg-near-black border border-white/10 rounded-xl px-4 py-3 text-xs font-mono focus:border-sky-500 outline-none"
+                className="w-full bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-mono focus:border-sky-500 outline-none"
                 value={request.moveParams.function}
                 onChange={(v) => updateMoveParam('function', v)}
                 placeholder="function_name"
@@ -119,7 +119,7 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
               Type Arguments
             </label>
             <input 
-              className="w-full bg-near-black border border-white/10 rounded-xl px-4 py-3 text-xs font-mono text-slate-200 focus:border-sky-500 outline-none"
+              className="w-full bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-mono text-slate-700 dark:text-slate-200 focus:border-sky-500 outline-none"
               value={request.moveParams.typeArguments.join(', ')}
               onChange={(e) => updateMoveParam('typeArguments', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
               placeholder="0x2::sui::SUI, 0x..."
@@ -156,7 +156,7 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
                   </div>
                   <div className="flex-1">
                     <VariableInput 
-                      className="w-full bg-near-black border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-white focus:border-sky-500 outline-none"
+                      className="w-full bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-slate-900 dark:text-white focus:border-sky-500 outline-none"
                       value={arg.value}
                       onChange={(v) => updateMoveArg(idx, { value: v })}
                       placeholder={arg.type === 'object' ? 'Object ID' : 'Value'}
@@ -175,19 +175,19 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
                 </div>
               ))}
               {request.moveParams.arguments.length === 0 && (
-                <div className="text-center py-4 bg-white/5 border border-white/10 rounded-xl border-dashed">
+                <div className="text-center py-4 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl border-dashed">
                   <span className="text-xs text-slate-600">No arguments defined.</span>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="space-y-2 pt-2 border-t border-white/10">
+          <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-white/10">
             <label className="flex items-center gap-2 text-[10px] uppercase font-bold text-slate-500 tracking-widest">
               <Zap size={12} className="text-amber-500" /> Gas Budget (Units)
             </label>
             <input 
-              className="w-full bg-near-black border border-white/10 rounded-xl px-4 py-3 text-xs font-mono text-amber-500 focus:border-amber-500/50 outline-none font-bold"
+              className="w-full bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-mono text-amber-500 focus:border-amber-500/50 outline-none font-bold"
               value={request.moveParams.gasBudget}
               onChange={(e) => updateMoveParam('gasBudget', e.target.value)}
               placeholder="10000000"

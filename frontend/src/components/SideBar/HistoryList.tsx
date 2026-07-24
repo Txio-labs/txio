@@ -27,7 +27,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({
     <div className="px-2 space-y-2 pb-4">
       <button 
         onClick={onOpenFullHistory}
-        className="w-full flex items-center justify-center gap-2 py-2 mb-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition-all group shadow-sm"
+        className="w-full flex items-center justify-center gap-2 py-2 mb-2 bg-slate-100 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:border-white/20 rounded-lg text-xs font-bold text-slate-400 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white transition-all group shadow-sm"
       >
         <span>Open Full History</span>
         <ArrowUpRight size={12} className="opacity-50 group-hover:opacity-100" />
@@ -47,10 +47,10 @@ export const HistoryList: React.FC<HistoryListProps> = ({
           <button 
             key={item.id || i} 
             onClick={() => onSelectRequest(item)}
-            className="group p-3 rounded-lg hover:bg-white/5 border border-white/5 hover:border-white/10 cursor-pointer transition-all bg-white/[0.02] text-left w-full"
+            className="group p-3 rounded-lg hover:bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:border-slate-200 dark:border-white/10 cursor-pointer transition-all bg-slate-100/70 dark:bg-white/[0.02] text-left w-full"
           >
             <div className="flex justify-between items-start mb-1">
-              <span className={`text-xs font-bold truncate flex-1 ${isSuccess ? 'text-slate-300' : 'text-red-400'}`}>
+              <span className={`text-xs font-bold truncate flex-1 ${isSuccess ? 'text-slate-600 dark:text-slate-300' : 'text-red-400'}`}>
                 {item.name || 'Untitled Request'}
               </span>
               <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ml-2 ${isSuccess ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>

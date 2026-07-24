@@ -58,11 +58,11 @@ export const Tab: React.FC<TabProps> = ({ title, isActive, onSelect, onClose, on
     return (
         <div
             className={`
-                group flex items-center gap-2 px-3 py-2 text-xs cursor-pointer border-r border-white/[0.06]
+                group flex items-center gap-2 px-3 py-2 text-xs cursor-pointer border-r border-slate-200 dark:border-white/[0.06]
                 transition-colors select-none min-w-[120px] max-w-[220px] relative
                 ${isActive
-                    ? 'bg-dark-indigo-glow text-slate-100'
-                    : 'bg-near-black text-slate-500 hover:bg-white/[0.02] hover:text-slate-300'}
+                    ? 'bg-white dark:bg-dark-indigo-glow text-slate-900 dark:text-slate-100'
+                    : 'bg-slate-50 dark:bg-near-black text-slate-500 hover:bg-slate-100/70 dark:bg-white/[0.02] hover:text-slate-600 dark:text-slate-300'}
             `}
             onClick={onSelect}
             onDoubleClick={handleDoubleClick}
@@ -81,7 +81,7 @@ export const Tab: React.FC<TabProps> = ({ title, isActive, onSelect, onClose, on
                     onBlur={finishEditing}
                     onKeyDown={handleKeyDown}
                     onClick={(e) => e.stopPropagation()}
-                    className="flex-1 bg-white/[0.04] text-white border border-electric-violet/40 focus:border-electric-violet focus:outline-none min-w-0 px-1.5 py-0.5 rounded font-sans"
+                    className="flex-1 bg-slate-100 dark:bg-white/[0.04] text-slate-900 dark:text-white border border-electric-violet/40 focus:border-electric-violet focus:outline-none min-w-0 px-1.5 py-0.5 rounded font-sans"
                 />
             ) : (
                 <span className="truncate flex-1 font-sans font-medium tracking-tight">{title}</span>
@@ -89,7 +89,7 @@ export const Tab: React.FC<TabProps> = ({ title, isActive, onSelect, onClose, on
 
             <button
                 onClick={(e) => { e.stopPropagation(); onClose(); }}
-                className={`flex-shrink-0 p-1 rounded hover:bg-white/10 hover:text-slate-100 transition-all ${isActive ? 'opacity-70' : 'opacity-0 group-hover:opacity-70'}`}
+                className={`flex-shrink-0 p-1 rounded hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:text-slate-100 transition-all ${isActive ? 'opacity-70' : 'opacity-0 group-hover:opacity-70'}`}
                 aria-label="Close tab"
             >
                 <X size={11} />

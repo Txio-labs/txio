@@ -37,13 +37,13 @@ export const CodeSnippet: React.FC<CodeSnippetProps> = ({ request, network }) =>
       <div className="flex justify-end mb-4">
         <button 
           onClick={handleCopySnippet}
-          className="h-[28px] px-3 bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10 hover:text-white rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2"
+          className="h-[28px] px-3 bg-slate-100 dark:bg-white/5 text-slate-400 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2"
         >
           {isCopied ? <Check size={12} /> : <Copy size={12} />}
           {isCopied ? 'Copied!' : 'Copy'}
         </button>
       </div>
-      <pre className="bg-near-black p-6 rounded-xl border border-white/10 text-slate-300 font-mono text-[11px] overflow-x-auto whitespace-pre-wrap select-text leading-relaxed shadow-2xl">
+      <pre className="bg-slate-50 dark:bg-near-black p-6 rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 font-mono text-[11px] overflow-x-auto whitespace-pre-wrap select-text leading-relaxed shadow-2xl">
         {generateSnippet()}
       </pre>
     </div>

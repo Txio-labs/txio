@@ -123,7 +123,7 @@ export const RawEditor: React.FC<RawEditorProps> = ({
       <div className="flex-1 flex flex-col min-w-0 p-6">
         {/* Read-Only Envelope Preview */}
         {request.type === RequestType.RPC && (
-          <div className="mb-4 bg-[#18181b] p-4 rounded-xl border border-white/10 opacity-75 shrink-0 group">
+          <div className="mb-4 bg-white dark:bg-[#18181b] p-4 rounded-xl border border-slate-200 dark:border-white/10 opacity-75 shrink-0 group">
             <div className="flex justify-between items-center mb-2">
               <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Full Request Preview</div>
               <div className="text-[9px] text-slate-600">ReadOnly</div>
@@ -160,7 +160,7 @@ export const RawEditor: React.FC<RawEditorProps> = ({
 
       {/* Templates Sidebar - Only show for RPC type */}
       {request.type === RequestType.RPC && (
-        <div className="w-64 border-l border-white/10 bg-near-black/20 overflow-y-auto custom-scrollbar p-4 flex flex-col">
+        <div className="w-64 border-l border-slate-200 dark:border-white/10 bg-slate-100/60 dark:bg-near-black/20 overflow-y-auto custom-scrollbar p-4 flex flex-col">
           <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
             <FileJson size={12}/> Templates
           </h3>
@@ -169,10 +169,10 @@ export const RawEditor: React.FC<RawEditorProps> = ({
               <button 
                 key={idx}
                 onClick={() => applyTemplate(t)}
-                className="w-full text-left p-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 transition-all group active:scale-95"
+                className="w-full text-left p-3 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/5 hover:border-slate-200 dark:border-white/10 transition-all group active:scale-95"
               >
                 <div className="flex justify-between items-center mb-1">
-                  <div className="text-xs font-bold text-slate-200 group-hover:text-white truncate">{t.label}</div>
+                  <div className="text-xs font-bold text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:hover:text-slate-900 dark:text-white truncate">{t.label}</div>
                   <ChevronRight size={12} className="text-slate-600 group-hover:text-slate-400 opacity-0 group-hover:opacity-100 transition-all -ml-2 group-hover:ml-0" />
                 </div>
                 <div className="text-[10px] text-slate-500 font-mono truncate opacity-60 group-hover:opacity-100 transition-opacity">

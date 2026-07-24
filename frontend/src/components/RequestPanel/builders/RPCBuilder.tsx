@@ -156,17 +156,17 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
       {/* RPC Method Selection */}
-      <div className="bg-near-black/40 backdrop-blur-sm p-6 rounded-2xl border border-white/10 shadow-xl">
+      <div className="bg-slate-100 dark:bg-near-black/40 backdrop-blur-sm p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-1.5 h-6 bg-emerald-500 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.4)]"></div>
-          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-[0.2em]">RPC Method</h3>
+          <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-[0.2em]">RPC Method</h3>
         </div>
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={16} />
           <input
             list="rpc-methods-builder"
             type="text"
-            className="w-full bg-near-black border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-sm text-white focus:border-electric-violet focus:outline-none transition-all font-mono"
+            className="w-full bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-white focus:border-electric-violet focus:outline-none transition-all font-mono"
             placeholder="e.g. suix_getOwnedObjects"
             value={request.rpcParams.method}
             onChange={(e) =>
@@ -233,9 +233,9 @@ const SuiNsHint: React.FC<{
 }> = ({ resolution, onApply }) => {
   if (resolution.status === 'resolving') {
     return (
-      <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/[0.06] text-xs text-slate-400">
+      <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-100/70 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06] text-xs text-slate-400">
         <Loader2 size={12} className="animate-spin text-electric-violet" />
-        Resolving <span className="font-mono text-slate-300">{resolution.name}</span>…
+        Resolving <span className="font-mono text-slate-600 dark:text-slate-300">{resolution.name}</span>…
       </div>
     );
   }
@@ -258,7 +258,7 @@ const SuiNsHint: React.FC<{
         <Check size={12} className="shrink-0 text-electric-violet" />
         <span className="font-mono text-slate-400 truncate">{resolution.name}</span>
         <ArrowRight size={11} className="shrink-0 text-slate-600" />
-        <span className="font-mono text-slate-200 truncate flex-1">{resolution.address}</span>
+        <span className="font-mono text-slate-700 dark:text-slate-200 truncate flex-1">{resolution.address}</span>
         <button
           type="button"
           onClick={onApply}
