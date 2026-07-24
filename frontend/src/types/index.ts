@@ -26,7 +26,8 @@ export const isNetwork = (
 // `WalletChainFamily` (wallet/types.ts), which the wallet layer already uses.
 export type ChainId = 'sui' | 'evm' | 'stellar';
 
-export type FeatureId = 'dashboard' | 'rpc' | 'ptb' | 'move' | 'playground' | 'history' | 'settings' | 'new_request' | 'profile' | 'ai_chat' | 'runner' | 'docs' | 'ecosystem' | 'features' | 'integrations' | 'infrastructure' | 'partners';
+export type FeatureId = 'dashboard' | 'rpc' | 'ptb' | 'move' | 'playground' | 'history' | 'settings' | 'new_request' | 'new_collection' | 'profile' | 'ai_chat' | 'runner' | 'docs' | 'ecosystem' | 'features' | 'integrations' | 'infrastructure' | 'partners';
+
 
 export interface TabItem {
   id: string;
@@ -58,13 +59,22 @@ export interface Environment {
   variables: Record<string, string>;
 }
 
+export type SuiExplorer = 'suiscan' | 'suiexplorer' | 'suivision';
+export type EvmExplorer = 'family' | 'blockscout';
+export type StellarExplorer = 'stellarexpert' | 'stellarchain';
+
 export interface AppSettings {
     theme: 'dark' | 'light';
     showLineNumbers: boolean;
     autoSave: boolean;
     telemetry: boolean;
     customRpc: Record<Network, string>;
-    explorer: 'suiscan' | 'suiexplorer' | 'suivision';
+    /** Preferred Sui block explorer. */
+    explorer: SuiExplorer;
+    /** Preferred EVM explorer family: chain-native (Etherscan-family) or Blockscout. */
+    evmExplorer: EvmExplorer;
+    /** Preferred Stellar block explorer. */
+    stellarExplorer: StellarExplorer;
 }
 
 export interface Notification {
@@ -179,6 +189,7 @@ export interface CollectionNode {
   id: string;
   type: 'collection' | 'folder' | 'request';
   name: string;
+  description?: string;
   isExpanded?: boolean;
   children?: CollectionNode[];
   isShared?: boolean;

@@ -28,6 +28,7 @@ import { FeaturesPage } from "@/features/FeaturesPage";
 import { IntegrationsPage } from "@/features/IntegrationsPage";
 import { InfrastructurePage } from "@/features/InfrastructurePage";
 import { PartnersPage } from "@/features/PartnersPage";
+import { NewCollectionPage } from "@/features/NewCollectionPage";
 
 const MOCK_TEAM: TeamMember[] = [];
 
@@ -74,6 +75,8 @@ const WorkspaceContent: React.FC = () => {
             return <InfrastructurePage embedded />;
         case 'partners':
             return <PartnersPage embedded />;
+        case 'new_collection':
+            return <NewCollectionPage tabId={activeTab.id} />;
         default:
             return <Dashboard />;
     }
