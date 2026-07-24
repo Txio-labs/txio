@@ -1,5 +1,6 @@
 {
   "outputDirectory": "frontend/out",
+  "cleanUrls": true,
   "headers": [
     {
       "source": "/(.*)",
