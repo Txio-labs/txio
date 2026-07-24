@@ -54,13 +54,22 @@ export interface Environment {
   variables: Record<string, string>;
 }
 
+export type SuiExplorer = 'suiscan' | 'suiexplorer' | 'suivision';
+export type EvmExplorer = 'family' | 'blockscout';
+export type StellarExplorer = 'stellarexpert' | 'stellarchain';
+
 export interface AppSettings {
     theme: 'dark' | 'light';
     showLineNumbers: boolean;
     autoSave: boolean;
     telemetry: boolean;
     customRpc: Record<Network, string>;
-    explorer: 'suiscan' | 'suiexplorer' | 'suivision';
+    /** Preferred Sui block explorer. */
+    explorer: SuiExplorer;
+    /** Preferred EVM explorer family: chain-native (Etherscan-family) or Blockscout. */
+    evmExplorer: EvmExplorer;
+    /** Preferred Stellar block explorer. */
+    stellarExplorer: StellarExplorer;
 }
 
 export interface Notification {

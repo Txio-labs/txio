@@ -97,23 +97,83 @@ export const SettingsPage: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 rounded-xl p-6 space-y-4">
-                        <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">Preferred Explorer</h3>
-                        <p className="text-xs text-slate-500">Choose the block explorer used for external links.</p>
-                        <div className="grid grid-cols-3 gap-3">
-                             {['suiscan', 'suiexplorer', 'suivision'].map((exp) => (
-                                 <button 
-                                    key={exp}
-                                    onClick={() => appStore.updateSettings({ explorer: exp as any })}
-                                    className={`px-4 py-3 rounded-lg border text-xs font-bold capitalize transition-all ${
-                                        settings.explorer === exp 
-                                        ? 'bg-electric-violet/20 border-sui-500 text-electric-violet' 
-                                        : 'bg-slate-50 dark:bg-near-black border-slate-200 dark:border-white/10 text-slate-400 hover:bg-slate-100 dark:bg-white/5'
-                                    }`}
-                                 >
-                                     {exp === 'suiexplorer' ? 'Sui Explorer' : exp}
-                                 </button>
-                             ))}
+                    <div className="bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 rounded-xl p-6 space-y-6">
+                        <div>
+                            <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">Preferred Explorers</h3>
+                            <p className="text-xs text-slate-500">Choose the block explorer used for external wallet links, per chain family.</p>
+                        </div>
+
+                        <div className="space-y-3">
+                            <div>
+                                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-2">Sui</p>
+                                <div className="grid grid-cols-3 gap-3">
+                                    {([
+                                        { id: 'suiscan', label: 'Suiscan' },
+                                        { id: 'suiexplorer', label: 'Sui Explorer' },
+                                        { id: 'suivision', label: 'Suivision' }
+                                    ] as const).map((exp) => (
+                                        <button
+                                            key={exp.id}
+                                            type="button"
+                                            onClick={() => appStore.updateSettings({ explorer: exp.id })}
+                                            className={`px-4 py-3 rounded-lg border text-xs font-bold transition-all ${
+                                                settings.explorer === exp.id
+                                                    ? 'bg-electric-violet/20 border-sui-500 text-electric-violet'
+                                                    : 'bg-slate-50 dark:bg-near-black border-slate-200 dark:border-white/10 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
+                                            }`}
+                                        >
+                                            {exp.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-2">EVM</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {([
+                                        { id: 'family', label: 'Chain-native', hint: 'Etherscan-family' },
+                                        { id: 'blockscout', label: 'Blockscout', hint: 'Where available' }
+                                    ] as const).map((exp) => (
+                                        <button
+                                            key={exp.id}
+                                            type="button"
+                                            onClick={() => appStore.updateSettings({ evmExplorer: exp.id })}
+                                            className={`px-4 py-3 rounded-lg border text-xs font-bold transition-all text-left ${
+                                                settings.evmExplorer === exp.id
+                                                    ? 'bg-electric-violet/20 border-sui-500 text-electric-violet'
+                                                    : 'bg-slate-50 dark:bg-near-black border-slate-200 dark:border-white/10 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
+                                            }`}
+                                        >
+                                            <div>{exp.label}</div>
+                                            <div className="text-[10px] font-medium opacity-70 mt-0.5">{exp.hint}</div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-2">Stellar</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {([
+                                        { id: 'stellarexpert', label: 'StellarExpert' },
+                                        { id: 'stellarchain', label: 'StellarChain' }
+                                    ] as const).map((exp) => (
+                                        <button
+                                            key={exp.id}
+                                            type="button"
+                                            onClick={() => appStore.updateSettings({ stellarExplorer: exp.id })}
+                                            className={`px-4 py-3 rounded-lg border text-xs font-bold transition-all ${
+                                                settings.stellarExplorer === exp.id
+                                                    ? 'bg-electric-violet/20 border-sui-500 text-electric-violet'
+                                                    : 'bg-slate-50 dark:bg-near-black border-slate-200 dark:border-white/10 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
+                                            }`}
+                                        >
+                                            {exp.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
