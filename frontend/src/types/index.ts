@@ -22,7 +22,12 @@ export const isNetwork = (
   typeof value === 'string' &&
   (ALL_NETWORKS as readonly string[]).includes(value);
 
+// Chains the RPC Method Builder can target. Kept in sync with
+// `WalletChainFamily` (wallet/types.ts), which the wallet layer already uses.
+export type ChainId = 'sui' | 'evm' | 'stellar';
+
 export type FeatureId = 'dashboard' | 'rpc' | 'ptb' | 'move' | 'playground' | 'history' | 'settings' | 'new_request' | 'new_collection' | 'profile' | 'ai_chat' | 'runner' | 'docs' | 'ecosystem' | 'features' | 'integrations' | 'infrastructure' | 'partners';
+
 
 export interface TabItem {
   id: string;
@@ -149,6 +154,7 @@ export interface RequestItem {
   rpcParams: {
     method: string;
     params: any[];
+    chain?: ChainId; // Defaults to 'sui' when absent (pre-multi-chain requests).
   };
   txType?: TransactionKind;
   moveParams: MoveCallParams;

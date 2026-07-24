@@ -68,8 +68,8 @@ export const CommandPalette: React.FC = () => {
         // 2. Collection Requests (Scoped to Workspace)
         flattenCollections(collections, items);
 
-        // 3. Move Commands (Common RPCs)
-        COMMON_RPC_METHODS.forEach(method => {
+        // 3. Move Commands (Common RPCs, across all supported chains)
+        Object.values(COMMON_RPC_METHODS).flat().forEach(method => {
             items.push({
                 id: `rpc-${method}`,
                 title: method,
