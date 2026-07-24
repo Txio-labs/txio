@@ -19,7 +19,9 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
         devnet: '',
         localnet: ''
     },
-    explorer: 'suiscan'
+    explorer: 'suiscan',
+    evmExplorer: 'family',
+    stellarExplorer: 'stellarexpert'
 };
 
 export const normalizeNotificationPreferences = (
@@ -31,14 +33,26 @@ export const normalizeNotificationPreferences = (
 
 export const normalizeAppSettings = (
     settings?: Partial<AppSettings> | null
-): AppSettings => ({
-    ...DEFAULT_APP_SETTINGS,
-    ...settings,
-    customRpc: {
-        ...DEFAULT_APP_SETTINGS.customRpc,
-        ...(settings?.customRpc || {})
+): AppSettings => {
+    const merged: AppSettings = {
+        ...DEFAULT_APP_SETTINGS,
+        ...settings,
+        customRpc: {
+            ...DEFAULT_APP_SETTINGS.customRpc,
+            ...(settings?.customRpc || {})
+        }
+    };
+
+    // Backward-compat: older persisted state only had Sui `explorer`.
+    if (!settings?.evmExplorer) {
+        merged.evmExplorer = DEFAULT_APP_SETTINGS.evmExplorer;
     }
-});
+    if (!settings?.stellarExplorer) {
+        merged.stellarExplorer = DEFAULT_APP_SETTINGS.stellarExplorer;
+    }
+
+    return merged;
+};
 
 export const resolveRpcUrl = (
     network: Network,

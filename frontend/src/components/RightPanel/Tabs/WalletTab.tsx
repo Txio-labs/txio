@@ -100,10 +100,11 @@ export const WalletTab: React.FC<
     }
 
     const explorerUrl =
-        getWalletExplorerUrl(
-            currentWallet,
-            settings.explorer
-        );
+        getWalletExplorerUrl(currentWallet, {
+            explorer: settings.explorer,
+            evmExplorer: settings.evmExplorer,
+            stellarExplorer: settings.stellarExplorer
+        });
 
     return (
         <div className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-5">
