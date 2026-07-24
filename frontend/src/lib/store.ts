@@ -23,6 +23,10 @@ import {
     normalizeNotificationPreferences
 } from './appConfig';
 import {
+    setTelemetryEnabled,
+    track
+} from './telemetry';
+import {
     ApiError,
     apiService
 } from '../services/api';
@@ -634,6 +638,34 @@ let state: AppState = {
     viewMode: hasToken ? 'app' : 'landing'
 };
 
+// Sync telemetry gate with persisted settings on boot.
+setTelemetryEnabled(initialSettings.telemetry);
+track('app_boot', { theme: initialSettings.theme });
+
+// Debounced auto-save for request tabs when settings.autoSave is on.
+let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
+
+const scheduleAutoSave = (tabId: string) => {
+    if (!state.settings.autoSave) {
+        return;
+    }
+
+    if (autoSaveTimer) {
+        clearTimeout(autoSaveTimer);
+    }
+
+    autoSaveTimer = setTimeout(() => {
+        autoSaveTimer = null;
+        const tab = state.tabs.find((t) => t.id === tabId);
+        if (!tab) return;
+        if (tab.type !== 'rpc' && tab.type !== 'ptb' && tab.type !== 'new_request') {
+            return;
+        }
+        appStore.saveCurrentTab();
+        track('request_saved', { tabType: tab.type, auto: true });
+    }, 600);
+};
+
 // Actions
 export const appStore = {
     subscribe(listener: Listener) {
@@ -930,23 +962,40 @@ export const appStore = {
             (t) => t.id === state.activeTabId
         );
 
-        if (currentTab) {
-            if (
-                !state.savedTabs.find(
-                    (t) => t.id === currentTab.id
-                )
-            ) {
-                state = {
-                    ...state,
-                    savedTabs: [
-                        ...state.savedTabs,
-                        currentTab
-                    ]
-                };
-
-                emit();
-            }
+        if (!currentTab) {
+            return;
         }
+
+        const snapshot: TabItem = {
+            ...currentTab,
+            isDirty: false
+        };
+
+        const existingIdx = state.savedTabs.findIndex(
+            (t) => t.id === snapshot.id
+        );
+
+        const savedTabs =
+            existingIdx === -1
+                ? [...state.savedTabs, snapshot]
+                : state.savedTabs.map((t, i) =>
+                      i === existingIdx ? snapshot : t
+                  );
+
+        // Also clear dirty flag on the live tab.
+        const tabs = state.tabs.map((t) =>
+            t.id === snapshot.id
+                ? { ...t, isDirty: false }
+                : t
+        );
+
+        state = {
+            ...state,
+            tabs,
+            savedTabs
+        };
+
+        emit();
     },
 
     clearSavedTabs() {
@@ -1016,13 +1065,16 @@ export const appStore = {
                           ...t,
                           type: type as FeatureId,
                           title: requestData.name,
-                          data: requestData
+                          data: requestData,
+                          // Mark dirty until auto-save or explicit save clears it.
+                          isDirty: true
                       }
                     : t
             )
         };
 
         emit();
+        scheduleAutoSave(tabId);
     },
 
     setNetwork(network: Network) {
@@ -1944,6 +1996,13 @@ export const appStore = {
         };
 
         persistSettings(settings);
+        setTelemetryEnabled(settings.telemetry);
+        if (typeof updates.telemetry === 'boolean') {
+            track('settings_changed', {
+                key: 'telemetry',
+                value: settings.telemetry
+            });
+        }
         emit();
     },
 

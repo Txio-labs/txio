@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useAppStore } from '@/lib/store';
 import {
     AlignLeft,
     AlertCircle,
@@ -64,6 +65,8 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
     placeholder = 'Enter JSON...',
     readOnly = false
 }) => {
+    const { settings } = useAppStore();
+    const showLineNumbers = settings.showLineNumbers;
     const [value, setValue] = useState(initialValue);
     const [prevInitialValue, setPrevInitialValue] = useState(initialValue);
     const [error, setError] = useState<ParseError | null>(null);
@@ -109,16 +112,14 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
     );
 
     const handleScroll = () => {
-        if (
-            textareaRef.current &&
-            preRef.current &&
-            lineGutterRef.current
-        ) {
+        if (textareaRef.current && preRef.current) {
             const { scrollTop, scrollLeft } =
                 textareaRef.current;
             preRef.current.scrollTop = scrollTop;
             preRef.current.scrollLeft = scrollLeft;
-            lineGutterRef.current.scrollTop = scrollTop;
+            if (lineGutterRef.current) {
+                lineGutterRef.current.scrollTop = scrollTop;
+            }
         }
     };
 
@@ -625,9 +626,11 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
             )}
 
             <div className="relative flex-1 min-h-0 flex">
+                {showLineNumbers && (
                 <div
                     ref={lineGutterRef}
                     className="shrink-0 w-12 bg-[#0a0a0a] border-r border-white/5 overflow-hidden select-none pointer-events-none"
+                    data-testid="json-editor-line-gutter"
                 >
                     <div className="py-4 pr-3 text-right font-mono text-[10px] leading-relaxed text-slate-700">
                         {Array.from(
@@ -659,6 +662,7 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
                         })}
                     </div>
                 </div>
+                )}
 
                 <div
                     className="relative flex-1 overflow-auto custom-scrollbar bg-[#18181b]"
