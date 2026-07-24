@@ -62,7 +62,7 @@ export const SettingsPage: React.FC = () => {
                         <div className="flex items-center justify-between">
                             <div>
                                 <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">Editor Auto-Save</h3>
-                                <p className="text-xs text-slate-500 mt-1">Automatically save changes to requests in tabs.</p>
+                                <p className="text-xs text-slate-500 mt-1">Debounced auto-save of the active request tab (savedTabs) while editing.</p>
                             </div>
                             <button 
                                 onClick={() => appStore.updateSettings({ autoSave: !settings.autoSave })}
@@ -74,7 +74,7 @@ export const SettingsPage: React.FC = () => {
                         <div className="flex items-center justify-between">
                             <div>
                                 <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">Show Line Numbers</h3>
-                                <p className="text-xs text-slate-500 mt-1">Display line numbers in JSON editors and snippets.</p>
+                                <p className="text-xs text-slate-500 mt-1">Show or hide the line-number gutter in JSON editors.</p>
                             </div>
                             <button 
                                 onClick={() => appStore.updateSettings({ showLineNumbers: !settings.showLineNumbers })}
@@ -86,7 +86,7 @@ export const SettingsPage: React.FC = () => {
                         <div className="flex items-center justify-between border-t border-slate-200 dark:border-white/5 pt-6">
                             <div>
                                 <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">Telemetry</h3>
-                                <p className="text-xs text-slate-500 mt-1">Allow txio to send anonymous usage data.</p>
+                                <p className="text-xs text-slate-500 mt-1">Queue anonymous product events locally when enabled (no third-party network yet).</p>
                             </div>
                             <button 
                                 onClick={() => appStore.updateSettings({ telemetry: !settings.telemetry })}
