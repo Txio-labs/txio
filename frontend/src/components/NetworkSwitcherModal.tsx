@@ -31,8 +31,8 @@ export const NetworkSwitcherModal: React.FC<NetworkSwitcherModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-near-black/60 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-[#18181b] border border-white/5 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative group">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-white/70 dark:bg-near-black/60 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/5 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative group">
           {/* Background Gradients */}
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-sui-500 to-transparent opacity-50"></div>
           <div className="absolute -top-20 -right-20 w-40 h-40 bg-electric-violet/10 blur-3xl rounded-full pointer-events-none"></div>
@@ -40,10 +40,10 @@ export const NetworkSwitcherModal: React.FC<NetworkSwitcherModalProps> = ({
 
           <div className="p-8 relative z-10">
               <div className="text-center mb-8">
-                  <div className="w-12 h-12 bg-dark-indigo-glow rounded-2xl border border-white/5 flex items-center justify-center mx-auto mb-4 shadow-inner">
+                  <div className="w-12 h-12 bg-white dark:bg-dark-indigo-glow rounded-2xl border border-slate-200 dark:border-white/5 flex items-center justify-center mx-auto mb-4 shadow-inner">
                       <Server size={24} className="text-electric-violet" />
                   </div>
-                  <h2 className="text-lg font-bold text-white mb-1">Switch Network Environment</h2>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Switch Network Environment</h2>
                   <p className="text-xs text-slate-500">Confirm transition to a new blockchain network.</p>
               </div>
               
@@ -55,16 +55,16 @@ export const NetworkSwitcherModal: React.FC<NetworkSwitcherModalProps> = ({
                       </div>
                       <div className="text-center">
                           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Current</div>
-                          <div className="text-xs font-bold text-slate-200 capitalize">{from}</div>
+                          <div className="text-xs font-bold text-slate-700 dark:text-slate-200 capitalize">{from}</div>
                       </div>
                   </div>
 
                   {/* Connection Line Animation */}
                   <div className="flex-1 flex flex-col items-center justify-center relative -top-3 px-2">
-                       <div className="relative w-full h-px bg-slate-800">
+                       <div className="relative w-full h-px bg-slate-200 dark:bg-slate-800">
                            <div className="absolute top-1/2 left-0 -translate-y-1/2 w-full h-0.5 bg-gradient-to-r from-transparent via-sui-500 to-transparent opacity-50 animate-pulse"></div>
                        </div>
-                       <div className="mt-2 bg-dark-indigo-glow border border-white/5 px-2 py-1 rounded text-[9px] text-slate-500 font-mono flex items-center gap-1">
+                       <div className="mt-2 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 px-2 py-1 rounded text-[9px] text-slate-500 font-mono flex items-center gap-1">
                            Connecting <span className="animate-pulse">...</span>
                        </div>
                   </div>
@@ -76,7 +76,7 @@ export const NetworkSwitcherModal: React.FC<NetworkSwitcherModalProps> = ({
                       </div>
                       <div className="text-center">
                           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Target</div>
-                          <div className="text-xs font-bold text-slate-200 capitalize">{to}</div>
+                          <div className="text-xs font-bold text-slate-700 dark:text-slate-200 capitalize">{to}</div>
                       </div>
                   </div>
               </div>
@@ -92,7 +92,7 @@ export const NetworkSwitcherModal: React.FC<NetworkSwitcherModalProps> = ({
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                  <button onClick={onClose} className="px-4 py-3 bg-dark-indigo-glow border border-white/5 hover:bg-white/5 text-slate-400 hover:text-white text-xs font-bold rounded-xl transition-all">
+                  <button onClick={onClose} className="px-4 py-3 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white text-xs font-bold rounded-xl transition-all">
                       Cancel Request
                   </button>
                   <button onClick={onConfirm} className="px-4 py-3 bg-electric-violet hover:bg-electric-violet text-white text-xs font-bold rounded-xl shadow-lg shadow-sui-900/20 flex items-center justify-center gap-2 transition-all active:scale-95">

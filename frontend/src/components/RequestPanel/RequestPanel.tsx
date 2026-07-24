@@ -82,7 +82,7 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-near-black relative font-sans">
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-near-black relative font-sans">
       <HeaderBar 
         requestType={request.type}
         network={network}
@@ -101,7 +101,7 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
         onCopySnippet={handleCopySnippet}
       />
 
-      <div className="flex-1 overflow-auto bg-dark-indigo-glow custom-scrollbar">
+      <div className="flex-1 overflow-auto bg-white dark:bg-dark-indigo-glow custom-scrollbar">
         {renderContent()}
       </div>
     </div>

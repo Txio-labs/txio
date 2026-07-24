@@ -39,7 +39,7 @@ const TabButton = ({
     className={`flex-1 flex flex-col items-center justify-center py-2 gap-1 transition-colors relative ${
       isActive
       ? 'text-electric-violet'
-      : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.03]'
+      : 'text-slate-500 hover:text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:bg-white/[0.03]'
     }`}
     title={label}
   >
@@ -114,11 +114,11 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   };
 
   return (
-    <div className="w-80 bg-near-black border-l border-white/[0.06] flex flex-col h-full font-sans relative z-30">
+    <div className="w-80 bg-slate-50 dark:bg-near-black border-l border-slate-200 dark:border-white/[0.06] flex flex-col h-full font-sans relative z-30">
       {/* Header */}
-      <div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-white/[0.06] bg-dark-indigo-glow">
+      <div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-slate-200 dark:border-white/[0.06] bg-white dark:bg-dark-indigo-glow">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold text-slate-300 tracking-tight">Inspector</span>
+          <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 tracking-tight">Inspector</span>
           <div className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
             network === 'mainnet' ? 'bg-emerald-500/[0.12] text-emerald-400' :
             network === 'testnet' ? 'bg-amber-500/[0.12] text-amber-400' :
@@ -130,7 +130,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         </div>
         <button
           onClick={onClose}
-          className="p-1 text-slate-500 hover:text-slate-200 rounded hover:bg-white/[0.05] transition-colors"
+          className="p-1 text-slate-500 hover:text-slate-700 dark:text-slate-200 rounded hover:bg-slate-100 dark:hover:bg-white/[0.05] transition-colors"
           aria-label="Close inspector"
         >
           <X size={13} />
@@ -138,7 +138,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
       </div>
 
       {/* Navigation */}
-      <div className="shrink-0 flex border-b border-white/[0.06] bg-near-black">
+      <div className="shrink-0 flex border-b border-slate-200 dark:border-white/[0.06] bg-slate-50 dark:bg-near-black">
         <TabButton id="wallet" icon={Wallet} label="Wallet" isActive={activeTab === 'wallet'} onSelect={setActiveTab} />
         <TabButton id="objects" icon={Box} label="Objects" isActive={activeTab === 'objects'} onSelect={setActiveTab} />
         <TabButton id="analysis" icon={BrainCircuit} label="Analysis" isActive={activeTab === 'analysis'} onSelect={setActiveTab} />
@@ -155,7 +155,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
 
         {/* --- OBJECTS TAB --- */}
         {activeTab === 'objects' && (
-          <div className="flex-1 flex flex-col min-h-0 bg-near-black">
+          <div className="flex-1 flex flex-col min-h-0 bg-slate-50 dark:bg-near-black">
             <ObjectsTab
               connectedAddress={connectedAddress}
               walletFamily={currentWallet?.family || null}

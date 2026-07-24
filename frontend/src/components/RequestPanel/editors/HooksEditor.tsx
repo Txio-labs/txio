@@ -30,19 +30,19 @@ const HookList: React.FC<{
   return (
     <div>
       <div className="flex justify-between items-center mb-2">
-        <h3 className="text-sm font-bold text-slate-200">
+        <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">
           {type === 'pre' ? 'Pre-Run Hooks' : 'Post-Run Hooks'}
         </h3>
         <button
           onClick={onAdd}
-          className="flex items-center gap-1 text-xs text-electric-violet hover:text-white"
+          className="flex items-center gap-1 text-xs text-electric-violet hover:text-slate-900 dark:hover:text-slate-900 dark:text-white"
         >
           <Plus size={12} /> Add
         </button>
       </div>
 
       {rows.length === 0 ? (
-        <div className="bg-near-black border border-white/10 rounded-lg p-4 text-xs text-slate-500 italic">
+        <div className="bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg p-4 text-xs text-slate-500 italic">
           {helpText}
         </div>
       ) : (
@@ -50,7 +50,7 @@ const HookList: React.FC<{
           {rows.map((hook) => (
             <div
               key={hook.id}
-              className="group flex items-start gap-3 p-3 bg-dark-indigo-glow border border-white/10 rounded-lg hover:border-white/20 transition-all"
+              className="group flex items-start gap-3 p-3 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 rounded-lg hover:border-slate-300 dark:border-white/20 transition-all"
             >
               <div className="pt-2">
                 <input
@@ -84,7 +84,7 @@ const HookList: React.FC<{
                     </label>
                     <input
                       placeholder="e.g. LATEST_OBJECT_ID"
-                      className="w-full bg-[#111] border border-white/10 rounded px-2 py-1.5 text-xs text-white font-mono outline-none focus:border-electric-violet"
+                      className="w-full bg-white dark:bg-[#111] border border-slate-200 dark:border-white/10 rounded px-2 py-1.5 text-xs text-slate-900 dark:text-white font-mono outline-none focus:border-electric-violet"
                       value={hook.key || ''}
                       onChange={(e) => onUpdate(hook.id, { key: e.target.value })}
                     />
@@ -96,7 +96,7 @@ const HookList: React.FC<{
                     </label>
                     <input
                       placeholder="e.g. LATEST_OBJECT_ID"
-                      className="w-full bg-[#111] border border-white/10 rounded px-2 py-1.5 text-xs text-white font-mono outline-none focus:border-electric-violet"
+                      className="w-full bg-white dark:bg-[#111] border border-slate-200 dark:border-white/10 rounded px-2 py-1.5 text-xs text-slate-900 dark:text-white font-mono outline-none focus:border-electric-violet"
                       value={hook.key || ''}
                       onChange={(e) => onUpdate(hook.id, { key: e.target.value })}
                     />
@@ -114,7 +114,7 @@ const HookList: React.FC<{
                     </label>
                     <input
                       placeholder={hook.action === 'fetch_object' ? '0x...' : 'path or literal value'}
-                      className="w-full bg-[#111] border border-white/10 rounded px-2 py-1.5 text-xs text-electric-violet font-mono outline-none focus:border-electric-violet"
+                      className="w-full bg-white dark:bg-[#111] border border-slate-200 dark:border-white/10 rounded px-2 py-1.5 text-xs text-electric-violet font-mono outline-none focus:border-electric-violet"
                       value={hook.value || ''}
                       onChange={(e) => onUpdate(hook.id, { value: e.target.value })}
                     />

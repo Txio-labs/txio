@@ -63,7 +63,7 @@ export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange }
     <div className="p-6 max-w-5xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h3 className="text-sm font-bold text-slate-200">Assertions</h3>
+          <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">Assertions</h3>
           <p className="text-xs text-slate-500 mt-1">
             Define rules to automatically validate the execution result.
           </p>
@@ -78,7 +78,7 @@ export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange }
       
       <div className="space-y-3">
         {tests.map((test, idx) => (
-          <div key={test.id} className="group flex items-start gap-3 p-3 bg-dark-indigo-glow border border-white/10 rounded-lg hover:border-white/20 transition-all">
+          <div key={test.id} className="group flex items-start gap-3 p-3 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 rounded-lg hover:border-slate-300 dark:border-white/20 transition-all">
             <div className="pt-2">
               <input 
                 type="checkbox" 
@@ -157,7 +157,7 @@ export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange }
                   {test.target === 'json_path' && (
                     <input 
                       placeholder="Path..." 
-                      className="w-1/2 bg-[#111] border border-white/10 rounded px-2 py-1.5 text-xs text-electric-violet font-mono outline-none focus:border-electric-violet"
+                      className="w-1/2 bg-white dark:bg-[#111] border border-slate-200 dark:border-white/10 rounded px-2 py-1.5 text-xs text-electric-violet font-mono outline-none focus:border-electric-violet"
                       value={test.value?.split('::')[0] || ''}
                       onChange={(e) => {
                         const val = test.value?.split('::')[1] || '';
@@ -168,7 +168,7 @@ export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange }
                   <input 
                     placeholder={test.operator === 'exists' ? 'N/A' : 'Value...'}
                     disabled={test.operator === 'exists' || test.operator === 'not_exists'}
-                    className={`flex-1 bg-[#111] border border-white/10 rounded px-2 py-1.5 text-xs text-white font-mono outline-none focus:border-electric-violet ${test.target === 'json_path' ? 'w-1/2' : 'w-full'}`}
+                    className={`flex-1 bg-white dark:bg-[#111] border border-slate-200 dark:border-white/10 rounded px-2 py-1.5 text-xs text-slate-900 dark:text-white font-mono outline-none focus:border-electric-violet ${test.target === 'json_path' ? 'w-1/2' : 'w-full'}`}
                     value={test.target === 'json_path' ? (test.value?.split('::')[1] || '') : (test.value || '')}
                     onChange={(e) => {
                       if (test.target === 'json_path') {
@@ -189,7 +189,7 @@ export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange }
           </div>
         ))}
         {tests.length === 0 && (
-          <div className="text-center py-12 border-2 border-dashed border-white/5 rounded-xl bg-white/[0.02]">
+          <div className="text-center py-12 border-2 border-dashed border-slate-200 dark:border-white/5 rounded-xl bg-slate-100/70 dark:bg-white/[0.02]">
             <Beaker size={32} className="mx-auto text-slate-600 mb-3" />
             <p className="text-sm font-bold text-slate-400">No tests defined</p>
             <p className="text-xs text-slate-600 mt-1 max-w-sm mx-auto">
