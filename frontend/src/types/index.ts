@@ -22,7 +22,7 @@ export const isNetwork = (
   typeof value === 'string' &&
   (ALL_NETWORKS as readonly string[]).includes(value);
 
-export type FeatureId = 'dashboard' | 'rpc' | 'ptb' | 'move' | 'playground' | 'history' | 'settings' | 'new_request' | 'profile' | 'ai_chat' | 'runner' | 'docs' | 'ecosystem' | 'features' | 'integrations' | 'infrastructure' | 'partners';
+export type FeatureId = 'dashboard' | 'rpc' | 'ptb' | 'move' | 'playground' | 'history' | 'settings' | 'new_request' | 'new_collection' | 'profile' | 'ai_chat' | 'runner' | 'docs' | 'ecosystem' | 'features' | 'integrations' | 'infrastructure' | 'partners';
 
 export interface TabItem {
   id: string;
@@ -183,6 +183,7 @@ export interface CollectionNode {
   id: string;
   type: 'collection' | 'folder' | 'request';
   name: string;
+  description?: string;
   isExpanded?: boolean;
   children?: CollectionNode[];
   isShared?: boolean;
