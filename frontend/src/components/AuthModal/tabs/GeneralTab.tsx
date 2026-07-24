@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, Check, LogOut, Mail, User as UserIcon } from 'lucide-react';
+import { AlertCircle, Check, FileText, FolderOpen, LogOut, Mail, Terminal, User as UserIcon } from 'lucide-react';
 import { Github } from '@/components/icons/BrandIcons';
 
 import { appStore, useAppStore } from '@/lib/store';
@@ -18,14 +18,20 @@ const countRequests = (nodes: CollectionNode[]): number =>
     }, 0);
 
 interface StatProps {
+    icon: React.ElementType;
     label: string;
     value: number;
 }
 
-const Stat: React.FC<StatProps> = ({ label, value }) => (
-    <div className="flex-1 min-w-0">
-        <div className="text-xs text-slate-500">{label}</div>
-        <div className="text-xl font-semibold text-white tracking-tight mt-0.5">{value}</div>
+const Stat: React.FC<StatProps> = ({ icon: Icon, label, value }) => (
+    <div className="flex flex-1 min-w-0 items-center gap-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.04] text-slate-400">
+            <Icon size={14} />
+        </div>
+        <div className="min-w-0">
+            <div className="text-xs text-slate-500">{label}</div>
+            <div className="text-xl font-semibold text-white tracking-tight mt-0.5">{value}</div>
+        </div>
     </div>
 );
 
@@ -101,17 +107,14 @@ export const GeneralTab: React.FC<TabProps & { onLogout: () => void }> = ({ user
 
     return (
         <div className="space-y-5 animate-in fade-in slide-in-from-right-2 duration-200">
-            {/* Workspace stats — single compact row */}
-            <section className="rounded-xl border border-white/[0.08] bg-dark-indigo-glow px-5 py-4">
-                <div className="flex items-center divide-x divide-white/[0.06]">
-                    <Stat label="Calls" value={history.length} />
-                    <div className="px-5"><Stat label="Collections" value={collections.length} /></div>
-                    <Stat label="Requests" value={savedRequestCount} />
-                </div>
-            </section>
-
-            {/* Profile details form */}
+            {/* Profile details, with workspace stats grouped in as its header */}
             <section className="rounded-xl border border-white/[0.08] bg-dark-indigo-glow overflow-hidden">
+                <div className="flex items-center divide-x divide-white/[0.06] px-5 py-4 border-b border-white/[0.06]">
+                    <Stat icon={Terminal} label="Calls" value={history.length} />
+                    <div className="px-5"><Stat icon={FolderOpen} label="Collections" value={collections.length} /></div>
+                    <Stat icon={FileText} label="Requests" value={savedRequestCount} />
+                </div>
+
                 <div className="px-5 py-4 border-b border-white/[0.06]">
                     <h3 className="text-sm font-semibold text-slate-100 tracking-tight">Profile details</h3>
                     <p className="text-xs text-slate-500 mt-0.5">Update how you appear across txio.</p>
