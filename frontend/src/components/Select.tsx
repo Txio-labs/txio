@@ -78,10 +78,10 @@ export const Select: React.FC<SelectProps> = ({
   };
 
   const variantClasses = {
-    default: 'bg-dark-indigo-glow border border-white/10 text-slate-300 hover:border-white/20 hover:text-white shadow-sm',
-    outline: 'bg-transparent border border-white/10 text-slate-400 hover:border-white/20 hover:text-white',
-    ghost: 'bg-transparent border-transparent text-slate-400 hover:bg-white/5 hover:text-white',
-    glass: 'bg-white/5 border border-white/10 text-slate-200 hover:bg-white/10 hover:border-white/20 backdrop-blur-md',
+    default: 'bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:border-white/20 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white shadow-sm',
+    outline: 'bg-transparent border border-slate-200 dark:border-white/10 text-slate-400 hover:border-slate-300 dark:border-white/20 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white',
+    ghost: 'bg-transparent border-transparent text-slate-400 hover:bg-slate-100 dark:bg-white/5 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white',
+    glass: 'bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 hover:border-slate-300 dark:border-white/20 backdrop-blur-md',
   };
 
   return (
@@ -94,7 +94,7 @@ export const Select: React.FC<SelectProps> = ({
           flex items-center justify-between gap-2 rounded-lg font-medium transition-all duration-200 outline-none select-none
           ${sizeClasses[size]}
           ${variantClasses[variant]}
-          ${isOpen ? 'border-sui-500/50 ring-1 ring-electric-violet/20 text-white z-20 relative' : ''}
+          ${isOpen ? 'border-sui-500/50 ring-1 ring-electric-violet/20 text-slate-900 dark:text-white z-20 relative' : ''}
           ${fullWidth ? 'w-full' : ''}
           ${disabled ? 'opacity-50 cursor-not-allowed grayscale-[0.5]' : ''}
         `}
@@ -114,7 +114,7 @@ export const Select: React.FC<SelectProps> = ({
       {isOpen && (
         <div 
             className={`
-                absolute z-[100] w-full min-w-[140px] p-1 bg-[#18181b] border border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top
+                absolute z-[100] w-full min-w-[140px] p-1 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top
                 ${menuPosition === 'bottom' ? 'top-full mt-1' : 'bottom-full mb-1'}
                 ${fullWidth ? '' : 'right-0'}
             `}
@@ -132,7 +132,7 @@ export const Select: React.FC<SelectProps> = ({
                   ${size === 'xs' ? 'text-[10px]' : 'text-xs'}
                   ${option.value === value
                     ? 'bg-white/10 text-electric-violet font-bold'
-                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                    : 'text-slate-400 hover:bg-slate-100 dark:bg-white/5 hover:text-slate-700 dark:text-slate-200'
                   }
                 `}
               >

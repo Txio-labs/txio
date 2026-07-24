@@ -22,13 +22,18 @@
   }
 
   body {
-    background-color: #0a0a0a;
-    color: #e4e4e7;
+    background-color: #fafafa;
+    color: #3f3f46;
     font-family: 'Space Grotesk', 'Inter', sans-serif;
     overflow: hidden;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  .dark body {
+    background-color: #0a0a0a;
+    color: #e4e4e7;
   }
 
   h1, h2, h3, h4, h5, h6 {

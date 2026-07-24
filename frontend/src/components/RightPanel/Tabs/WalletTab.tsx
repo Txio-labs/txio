@@ -58,13 +58,13 @@ export const WalletTab: React.FC<
     if (!currentWallet) {
         return (
             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-5">
-                <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(163,163,163,0.16),transparent_42%),linear-gradient(180deg,rgba(24,24,27,0.98),rgba(10,10,10,0.98))] p-5">
+                <div className="relative overflow-hidden rounded-[28px] border border-slate-200 dark:border-white/10 bg-[radial-gradient(circle_at_top,rgba(163,163,163,0.16),transparent_42%),linear-gradient(180deg,rgba(24,24,27,0.98),rgba(10,10,10,0.98))] p-5">
                     <div className="absolute inset-0 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.04),transparent)] opacity-60" />
                     <div className="relative z-10">
                         <div className="mb-4 inline-flex rounded-2xl border border-electric-violet/20 bg-electric-violet/10 p-3 text-electric-violet shadow-[0_20px_45px_rgba(163,163,163,0.18)]">
                             <Wallet size={24} />
                         </div>
-                        <div className="mb-2 text-sm font-bold text-white">
+                        <div className="mb-2 text-sm font-bold text-slate-900 dark:text-white">
                             Universal wallet access
                         </div>
                         <p className="mb-5 text-xs leading-6 text-slate-400">
@@ -107,7 +107,7 @@ export const WalletTab: React.FC<
 
     return (
         <div className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-5">
-            <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(163,163,163,0.18),transparent_42%),linear-gradient(180deg,rgba(24,24,27,0.98),rgba(10,10,10,0.98))] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.4)]">
+            <div className="relative overflow-hidden rounded-[28px] border border-slate-200 dark:border-white/10 bg-[radial-gradient(circle_at_top,rgba(163,163,163,0.18),transparent_42%),linear-gradient(180deg,rgba(24,24,27,0.98),rgba(10,10,10,0.98))] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.4)]">
                 <div className="absolute -right-8 top-0 h-32 w-32 rounded-full bg-electric-violet/10 blur-[48px]" />
                 <div className="relative z-10">
                     <div className="flex items-start justify-between gap-3">
@@ -115,7 +115,7 @@ export const WalletTab: React.FC<
                             <div className="text-[10px] font-black uppercase tracking-[0.26em] text-slate-500">
                                 Active wallet
                             </div>
-                            <div className="mt-2 text-lg font-semibold text-white">
+                            <div className="mt-2 text-lg font-semibold text-slate-900 dark:text-white">
                                 {
                                     currentWallet.name
                                 }
@@ -130,7 +130,7 @@ export const WalletTab: React.FC<
                                 }
                             </div>
                         </div>
-                        <div className="rounded-full border border-white/10 bg-white/[0.04] p-1">
+                        <div className="rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/[0.04] p-1">
                             <Avatar
                                 size="xs"
                                 seed={
@@ -140,19 +140,19 @@ export const WalletTab: React.FC<
                         </div>
                     </div>
 
-                    <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-4">
+                    <div className="mt-5 rounded-2xl border border-slate-200 dark:border-white/10 bg-black/20 p-4">
                         <div className="flex items-center justify-between gap-3">
                             <div>
                                 <div className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">
                                     Address
                                 </div>
-                                <div className="mt-1 font-mono text-sm text-white">
+                                <div className="mt-1 font-mono text-sm text-slate-900 dark:text-white">
                                     {formatAddress(
                                         currentWallet.address
                                     )}
                                 </div>
                             </div>
-                            <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-slate-300">
+                            <span className="rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/[0.04] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-slate-600 dark:text-slate-300">
                                 {status}
                             </span>
                         </div>
@@ -176,12 +176,12 @@ export const WalletTab: React.FC<
                             />
                         </div>
 
-                        <div className="mt-5 flex items-center gap-2 rounded-2xl border border-white/10 bg-near-black/40 p-1">
+                        <div className="mt-5 flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-near-black/40 p-1">
                             <button
                                 onClick={() =>
                                     void handleCopy()
                                 }
-                                className="flex flex-1 items-center justify-center gap-1.5 rounded-[14px] px-3 py-2 text-[11px] font-bold text-slate-400 transition-colors hover:bg-white/5 hover:text-white"
+                                className="flex flex-1 items-center justify-center gap-1.5 rounded-[14px] px-3 py-2 text-[11px] font-bold text-slate-400 transition-colors hover:bg-slate-100 dark:bg-white/5 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white"
                             >
                                 {copied ? (
                                     <Check
@@ -210,7 +210,7 @@ export const WalletTab: React.FC<
                                 disabled={
                                     !explorerUrl
                                 }
-                                className="flex flex-1 items-center justify-center gap-1.5 rounded-[14px] px-3 py-2 text-[11px] font-bold text-slate-400 transition-colors hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                                className="flex flex-1 items-center justify-center gap-1.5 rounded-[14px] px-3 py-2 text-[11px] font-bold text-slate-400 transition-colors hover:bg-slate-100 dark:bg-white/5 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 <ExternalLink size={13} />
                                 Explorer
@@ -247,11 +247,11 @@ function Metric({
     value: string;
 }) {
     return (
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3">
+        <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/[0.03] px-3 py-3">
             <div className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">
                 {label}
             </div>
-            <div className="mt-2 text-sm font-semibold text-white">
+            <div className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">
                 {value}
             </div>
         </div>
@@ -268,11 +268,11 @@ function InfoCard({
     body: string;
 }) {
     return (
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="mb-3 inline-flex rounded-2xl border border-white/10 bg-black/20 p-2 text-electric-violet">
+        <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/[0.03] p-4">
+            <div className="mb-3 inline-flex rounded-2xl border border-slate-200 dark:border-white/10 bg-black/20 p-2 text-electric-violet">
                 {icon}
             </div>
-            <div className="text-xs font-bold text-white">
+            <div className="text-xs font-bold text-slate-900 dark:text-white">
                 {title}
             </div>
             <div className="mt-1 text-[11px] leading-6 text-slate-400">

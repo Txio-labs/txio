@@ -36,10 +36,10 @@ export const DiscussTab: React.FC<DiscussTabProps> = ({
               <Avatar size="sm" type="user" seed={c.userName} />
               <div>
                 <div className="flex items-baseline gap-2 mb-1">
-                  <span className="text-xs font-bold text-slate-300">{c.userName}</span>
+                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300">{c.userName}</span>
                   <span className="text-[10px] text-slate-600">{new Date(c.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                 </div>
-                <div className="text-xs text-slate-400 bg-[#18181b] p-2 rounded-lg rounded-tl-none border border-white/10">
+                <div className="text-xs text-slate-400 bg-white dark:bg-[#18181b] p-2 rounded-lg rounded-tl-none border border-slate-200 dark:border-white/10">
                   {c.content}
                 </div>
               </div>
@@ -48,15 +48,15 @@ export const DiscussTab: React.FC<DiscussTabProps> = ({
         )}
         <div ref={commentsEndRef} />
       </div>
-      <div className="p-3 border-t border-white/10 bg-near-black">
+      <div className="p-3 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black">
         <form onSubmit={onSubmitComment} className="relative">
           <input 
-            className="w-full bg-near-black border border-white/10 rounded-lg py-2 pl-3 pr-10 text-xs text-white focus:border-electric-violet outline-none transition-all placeholder:text-slate-600"
+            className="w-full bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg py-2 pl-3 pr-10 text-xs text-slate-900 dark:text-white focus:border-electric-violet outline-none transition-all placeholder:text-slate-600"
             placeholder="Add a comment..."
             value={commentInput}
             onChange={(e) => onCommentInputChange(e.target.value)}
           />
-          <button type="submit" disabled={!commentInput.trim()} className="absolute right-2 top-1.5 text-slate-500 hover:text-white disabled:opacity-50 transition-colors">
+          <button type="submit" disabled={!commentInput.trim()} className="absolute right-2 top-1.5 text-slate-500 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white disabled:opacity-50 transition-colors">
             <Send size={14} />
           </button>
         </form>
