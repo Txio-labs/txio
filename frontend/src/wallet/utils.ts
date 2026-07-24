@@ -224,10 +224,8 @@ export const detectInjectedWallets =
         };
     };
 
-const EVM_EXPLORERS: Record<
-    string,
-    string
-> = {
+/** Chain-native EVM explorers (Etherscan-family / brand scanners). */
+const EVM_FAMILY_EXPLORERS: Record<string, string> = {
     'eip155:1': 'https://etherscan.io/address/',
     'eip155:8453': 'https://basescan.org/address/',
     'eip155:137': 'https://polygonscan.com/address/',
@@ -245,43 +243,91 @@ const EVM_EXPLORERS: Record<
     'eip155:97': 'https://testnet.bscscan.com/address/'
 };
 
+/** Blockscout address explorers (where a public instance is known). */
+const EVM_BLOCKSCOUT_EXPLORERS: Record<string, string> = {
+    'eip155:1': 'https://eth.blockscout.com/address/',
+    'eip155:8453': 'https://base.blockscout.com/address/',
+    'eip155:137': 'https://polygon.blockscout.com/address/',
+    'eip155:42161': 'https://arbitrum.blockscout.com/address/',
+    'eip155:10': 'https://optimism.blockscout.com/address/',
+    'eip155:11155111': 'https://eth-sepolia.blockscout.com/address/',
+    'eip155:84532': 'https://base-sepolia.blockscout.com/address/'
+};
+
+/** @deprecated Prefer EVM_FAMILY_EXPLORERS; kept for any external imports. */
+const EVM_EXPLORERS = EVM_FAMILY_EXPLORERS;
+
+export type ExplorerPreferences = Pick<
+    AppSettings,
+    'explorer' | 'evmExplorer' | 'stellarExplorer'
+>;
+
+const DEFAULT_EXPLORER_PREFS: ExplorerPreferences = {
+    explorer: 'suiscan',
+    evmExplorer: 'family',
+    stellarExplorer: 'stellarexpert'
+};
+
+/**
+ * Resolve an external block-explorer URL for a connected wallet.
+ * Honors per-family preferences from Settings (Sui / EVM / Stellar).
+ */
 export const getWalletExplorerUrl = (
     wallet: ConnectedWallet,
-    explorer: AppSettings['explorer'] =
-        'suiscan'
+    explorerOrPrefs:
+        | AppSettings['explorer']
+        | ExplorerPreferences
+        | Partial<ExplorerPreferences> = 'suiscan'
 ) => {
+    // Backward-compat: older call sites passed only the Sui explorer string.
+    const prefs: ExplorerPreferences =
+        typeof explorerOrPrefs === 'string'
+            ? {
+                  ...DEFAULT_EXPLORER_PREFS,
+                  explorer: explorerOrPrefs
+              }
+            : {
+                  ...DEFAULT_EXPLORER_PREFS,
+                  ...explorerOrPrefs
+              };
+
     if (wallet.family === 'evm') {
-        const explorer =
-            EVM_EXPLORERS[
-                wallet.chain.id
-            ];
-        return explorer
-            ? `${explorer}${wallet.address}`
-            : null;
+        const map =
+            prefs.evmExplorer === 'blockscout'
+                ? EVM_BLOCKSCOUT_EXPLORERS
+                : EVM_FAMILY_EXPLORERS;
+        const base =
+            map[wallet.chain.id] ??
+            EVM_FAMILY_EXPLORERS[wallet.chain.id];
+        return base ? `${base}${wallet.address}` : null;
     }
 
     if (wallet.family === 'sui') {
         const network =
-            wallet.chain.network ===
-            'mainnet'
+            wallet.chain.network === 'mainnet'
                 ? 'mainnet'
-                : wallet.chain.network ===
-                    'devnet'
+                : wallet.chain.network === 'devnet'
                   ? 'devnet'
                   : 'testnet';
 
         return getSuiAccountExplorerUrl(
             wallet.address,
             network as Network,
-            explorer
+            prefs.explorer
         );
     }
 
+    // Stellar
     const networkPath =
-        wallet.chain.network ===
-        'testnet'
-            ? 'testnet'
-            : 'public';
+        wallet.chain.network === 'testnet' ? 'testnet' : 'public';
+
+    if (prefs.stellarExplorer === 'stellarchain') {
+        const host =
+            networkPath === 'testnet'
+                ? 'https://testnet.stellarchain.io'
+                : 'https://stellarchain.io';
+        return `${host}/accounts/${wallet.address}`;
+    }
 
     return `https://stellar.expert/explorer/${networkPath}/account/${wallet.address}`;
 };
