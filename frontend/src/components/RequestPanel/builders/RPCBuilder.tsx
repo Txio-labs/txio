@@ -1,9 +1,17 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { AlertCircle, Search, Loader2, Check, ArrowRight, FileCode } from 'lucide-react';
-import { ADDRESS_FIRST_PARAM_METHODS, COMMON_RPC_METHODS, RPC_METHOD_TEMPLATES } from '@/lib/constants';
+import {
+  ADDRESS_FIRST_PARAM_METHODS,
+  COMMON_RPC_METHODS,
+  DEFAULT_RPC_CHAIN,
+  RPC_CHAINS,
+  RPC_METHOD_TEMPLATES,
+} from '@/lib/constants';
 import { useAppStore } from '@/lib/store';
 import { looksLikeSuiNs, resolveSuiAddress, SuiRpcError } from '@/services/suiService';
+import { ChainId } from '@/types';
 import { JsonEditor } from '../../ui/JsonEditor';
+import { Select } from '../../Select';
 
 interface RPCBuilderProps {
   request: any;
@@ -24,6 +32,22 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [rawJson, setRawJson] = useState<string | null>(null);
   const [resolutionResult, setResolutionResult] = useState<NsResolutionState>({ status: 'idle', name: '' });
+
+  const chain: ChainId = request.rpcParams.chain ?? DEFAULT_RPC_CHAIN;
+  const methodsForChain = COMMON_RPC_METHODS[chain];
+  const templatesForChain = RPC_METHOD_TEMPLATES[chain];
+
+  const setChain = useCallback(
+    (nextChain: ChainId) => {
+      onChange({
+        ...request,
+        rpcParams: { ...request.rpcParams, chain: nextChain, method: '', params: [] },
+      });
+      setRawJson(null);
+      setJsonError(null);
+    },
+    [onChange, request],
+  );
 
   const displayJson =
     rawJson !== null
@@ -49,7 +73,7 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
 
   const applyParamsTemplate = useCallback(
     (method: string) => {
-      const template = RPC_METHOD_TEMPLATES[method];
+      const template = templatesForChain[method];
       if (!template) return;
       const nextParams = template.map((v) =>
         v && typeof v === 'object' ? structuredClone(v) : v,
@@ -61,19 +85,19 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
         rpcParams: { ...request.rpcParams, params: nextParams },
       });
     },
-    [onChange, request],
+    [onChange, request, templatesForChain],
   );
 
   const methodHasTemplate = useMemo(
-    () => Boolean(request.rpcParams.method) && request.rpcParams.method in RPC_METHOD_TEMPLATES,
-    [request.rpcParams.method],
+    () => Boolean(request.rpcParams.method) && request.rpcParams.method in templatesForChain,
+    [request.rpcParams.method, templatesForChain],
   );
 
   // Auto-fill template when method changes and params are empty.
   const lastAutofilledMethod = useRef<string | null>(null);
   useEffect(() => {
     const method = request.rpcParams.method;
-    if (!method || !(method in RPC_METHOD_TEMPLATES)) return;
+    if (!method || !(method in templatesForChain)) return;
     if (lastAutofilledMethod.current === method) return;
 
     const current = request.rpcParams.params;
@@ -86,18 +110,19 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
 
     lastAutofilledMethod.current = method;
     queueMicrotask(() => applyParamsTemplate(method));
-  }, [request.rpcParams.method, request.rpcParams.params, applyParamsTemplate]);
+  }, [request.rpcParams.method, request.rpcParams.params, applyParamsTemplate, templatesForChain]);
 
   // First-param name detection: only when method is in the address-first set
-  // AND params[0] is a string that looks like a .sui name.
+  // AND params[0] is a string that looks like a .sui name. SuiNS only exists
+  // on Sui, so this is skipped entirely for other chains.
   const candidateName = useMemo(() => {
     const method = request.rpcParams.method;
-    if (!method || !ADDRESS_FIRST_PARAM_METHODS.has(method)) return null;
+    if (chain !== 'sui' || !method || !ADDRESS_FIRST_PARAM_METHODS.has(method)) return null;
     const first = request.rpcParams.params?.[0];
     if (typeof first !== 'string') return null;
     const trimmed = first.trim();
     return looksLikeSuiNs(trimmed) ? trimmed : null;
-  }, [request.rpcParams.method, request.rpcParams.params]);
+  }, [chain, request.rpcParams.method, request.rpcParams.params]);
 
   // Debounced resolve when the candidate name changes
   const lastResolved = useRef<string | null>(null);
@@ -161,13 +186,28 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
           <div className="w-1.5 h-6 bg-emerald-500 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.4)]"></div>
           <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-[0.2em]">RPC Method</h3>
         </div>
+
+        {/* Chain selector — scopes the method suggestions and "Insert template" below. */}
+        <div className="mb-4">
+          <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-2">
+            Chain
+          </label>
+          <Select
+            value={chain}
+            onChange={(value) => setChain(value as ChainId)}
+            options={RPC_CHAINS.map((c) => ({ label: c.label, value: c.id }))}
+            fullWidth
+            variant="glass"
+          />
+        </div>
+
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={16} />
           <input
             list="rpc-methods-builder"
             type="text"
             className="w-full bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-white focus:border-electric-violet focus:outline-none transition-all font-mono"
-            placeholder="e.g. suix_getOwnedObjects"
+            placeholder={`e.g. ${methodsForChain[0] ?? 'method_name'}`}
             value={request.rpcParams.method}
             onChange={(e) =>
               onChange({
@@ -178,7 +218,7 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
             }
           />
           <datalist id="rpc-methods-builder">
-            {COMMON_RPC_METHODS.map((m) => (
+            {methodsForChain.map((m) => (
               <option key={m} value={m} />
             ))}
           </datalist>
