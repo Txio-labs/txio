@@ -57,33 +57,8 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
   onSelectCollectionRequest,
   onCreateCollection
 }) => {
-  const [isAddingCollection, setIsAddingCollection] = useState(false);
-  const [newCollectionName, setNewCollectionName] = useState('');
-  const createInputRef = useRef<HTMLInputElement>(null);
   const isFiltering = filterQuery.trim().length > 0;
   const visibleCollections = filterCollectionTree(collections, filterQuery);
-
-  useEffect(() => {
-    if (isAddingCollection && createInputRef.current) {
-      createInputRef.current.focus();
-    }
-  }, [isAddingCollection]);
-
-  const handleCreateCollection = (e?: React.MouseEvent) => {
-    if (e) e.preventDefault();
-    const name = newCollectionName.trim() || 'New Collection';
-    onCreateCollection(name);
-    setIsAddingCollection(false);
-    setNewCollectionName('');
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleCreateCollection();
-    else if (e.key === 'Escape') {
-      setIsAddingCollection(false);
-      setNewCollectionName('');
-    }
-  };
 
   const renderTree = (nodes: CollectionNode[], depth = 0) => {
     return nodes.map((node, index) => {
@@ -161,28 +136,12 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
     <div className="flex-1 pb-4 px-2">
       <button
         type="button"
-        onClick={() => setIsAddingCollection(true)}
+        onClick={() => appStore.openTab('new_collection')}
         className="w-full flex items-center gap-1.5 px-2 py-1 mb-1 text-[11px] text-slate-500 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:bg-white/5 rounded-lg transition-colors"
       >
         <Plus size={11} />
         <span>New Collection</span>
       </button>
-      {isAddingCollection && (
-        <div className="mb-2 px-1 animate-in slide-in-from-top-2 duration-200">
-          <div className="flex items-center gap-2 bg-white dark:bg-dark-indigo-glow/80 p-1.5 rounded-lg border border-sui-500/50 ring-1 ring-electric-violet/20 shadow-lg">
-            <Folder size={14} className="text-electric-violet shrink-0" />
-            <input 
-              ref={createInputRef} 
-              className="bg-transparent text-xs text-slate-900 dark:text-white outline-none flex-1 min-w-0 placeholder:text-slate-500 font-medium" 
-              placeholder="Collection Name..." 
-              value={newCollectionName} 
-              onChange={(e) => setNewCollectionName(e.target.value)} 
-              onKeyDown={handleKeyDown} 
-              onBlur={() => setTimeout(() => { if (newCollectionName.trim() === '') setIsAddingCollection(false); }, 150)} 
-            />
-          </div>
-        </div>
-      )}
       
       <div className="pl-1 space-y-0.5">
         {visibleCollections.length > 0 ? (
