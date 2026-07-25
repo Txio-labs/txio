@@ -138,47 +138,49 @@ export const Layout: React.FC<LayoutProps> = ({
                 </div>
             )}
 
-            <header className="h-12 bg-near-black border-b border-white/10 flex items-center justify-between px-4 shrink-0 z-20">
-                <div className="flex items-center gap-4">
+            <header className="h-12 bg-near-black border-b border-white/10 flex items-center justify-between px-3 shrink-0 z-20">
+                <div className="flex items-center gap-2">
                     <div 
-                        className="flex items-center gap-2 font-bold text-slate-100 group cursor-pointer"
+                        className="flex items-center gap-1.5 font-bold text-slate-100 group cursor-pointer"
                         onClick={() => appStore.setActiveTab(null)}
                     >
-                        <div className="w-6 h-6 rounded flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <div className="w-5 h-5 rounded flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                             <TxioLogoSmall />
                         </div>
-                        <span className="text-sm tracking-tight group-hover:text-sui-300 transition-colors">txio</span>
+                        <span className="text-xs tracking-tight group-hover:text-sui-300 transition-colors">txio</span>
                     </div>
-                    <div className="h-4 w-px bg-white/10 mx-2"></div>
-                    <button onClick={() => appStore.toggleSidebar()} className={`p-1.5 rounded hover:bg-white/10 transition-colors ${isSidebarOpen ? 'text-electric-violet' : 'text-slate-500'}`}>
-                        <PanelLeft size={16} />
+                    <div className="h-3 w-px bg-white/10 mx-1.5"></div>
+                    <button onClick={() => appStore.toggleSidebar()} className={`p-1.5 rounded hover:bg-white/10 transition-colors ${isSidebarOpen ? 'text-electric-violet' : 'text-slate-500'}`} title="Toggle sidebar">
+                        <PanelLeft size={14} />
                     </button>
                     <button 
                         onClick={() => appStore.setCommandPalette(true)}
-                        className="flex items-center gap-2 bg-dark-indigo-glow border border-white/5 hover:border-white/20 hover:bg-[#111] px-3 py-1.5 rounded-full text-xs text-slate-400 w-64 transition-all group shadow-inner"
+                        className="flex items-center gap-1.5 bg-dark-indigo-glow border border-white/5 hover:border-white/20 hover:bg-[#111] px-2 py-1 rounded-full text-xs text-slate-400 w-48 transition-all group shadow-inner"
+                        title="Search commands (Ctrl+K)"
                     >
-                        <Search size={12} className="group-hover:text-electric-violet" />
-                        <span>Search commands...</span>
-                        <div className="ml-auto flex items-center gap-1">
-                            <span className="bg-white/5 px-1 rounded text-[10px] text-slate-500 group-hover:text-slate-300">⌘</span>
-                            <span className="bg-white/5 px-1 rounded text-[10px] text-slate-500 group-hover:text-slate-300">K</span>
+                        <Search size={11} className="group-hover:text-electric-violet" />
+                        <span className="whitespace-nowrap">Search...</span>
+                        <div className="ml-auto hidden md:flex items-center gap-0.5">
+                            <span className="bg-white/5 px-1 rounded text-[9px] text-slate-500 group-hover:text-slate-300">⌘</span>
+                            <span className="bg-white/5 px-1 rounded text-[9px] text-slate-500 group-hover:text-slate-300">K</span>
                         </div>
                     </button>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
                     <div className="relative" ref={networkMenuRef}>
                         <button 
                             onClick={() => setIsNetworkMenuOpen(!isNetworkMenuOpen)}
-                            className={`flex items-center gap-2 px-3 py-1 rounded-full bg-dark-indigo-glow border border-white/10 text-xs hover:bg-[#111] transition-all hover:border-white/20 shadow-sm ${isNetworkMenuOpen ? 'border-slate-600 bg-slate-800' : ''}`}
+                            className={`flex items-center gap-1 px-2 py-1 rounded-full bg-dark-indigo-glow border border-white/10 text-xs hover:bg-[#111] transition-all hover:border-white/20 shadow-sm ${isNetworkMenuOpen ? 'border-slate-600 bg-slate-800' : ''} w-24`}
+                            title="Network"
                         >
-                            <div className={`w-2 h-2 rounded-full ${rpcHealth?.status === 'healthy' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' : rpcHealth?.status === 'degraded' ? 'bg-amber-500' : 'bg-red-500'} animate-pulse`}></div>
-                            <span className="text-slate-300 capitalize font-medium">{network}</span>
-                            <ChevronDown size={10} className={`text-slate-500 transition-transform duration-200 ${isNetworkMenuOpen ? 'rotate-180' : ''}`}/>
+                            <div className={`w-1.5 h-1.5 rounded-full ${rpcHealth?.status === 'healthy' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' : rpcHealth?.status === 'degraded' ? 'bg-amber-500' : 'bg-red-500'} animate-pulse`}></div>
+                            <span className="text-slate-300 capitalize font-medium truncate max-w-[40px]">{network}</span>
+                            <ChevronDown size={10} className={`text-slate-500 transition-transform duration-200 shrink-0 ${isNetworkMenuOpen ? 'rotate-180' : ''}`}/>
                         </button>
 
                         {isNetworkMenuOpen && (
-                            <div className="absolute top-full right-0 mt-2 w-48 bg-[#003152] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
+                            <div className="absolute top-full right-0 mt-2 w-44 bg-[#003152] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
                                 <div className="p-1">
                                     {(['mainnet', 'testnet', 'devnet'] as Network[]).map((net) => (
                                         <button
@@ -190,7 +192,7 @@ export const Layout: React.FC<LayoutProps> = ({
                                                 : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
                                             }`}
                                         >
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-1.5">
                                                 <div className={`w-1.5 h-1.5 rounded-full ${
                                                     net === 'mainnet' ? 'bg-emerald-500' : 
                                                     net === 'testnet' ? 'bg-amber-500' : 
@@ -202,8 +204,8 @@ export const Layout: React.FC<LayoutProps> = ({
                                         </button>
                                     ))}
                                 </div>
-                                <div className="border-t border-white/10 p-2 bg-near-black/20">
-                                    <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                                <div className="border-t border-white/10 p-1.5 bg-near-black/20">
+                                    <div className="flex justify-between text-[8px] text-slate-500 font-mono">
                                         <span>Latency</span>
                                         <span className={rpcHealth?.status === 'healthy' ? 'text-emerald-500' : rpcHealth?.status === 'degraded' ? 'text-amber-500' : 'text-red-400'}>
                                             {rpcHealth?.latency?.[0]
@@ -216,11 +218,11 @@ export const Layout: React.FC<LayoutProps> = ({
                         )}
                     </div>
                     
-                    <button onClick={() => appStore.toggleInspector()} className={`p-1.5 rounded hover:bg-white/10 transition-colors ${isInspectorOpen ? 'text-electric-violet' : 'text-slate-500'}`}>
-                        <PanelRight size={16} />
+                    <button onClick={() => appStore.toggleInspector()} className={`p-1.5 rounded hover:bg-white/10 transition-colors ${isInspectorOpen ? 'text-electric-violet' : 'text-slate-500'}`} title="Toggle inspector">
+                        <PanelRight size={14} />
                     </button>
                     
-                    <button onClick={() => appStore.setAuthModal(true)} className="w-8 h-8 cursor-pointer hover:ring-2 ring-electric-violet/50 rounded-xl transition-all">
+                    <button onClick={() => appStore.setAuthModal(true)} className="w-7 h-7 cursor-pointer hover:ring-2 ring-electric-violet/50 rounded-lg transition-all" title="Account">
                         <Avatar size="sm" src={user?.avatarUrl} />
                     </button>
                 </div>

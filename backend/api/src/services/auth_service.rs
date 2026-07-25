@@ -232,6 +232,19 @@ impl AuthService {
         Ok(Self::to_user_response(&updated_user))
     }
 
+    pub async fn update_user_github_account(
+        &self,
+        user: &User,
+        github_account: &crate::model::user::GitHubAccount,
+    ) -> Result<User, AppError> {
+        let mut updated_user = user.clone();
+        updated_user.github_account = Some(github_account.clone());
+
+        let saved_user = self.repo.update(&updated_user).await?;
+
+        Ok(saved_user)
+    }
+
     pub async fn oauth_login_or_register(&self, email: String) -> Result<AuthResponse, AppError> {
         let user_result = self.repo.find_by_email(&email).await;
 

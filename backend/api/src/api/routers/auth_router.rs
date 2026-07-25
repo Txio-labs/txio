@@ -39,5 +39,9 @@ pub fn router(service: AuthService) -> Router {
             "/github/callback",
             axum::routing::get(auth_handler::github_callback),
         )
+        .route(
+            "/github/unlink",
+            axum::routing::post(auth_handler::github_unlink),
+        )
         .with_state(service)
 }

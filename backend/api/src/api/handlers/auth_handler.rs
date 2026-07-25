@@ -84,6 +84,27 @@ pub async fn logout() -> Result<Json<Value>, AppError> {
     Ok(Json(json!({ "message": "Logged out successfully" })))
 }
 
+pub async fn github_unlink(
+    State(service): State<AuthService>,
+    claims: crate::utils::auth_jwt::Claims,
+) -> Result<Json<Value>, AppError> {
+    let mut user = service.get_user_profile_by_email(&claims.email).await?;
+
+    if user.github_account.is_none() {
+        return Err(AppError::BadRequest("No GitHub account linked".into()));
+    }
+
+    user.github_account = None;
+
+    let updated_user = service.update_user_github_account(&user, &GitHubAccount {
+        id: String::new(),
+        login: String::new(),
+        access_token: None,
+    }).await?;
+
+    Ok(Json(json!({ "message": "GitHub account unlinked successfully" })))
+}
+
 pub async fn get_user_profile(
     State(service): State<AuthService>,
     claims: crate::utils::auth_jwt::Claims,
@@ -424,11 +445,35 @@ pub async fn github_callback(
 
     let auth_res = service.oauth_login_or_register(email).await?;
 
-    let redirect_to = format!(
-        "{}/?token={}",
-        frontend_url.trim_end_matches('/'),
-        auth_res.token
-    );
+    let mut user = service.get_user_profile_by_email(&auth_res.user.email).await?;
 
-    Ok(axum::response::Redirect::temporary(&redirect_to))
+    if user.github_account.is_none() {
+        let github_account = GitHubAccount {
+            id: user_data["id"].to_string(),
+            login: user_data["login"].as_str().unwrap_or("").to_string(),
+            access_token: Some(access_token),
+        };
+        user.github_account = Some(github_account);
+
+        let updated_user = service.update_user_github_account(&user, &github_account).await?;
+        let updated_user_response = AuthResponse {
+            token: auth_res.token,
+            user: Self::to_user_response(&updated_user),
+        };
+        let redirect_to = format!(
+            "{}/?token={}",
+            frontend_url.trim_end_matches('/'),
+            updated_user_response.token
+        );
+
+        Ok(axum::response::Redirect::temporary(&redirect_to))
+    } else {
+        let redirect_to = format!(
+            "{}/?token={}",
+            frontend_url.trim_end_matches('/'),
+            auth_res.token
+        );
+
+        Ok(axum::response::Redirect::temporary(&redirect_to))
+    }
 }

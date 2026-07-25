@@ -2,6 +2,14 @@ use serde::{Deserialize, Serialize};
 use mongodb::bson::oid::ObjectId;
 use chrono::{DateTime, Utc};
 
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct GitHubAccount {
+    pub id: String,
+    pub login: String,
+    #[serde(skip_serializing)]
+    pub access_token: Option<String>,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct User {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
@@ -12,6 +20,7 @@ pub struct User {
     #[serde(default)]
     pub network: SuiNetwork,
     pub created_at: DateTime<Utc>,
+    pub github_account: Option<GitHubAccount>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default, clap::ValueEnum)]

@@ -487,6 +487,15 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
                                             </button>
                                         </div>
                                     </Field>
+                                    <div className="mt-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => window.location.href = `${API_BASE}/auth/github/unlink`}
+                                            className="text-[11px] text-rose-400 hover:text-rose-300 transition-colors"
+                                        >
+                                            Unlink GitHub
+                                        </button>
+                                    </div>
                                     <Field label="Timezone" hint="Detected from your browser." htmlFor="profile-tz">
                                         <input
                                             id="profile-tz"
