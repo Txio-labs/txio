@@ -197,6 +197,18 @@ export interface CollectionNode {
   workspaceId?: string; // Added for workspace filtering
 }
 
+// A user-created transaction recipe template (Recipes page). `id` is a real
+// Mongo id for persisted templates, or a `local-*` id for built-in seed
+// templates that only exist client-side and cannot be deleted via the API.
+export interface RecipeTemplate {
+  id: string;
+  title: string;
+  type: string;
+  description?: string;
+  payload?: Record<string, unknown>;
+  isBuiltIn?: boolean;
+}
+
 // --- PTB Visualizer Types ---
 
 export type NodeType = 'transaction' | 'transfer' | 'splitCoins' | 'mergeCoins' | 'moveCall' | 'object';

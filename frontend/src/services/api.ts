@@ -3,6 +3,7 @@ import {
     CollectionNode,
     isNetwork,
     Network,
+    RecipeTemplate,
     RequestItem,
     RequestType,
     UserProfile,
@@ -106,6 +107,15 @@ interface BackendWorkspace {
     type?: 'Personal' | 'Team' | null;
     active_env_id?: string | null;
     activeEnvId?: string | null;
+}
+
+interface BackendRecipeTemplate {
+    id?: MongoIdLike;
+    _id?: MongoIdLike;
+    title: string;
+    recipe_type: string;
+    description?: string | null;
+    payload?: Record<string, unknown>;
 }
 
 interface BackendSavedRequest {
@@ -306,6 +316,18 @@ const normalizeSavedRequest = (
             : undefined
     };
 };
+
+const normalizeRecipeTemplate = (
+    template: BackendRecipeTemplate
+): RecipeTemplate => ({
+    id:
+        extractId(template.id ?? template._id) ||
+        `${template.title}-${Date.now()}`,
+    title: template.title?.trim() || 'Untitled Template',
+    type: template.recipe_type || 'PTB',
+    description: template.description ?? undefined,
+    payload: template.payload ?? {}
+});
 
 const normalizeCollectionNode = (
     collection: BackendCollection,
@@ -994,6 +1016,46 @@ class ApiService {
         >(`/collections/${id}`, {
             method: 'DELETE'
         });
+    }
+
+    // Recipe Templates
+    async getRecipeTemplates(): Promise<RecipeTemplate[]> {
+        const templates =
+            await this.request<BackendRecipeTemplate[]>(
+                '/recipe-templates'
+            );
+
+        return templates.map(normalizeRecipeTemplate);
+    }
+
+    async createRecipeTemplate(
+        title: string,
+        recipeType: string,
+        description?: string,
+        payload?: Record<string, unknown>
+    ): Promise<RecipeTemplate> {
+        const data =
+            await this.request<BackendRecipeTemplate>(
+                '/recipe-templates',
+                {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        title,
+                        recipe_type: recipeType,
+                        description,
+                        payload: payload ?? {}
+                    })
+                }
+            );
+
+        return normalizeRecipeTemplate(data);
+    }
+
+    async deleteRecipeTemplate(id: string): Promise<void> {
+        await this.request<BackendMessageResponse>(
+            `/recipe-templates/${id}`,
+            { method: 'DELETE' }
+        );
     }
 
     // Requests
