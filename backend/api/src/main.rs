@@ -84,6 +84,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     otp_repo.ensure_indexes().await?;
     let rpc_repo = repositories::rpc_repository::RpcRepository::new(&db);
     let collection_repo = repositories::collection_repository::CollectionRepository::new(&db);
+    let recipe_template_repo =
+        repositories::recipe_template_repository::RecipeTemplateRepository::new(&db);
     let request_repo = repositories::request_repository::RequestRepository::new(&db);
     let workspace_repo = repositories::workspace_repository::WorkspaceRepository::new(&db);
     let session_repo = repositories::session_repository::SessionRepository::new(&db);
@@ -119,6 +121,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let workspace_service =
         services::workspace_service::WorkspaceService::new(workspace_repo, collection_repo);
+
+    let recipe_template_service =
+        services::recipe_template_service::RecipeTemplateService::new(recipe_template_repo);
 
     let admin_service = services::admin_service::AdminService::new(
         user_repo.clone(),
@@ -217,6 +222,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nest(
             "/api/v1/workspaces",
             api::routers::workspace_router::router(workspace_service),
+        )
+        .nest(
+            "/api/v1/recipe-templates",
+            api::routers::recipe_template_router::router(recipe_template_service),
         )
         .nest(
             "/api/v1/terminal",
