@@ -36,6 +36,7 @@ impl AuthService {
             email: user.email.clone(),
             created_at: user.created_at.to_string(),
             notification_preferences: user.notification_preferences.clone(),
+            github_account: user.github_account.clone(),
         }
     }
 
@@ -328,6 +329,17 @@ impl AuthService {
         Ok(Self::to_user_response(&updated_user))
     }
 
+    pub async fn update_user_github_account(
+        &self,
+        email: &str,
+        github_account: Option<crate::model::user::GitHubAccount>,
+    ) -> Result<User, AppError> {
+        let mut user = self.repo.find_by_email(email).await?;
+        user.github_account = github_account;
+
+        self.repo.update(&user).await
+    }
+
     pub async fn oauth_login_or_register(
         &self,
         google_sub: String,
@@ -446,6 +458,7 @@ mod oauth_tests {
             tier: crate::model::user::PlanTier::Free,
             network: crate::model::network::Network::Mainnet,
             created_at: Utc::now(),
+            github_account: None,
             notification_preferences: crate::model::user::NotificationPreferences::default(),
         }
     }

@@ -4,6 +4,14 @@ use serde::{Deserialize, Serialize};
 
 use crate::model::network::Network;
 
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct GitHubAccount {
+    pub id: String,
+    pub login: String,
+    #[serde(skip_serializing)]
+    pub access_token: Option<String>,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct User {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
@@ -16,6 +24,8 @@ pub struct User {
     #[serde(default)]
     pub network: Network,
     pub created_at: DateTime<Utc>,
+    #[serde(default)]
+    pub github_account: Option<GitHubAccount>,
     #[serde(default)]
     pub notification_preferences: NotificationPreferences,
 }
@@ -56,6 +66,7 @@ impl User {
             tier: PlanTier::Free,
             network: Network::default(),
             created_at: Utc::now(),
+            github_account: None,
             notification_preferences: NotificationPreferences::default(),
         }
     }

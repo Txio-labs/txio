@@ -7,6 +7,7 @@ use crate::dtos::{
     },
     response::{AuthResponse, UserResponse},
 };
+use crate::model::user::GitHubAccount;
 use crate::services::auth_service::AuthService;
 use crate::utils::error::AppError;
 use axum::{Json, extract::State, http::header, response::IntoResponse};
@@ -88,6 +89,23 @@ pub async fn profile(
 
 pub async fn logout() -> Result<Json<Value>, AppError> {
     Ok(Json(json!({ "message": "Logged out successfully" })))
+}
+
+pub async fn github_unlink(
+    State(service): State<AuthService>,
+    claims: crate::utils::auth_jwt::Claims,
+) -> Result<Json<Value>, AppError> {
+    let user = service.get_user_profile_by_email(&claims.email).await?;
+
+    if user.github_account.is_none() {
+        return Err(AppError::BadRequest("No GitHub account linked".into()));
+    }
+
+    service
+        .update_user_github_account(&claims.email, None)
+        .await?;
+
+    Ok(Json(json!({ "message": "GitHub account unlinked successfully" })))
 }
 
 pub async fn get_user_profile(
@@ -452,7 +470,8 @@ pub async fn google_callback(
 
 pub async fn github_login() -> Result<axum::response::Response, AppError> {
     let client_id = std::env::var("GITHUB_CLIENT_ID").unwrap_or_default();
-    if client_id.trim().is_empty() {
+    let client_secret = std::env::var("GITHUB_CLIENT_SECRET").unwrap_or_default();
+    if client_id.trim().is_empty() || client_secret.trim().is_empty() {
         return Err(AppError::BadRequest(
             "GitHub OAuth is not configured. Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET.".into(),
         ));
@@ -590,6 +609,17 @@ pub async fn github_callback(
     let auth_res = service
         .oauth_login_or_register(github_id.to_string(), email)
         .await?;
+
+    if auth_res.user.github_account.is_none() {
+        let github_account = GitHubAccount {
+            id: user_data["id"].to_string(),
+            login: user_data["login"].as_str().unwrap_or("").to_string(),
+            access_token: Some(access_token.to_string()),
+        };
+        service
+            .update_user_github_account(&auth_res.user.email, Some(github_account))
+            .await?;
+    }
 
     // See the matching comment in google_callback: a cookie can't bridge
     // the backend's and frontend's separate domains, so the token goes in

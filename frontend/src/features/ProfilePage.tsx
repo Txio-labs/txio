@@ -21,7 +21,7 @@ import {
 import { Github } from '@/components/icons/BrandIcons';
 import { useAppStore, appStore } from '@/lib/store';
 import { normalizeNotificationPreferences } from '@/lib/appConfig';
-import { apiService } from '@/services/api';
+import { API_BASE, apiService } from '@/services/api';
 import { Avatar } from '../components/ui/Avatar';
 import type { ActiveSession, NotificationPreferences, UserProfile } from '../types';
 
@@ -726,13 +726,22 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
                                             <span className="truncate text-slate-500">Not connected</span>
                                             <button
                                                 type="button"
-                                                onClick={() => appStore.showToast('GitHub OAuth not implemented', 'info')}
+                                                onClick={() => window.location.href = `${API_BASE}/auth/github/login`}
                                                 className="ml-auto text-[11px] text-electric-violet hover:text-soft-purple font-medium transition-colors"
                                             >
                                                 Connect →
                                             </button>
                                         </div>
                                     </Field>
+                                    <div className="mt-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => window.location.href = `${API_BASE}/auth/github/unlink`}
+                                            className="text-[11px] text-rose-400 hover:text-rose-300 transition-colors"
+                                        >
+                                            Unlink GitHub
+                                        </button>
+                                    </div>
                                     <Field label="Timezone" hint="Detected from your browser." htmlFor="profile-tz">
                                         <input
                                             id="profile-tz"
