@@ -2,7 +2,7 @@ use crate::api::handlers::auth_handler;
 use crate::services::auth_service::AuthService;
 use axum::{
     Json, Router,
-    routing::{get, post},
+    routing::{delete, get, post},
 };
 use serde_json::json;
 use std::sync::Arc;
@@ -44,6 +44,11 @@ pub fn router(service: AuthService) -> Router {
         .route("/switch-network", post(auth_handler::switch_network))
         .route("/rpc-log", post(auth_handler::log_rpc_call))
         .route("/logout", post(auth_handler::logout))
+        .route("/sessions", get(auth_handler::list_sessions))
+        .route(
+            "/sessions/{session_id}",
+            delete(auth_handler::revoke_session),
+        )
         .route(
             "/google/login",
             axum::routing::get(auth_handler::google_login),

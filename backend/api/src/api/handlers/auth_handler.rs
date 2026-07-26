@@ -10,16 +10,107 @@ use crate::dtos::{
 use crate::model::user::GitHubAccount;
 use crate::services::auth_service::AuthService;
 use crate::utils::error::AppError;
-use axum::{Json, extract::State, http::header, response::IntoResponse};
+use axum::{
+    Json,
+    extract::{ConnectInfo, Path, State},
+    http::{HeaderMap, header},
+    response::IntoResponse,
+};
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
 use hmac::{Hmac, KeyInit, Mac};
 use serde_json::{Value, json};
 use sha2::Sha256;
+use std::net::SocketAddr;
 
 type HmacSha256 = Hmac<Sha256>;
 
+/// Derive a short "Browser on OS" label from User-Agent for the sessions UI.
+fn device_label_from_headers(headers: &HeaderMap) -> String {
+    let ua = headers
+        .get(header::USER_AGENT)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    if ua.is_empty() {
+        return "Unknown device".to_string();
+    }
+
+    let browser = if ua.contains("Edg/") {
+        "Edge"
+    } else if ua.contains("Chrome/") {
+        "Chrome"
+    } else if ua.contains("Firefox/") {
+        "Firefox"
+    } else if ua.contains("Safari/") {
+        "Safari"
+    } else {
+        "Browser"
+    };
+
+    let os = if ua.contains("Windows") {
+        "Windows"
+    } else if ua.contains("Android") {
+        "Android"
+    } else if ua.contains("iPhone") || ua.contains("iPad") {
+        "iOS"
+    } else if ua.contains("Mac OS") || ua.contains("Macintosh") {
+        "macOS"
+    } else if ua.contains("Linux") {
+        "Linux"
+    } else {
+        "Unknown OS"
+    };
+
+    format!("{browser} on {os}")
+}
+
+/// Prefer reverse-proxy headers, then fall back to the TCP peer address.
+fn client_ip_from_request(headers: &HeaderMap, addr: &SocketAddr) -> String {
+    if let Some(xff) = headers
+        .get("x-forwarded-for")
+        .and_then(|v| v.to_str().ok())
+    {
+        if let Some(first) = xff.split(',').next() {
+            let trimmed = first.trim();
+            if !trimmed.is_empty() {
+                return trimmed.to_string();
+            }
+        }
+    }
+    if let Some(real) = headers.get("x-real-ip").and_then(|v| v.to_str().ok()) {
+        if !real.is_empty() {
+            return real.to_string();
+        }
+    }
+    addr.ip().to_string()
+}
+
+/// Persist a sessions-collection row for a freshly issued JWT (best-effort).
+async fn record_login_session(
+    service: &AuthService,
+    token: &str,
+    headers: &HeaderMap,
+    addr: &SocketAddr,
+) {
+    let Ok(claims) = service.verify_token(token) else {
+        return;
+    };
+    let Some(jti) = claims.jti.as_deref().filter(|j| !j.is_empty()) else {
+        return;
+    };
+    let _ = service
+        .create_session(
+            &claims.sub,
+            jti,
+            &device_label_from_headers(headers),
+            &client_ip_from_request(headers, addr),
+        )
+        .await;
+}
+
 pub async fn register(
     State(service): State<AuthService>,
+    headers: HeaderMap,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Json(payload): Json<RegisterUserRequest>,
 ) -> Result<Json<AuthResponse>, AppError> {
     use validator::Validate;
@@ -28,12 +119,15 @@ pub async fn register(
         .map_err(|e| AppError::ValidationError(e.to_string()))?;
 
     let response = service.register_user(payload).await?;
+    record_login_session(&service, &response.token, &headers, &addr).await;
 
     Ok(Json(response))
 }
 
 pub async fn login(
     State(service): State<AuthService>,
+    headers: HeaderMap,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Json(payload): Json<LoginRequest>,
 ) -> Result<Json<AuthResponse>, AppError> {
     use validator::Validate;
@@ -42,8 +136,30 @@ pub async fn login(
         .map_err(|e| AppError::ValidationError(e.to_string()))?;
 
     let response = service.login_user(payload).await?;
+    record_login_session(&service, &response.token, &headers, &addr).await;
 
     Ok(Json(response))
+}
+
+/// GET /auth/sessions — list active sessions for the authenticated user.
+pub async fn list_sessions(
+    State(service): State<AuthService>,
+    claims: crate::utils::auth_jwt::Claims,
+) -> Result<Json<Value>, AppError> {
+    let sessions = service
+        .list_sessions(&claims.sub, claims.jti.as_deref())
+        .await?;
+    Ok(Json(json!({ "sessions": sessions })))
+}
+
+/// DELETE /auth/sessions/:session_id — revoke one session owned by the caller.
+pub async fn revoke_session(
+    State(service): State<AuthService>,
+    claims: crate::utils::auth_jwt::Claims,
+    Path(session_id): Path<String>,
+) -> Result<Json<Value>, AppError> {
+    service.revoke_session(&claims.sub, &session_id).await?;
+    Ok(Json(json!({ "message": "Session revoked" })))
 }
 
 pub async fn request_otp(
@@ -365,6 +481,7 @@ pub async fn google_callback(
     State(service): State<AuthService>,
     axum::extract::Query(query): axum::extract::Query<OAuthCallbackQuery>,
     headers: axum::http::HeaderMap,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
 ) -> Result<axum::response::Response, AppError> {
     let cookie_state = get_cookie(&headers, "oauth_state")
         .ok_or(AppError::BadRequest("Missing OAuth state cookie".into()))?;
@@ -449,6 +566,8 @@ pub async fn google_callback(
         .oauth_login_or_register(google_sub.to_string(), email.to_string())
         .await?;
 
+    record_login_session(&service, &auth_res.token, &headers, &addr).await;
+
     // Hand the JWT to the frontend via a URL fragment, not a cookie: the
     // backend (this Render service) and the frontend (Vercel, a different
     // eTLD+1) are different sites, so a cookie this response sets via
@@ -500,6 +619,7 @@ pub async fn github_callback(
     State(service): State<AuthService>,
     axum::extract::Query(query): axum::extract::Query<OAuthCallbackQuery>,
     headers: axum::http::HeaderMap,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
 ) -> Result<axum::response::Response, AppError> {
     let cookie_state = get_cookie(&headers, "oauth_state")
         .ok_or(AppError::BadRequest("Missing OAuth state cookie".into()))?;
@@ -620,6 +740,8 @@ pub async fn github_callback(
             .update_user_github_account(&auth_res.user.email, Some(github_account))
             .await?;
     }
+
+    record_login_session(&service, &auth_res.token, &headers, &addr).await;
 
     // See the matching comment in google_callback: a cookie can't bridge
     // the backend's and frontend's separate domains, so the token goes in
