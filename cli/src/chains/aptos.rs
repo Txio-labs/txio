@@ -1,10 +1,10 @@
 use crate::chains::traits::ChainAdapter;
 use crate::chains::validation::{build_url, build_url_with_query, validate_aptos_address};
 use crate::cli::parser::Network;
+use anyhow::Result;
 use async_trait::async_trait;
-use serde_json::{json, Value};
-use anyhow::{Result, anyhow};
 use reqwest::Client;
+use serde_json::Value;
 
 pub struct AptosAdapter {
     client: Client,
@@ -12,6 +12,7 @@ pub struct AptosAdapter {
 }
 
 impl AptosAdapter {
+    #[allow(dead_code)]
     pub fn new() -> Self {
         Self::with_rpc(None, Network::Mainnet)
     }
@@ -44,8 +45,15 @@ impl ChainAdapter for AptosAdapter {
         "https://fullnode.mainnet.aptoslabs.com/v1"
     }
 
-    async fn call_rpc(&self, method: &str, _params: Value) -> Result<Value> {
-        // Aptos uses REST API mostly, but we can simulate/wrap it
+    async fn call_rpc(&self, method: &str, params: Value) -> Result<Value> {
+        if params != Value::Null
+            && params != Value::Array(vec![])
+            && params != Value::Object(serde_json::Map::new())
+        {
+            return Err(anyhow::anyhow!(
+                "Aptos REST API does not support params in raw RPC calls. Use chain-specific subcommands instead."
+            ));
+        }
         let url = format!("{}/{}", self.rpc_url, method);
         let response = self.client.get(&url).send().await?;
         let body: Value = response.json().await?;

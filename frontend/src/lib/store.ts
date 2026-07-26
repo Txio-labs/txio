@@ -10,6 +10,7 @@ import {
     UserProfile,
     ActivityLog,
     Comment,
+    isNetwork,
     Network,
     AppSettings,
     Notification
@@ -18,8 +19,13 @@ import {
 import { DEFAULT_MOVE_CALL } from './constants';
 import {
     DEFAULT_APP_SETTINGS,
-    normalizeAppSettings
+    normalizeAppSettings,
+    normalizeNotificationPreferences
 } from './appConfig';
+import {
+    setTelemetryEnabled,
+    track
+} from './telemetry';
 import {
     ApiError,
     apiService
@@ -109,6 +115,10 @@ const applyUserProfileOverrides = (
 ): UserProfile => {
     return {
         ...user,
+        notificationPreferences:
+            normalizeNotificationPreferences(
+                user.notificationPreferences
+            ),
         ...readUserProfileOverrides(user)
     };
 };
@@ -288,8 +298,7 @@ const readStoredNetwork = () => {
             networkStorageKey
         );
 
-    return storedNetwork === 'testnet' ||
-        storedNetwork === 'devnet'
+    return isNetwork(storedNetwork)
         ? storedNetwork
         : 'mainnet';
 };
@@ -523,6 +532,8 @@ interface AppState {
 
     network: Network;
 
+    pendingNetworkSwitch: Network | null;
+
     isSyncing: boolean;
     scanStep: string;
 
@@ -600,6 +611,8 @@ let state: AppState = {
 
     network: initialNetwork,
 
+    pendingNetworkSwitch: null,
+
     isSyncing: false,
 
     scanStep: '',
@@ -623,6 +636,34 @@ let state: AppState = {
     // IMPORTANT:
     // restore app mode if token exists
     viewMode: hasToken ? 'app' : 'landing'
+};
+
+// Sync telemetry gate with persisted settings on boot.
+setTelemetryEnabled(initialSettings.telemetry);
+track('app_boot', { theme: initialSettings.theme });
+
+// Debounced auto-save for request tabs when settings.autoSave is on.
+let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
+
+const scheduleAutoSave = (tabId: string) => {
+    if (!state.settings.autoSave) {
+        return;
+    }
+
+    if (autoSaveTimer) {
+        clearTimeout(autoSaveTimer);
+    }
+
+    autoSaveTimer = setTimeout(() => {
+        autoSaveTimer = null;
+        const tab = state.tabs.find((t) => t.id === tabId);
+        if (!tab) return;
+        if (tab.type !== 'rpc' && tab.type !== 'ptb' && tab.type !== 'new_request') {
+            return;
+        }
+        appStore.saveCurrentTab();
+        track('request_saved', { tabType: tab.type, auto: true });
+    }, 600);
 };
 
 // Actions
@@ -921,23 +962,40 @@ export const appStore = {
             (t) => t.id === state.activeTabId
         );
 
-        if (currentTab) {
-            if (
-                !state.savedTabs.find(
-                    (t) => t.id === currentTab.id
-                )
-            ) {
-                state = {
-                    ...state,
-                    savedTabs: [
-                        ...state.savedTabs,
-                        currentTab
-                    ]
-                };
-
-                emit();
-            }
+        if (!currentTab) {
+            return;
         }
+
+        const snapshot: TabItem = {
+            ...currentTab,
+            isDirty: false
+        };
+
+        const existingIdx = state.savedTabs.findIndex(
+            (t) => t.id === snapshot.id
+        );
+
+        const savedTabs =
+            existingIdx === -1
+                ? [...state.savedTabs, snapshot]
+                : state.savedTabs.map((t, i) =>
+                      i === existingIdx ? snapshot : t
+                  );
+
+        // Also clear dirty flag on the live tab.
+        const tabs = state.tabs.map((t) =>
+            t.id === snapshot.id
+                ? { ...t, isDirty: false }
+                : t
+        );
+
+        state = {
+            ...state,
+            tabs,
+            savedTabs
+        };
+
+        emit();
     },
 
     clearSavedTabs() {
@@ -1007,13 +1065,16 @@ export const appStore = {
                           ...t,
                           type: type as FeatureId,
                           title: requestData.name,
-                          data: requestData
+                          data: requestData,
+                          // Mark dirty until auto-save or explicit save clears it.
+                          isDirty: true
                       }
                     : t
             )
         };
 
         emit();
+        scheduleAutoSave(tabId);
     },
 
     setNetwork(network: Network) {
@@ -1056,6 +1117,36 @@ export const appStore = {
             persistNetwork(network);
             emit();
         }, 2000);
+    },
+
+    requestNetworkSwitch(network: Network) {
+        if (state.network === network) return;
+        state = {
+            ...state,
+            pendingNetworkSwitch: network
+        };
+        emit();
+    },
+
+    cancelNetworkSwitch() {
+        state = {
+            ...state,
+            pendingNetworkSwitch: null
+        };
+        emit();
+    },
+
+    confirmNetworkSwitch() {
+        const target = state.pendingNetworkSwitch;
+        if (!target) return;
+
+        state = {
+            ...state,
+            pendingNetworkSwitch: null
+        };
+        emit();
+
+        appStore.setNetwork(target);
     },
 
     async fetchWorkspaces(
@@ -1310,7 +1401,7 @@ export const appStore = {
         emit();
     },
 
-    async createCollection(name: string) {
+    async createCollection(name: string, description?: string) {
         if (!state.currentWorkspaceId) {
             appStore.showToast(
                 'Create a workspace first',
@@ -1323,7 +1414,8 @@ export const appStore = {
             const newColl =
                 await apiService.createCollection(
                     state.currentWorkspaceId,
-                    name || 'New Collection'
+                    name || 'New Collection',
+                    description
                 );
 
             state = {
@@ -1646,6 +1738,12 @@ export const appStore = {
                       )
                     : null;
 
+            if (hydratedRestoredUser) {
+                persistStoredUser(
+                    hydratedRestoredUser
+                );
+            }
+
             apiService.setToken(token);
 
             state = {
@@ -1659,15 +1757,22 @@ export const appStore = {
 
             emit();
 
+            // Kick off the workspaces fetch before the try/catch so its promise
+            // is in scope for both the success path and the profile-refresh
+            // fallback in the catch block below. Declaring it inside the try
+            // left it block-scoped, so the catch referenced an undefined
+            // binding and threw `ReferenceError: workspacesPromise is not
+            // defined`, losing the cached-user fallback entirely.
+            const workspacesPromise =
+                apiService.getWorkspaces();
+
+            void workspacesPromise.catch(
+                () => undefined
+            );
+
             try {
                 const profilePromise =
                     apiService.getProfile();
-                const workspacesPromise =
-                    apiService.getWorkspaces();
-
-                void workspacesPromise.catch(
-                    () => undefined
-                );
 
                 const user =
                     await profilePromise;
@@ -1892,6 +1997,13 @@ export const appStore = {
         };
 
         persistSettings(settings);
+        setTelemetryEnabled(settings.telemetry);
+        if (typeof updates.telemetry === 'boolean') {
+            track('settings_changed', {
+                key: 'telemetry',
+                value: settings.telemetry
+            });
+        }
         emit();
     },
 

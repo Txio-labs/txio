@@ -25,18 +25,15 @@ impl WorkspaceService {
         name: String,
         workspace_type: WorkspaceType,
     ) -> Result<Workspace, AppError> {
-        let existing_workspaces = self
-            .workspace_repo
-            .find_all_by_user(user_id.clone())
-            .await?;
+        let existing_workspaces = self.workspace_repo.find_all_by_user(user_id).await?;
 
         let workspace = self
             .workspace_repo
-            .save(&Workspace::new(user_id.clone(), name, workspace_type))
+            .save(&Workspace::new(user_id, name, workspace_type))
             .await?;
 
         if existing_workspaces.is_empty() {
-            if let Some(workspace_id) = workspace.id.clone() {
+            if let Some(workspace_id) = workspace.id {
                 self.collection_repo
                     .assign_workspace_to_unscoped_user_collections(user_id, workspace_id)
                     .await?;

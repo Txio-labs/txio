@@ -5,16 +5,32 @@ import {
     Mail,
     Lock,
     ArrowRight,
-    Github,
-    Twitter,
     ArrowLeft,
     ShieldCheck,
     Zap
 } from 'lucide-react';
+import { Github, Twitter } from '@/components/icons/BrandIcons';
 
 import { appStore, useAppStore } from '@/lib/store';
 import { API_BASE, apiService } from '@/services/api';
 import logoDark from '../assets/txio2.png';
+
+
+// Read and clear the short-lived OAuth token the backend hands off via a URL
+// fragment. A cookie can't be used: the backend and frontend are different
+// sites, so a cookie the backend's redirect response sets is never visible
+// to document.cookie on the frontend's origin.
+function consumeOAuthFragmentToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    const hash = window.location.hash;
+    const match = hash.match(/(?:^#|&)token=([^&]+)/);
+    if (!match) return null;
+    const remainingHash = hash.replace(/(?:^#|&)token=[^&]+/, '').replace(/^#&/, '#');
+    const url = new URL(window.location.href);
+    url.hash = remainingHash === '#' ? '' : remainingHash;
+    window.history.replaceState({}, '', url.toString());
+    return decodeURIComponent(match[1]);
+}
 
 export const SignInPage: React.FC = () => {
     const { theme } = useAppStore();
@@ -31,15 +47,15 @@ export const SignInPage: React.FC = () => {
     useEffect(() => {
         const initializeAuth = async () => {
             try {
-                // Read token from Google callback URL
-                const params = new URLSearchParams(window.location.search);
-                const urlToken = params.get('token');
+                // Read OAuth token from the URL fragment (backend appends it on
+                // OAuth callback redirect).
+                const fragmentToken = consumeOAuthFragmentToken();
 
                 // Read token from localStorage
                 const storedToken = localStorage.getItem('txio_token');
 
-                // Prefer Google callback token
-                const token = urlToken || storedToken;
+                // Prefer the freshly-issued OAuth token over a stored one
+                const token = fragmentToken || storedToken;
 
                 // No token
                 if (!token) {
@@ -89,20 +105,11 @@ export const SignInPage: React.FC = () => {
                         );
                     }
 
-                    // Success toast only after OAuth redirect
-                    if (urlToken) {
+                    // Success toast only after OAuth redirect (token arrived via fragment)
+                    if (fragmentToken) {
                         appStore.showToast(
                             'Successfully signed in with Google',
                             'success'
-                        );
-                    }
-
-                    // Remove token from URL
-                    if (urlToken) {
-                        window.history.replaceState(
-                            {},
-                            '',
-                            window.location.pathname
                         );
                     }
 
@@ -222,7 +229,7 @@ export const SignInPage: React.FC = () => {
                     className="absolute inset-0 opacity-20"
                     style={{
                         backgroundImage:
-                            'radial-gradient(circle at 2px 2px, #ADDFF1 1px, transparent 0)',
+                            'radial-gradient(circle at 2px 2px, #a3a3a3 1px, transparent 0)',
                         backgroundSize: '30px 30px'
                     }}
                 />
@@ -230,7 +237,7 @@ export const SignInPage: React.FC = () => {
                 <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-electric-violet/10 blur-[150px] rounded-full"></div>
 
                 <div className="relative z-10">
-                    <div
+                    <button
                         className="flex items-center gap-3 mb-16 cursor-pointer"
                         onClick={() => {
                             appStore.setViewMode('landing');
@@ -246,12 +253,12 @@ export const SignInPage: React.FC = () => {
                         <span className="text-2xl font-bold tracking-tighter text-white">
                             txio
                         </span>
-                    </div>
+                    </button>
 
                     <div className="space-y-6">
                         <h1 className="text-6xl font-bold tracking-tight text-white leading-[1.1]">
                             Welcome back. <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet to-soft-purple">
+                            <span className="text-electric-violet">
                                 Let&apos;s get to it.
                             </span>
                         </h1>
@@ -435,7 +442,7 @@ export const SignInPage: React.FC = () => {
                             <span
                                 className={`relative px-4 text-[10px] font-bold uppercase tracking-widest ${
                                     theme === 'dark'
-                                        ? 'bg-[#001B2E] text-slate-600'
+                                        ? 'bg-[#0a0a0a] text-slate-600'
                                         : 'bg-white text-slate-400'
                                 }`}
                             >
@@ -528,7 +535,7 @@ export const SignInPage: React.FC = () => {
                                 ) : (
                                     <Twitter
                                         size={18}
-                                        className="text-sky-400"
+                                        className="text-slate-300"
                                     />
                                 )}
 

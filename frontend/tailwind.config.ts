@@ -24,10 +24,10 @@ export default {
         mono: ["var(--font-jetbrains-mono)", "monospace"],
       },
       colors: {
-        'near-black': '#001B2E',
-        'electric-violet': '#ADDFF1',
-        'soft-purple': '#7FC4E3',
-        'dark-indigo-glow': '#003152',
+        'near-black': '#0a0a0a',
+        'electric-violet': '#a3a3a3',
+        'soft-purple': '#a3a3a3',
+        'dark-indigo-glow': '#18181b',
         slate: {
           50: '#fafafa',
           100: '#f4f4f5',

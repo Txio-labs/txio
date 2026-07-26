@@ -1,0 +1,11 @@
+[advisories]
+ignore = [
+    # All four advisories are transitive through mongodb v2.8.2 (trust-dns-proto's
+    # idna, and rustls 0.21 -> rustls-webpki 0.101.7). No 2.x release fixes them;
+    # the fix requires the mongodb 3.x major upgrade, which is a breaking-API
+    # migration tracked separately rather than bundled into a CI-fix.
+    "RUSTSEC-2024-0421", # idna 0.2.3, via trust-dns-proto -> mongodb 2.8.2
+    "RUSTSEC-2026-0099", # rustls-webpki 0.101.7, via rustls 0.21 -> mongodb 2.8.2
+    "RUSTSEC-2026-0104", # rustls-webpki 0.101.7, via rustls 0.21 -> mongodb 2.8.2
+    "RUSTSEC-2026-0098", # rustls-webpki 0.101.7, via rustls 0.21 -> mongodb 2.8.2
+]

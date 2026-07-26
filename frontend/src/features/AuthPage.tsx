@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    Mail, Lock, User, ArrowRight, Github, Twitter, Code2, Sparkles, 
+import {
+    Mail, Lock, User, ArrowRight, Code2, Sparkles,
     ChevronRight, ShieldCheck, Zap, Globe, ArrowLeft
 } from 'lucide-react';
+import { Github, Twitter } from '@/components/icons/BrandIcons';
 import { appStore, useAppStore } from '@/lib/store';
 import logoDark from '../assets/txio2.png';
 import logoLight from '../assets/txio3.png';
@@ -36,13 +37,13 @@ export const AuthPage: React.FC = () => {
                 
                 <div className="relative z-10 w-full flex flex-col p-16 justify-between">
                     <div>
-                        <div 
+                        <button 
                             className="flex items-center gap-3 mb-12 cursor-pointer"
                             onClick={() => appStore.setViewMode('landing')}
                         >
                             <img src={logoDark.src} alt="txio" className="h-10 w-auto" />
                             <span className="text-2xl font-bold tracking-tighter text-white">txio</span>
-                        </div>
+                        </button>
 
                         <motion.div 
                             initial={{ opacity: 0, x: -20 }}
@@ -52,7 +53,7 @@ export const AuthPage: React.FC = () => {
                         >
                             <h1 className="text-5xl font-bold tracking-tight leading-[1.1] text-white">
                                 One workspace. <br />
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet to-soft-purple">Every chain.</span>
+                                <span className="text-electric-violet">Every chain.</span>
                             </h1>
                             <p className="text-lg text-slate-400 leading-relaxed">
                                 Thousands of devs already build, debug, and ship on txio. You&apos;re a signup away from joining them.
@@ -188,7 +189,7 @@ export const AuthPage: React.FC = () => {
                         <button 
                             type="submit"
                             disabled={isLoading}
-                            className="w-full py-4 bg-electric-violet text-white rounded-2xl font-bold text-lg hover:bg-soft-purple transition-all shadow-[0_0_20px_rgba(173,223,241,0.3)] flex items-center justify-center gap-2 group disabled:opacity-50"
+                            className="w-full py-4 bg-electric-violet text-white rounded-2xl font-bold text-lg hover:bg-soft-purple transition-all shadow-[0_0_20px_rgba(163,163,163,0.3)] flex items-center justify-center gap-2 group disabled:opacity-50"
                         >
                             {isLoading ? (
                                 <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -221,7 +222,7 @@ export const AuthPage: React.FC = () => {
                             <button className={`flex items-center justify-center gap-2 py-3 rounded-xl border transition-all ${
                                 theme === 'dark' ? 'bg-white/5 border-white/5 hover:bg-white/10' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
                             }`}>
-                                <Twitter size={18} className="text-sky-400" />
+                                <Twitter size={18} className="text-slate-300" />
                                 <span className="text-sm font-bold">Twitter</span>
                             </button>
                         </div>

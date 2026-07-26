@@ -19,7 +19,7 @@ const TxioLogo = () => {
     <img
       src={logo.src}
       alt="txio"
-      className="w-6 h-6 object-contain drop-shadow-[0_0_6px_rgba(173,223,241,0.35)]"
+      className="w-6 h-6 object-contain drop-shadow-[0_0_6px_rgba(163,163,163,0.35)]"
     />
   );
 };
@@ -51,7 +51,7 @@ const NavItem: React.FC<NavItemProps> = ({
         {isActive && (
           <motion.div
             layoutId="nav-pill"
-            className="absolute left-0 w-[2px] h-6 bg-electric-violet rounded-r-full shadow-[0_0_10px_rgba(173,223,241,0.6)]"
+            className="absolute left-0 w-[2px] h-6 bg-electric-violet rounded-r-full shadow-[0_0_10px_rgba(163,163,163,0.6)]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -64,7 +64,7 @@ const NavItem: React.FC<NavItemProps> = ({
         relative p-2 rounded-xl transition-colors duration-200
         ${isActive
           ? 'text-electric-violet bg-electric-violet/[0.08]'
-          : 'text-slate-500 hover:text-slate-200 hover:bg-white/[0.04]'}
+          : 'text-slate-500 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:bg-white/[0.04]'}
       `}>
         <Icon size={18} strokeWidth={isActive ? 2 : 1.75} className="relative z-10" />
       </div>
@@ -96,17 +96,17 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       initial="hidden"
       animate="visible"
       variants={containerVariants}
-      className="w-14 bg-near-black border-r border-white/[0.06] flex flex-col items-center py-4 gap-1 z-20 shrink-0 relative"
+      className="w-14 bg-slate-50 dark:bg-near-black border-r border-slate-200 dark:border-white/[0.06] flex flex-col items-center py-4 gap-1 z-20 shrink-0 relative"
     >
-      <motion.div
+      <motion.button
         variants={itemVariants}
         className="mb-4 group cursor-pointer relative"
         onClick={() => appStore.setActiveTab(null)}
       >
-        <div className="relative z-10 p-1.5 rounded-xl bg-white/[0.02] border border-white/[0.06] group-hover:border-electric-violet/30 transition-colors duration-300">
+        <div className="relative z-10 p-1.5 rounded-xl bg-slate-100/70 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06] group-hover:border-electric-violet/30 transition-colors duration-300">
           <TxioLogo />
         </div>
-      </motion.div>
+      </motion.button>
 
       <div className="w-6 h-px bg-white/[0.06] mb-2"></div>
 
@@ -149,7 +149,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
             relative p-2 transition-colors duration-200 rounded-xl group
             ${activeTabType === 'settings'
               ? 'text-electric-violet bg-electric-violet/[0.08]'
-              : 'text-slate-500 hover:text-slate-200 hover:bg-white/[0.04]'}
+              : 'text-slate-500 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:bg-white/[0.04]'}
           `}
           title="Settings"
         >

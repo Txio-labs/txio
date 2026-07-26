@@ -1,10 +1,10 @@
 use crate::chains::traits::ChainAdapter;
 use crate::chains::validation::validate_solana_address;
 use crate::cli::parser::Network;
+use anyhow::Result;
 use async_trait::async_trait;
-use serde_json::{json, Value};
-use anyhow::{Result, anyhow};
 use reqwest::Client;
+use serde_json::{Value, json};
 
 pub struct SolanaAdapter {
     client: Client,
@@ -12,6 +12,7 @@ pub struct SolanaAdapter {
 }
 
 impl SolanaAdapter {
+    #[allow(dead_code)]
     pub fn new() -> Self {
         Self::with_rpc(None, Network::Mainnet)
     }
@@ -52,7 +53,9 @@ impl ChainAdapter for SolanaAdapter {
             "params": params
         });
 
-        let response = self.client.post(&self.rpc_url)
+        let response = self
+            .client
+            .post(&self.rpc_url)
             .json(&payload)
             .send()
             .await?;
@@ -68,10 +71,14 @@ impl ChainAdapter for SolanaAdapter {
     }
 
     async fn get_transaction(&self, hash: &str) -> Result<Value> {
-        self.call_rpc("getTransaction", json!([
-            hash,
-            { "encoding": "jsonParsed", "maxSupportedTransactionVersion": 0 }
-        ])).await
+        self.call_rpc(
+            "getTransaction",
+            json!([
+                hash,
+                { "encoding": "jsonParsed", "maxSupportedTransactionVersion": 0 }
+            ]),
+        )
+        .await
     }
 
     async fn get_block(&self, block: Option<u64>) -> Result<Value> {
@@ -82,34 +89,47 @@ impl ChainAdapter for SolanaAdapter {
                 val.as_u64().unwrap_or(0)
             }
         };
-        self.call_rpc("getBlock", json!([
-            slot,
-            {
-                "encoding": "jsonParsed",
-                "maxSupportedTransactionVersion": 0,
-                "transactionDetails": "full",
-                "rewards": false
-            }
-        ])).await
+        self.call_rpc(
+            "getBlock",
+            json!([
+                slot,
+                {
+                    "encoding": "jsonParsed",
+                    "maxSupportedTransactionVersion": 0,
+                    "transactionDetails": "full",
+                    "rewards": false
+                }
+            ]),
+        )
+        .await
     }
 
     async fn get_gas_price(&self) -> Result<Value> {
-        self.call_rpc("getRecentPrioritizationFees", json!([[]])).await
+        self.call_rpc("getRecentPrioritizationFees", json!([[]]))
+            .await
     }
 
     async fn get_account(&self, address: &str) -> Result<Value> {
         let address = validate_solana_address(address)?;
-        self.call_rpc("getAccountInfo", json!([
-            address,
-            { "encoding": "jsonParsed" }
-        ])).await
+        self.call_rpc(
+            "getAccountInfo",
+            json!([
+                address,
+                { "encoding": "jsonParsed" }
+            ]),
+        )
+        .await
     }
 
     async fn get_history(&self, address: &str, limit: u32) -> Result<Value> {
         let address = validate_solana_address(address)?;
-        self.call_rpc("getSignaturesForAddress", json!([
-            address,
-            { "limit": limit }
-        ])).await
+        self.call_rpc(
+            "getSignaturesForAddress",
+            json!([
+                address,
+                { "limit": limit }
+            ]),
+        )
+        .await
     }
 }

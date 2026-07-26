@@ -1,12 +1,12 @@
 use axum::{
-    BoxError, Router, error_handling::HandleErrorLayer, http::HeaderValue, http::StatusCode,
+    BoxError, Router, error_handling::HandleErrorLayer, http, http::HeaderValue, http::StatusCode,
     routing::get,
 };
 use dotenvy::{dotenv, from_path_override};
 use std::{net::SocketAddr, path::PathBuf, sync::Arc, time::Duration};
 use tower::ServiceBuilder;
 use tower_governor::{GovernorLayer, governor::GovernorConfigBuilder};
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::CorsLayer;
 use tower_http::limit::RequestBodyLimitLayer;
 
 use ::txio_api::{
@@ -71,15 +71,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     tracing::info!("Connected to MongoDB at {}", mongo_host);
 
+    let db = db_client.default_database().unwrap_or_else(|| {
+        tracing::warn!("MONGO_URI did not include a default database; falling back to txio_db");
+        db_client.database("txio_db")
+    });
+
     // 4. Initialize Repositories
 
-    let user_repo = repositories::user_repository::UserRepository::new(&db_client);
-    let otp_repo = repositories::otp_repository::OTPRepository::new(&db_client);
-    let rpc_repo = repositories::rpc_repository::RpcRepository::new(&db_client);
-    let collection_repo =
-        repositories::collection_repository::CollectionRepository::new(&db_client);
-    let request_repo = repositories::request_repository::RequestRepository::new(&db_client);
-    let workspace_repo = repositories::workspace_repository::WorkspaceRepository::new(&db_client);
+    let user_repo = repositories::user_repository::UserRepository::new(&db);
+    user_repo.ensure_indices().await?;
+    let otp_repo = repositories::otp_repository::OTPRepository::new(&db);
+    otp_repo.ensure_indexes().await?;
+    let rpc_repo = repositories::rpc_repository::RpcRepository::new(&db);
+    let collection_repo = repositories::collection_repository::CollectionRepository::new(&db);
+    let request_repo = repositories::request_repository::RequestRepository::new(&db);
+    let workspace_repo = repositories::workspace_repository::WorkspaceRepository::new(&db);
+    let session_repo = repositories::session_repository::SessionRepository::new(&db);
 
     // 5. Initialize JWT Helper
     let jwt_helper = utils::auth_jwt::JwtHelper::new(config.jwt_secret);
@@ -88,15 +95,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let email_service = services::email_service::EmailService::new(config.brevo_api_key);
     let otp_service = services::otp_service::OTPService::new(otp_repo.clone());
 
-    // Default Mainnet URL for SuiService (can be overridden dynamically)
-    let default_sui_url = model::user::SuiNetwork::Mainnet.url().to_string();
+    // Default network URL for SuiService (can be overridden dynamically)
+    let default_sui_url = model::network::Network::default().sui_url().to_string();
     let sui_service = services::sui_service::SuiService::new(rpc_repo.clone(), default_sui_url);
 
     // 6. Initialize Services (Dependency Injection)
     let auth_service = services::auth_service::AuthService::new(
         user_repo.clone(),
         rpc_repo.clone(),
-        jwt_helper,
+        session_repo,
+        jwt_helper.clone(),
         otp_service,
         email_service,
     );
@@ -140,15 +148,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
         Box::new(e) as Box<dyn std::error::Error>
     })?;
-    let allowed_origins = vec![
-        cors_origin,
-        HeaderValue::from_static("http://localhost:3000"),
-        HeaderValue::from_static("http://127.0.0.1:3000"),
-    ];
+    let mut allowed_origins = vec![cors_origin];
+
+    // Add localhost origins only in development
+    if cfg!(debug_assertions) || std::env::var("DEV_MODE").is_ok() {
+        allowed_origins.push(HeaderValue::from_static("http://localhost:3000"));
+        allowed_origins.push(HeaderValue::from_static("http://127.0.0.1:3000"));
+    }
     let cors = CorsLayer::new()
         .allow_origin(allowed_origins)
-        .allow_methods(Any)
-        .allow_headers(Any);
+        .allow_credentials(true)
+        .allow_methods([
+            http::Method::GET,
+            http::Method::POST,
+            http::Method::PUT,
+            http::Method::DELETE,
+            http::Method::OPTIONS,
+        ])
+        .allow_headers([
+            http::header::AUTHORIZATION,
+            http::header::CONTENT_TYPE,
+            http::header::ACCEPT,
+        ]);
 
     tracing::info!(
         frontend_origin = %frontend_origin,
@@ -211,9 +232,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .timeout(REQUEST_TIMEOUT),
         )
         .layer(RequestBodyLimitLayer::new(MAX_REQUEST_BODY_BYTES))
-        .layer(GovernorLayer {
-            config: governor_conf,
-        })
+        .layer(GovernorLayer::new(governor_conf))
+        .layer(axum::Extension(jwt_helper))
         .layer(cors);
 
     // 8. Run Server
@@ -228,8 +248,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Box::new(std::io::Error::new(
             e.kind(),
             format!(
-                "Failed to bind API server to {}. Set PORT to override the default bind port. {}",
-                addr, e
+                "Failed to bind API server to {addr}. Set PORT to override the default bind port. {e}"
             ),
         )) as Box<dyn std::error::Error>
     })?;
