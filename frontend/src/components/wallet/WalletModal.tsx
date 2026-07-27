@@ -29,6 +29,8 @@ import { WalletGlyph } from './WalletGlyph';
 const FAMILY_ORDER = [
     'evm',
     'sui',
+    'solana',
+    'aptos',
     'stellar'
 ] as const;
 
@@ -203,7 +205,7 @@ export function WalletModal() {
                                         Connect a wallet
                                     </h2>
                                     <p className="mt-1 text-sm text-slate-400">
-                                        One connection surface for EVM, Sui, and Stellar flows.
+                                        One connection surface for EVM, Sui, Solana, Aptos, and Stellar flows.
                                     </p>
                                 </div>
                                 <button

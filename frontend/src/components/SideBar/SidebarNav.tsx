@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Folder, History, Box, Settings, LayoutGrid, Database, Activity, ShieldCheck } from 'lucide-react';
+import { Folder, History, Box, Settings, LayoutGrid, Database, Activity, ShieldCheck, Code2, Sparkles } from 'lucide-react';
 import { appStore, useAppStore } from '@/lib/store';
 import logoDark from '../../assets/txio2.png';
 import logoLight from '../../assets/txio3.png';
@@ -142,6 +142,36 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
 
       <div className="flex-1" />
       
+      <motion.div variants={itemVariants} className="w-full flex justify-center pb-1">
+        <button
+          onClick={() => appStore.openTab('move')}
+          className={`
+            relative p-2 transition-colors duration-200 rounded-xl group mb-1
+            ${activeTabType === 'move'
+              ? 'text-electric-violet bg-electric-violet/[0.08]'
+              : 'text-slate-500 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:bg-white/[0.04]'}
+          `}
+          title="Move Builder"
+        >
+          <Code2 size={18} strokeWidth={1.75} className="group-hover:scale-110 transition-transform duration-300" />
+        </button>
+      </motion.div>
+      
+      <motion.div variants={itemVariants} className="w-full flex justify-center pb-1">
+        <button
+          onClick={() => appStore.openTab('playground')}
+          className={`
+            relative p-2 transition-colors duration-200 rounded-xl group mb-1
+            ${activeTabType === 'playground'
+              ? 'text-electric-violet bg-electric-violet/[0.08]'
+              : 'text-slate-500 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:bg-white/[0.04]'}
+          `}
+          title="Playground"
+        >
+          <Sparkles size={18} strokeWidth={1.75} className="group-hover:scale-110 transition-transform duration-300" />
+        </button>
+      </motion.div>
+
       <motion.div variants={itemVariants} className="w-full flex justify-center pb-1">
         <button
           onClick={() => appStore.openTab('settings')}

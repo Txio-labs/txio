@@ -44,6 +44,8 @@ import {
     detectStellarWallets,
     restoreStellarWallet
 } from '../stellar';
+import { connectSolanaWallet, detectSolanaWallets, restoreSolanaWallet, disconnectSolanaWallet } from '../solana';
+import { connectAptosWallet, detectAptosWallets, restoreAptosWallet, disconnectAptosWallet } from '../aptos';
 import {
     clearActiveWalletSnapshot,
     persistActiveWalletSnapshot,
@@ -154,6 +156,8 @@ export function WalletManagerProvider({
     ] = useState<ConnectedWallet | null>(
         null
     );
+    const [solanaSession, setSolanaSession] = useState<ConnectedWallet | null>(null);
+    const [aptosSession, setAptosSession] = useState<ConnectedWallet | null>(null);
     const [
         preferredWalletId,
         setPreferredWalletId
@@ -179,6 +183,8 @@ export function WalletManagerProvider({
         rabet: false,
         hana: false
     });
+    const [solanaAvailability, setSolanaAvailability] = useState({'phantom-solana': false, solflare: false, backpack: false});
+    const [aptosAvailability, setAptosAvailability] = useState({petra: false, martian: false});
 
     const restoreAttemptedRef =
         useRef(false);
@@ -259,17 +265,30 @@ export function WalletManagerProvider({
                 });
         }, []);
 
+    const refreshSolanaAvailability = useCallback(() => {
+        detectSolanaWallets().then(setSolanaAvailability).catch(() => setSolanaAvailability({'phantom-solana': false, solflare: false, backpack: false}));
+    }, []);
+    const refreshAptosAvailability = useCallback(() => {
+        detectAptosWallets().then(setAptosAvailability).catch(() => setAptosAvailability({petra: false, martian: false}));
+    }, []);
+
     useEffect(() => {
         refreshStellarAvailability();
-    }, [refreshStellarAvailability]);
+        refreshSolanaAvailability();
+        refreshAptosAvailability();
+    }, [refreshStellarAvailability, refreshSolanaAvailability, refreshAptosAvailability]);
 
     useEffect(() => {
         if (isModalOpen) {
             refreshStellarAvailability();
+        refreshSolanaAvailability();
+        refreshAptosAvailability();
         }
     }, [
         isModalOpen,
-        refreshStellarAvailability
+        refreshStellarAvailability,
+        refreshSolanaAvailability,
+        refreshAptosAvailability
     ]);
 
     const connectedSuiWallet =
@@ -367,7 +386,9 @@ export function WalletManagerProvider({
         const connectedWallets = [
             connectedEvmWallet,
             connectedSuiWallet,
-            stellarSession
+            stellarSession,
+            solanaSession,
+            aptosSession
         ].filter(
             Boolean
         ) as ConnectedWallet[];
@@ -392,7 +413,9 @@ export function WalletManagerProvider({
         connectedEvmWallet,
         connectedSuiWallet,
         preferredWalletId,
-        stellarSession
+        stellarSession,
+        solanaSession,
+        aptosSession
     ]);
 
     const disconnectFamiliesExcept =
@@ -430,12 +453,22 @@ export function WalletManagerProvider({
                         null
                     );
                 }
+                if (family !== 'solana' && solanaSession) {
+                    await disconnectSolanaWallet(solanaSession.id);
+                    setSolanaSession(null);
+                }
+                if (family !== 'aptos' && aptosSession) {
+                    await disconnectAptosWallet(aptosSession.id);
+                    setAptosSession(null);
+                }
             },
             [
                 disconnectEvmAsync,
                 disconnectSuiAsync,
                 evmAccount.isConnected,
                 stellarSession,
+                solanaSession,
+                aptosSession,
                 suiWalletState.isConnected
             ]
         );
@@ -794,17 +827,18 @@ export function WalletManagerProvider({
                     setSuiConnectedAt(
                         Date.now()
                     );
+                } else if (descriptor.chainFamily === 'solana') {
+                    await disconnectFamiliesExcept('solana');
+                    const wallet = await connectSolanaWallet(walletId);
+                    setSolanaSession(wallet);
+                } else if (descriptor.chainFamily === 'aptos') {
+                    await disconnectFamiliesExcept('aptos');
+                    const wallet = await connectAptosWallet(walletId);
+                    setAptosSession(wallet);
                 } else {
-                    await disconnectFamiliesExcept(
-                        'stellar'
-                    );
-                    const wallet =
-                        await connectStellarWallet(
-                            walletId
-                        );
-                    setStellarSession(
-                        wallet
-                    );
+                    await disconnectFamiliesExcept('stellar');
+                    const wallet = await connectStellarWallet(walletId);
+                    setStellarSession(wallet);
                 }
 
                 setPreferredWalletId(
@@ -878,10 +912,14 @@ export function WalletManagerProvider({
                     'sui'
                 ) {
                     await disconnectSuiAsync();
+                } else if (currentWallet.family === 'solana') {
+                    await disconnectSolanaWallet(currentWallet.id);
+                    setSolanaSession(null);
+                } else if (currentWallet.family === 'aptos') {
+                    await disconnectAptosWallet(currentWallet.id);
+                    setAptosSession(null);
                 } else {
-                    setStellarSession(
-                        null
-                    );
+                    setStellarSession(null);
                 }
             } finally {
                 clearActiveWalletSnapshot();
@@ -1095,6 +1133,21 @@ export function WalletManagerProvider({
                                 ? 'installed'
                                 : 'not-installed';
                         break;
+                    case 'phantom-solana':
+                        availability = solanaAvailability['phantom-solana'] ? 'installed' : 'not-installed';
+                        break;
+                    case 'solflare':
+                        availability = solanaAvailability.solflare ? 'installed' : 'not-installed';
+                        break;
+                    case 'backpack':
+                        availability = solanaAvailability.backpack ? 'installed' : 'not-installed';
+                        break;
+                    case 'petra':
+                        availability = aptosAvailability.petra ? 'installed' : 'not-installed';
+                        break;
+                    case 'martian':
+                        availability = aptosAvailability.martian ? 'installed' : 'not-installed';
+                        break;
                     default:
                         availability =
                             'not-installed';
@@ -1125,6 +1178,8 @@ export function WalletManagerProvider({
         evmConnectors,
         recentWalletIds,
         stellarAvailability,
+        solanaAvailability,
+        aptosAvailability,
         suiWallets
     ]);
 

@@ -6,6 +6,9 @@ use validator::Validate;
 pub struct RegisterUserRequest {
     #[validate(email)]
     pub email: String,
+    // bcrypt truncates input at 72 bytes; enforce that limit here
+    // so oversized passwords fail validation instead of silently
+    // losing their tail.
     #[validate(length(min = 8, max = 72))]
     pub password: String,
 }
@@ -14,6 +17,9 @@ pub struct RegisterUserRequest {
 pub struct LoginRequest {
     #[validate(email)]
     pub email: String,
+    // bcrypt truncates input at 72 bytes; enforce that limit here
+    // so oversized passwords fail validation instead of silently
+    // losing their tail.
     #[validate(length(min = 8, max = 72))]
     pub password: String,
 }
@@ -38,6 +44,9 @@ pub struct ResetPasswordWithOTPRequest {
     pub email: String,
     #[validate(length(min = 6, max = 6))]
     pub otp: String,
+    // bcrypt truncates input at 72 bytes; enforce that limit here
+    // so oversized passwords fail validation instead of silently
+    // losing their tail.
     #[validate(length(min = 8, max = 72))]
     pub new_password: String,
 }
@@ -50,6 +59,10 @@ pub struct UpdateEmailRequest {
 
 #[derive(Debug, Validate, Serialize, Deserialize)]
 pub struct UpdatePasswordRequest {
+    // bcrypt truncates input at 72 bytes; enforce that limit here
+    // so oversized passwords fail validation instead of silently
+    // losing their tail.
+    #[validate(length(min = 8, max = 72))]
     pub current_password: String,
     #[validate(length(min = 8, max = 72))]
     pub new_password: String,

@@ -248,6 +248,8 @@ impl ChainAdapter for SuiAdapter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    use tokio::net::TcpListener;
 
     #[test]
     fn suins_regex_matches_name_inside_string() {
@@ -326,9 +328,6 @@ mod tests {
 
     #[tokio::test]
     async fn unresolvable_name_is_left_as_literal() {
-        use tokio::io::{AsyncReadExt, AsyncWriteExt};
-        use tokio::net::TcpListener;
-
         // Minimal mock JSON-RPC server. First request is the SuiNS lookup and
         // answers `result: null` (name has no record => Ok(None)); the second is
         // the real method call, whose params must still carry the literal name.
@@ -381,9 +380,6 @@ mod tests {
     /// single resolution RPC (the memo/dedup path).
     #[tokio::test]
     async fn duplicate_name_triggers_single_resolution_rpc() {
-        use tokio::io::{AsyncReadExt, AsyncWriteExt};
-        use tokio::net::TcpListener;
-
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap();
         let resolve_count = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));

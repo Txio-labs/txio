@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
     Code2, Box, Cpu, Zap, Shield, Play, Save, Share2, 
-    ChevronRight, Search, Plus, Terminal, Layers, Database
+    ChevronRight, Search, Plus, Terminal, Layers, Database, Loader2, Check
 } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 
@@ -10,12 +10,40 @@ export const MoveBuilder: React.FC = () => {
     const { theme } = useAppStore();
     const [activeModule, setActiveModule] = useState('core');
 
+    const [contractName, setContractName] = useState('AssetBridge');
+    const [code, setCode] = useState(`public entry fun initialize_market(admin: address) {\n    // Initialize the market configuration\n}\n\npublic fun mint_collection_token(amount: u64, treasury_cap: &mut TreasuryCap<T>): Coin<T> {\n    let token = coin::mint_balance(amount, treasury_cap);\n    return token\n}`);
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'success'>('idle');
+    const [isDeploying, setIsDeploying] = useState(false);
+    const [deployResult, setDeployResult] = useState('');
+
     const modules = [
         { id: 'core', name: 'Standard Assets', icon: Box },
         { id: 'defi', name: 'DeFi Primitives', icon: Zap },
         { id: 'identity', name: 'Identity & Auth', icon: Shield },
         { id: 'social', name: 'Social Graph', icon: Share2 }
     ];
+
+    const handleSave = () => {
+        setIsSaving(true);
+        // Simulate save to backend/localStorage
+        setTimeout(() => {
+            setIsSaving(false);
+            setSaveStatus('success');
+            setTimeout(() => setSaveStatus('idle'), 2000);
+        }, 800);
+    };
+
+    const handleDeploy = () => {
+        if (!code.trim() || !contractName.trim()) return;
+        setIsDeploying(true);
+        setDeployResult('');
+        // TODO: Replace simulated deploy with real backend compilation and execution
+        setTimeout(() => {
+            setIsDeploying(false);
+            setDeployResult('0x' + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join(''));
+        }, 2000);
+    };
 
     return (
         <div className="h-full flex bg-[#0a0a0a] text-slate-300 font-sans overflow-hidden">
@@ -69,72 +97,45 @@ export const MoveBuilder: React.FC = () => {
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-electric-violet" />
-                            <span className="text-sm font-black text-white">Untitled_Contract.move</span>
+                            <span className="text-sm font-black text-white">{contractName || 'Untitled_Contract'}.move</span>
                         </div>
-                        <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[9px] font-black text-slate-500 uppercase tracking-widest">Modified 2m ago</span>
+                        {saveStatus === 'success' && <span className="text-xs font-bold text-emerald-400 flex items-center gap-1"><Check size={12}/> Saved</span>}
                     </div>
                     
                     <div className="flex items-center gap-3">
-                        <button className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-bold transition-all">
-                            <Save size={14} /> Save
+                        <button onClick={handleSave} disabled={isSaving} className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-bold transition-all disabled:opacity-50">
+                            {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save
                         </button>
-                        <button className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-electric-violet text-white text-xs font-bold shadow-lg shadow-electric-violet/20 hover:bg-soft-purple transition-all">
-                            <Play size={14} /> Deploy to Devnet
+                        <button onClick={handleDeploy} disabled={isDeploying || !code.trim() || !contractName.trim()} className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-electric-violet text-white text-xs font-bold shadow-lg shadow-electric-violet/20 hover:bg-soft-purple transition-all disabled:opacity-50">
+                            {isDeploying ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />} Deploy to Devnet
                         </button>
                     </div>
                 </header>
 
                 {/* Canvas Content */}
                 <div className="flex-1 p-12 relative z-10 overflow-y-auto custom-scrollbar">
-                    <div className="max-w-4xl mx-auto space-y-12">
-                        {/* Entry Point Card */}
+                    <div className="max-w-4xl mx-auto space-y-6">
+                        {deployResult && (
+                            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center gap-3 text-sm">
+                                <Check size={16} /> Successfully deployed! Transaction Hash: <span className="font-mono text-emerald-300">{deployResult}</span>
+                            </motion.div>
+                        )}
                         <motion.div 
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="p-8 rounded-[2.5rem] bg-[#18181b] border border-white/10 shadow-2xl relative group"
+                            className="p-1 rounded-[1.5rem] bg-[#18181b] border border-white/10 shadow-2xl relative group h-[600px] flex flex-col"
                         >
-                            <div className="absolute top-0 right-0 p-6 text-slate-800"><Code2 size={64} /></div>
-                            <div className="space-y-6 relative z-10">
-                                <div className="flex items-center gap-3">
-                                    <div className="px-3 py-1 rounded-full bg-electric-violet/10 border border-electric-violet/20 text-[10px] font-black text-electric-violet uppercase tracking-widest">Entry Function</div>
-                                    <h2 className="text-2xl font-black text-white">initialize_market</h2>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 space-y-2">
-                                        <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Parameters</div>
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <span className="text-slate-400">admin:</span>
-                                            <span className="text-emerald-400 font-mono">address</span>
-                                        </div>
-                                    </div>
-                                    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 space-y-2">
-                                        <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Visibility</div>
-                                        <div className="text-sm font-bold text-sky-400">Public Entry</div>
-                                    </div>
-                                </div>
+                            <div className="flex items-center gap-2 px-6 py-4 border-b border-white/5">
+                                <Code2 size={18} className="text-slate-500"/>
+                                <span className="text-xs font-black uppercase tracking-widest text-slate-500">Contract Editor</span>
                             </div>
-                        </motion.div>
-
-                        {/* Connection Line */}
-                        <div className="w-px h-12 bg-gradient-to-b from-electric-violet/50 to-transparent mx-auto" />
-
-                        {/* Logic Step Card */}
-                        <motion.div 
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.1 }}
-                            className="p-8 rounded-[2.5rem] bg-[#18181b] border border-white/10 shadow-2xl relative"
-                        >
-                            <div className="space-y-6">
-                                <div className="flex items-center gap-3">
-                                    <div className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-black text-emerald-400 uppercase tracking-widest">Resource Logic</div>
-                                    <h2 className="text-2xl font-black text-white">mint_collection_token</h2>
-                                </div>
-                                <div className="p-6 rounded-2xl bg-black/40 border border-white/5 font-mono text-sm text-slate-500">
-                                    <div>let <span className="text-white">token</span> = coin::mint_balance(amount, treasury_cap);</div>
-                                    <div className="mt-1 text-slate-600">{/* Validate treasury ownership... */}</div>
-                                </div>
-                            </div>
+                            <textarea 
+                                value={code}
+                                onChange={(e) => setCode(e.target.value)}
+                                spellCheck={false}
+                                className="flex-1 w-full bg-transparent text-sm font-mono text-slate-300 p-6 focus:outline-none resize-none custom-scrollbar"
+                                placeholder="// Write your Move contract here..."
+                            />
                         </motion.div>
                     </div>
                 </div>
@@ -149,9 +150,10 @@ export const MoveBuilder: React.FC = () => {
                             <label className="text-[10px] font-black text-slate-600 uppercase">Contract Name</label>
                             <input 
                                 type="text" 
-                                value="AssetBridge"
-                                readOnly
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm font-bold focus:border-electric-violet/40 transition-all outline-none"
+                                value={contractName}
+                                onChange={(e) => setContractName(e.target.value)}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm font-bold focus:border-electric-violet/40 transition-all outline-none text-white"
+                                placeholder="Enter contract name"
                             />
                         </div>
                         <div className="space-y-1">

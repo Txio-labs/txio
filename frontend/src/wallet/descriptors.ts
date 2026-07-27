@@ -324,6 +324,94 @@ export const WALLET_DESCRIPTORS: WalletDescriptor[] =
             installUrl:
                 'https://hanawallet.io/',
             iconSeed: 'hana-wallet'
+        },
+        {
+            id: 'phantom-solana',
+            name: 'Phantom',
+            shortName: 'PH',
+            chainFamily: 'solana',
+            methods: ['injected'],
+            tags: [
+                'solana',
+                'phantom',
+                'browser'
+            ],
+            description:
+                'Phantom wallet support for Solana.',
+            installUrl:
+                'https://phantom.com/download',
+            mobileUrl:
+                'https://phantom.app/ul/browse/',
+            badge: 'Solana',
+            iconSeed: 'phantom'
+        },
+        {
+            id: 'solflare',
+            name: 'Solflare',
+            shortName: 'SF',
+            chainFamily: 'solana',
+            methods: ['injected'],
+            tags: [
+                'solana',
+                'solflare',
+                'browser'
+            ],
+            description:
+                'Solflare wallet support for Solana.',
+            installUrl:
+                'https://solflare.com/',
+            iconSeed: 'solflare'
+        },
+        {
+            id: 'backpack',
+            name: 'Backpack',
+            shortName: 'BP',
+            chainFamily: 'solana',
+            methods: ['injected'],
+            tags: [
+                'solana',
+                'backpack',
+                'browser'
+            ],
+            description:
+                'Backpack wallet support for Solana.',
+            installUrl:
+                'https://backpack.app/',
+            iconSeed: 'backpack'
+        },
+        {
+            id: 'petra',
+            name: 'Petra',
+            shortName: 'PT',
+            chainFamily: 'aptos',
+            methods: ['injected'],
+            tags: [
+                'aptos',
+                'petra',
+                'browser'
+            ],
+            description:
+                'Petra wallet support for Aptos.',
+            installUrl:
+                'https://petra.app/',
+            iconSeed: 'petra'
+        },
+        {
+            id: 'martian',
+            name: 'Martian',
+            shortName: 'MT',
+            chainFamily: 'aptos',
+            methods: ['injected'],
+            tags: [
+                'aptos',
+                'martian',
+                'browser'
+            ],
+            description:
+                'Martian wallet support for Aptos.',
+            installUrl:
+                'https://martianwallet.xyz/',
+            iconSeed: 'martian'
         }
     ];
 
