@@ -11,6 +11,7 @@ use crate::services::email_service::EmailService;
 use crate::services::otp_service::OTPService;
 use crate::utils::auth_jwt::{Claims, JwtHelper};
 use crate::utils::error::AppError;
+use chrono::Utc;
 
 #[derive(Clone)]
 pub struct AuthService {
@@ -181,32 +182,62 @@ impl AuthService {
 
     pub async fn login_user(&self, req: LoginRequest) -> Result<AuthResponse, AppError> {
         const DUMMY_HASH: &str = "$2b$12$K4IzU6d5TqmqRKFLJZdqOeVLqZJ3mJHvJZdqOeVLqZJ3mJHvJZdq.";
+        const MAX_FAILED_ATTEMPTS: i32 = 5;
+        const LOCKOUT_MINUTES: i64 = 15;
 
         let user_result = self.repo.find_by_email(&req.email).await;
 
-        // Only NotFound is expected during normal login; any other error
-        // (timeout, connection failure, etc.) must be surfaced so the caller
-        // can distinguish a real infrastructure problem from a bad password.
         if let Err(e) = &user_result {
             if !matches!(e, AppError::NotFound(_)) {
                 return Err(user_result.unwrap_err());
             }
         }
 
+        // Check lockout before doing anything else.
+        if let Ok(ref user) = user_result {
+            if let Some(locked_until) = user.locked_until {
+                if Utc::now() < locked_until {
+                    return Err(AppError::Unauthorized(
+                        "Account is temporarily locked. Try again later.".into(),
+                    ));
+                }
+            }
+        }
+
         let (hash_to_verify, user_found) = match &user_result {
             Ok(user) => (user.password_hash.as_str(), true),
-            Err(_) => (DUMMY_HASH, false), // only NotFound reaches here
+            Err(_) => (DUMMY_HASH, false),
         };
 
         let is_valid = bcrypt::verify(req.password.as_bytes(), hash_to_verify).unwrap_or(false);
 
         if !user_found || !is_valid {
+            // Only track attempts for real accounts — don't create a user-enumeration
+            // oracle by behaving differently, but also don't write to a nonexistent doc.
+            if user_found {
+                let user = user_result.as_ref().unwrap();
+                let attempts = user.failed_login_attempts + 1;
+                let locked_until = if attempts >= MAX_FAILED_ATTEMPTS {
+                    Some(Utc::now() + chrono::Duration::minutes(LOCKOUT_MINUTES))
+                } else {
+                    None
+                };
+                let _ = self
+                    .repo
+                    .update_login_attempts(&req.email, attempts, locked_until)
+                    .await;
+            }
             return Err(AppError::Unauthorized("Invalid credentials".into()));
         }
 
         let user = user_result.unwrap();
-        let user_id = user.id.map(|id| id.to_string()).unwrap_or_default();
 
+        // Reset counter on successful login.
+        if user.failed_login_attempts > 0 {
+            let _ = self.repo.update_login_attempts(&user.email, 0, None).await;
+        }
+
+        let user_id = user.id.map(|id| id.to_string()).unwrap_or_default();
         let (token, _jti) = self.jwt_helper.generate_token(&user_id, &user.email)?;
 
         Ok(AuthResponse {
@@ -460,6 +491,8 @@ mod oauth_tests {
             created_at: Utc::now(),
             github_account: None,
             notification_preferences: crate::model::user::NotificationPreferences::default(),
+            failed_login_attempts: 0,
+            locked_until: None,
         }
     }
 
