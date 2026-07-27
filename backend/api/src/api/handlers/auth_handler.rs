@@ -65,10 +65,7 @@ fn device_label_from_headers(headers: &HeaderMap) -> String {
 
 /// Prefer reverse-proxy headers, then fall back to the TCP peer address.
 fn client_ip_from_request(headers: &HeaderMap, addr: &SocketAddr) -> String {
-    if let Some(xff) = headers
-        .get("x-forwarded-for")
-        .and_then(|v| v.to_str().ok())
-    {
+    if let Some(xff) = headers.get("x-forwarded-for").and_then(|v| v.to_str().ok()) {
         if let Some(first) = xff.split(',').next() {
             let trimmed = first.trim();
             if !trimmed.is_empty() {
@@ -221,7 +218,9 @@ pub async fn github_unlink(
         .update_user_github_account(&claims.email, None)
         .await?;
 
-    Ok(Json(json!({ "message": "GitHub account unlinked successfully" })))
+    Ok(Json(
+        json!({ "message": "GitHub account unlinked successfully" }),
+    ))
 }
 
 pub async fn get_user_profile(

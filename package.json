@@ -24,6 +24,12 @@
     "micromatch": "^4.0.8",
     "braces": "^3.0.3",
     "path-to-regexp": "^6.3.0",
+    "brace-expansion": "^5.0.8",
+    "minimatch": "^9.0.5",
+    "ejs": "^3.1.10",
+    "filelist": "^1.0.4",
+    "jake": "^10.9.2",
+    "glob": "^10.4.5",
     "next": {
       "postcss": "^8.5.20"
     }

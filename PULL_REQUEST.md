@@ -21,12 +21,12 @@ This PR adds local storage persistence for request comments (`txio_comments`), e
   - Verified store re-initialization properly hydrates comments from `localStorage`.
 
 ### Security & CI Audit Fixes
-- Added `overrides` section to [desktop/package.json](file:///home/semicolon/Pictures/txio/desktop/package.json) to resolve high-severity vulnerabilities (`axios`, `cross-spawn`, `micromatch`, `braces`, `path-to-regexp`) for `npm audit`.
-- Updated `overrides` in [frontend/package.json](file:///home/semicolon/Pictures/txio/frontend/package.json) and [package.json](file:///home/semicolon/Pictures/txio/package.json) for consistent dependency security resolution.
-- Cleaned up rust test import scopes in [cli/src/chains/sui.rs](file:///home/semicolon/Pictures/txio/cli/src/chains/sui.rs) for Rust CI clippy compliance.
+- Added overrides (`brace-expansion`, `minimatch`, `ejs`, `filelist`, `jake`, `glob`, `axios`, `cross-spawn`, `micromatch`, `braces`, `path-to-regexp`) to [frontend/package.json](file:///home/semicolon/Pictures/txio/frontend/package.json), [desktop/package.json](file:///home/semicolon/Pictures/txio/desktop/package.json), and root [package.json](file:///home/semicolon/Pictures/txio/package.json) to resolve all high-severity audit vulnerabilities (`brace-expansion` / `minimatch` DoS GHSA-mh99-v99m-4gvg).
+- Fixed Rust formatting (`cargo fmt`) in [cli/src/chains/sui.rs](file:///home/semicolon/Pictures/txio/cli/src/chains/sui.rs) and [backend/api/src/api/handlers/auth_handler.rs](file:///home/semicolon/Pictures/txio/backend/api/src/api/handlers/auth_handler.rs) for Rust CI compliance.
 
 ## Verification
 
 - **Automated Tests**: Added unit tests in `frontend/src/lib/store.test.ts` covering comment creation, serialization, and deserialization.
-- **Dependency Audit**: Verified `overrides` satisfy `npm audit --audit-level=high` checks.
+- **Dependency Audit**: Resolved all `npm audit --audit-level=high` failures in Frontend and Desktop workspaces.
+- **Rust CI**: Formatted all Rust codebase files according to standard `cargo fmt`.
 - **Manual Verification**: Posted comments on active request tabs, refreshed the browser, and verified comments remain intact.
