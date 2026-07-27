@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Terminal, X, Filter, Trash2, Command, Square } from 'lucide-react';
+import { Terminal, X, Filter, Trash2, Command, Square, Copy, Check } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { apiService, CommandExecutionResponse } from '@/services/api';
 
@@ -31,6 +31,7 @@ export const TerminalPanel: React.FC = () => {
     const [showErrorsOnly, setShowErrorsOnly] = useState(false);
     const [terminalHeight, setTerminalHeight] = useState<number>(getInitialTerminalHeight);
     const [isDragging, setIsDragging] = useState(false);
+    const [copiedLogId, setCopiedLogId] = useState<string | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const executionIdRef = useRef<string | null>(null);
@@ -110,6 +111,29 @@ export const TerminalPanel: React.FC = () => {
     const clearLogs = () => {
         appStore.clearActivityLogs();
         appStore.showToast('Terminal cleared', 'info');
+    };
+
+    const copyToClipboard = async (text: string, logId?: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            if (logId) {
+                setCopiedLogId(logId);
+                setTimeout(() => setCopiedLogId(null), 1500);
+            }
+            appStore.showToast('Copied to clipboard', 'success');
+        } catch {
+            appStore.showToast('Failed to copy', 'error');
+        }
+    };
+
+    const copyAllLogs = () => {
+        const text = visibleLogs
+            .map((log) => {
+                const ts = new Date(log.timestamp).toLocaleTimeString();
+                return `[${ts}] ${log.type} ${log.userName} → ${log.action}`;
+            })
+            .join('\n');
+        void copyToClipboard(text);
     };
 
     const sleep = (ms: number) =>
@@ -492,6 +516,16 @@ export const TerminalPanel: React.FC = () => {
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
+                                    copyAllLogs();
+                                }}
+                                className="p-1.5 rounded-md text-slate-500 hover:text-slate-200 hover:bg-white/[0.05] transition-colors"
+                                title="Copy all output"
+                            >
+                                <Copy size={13} />
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
                                     setShowErrorsOnly((current) => !current);
                                 }}
                                 className={`p-1.5 rounded-md transition-colors ${
@@ -573,6 +607,16 @@ export const TerminalPanel: React.FC = () => {
                                             {typeBadge}
                                             <span className="text-slate-500 font-bold">{log.userName}</span>
                                             {log.target && <span className="text-electric-violet/60 italic text-[10px]">({log.target})</span>}
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    void copyToClipboard(log.action, log.id);
+                                                }}
+                                                className="ml-auto opacity-0 group-hover:opacity-100 p-1 rounded text-slate-500 hover:text-slate-200 hover:bg-white/[0.05] transition-all"
+                                                title="Copy output"
+                                            >
+                                                {copiedLogId === log.id ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
+                                            </button>
                                         </div>
                                         <pre className="text-white/90 whitespace-pre-wrap break-words ml-4 border-l border-white/5 pl-3">
                                             {log.action}
@@ -590,12 +634,22 @@ export const TerminalPanel: React.FC = () => {
                                 >
                                     {timestamp}
                                     {typeBadge}
-                                    <span className="text-slate-300">
+                                    <span className="text-slate-300 flex-1">
                                         <span className="text-slate-500 font-bold">{log.userName}</span>
                                         <span className="mx-2 text-slate-600">→</span>
                                         <span className="text-white/90 whitespace-pre-wrap break-words">{log.action}</span>
                                         {log.target && <span className="ml-2 text-electric-violet/60 italic">({log.target})</span>}
                                     </span>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            void copyToClipboard(log.action, log.id);
+                                        }}
+                                        className="opacity-0 group-hover:opacity-100 p-1 rounded text-slate-500 hover:text-slate-200 hover:bg-white/[0.05] transition-all shrink-0"
+                                        title="Copy output"
+                                    >
+                                        {copiedLogId === log.id ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
+                                    </button>
                                 </motion.div>
                             );
                         })}
