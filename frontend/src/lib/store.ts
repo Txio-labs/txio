@@ -54,6 +54,8 @@ const settingsStorageKey =
     'txio_settings';
 const networkStorageKey =
     'txio_network';
+const commentsStorageKey =
+    'txio_comments';
 
 const emit = () => {
     listeners.forEach((l) => l());
@@ -314,6 +316,55 @@ const persistNetwork = (
         networkStorageKey,
         network
     );
+};
+
+const readStoredComments = (): Record<string, Comment[]> => {
+    if (typeof window === 'undefined') {
+        return {};
+    }
+
+    try {
+        const raw = localStorage.getItem(
+            commentsStorageKey
+        );
+
+        if (!raw) {
+            return {};
+        }
+
+        const parsed = JSON.parse(raw);
+        if (
+            parsed &&
+            typeof parsed === 'object' &&
+            !Array.isArray(parsed)
+        ) {
+            return parsed as Record<
+                string,
+                Comment[]
+            >;
+        }
+
+        return {};
+    } catch {
+        return {};
+    }
+};
+
+const persistComments = (
+    comments: Record<string, Comment[]>
+) => {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    try {
+        localStorage.setItem(
+            commentsStorageKey,
+            JSON.stringify(comments)
+        );
+    } catch {
+        // Ignore storage errors
+    }
 };
 
 const resolveWorkspaceSelection = (
@@ -625,7 +676,7 @@ let state: AppState = {
 
     activityLogs: [],
 
-    comments: {},
+    comments: readStoredComments(),
 
     settings: initialSettings,
 
@@ -2040,6 +2091,7 @@ export const appStore = {
             comments: newComments
         };
 
+        persistComments(newComments);
         emit();
     },
 

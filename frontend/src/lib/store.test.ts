@@ -438,3 +438,44 @@ describe('appStore auth and session state', () => {
         });
     });
 });
+
+describe('appStore comments persistence', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        vi.resetAllMocks();
+    });
+
+    it('persists posted comments to localStorage and restores them on load', async () => {
+        localStorage.setItem('txio_token', 'cached-token');
+        localStorage.setItem('txio_user', JSON.stringify(user));
+
+        const { appStore, apiService } = await loadStore();
+        apiService.getProfile.mockResolvedValue(user);
+        apiService.getWorkspaces.mockResolvedValue([]);
+
+        await appStore.initialize();
+
+        const requestId = 'req-123';
+        appStore.postComment(requestId, 'Great API request structure!');
+
+        const snapshot = appStore.getSnapshot();
+        expect(snapshot.comments[requestId]).toBeDefined();
+        expect(snapshot.comments[requestId]).toHaveLength(1);
+        expect(snapshot.comments[requestId][0]).toMatchObject({
+            userName: user.name,
+            content: 'Great API request structure!'
+        });
+
+        const storedRaw = localStorage.getItem('txio_comments');
+        expect(storedRaw).not.toBeNull();
+        const storedComments = JSON.parse(storedRaw!);
+        expect(storedComments[requestId]).toHaveLength(1);
+        expect(storedComments[requestId][0].content).toBe('Great API request structure!');
+
+        // Reload store and verify comments are hydrated from localStorage
+        const reloaded = await loadStore();
+        const reloadedSnapshot = reloaded.appStore.getSnapshot();
+        expect(reloadedSnapshot.comments[requestId]).toHaveLength(1);
+        expect(reloadedSnapshot.comments[requestId][0].content).toBe('Great API request structure!');
+    });
+});
