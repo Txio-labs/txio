@@ -311,7 +311,7 @@ impl AuthService {
     pub async fn get_rpc_history(&self, email: &str) -> Result<Vec<RpcLog>, AppError> {
         let user = self.repo.find_by_email(email).await?;
         if let Some(user_id) = user.id {
-            let logs = self.rpc_repo.find_by_user_id(user_id).await?;
+            let logs = self.rpc_repo.find_by_user_id(user_id, 100).await?;
             Ok(logs)
         } else {
             Ok(vec![])

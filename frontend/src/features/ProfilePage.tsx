@@ -722,26 +722,40 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
                                     </Field>
                                     <Field label="GitHub" hint="Link your GitHub to publish recipes and sync gists.">
                                         <div className={`${readonlyInputClass} flex items-center gap-2`}>
-                                            <Github size={14} className="text-slate-400 shrink-0" />
-                                            <span className="truncate text-slate-500">Not connected</span>
-                                            <button
-                                                type="button"
-                                                onClick={() => window.location.href = `${API_BASE}/auth/github/login`}
-                                                className="ml-auto text-[11px] text-electric-violet hover:text-soft-purple font-medium transition-colors"
-                                            >
-                                                Connect →
-                                            </button>
+                                            <Github size={14} className={user.githubAccount ? "text-slate-200 shrink-0" : "text-slate-400 shrink-0"} />
+                                            <span className={user.githubAccount ? "truncate text-slate-200" : "truncate text-slate-500"}>
+                                                {user.githubAccount ? `@${user.githubAccount.login}` : "Not connected"}
+                                            </span>
+                                            {!user.githubAccount && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => window.location.href = `${API_BASE}/auth/github/login`}
+                                                    className="ml-auto text-[11px] text-electric-violet hover:text-soft-purple font-medium transition-colors"
+                                                >
+                                                    Connect →
+                                                </button>
+                                            )}
                                         </div>
                                     </Field>
-                                    <div className="mt-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => window.location.href = `${API_BASE}/auth/github/unlink`}
-                                            className="text-[11px] text-rose-400 hover:text-rose-300 transition-colors"
-                                        >
-                                            Unlink GitHub
-                                        </button>
-                                    </div>
+                                    {user.githubAccount && (
+                                        <div className="mt-2">
+                                            <button
+                                                type="button"
+                                                onClick={async () => {
+                                                    try {
+                                                        await apiService.unlinkGithub();
+                                                        appStore.updateUser({ githubAccount: undefined });
+                                                        appStore.showToast("GitHub unlinked", "success");
+                                                    } catch (err) {
+                                                        appStore.showToast("Failed to unlink GitHub", "error");
+                                                    }
+                                                }}
+                                                className="text-[11px] text-rose-400 hover:text-rose-300 transition-colors"
+                                            >
+                                                Unlink GitHub
+                                            </button>
+                                        </div>
+                                    )}
                                     <Field label="Timezone" hint="Detected from your browser." htmlFor="profile-tz">
                                         <input
                                             id="profile-tz"

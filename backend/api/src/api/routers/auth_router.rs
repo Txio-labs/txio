@@ -43,6 +43,7 @@ pub fn router(service: AuthService) -> Router {
         )
         .route("/switch-network", post(auth_handler::switch_network))
         .route("/rpc-log", post(auth_handler::log_rpc_call))
+        .route("/rpc-history", get(auth_handler::get_rpc_history))
         .route("/logout", post(auth_handler::logout))
         .route("/sessions", get(auth_handler::list_sessions))
         .route(
