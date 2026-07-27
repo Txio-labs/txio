@@ -746,7 +746,7 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
                                                         await apiService.unlinkGithub();
                                                         appStore.updateUser({ githubAccount: undefined });
                                                         appStore.showToast("GitHub unlinked", "success");
-                                                    } catch (err) {
+                                                    } catch {
                                                         appStore.showToast("Failed to unlink GitHub", "error");
                                                     }
                                                 }}
