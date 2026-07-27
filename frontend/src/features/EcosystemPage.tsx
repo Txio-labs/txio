@@ -59,6 +59,15 @@ export const EcosystemPage: React.FC<
         };
     }, [embedded]);
 
+    const EXPLORER_URLS: Record<string, string> = {
+        'Sui': 'https://suiexplorer.com',
+        'Solana': 'https://explorer.solana.com',
+        'Ethereum': 'https://etherscan.io',
+        'Aptos': 'https://explorer.aptoslabs.com',
+        'Starknet': 'https://starkscan.co',
+        'Arbitrum': 'https://arbiscan.io'
+    };
+
     const chains = [
         { name: 'Sui', desc: 'Object-centric L1. Move-native. Fast.', color: '#38bdf8', tps: '297k', latency: '390ms', status: 'Optimal' },
         { name: 'Solana', desc: 'Parallel execution. Sub-second confirmations.', color: '#14f195', tps: '65k', latency: '400ms', status: 'Optimal' },
