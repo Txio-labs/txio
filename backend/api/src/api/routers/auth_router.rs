@@ -42,6 +42,10 @@ pub fn router(service: AuthService) -> Router {
         .route("/get-user-profile", post(auth_handler::get_user_profile))
         .route("/update-email", post(auth_handler::update_user_email))
         .route("/update-password", post(auth_handler::update_user_password))
+        .route(
+            "/update-notification-preferences",
+            post(auth_handler::update_notification_preferences),
+        )
         .route("/delete-user", post(auth_handler::delete_user))
         .route(
             "/forgot-password",
