@@ -144,4 +144,11 @@ impl UserRepository {
         }
         Ok(emails)
     }
+
+    /// Sets or clears the durable `is_admin` flag (bootstrap / ops only).
+    pub async fn set_is_admin(&self, email: &str, is_admin: bool) -> Result<User, AppError> {
+        let mut user = self.find_by_email(email).await?;
+        user.is_admin = is_admin;
+        self.update(&user).await
+    }
 }

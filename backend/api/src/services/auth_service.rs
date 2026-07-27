@@ -10,6 +10,7 @@ use crate::repositories::user_repository::UserRepository;
 use crate::services::email_service::EmailService;
 use crate::services::otp_service::OTPService;
 use crate::utils::auth_jwt::{Claims, JwtHelper};
+use crate::utils::config::is_reserved_admin_email;
 use crate::utils::error::AppError;
 use chrono::Utc;
 
@@ -21,6 +22,8 @@ pub struct AuthService {
     jwt_helper: JwtHelper,
     otp_service: OTPService,
     email_service: EmailService,
+    /// Emails listed in ADMIN_EMAILS — reserved from self-service account creation.
+    reserved_admin_emails: Vec<String>,
 }
 
 impl AuthService {
@@ -48,6 +51,7 @@ impl AuthService {
         jwt_helper: JwtHelper,
         otp_service: OTPService,
         email_service: EmailService,
+        reserved_admin_emails: Vec<String>,
     ) -> Self {
         Self {
             repo,
@@ -56,7 +60,18 @@ impl AuthService {
             jwt_helper,
             otp_service,
             email_service,
+            reserved_admin_emails,
         }
+    }
+
+    fn reject_reserved_email(&self, email: &str) -> Result<(), AppError> {
+        if is_reserved_admin_email(email, &self.reserved_admin_emails) {
+            return Err(AppError::BadRequest(
+                "This email is reserved for administrator provisioning and cannot be registered or claimed via self-service. Use the bootstrap_admin tool instead."
+                    .into(),
+            ));
+        }
+        Ok(())
     }
 
     /// Verify a JWT and return its claims.
@@ -156,6 +171,8 @@ impl AuthService {
     // ── Auth ─────────────────────────────────────────────────────────────────
 
     pub async fn register_user(&self, req: RegisterUserRequest) -> Result<AuthResponse, AppError> {
+        self.reject_reserved_email(&req.email)?;
+
         match self.repo.find_by_email(&req.email).await {
             Ok(_) => return Err(AppError::BadRequest("Email already registered".into())),
             Err(AppError::NotFound(_)) => (),
@@ -278,6 +295,7 @@ impl AuthService {
         let mut user = self.repo.find_by_email(old_email).await?;
 
         if new_email != old_email {
+            self.reject_reserved_email(new_email)?;
             match self.repo.find_by_email(new_email).await {
                 Ok(_) => return Err(AppError::BadRequest("Email already in use".into())),
                 Err(AppError::NotFound(_)) => (),
@@ -404,6 +422,7 @@ impl AuthService {
         let user = match user {
             OAuthAccountResolution::Login(existing) => existing,
             OAuthAccountResolution::Register { email, google_sub } => {
+                self.reject_reserved_email(&email)?;
                 let random_password = uuid::Uuid::new_v4().to_string();
                 let password_hash = bcrypt::hash(random_password.as_bytes(), bcrypt::DEFAULT_COST)
                     .map_err(|_| AppError::InternalError("Failed to hash password".into()))?;
@@ -502,6 +521,7 @@ mod oauth_tests {
             notification_preferences: crate::model::user::NotificationPreferences::default(),
             failed_login_attempts: 0,
             locked_until: None,
+            is_admin: false,
         }
     }
 

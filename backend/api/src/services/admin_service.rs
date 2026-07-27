@@ -1,50 +1,49 @@
 use crate::dtos::admin_dtos::{AdminLogEntry, AdminStatsResponse};
+use crate::model::user::User;
 use crate::repositories::rpc_repository::RpcRepository;
 use crate::repositories::user_repository::UserRepository;
 use crate::utils::auth_jwt::Claims;
 use crate::utils::error::AppError;
+use mongodb::bson::oid::ObjectId;
 
 #[derive(Clone)]
 pub struct AdminService {
     user_repo: UserRepository,
     rpc_repo: RpcRepository,
-    admin_emails: Vec<String>,
 }
 
 impl AdminService {
-    pub fn new(
-        user_repo: UserRepository,
-        rpc_repo: RpcRepository,
-        admin_emails: Vec<String>,
-    ) -> Self {
+    pub fn new(user_repo: UserRepository, rpc_repo: RpcRepository) -> Self {
         Self {
             user_repo,
             rpc_repo,
-            admin_emails,
         }
     }
 
-    fn is_admin(&self, email: &str) -> bool {
-        self.admin_emails
-            .iter()
-            .any(|admin_email| admin_email.eq_ignore_ascii_case(email))
-    }
-
-    fn require_admin(&self, claims: &Claims) -> Result<(), AppError> {
-        if self.is_admin(&claims.email) {
+    /// Admin access is granted solely by the durable `User.is_admin` flag.
+    /// Email allowlist matching against JWT claims is intentionally not used.
+    pub(crate) fn ensure_admin_flag(user: &User) -> Result<(), AppError> {
+        if user.is_admin {
             Ok(())
         } else {
             Err(AppError::Forbidden("Admin access required".into()))
         }
     }
 
+    async fn require_admin(&self, claims: &Claims) -> Result<(), AppError> {
+        let oid = ObjectId::parse_str(&claims.sub)
+            .map_err(|_| AppError::Unauthorized("Invalid token subject".into()))?;
+        let user = self.user_repo.find_by_id(&oid).await?;
+        Self::ensure_admin_flag(&user)
+    }
+
     pub async fn list_user_emails(&self, claims: &Claims) -> Result<Vec<String>, AppError> {
-        self.require_admin(claims)?;
+        self.require_admin(claims).await?;
         self.user_repo.list_all_emails().await
     }
 
     pub async fn delete_user(&self, claims: &Claims, email: &str) -> Result<String, AppError> {
-        self.require_admin(claims)?;
+        self.require_admin(claims).await?;
 
         let user = self.user_repo.find_by_email(email).await?;
         let user_id = user
@@ -57,7 +56,7 @@ impl AdminService {
     }
 
     pub async fn stats(&self, claims: &Claims) -> Result<AdminStatsResponse, AppError> {
-        self.require_admin(claims)?;
+        self.require_admin(claims).await?;
 
         let user_count = self.user_repo.count_documents().await?;
         let rpc_log_count = self.rpc_repo.count_all().await?;
@@ -73,7 +72,7 @@ impl AdminService {
         claims: &Claims,
         limit: i64,
     ) -> Result<Vec<AdminLogEntry>, AppError> {
-        self.require_admin(claims)?;
+        self.require_admin(claims).await?;
 
         let logs = self.rpc_repo.find_recent(limit).await?;
         Ok(logs
@@ -91,54 +90,31 @@ impl AdminService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mongodb::Client;
+    use crate::model::user::User;
 
-    fn claims_for(email: &str) -> Claims {
-        Claims {
-            sub: "000000000000000000000000".to_string(),
-            email: email.to_string(),
-            exp: 0,
-            iat: 0,
-            jti: None,
-        }
+    fn sample_user(is_admin: bool) -> User {
+        let mut user = User::new("admin@example.com".into(), "hash".into());
+        user.is_admin = is_admin;
+        user
     }
 
-    // Client construction from a URI only parses connection options; the
-    // driver connects lazily on first use, so this never touches the
-    // network and is safe to build in unit tests.
-    async fn admin_service(admin_emails: Vec<String>) -> AdminService {
-        let client = Client::with_uri_str("mongodb://localhost:27017")
-            .await
-            .expect("parsing a well-formed URI must not require a live connection");
-        let db = client
-            .default_database()
-            .unwrap_or_else(|| client.database("txio_db"));
-        let user_repo = UserRepository::new(&db);
-        let rpc_repo = RpcRepository::new(&db);
-        AdminService::new(user_repo, rpc_repo, admin_emails)
+    #[test]
+    fn ensure_admin_flag_accepts_admin_user() {
+        assert!(AdminService::ensure_admin_flag(&sample_user(true)).is_ok());
     }
 
-    #[tokio::test]
-    async fn require_admin_accepts_case_insensitive_listed_email() {
-        let service = admin_service(vec!["Admin@Example.com".to_string()]).await;
-        let claims = claims_for("admin@example.com");
-        assert!(service.require_admin(&claims).is_ok());
-    }
-
-    #[tokio::test]
-    async fn require_admin_rejects_unlisted_email() {
-        let service = admin_service(vec!["admin@example.com".to_string()]).await;
-        let claims = claims_for("someone-else@example.com");
+    #[test]
+    fn ensure_admin_flag_rejects_non_admin_user() {
         assert!(matches!(
-            service.require_admin(&claims),
+            AdminService::ensure_admin_flag(&sample_user(false)),
             Err(AppError::Forbidden(_))
         ));
     }
 
-    #[tokio::test]
-    async fn require_admin_rejects_when_allowlist_is_empty() {
-        let service = admin_service(vec![]).await;
-        let claims = claims_for("anyone@example.com");
-        assert!(service.require_admin(&claims).is_err());
+    #[test]
+    fn ensure_admin_flag_ignores_email_string() {
+        // Even with an "admin-looking" email, privilege requires the flag.
+        let user = User::new("admin@txio.io".into(), "hash".into());
+        assert!(AdminService::ensure_admin_flag(&user).is_err());
     }
 }
