@@ -22,12 +22,6 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
   isReadOnly = false
 }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('builder');
-  const [isSnippetCopied, setIsSnippetCopied] = useState(false);
-
-  const handleCopySnippet = () => {
-    setIsSnippetCopied(true);
-    setTimeout(() => setIsSnippetCopied(false), 2000);
-  };
 
   const handleTypeChange = (type: RequestType) => {
     onChange({ ...request, type });
@@ -96,9 +90,7 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
       <RequestTabs 
         activeTab={activeTab}
         testsCount={request.tests?.length || 0}
-        isSnippetCopied={isSnippetCopied}
         onTabChange={setActiveTab}
-        onCopySnippet={handleCopySnippet}
       />
 
       <div className="flex-1 overflow-auto bg-white dark:bg-dark-indigo-glow custom-scrollbar">
