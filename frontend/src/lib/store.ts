@@ -476,6 +476,8 @@ interface AppState {
         | 'integrations'
         | 'infrastructure'
         | 'partners';
+
+    pendingAiPrompt: string | null;
 }
 
 // --- INITIAL STATE ---
@@ -545,7 +547,9 @@ let state: AppState = {
 
     // IMPORTANT:
     // restore app mode if token exists
-    viewMode: hasToken ? 'app' : 'landing'
+    viewMode: hasToken ? 'app' : 'landing',
+
+    pendingAiPrompt: null
 };
 
 // Actions
@@ -1890,6 +1894,15 @@ export const appStore = {
         state = {
             ...state,
             comments: newComments
+        };
+
+        emit();
+    },
+
+    setPendingAiPrompt(prompt: string | null) {
+        state = {
+            ...state,
+            pendingAiPrompt: prompt
         };
 
         emit();
