@@ -64,5 +64,15 @@
       "target": ["dmg"],
       "icon": "src/assets/logo-B-VeRwKK.png"
     }
+  },
+  "overrides": {
+    "axios": "^1.18.1",
+    "form-data": "^4.0.6",
+    "ws": "^8.20.2",
+    "postcss": "^8.5.20",
+    "cross-spawn": "^7.0.6",
+    "micromatch": "^4.0.8",
+    "braces": "^3.0.3",
+    "path-to-regexp": "^6.3.0"
   }
 }

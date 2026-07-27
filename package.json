@@ -20,6 +20,10 @@
     "postcss": "^8.5.14",
     "typescript": "5.9.3",
     "sharp": "^0.35.3",
+    "cross-spawn": "^7.0.6",
+    "micromatch": "^4.0.8",
+    "braces": "^3.0.3",
+    "path-to-regexp": "^6.3.0",
     "next": {
       "postcss": "^8.5.20"
     }
