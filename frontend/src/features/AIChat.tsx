@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Terminal, Layers, RefreshCw, Copy, Check, Plus } from 'lucide-react';
-import { appStore } from '@/lib/store';
+import { appStore, useAppStore } from '@/lib/store';
 import { DEFAULT_MOVE_CALL } from '@/lib/constants';
 import { apiService, AiChatMessage, AiToolCall } from '@/services/api';
 import { RequestType } from '../types';
@@ -16,6 +16,7 @@ const INITIAL_MESSAGE: Message = {
 };
 
 export const AIChat: React.FC = () => {
+  const { pendingAiPrompt } = useAppStore();
   const [messages, setMessages] = useState<Message[]>([
     INITIAL_MESSAGE
   ]);
@@ -23,12 +24,22 @@ export const AIChat: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const pendingPromptRef = useRef<string | null>(null);
+  const handleSendRef = useRef<(msg: string) => Promise<void>>(null!);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isTyping]);
+
+  useEffect(() => {
+    if (pendingAiPrompt && !pendingPromptRef.current) {
+      pendingPromptRef.current = pendingAiPrompt;
+      appStore.setPendingAiPrompt(null);
+      void handleSendRef.current(pendingAiPrompt);
+    }
+  }, [pendingAiPrompt]);
 
   const handleCopy = (text: string, index: number) => {
     navigator.clipboard.writeText(text);
@@ -101,6 +112,8 @@ export const AIChat: React.FC = () => {
       setIsTyping(false);
     }
   };
+
+  handleSendRef.current = handleSend;
 
   const executeToolCall = (
     toolCall: AiToolCall

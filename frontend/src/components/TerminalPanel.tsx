@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Terminal, X, Filter, Trash2, Command, Square } from 'lucide-react';
+import { Terminal, X, Filter, Trash2, Command, Square, Sparkles } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { apiService, CommandExecutionResponse } from '@/services/api';
 
@@ -579,6 +579,19 @@ export const TerminalPanel: React.FC = () => {
                                             {typeBadge}
                                             <span className="text-slate-500 font-bold">{log.userName}</span>
                                             {log.target && <span className="text-electric-violet/60 italic text-[10px]">({log.target})</span>}
+                                            {log.type === 'error' && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        appStore.setPendingAiPrompt(`Explain this terminal error:\n\n${log.action}`);
+                                                        appStore.openTab('ai_chat');
+                                                    }}
+                                                    className="ml-auto shrink-0 p-1 rounded text-slate-600 hover:text-electric-violet opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    title="Ask AI to explain this error"
+                                                >
+                                                    <Sparkles size={12} />
+                                                </button>
+                                            )}
                                         </div>
                                         <pre className="text-slate-800 dark:text-white/90 whitespace-pre-wrap break-words ml-4 border-l border-slate-200 dark:border-white/5 pl-3">
                                             {log.action}
@@ -602,6 +615,19 @@ export const TerminalPanel: React.FC = () => {
                                         <span className="text-slate-800 dark:text-white/90 whitespace-pre-wrap break-words">{log.action}</span>
                                         {log.target && <span className="ml-2 text-electric-violet/60 italic">({log.target})</span>}
                                     </span>
+                                    {log.type === 'error' && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                appStore.setPendingAiPrompt(`Explain this terminal error:\n\n${log.action}`);
+                                                appStore.openTab('ai_chat');
+                                            }}
+                                            className="ml-auto shrink-0 p-1 rounded text-slate-600 hover:text-electric-violet opacity-0 group-hover:opacity-100 transition-opacity"
+                                            title="Ask AI to explain this error"
+                                        >
+                                            <Sparkles size={12} />
+                                        </button>
+                                    )}
                                 </motion.div>
                             );
                         })}
