@@ -245,6 +245,15 @@ impl AuthService {
         new_email: &str,
     ) -> Result<UserResponse, AppError> {
         let mut user = self.repo.find_by_email(old_email).await?;
+
+        if new_email != old_email {
+            match self.repo.find_by_email(new_email).await {
+                Ok(_) => return Err(AppError::BadRequest("Email already in use".into())),
+                Err(AppError::NotFound(_)) => (),
+                Err(e) => return Err(e),
+            };
+        }
+
         user.email = new_email.to_string();
         let updated_user = self.repo.update(&user).await?;
         Ok(Self::to_user_response(&updated_user))
