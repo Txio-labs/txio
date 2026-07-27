@@ -19,15 +19,35 @@
     "electron-updater": "^6.6.0"
   },
   "devDependencies": {
-    "electron": "43.2.0",
-    "electron-builder": "^26.15.3",
     "@tailwindcss/cli": "^4.3.3",
     "autoprefixer": "^10.5.4",
+    "electron": "43.2.0",
+    "electron-builder": "^26.15.3",
     "postcss": "^8.5.20",
     "tailwindcss": "^4.3.3"
   },
   "optionalDependencies": {
     "dmg-license": "^1.0.11"
+  },
+  "overrides": {
+    "builder-util-runtime": "^9.7.0",
+    "tar": "^7.5.3",
+    "brace-expansion": "^2.0.2",
+    "minimatch": {
+      "brace-expansion": "^2.0.2"
+    },
+    "axios": "^1.18.1",
+    "form-data": "^4.0.6",
+    "ws": "^8.20.2",
+    "postcss": "^8.5.20",
+    "cross-spawn": "^7.0.6",
+    "micromatch": "^4.0.8",
+    "braces": "^3.0.3",
+    "path-to-regexp": "^6.3.0",
+    "ejs": "^3.1.10",
+    "filelist": "^1.0.4",
+    "jake": "^10.9.2",
+    "glob": "^10.4.5"
   },
   "build": {
     "appId": "com.kingvic.txio",
@@ -52,35 +72,27 @@
       "!**/node_modules/*/{README.md,readme.md,README}",
       "!**/node_modules/*/{test,tests,__tests__}"
     ],
-    "electronLanguages": ["en"],
+    "electronLanguages": [
+      "en"
+    ],
     "linux": {
-      "target": ["AppImage"],
+      "target": [
+        "AppImage"
+      ],
       "icon": "src/assets/logo-B-VeRwKK.png",
       "category": "Development"
     },
     "win": {
-      "target": ["nsis"],
+      "target": [
+        "nsis"
+      ],
       "icon": "src/assets/logo-B-VeRwKK.png"
     },
     "mac": {
-      "target": ["dmg"],
+      "target": [
+        "dmg"
+      ],
       "icon": "src/assets/logo-B-VeRwKK.png"
     }
-  },
-  "overrides": {
-    "axios": "^1.18.1",
-    "form-data": "^4.0.6",
-    "ws": "^8.20.2",
-    "postcss": "^8.5.20",
-    "cross-spawn": "^7.0.6",
-    "micromatch": "^4.0.8",
-    "braces": "^3.0.3",
-    "path-to-regexp": "^6.3.0",
-    "brace-expansion": "^5.0.8",
-    "minimatch": "^9.0.5",
-    "ejs": "^3.1.10",
-    "filelist": "^1.0.4",
-    "jake": "^10.9.2",
-    "glob": "^10.4.5"
   }
 }
