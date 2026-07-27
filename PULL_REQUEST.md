@@ -21,7 +21,7 @@ This PR adds local storage persistence for request comments (`txio_comments`), e
   - Verified store re-initialization properly hydrates comments from `localStorage`.
 
 ### Security & CI Audit Fixes
-- Added overrides (`brace-expansion`, `minimatch`, `ejs`, `filelist`, `jake`, `glob`, `axios`, `cross-spawn`, `micromatch`, `braces`, `path-to-regexp`) to [frontend/package.json](file:///home/semicolon/Pictures/txio/frontend/package.json), [desktop/package.json](file:///home/semicolon/Pictures/txio/desktop/package.json), and root [package.json](file:///home/semicolon/Pictures/txio/package.json) to resolve all high-severity audit vulnerabilities (`brace-expansion` / `minimatch` DoS GHSA-mh99-v99m-4gvg).
+- Added overrides and updated lockfiles ([frontend/package-lock.json](file:///home/semicolon/Pictures/txio/frontend/package-lock.json) and [desktop/package-lock.json](file:///home/semicolon/Pictures/txio/desktop/package-lock.json)) for `brace-expansion` (`^2.0.1` / `^5.0.8`) and `minimatch` (`^9.0.5` / `^10.2.5`) to eliminate all `brace-expansion <=5.0.7` high-severity audit failures (GHSA-mh99-v99m-4gvg) in CI.
 - Fixed Rust formatting (`cargo fmt`) in [cli/src/chains/sui.rs](file:///home/semicolon/Pictures/txio/cli/src/chains/sui.rs) and [backend/api/src/api/handlers/auth_handler.rs](file:///home/semicolon/Pictures/txio/backend/api/src/api/handlers/auth_handler.rs) for Rust CI compliance.
 
 ## Verification
