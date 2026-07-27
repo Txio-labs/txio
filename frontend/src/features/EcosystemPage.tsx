@@ -217,7 +217,10 @@ export const EcosystemPage: React.FC<
                                     </div>
                                 </div>
 
-                                <button className="mt-8 flex items-center justify-center gap-2 py-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-white transition-all border border-transparent hover:border-white/10 active:scale-95">
+                                <button 
+                                    onClick={() => window.open(EXPLORER_URLS[chain.name], '_blank', 'noopener,noreferrer')}
+                                    className="mt-8 flex items-center justify-center gap-2 py-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-white transition-all border border-transparent hover:border-white/10 active:scale-95"
+                                >
                                     Explorer <ExternalLink size={14} />
                                 </button>
                             </div>
@@ -301,10 +304,10 @@ export const EcosystemPage: React.FC<
                             Go build <br /> something good.
                         </h3>
                         <div className="flex flex-col md:flex-row justify-center gap-6 items-center">
-                            <button className="w-full md:w-auto px-10 py-5 bg-white text-near-black rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all active:scale-95 shadow-2xl">
+                            <button onClick={() => navigateTo('signup')} className="w-full md:w-auto px-10 py-5 bg-white text-near-black rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all active:scale-95 shadow-2xl">
                                 Request Access
                             </button>
-                            <button className="w-full md:w-auto px-10 py-5 bg-near-black/20 text-white border border-white/20 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all">
+                            <button onClick={() => navigateTo('docs')} className="w-full md:w-auto px-10 py-5 bg-near-black/20 text-white border border-white/20 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all">
                                 Read the docs
                             </button>
                         </div>
