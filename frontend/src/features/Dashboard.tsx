@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Activity, Terminal, Layers, Globe, Zap, Fuel, Clock, Plus, ChevronRight, Shield, Cpu, Sparkles, ZapOff
+    Activity, Terminal, Layers, Globe, Zap, Fuel, Clock, Plus, ChevronRight, Shield, Cpu, Sparkles, ZapOff, Code2
 } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { RequestType } from '@/types';
@@ -203,6 +203,8 @@ export const Dashboard: React.FC = () => {
                     {[
                         { title: 'RPC Builder', desc: 'Interact with fullnodes via JSON-RPC', icon: Terminal, action: () => appStore.openTab('rpc'), hotkey: '⌘R' },
                         { title: 'TX Composer', desc: 'Batch operations into single transactions', icon: Layers, action: () => appStore.openTab('ptb'), hotkey: '⌘P' },
+                        { title: 'Move Builder', desc: 'Write and deploy Move contracts visually', icon: Code2, action: () => appStore.openTab('move'), hotkey: '⌘M' },
+                        { title: 'Playground', desc: 'Test SDK snippets against live state', icon: Sparkles, action: () => appStore.openTab('playground'), hotkey: '⌘G' },
                         { title: 'AI Debugger', desc: 'Explain transaction errors and audit code', icon: Shield, action: () => appStore.openTab('ai_chat'), hotkey: '⌘D' }
                     ].map((tool, i) => (
                         <button 

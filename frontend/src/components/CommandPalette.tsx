@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Search, Command, ArrowRight, Layers, Terminal, Settings, User, CreditCard, Play, Plus, Box, RotateCcw } from 'lucide-react';
+import { Search, Command, ArrowRight, Layers, Terminal, Settings, User, CreditCard, Play, Plus, Box, RotateCcw, Code2, Sparkles } from 'lucide-react';
 import { appStore, useAppStore } from '@/lib/store';
 import { CollectionNode, RequestType, FeatureId } from '../types';
 import { COMMON_RPC_METHODS } from '@/lib/constants';
@@ -60,6 +60,8 @@ export const CommandPalette: React.FC = () => {
         items.push(
             { id: 'new-req', title: 'New Request', subtitle: 'Create a blank JSON-RPC or Move Call', icon: <Plus size={14} />, action: () => appStore.openTab('new_request'), keywords: ['new', 'create', 'request'] },
             { id: 'new-ptb', title: 'New PTB', subtitle: 'Programmable Transaction Block Builder', icon: <Layers size={14} />, action: () => appStore.openTab('ptb'), keywords: ['new', 'create', 'ptb', 'transaction'] },
+            { id: 'move-builder', title: 'Move Builder', subtitle: 'Write and deploy Move contracts visually', icon: <Code2 size={14} />, action: () => appStore.openTab('move'), keywords: ['move', 'contract', 'deploy', 'builder'] },
+            { id: 'playground', title: 'Playground', subtitle: 'Test SDK snippets against live state', icon: <Sparkles size={14} />, action: () => appStore.openTab('playground'), keywords: ['playground', 'sdk', 'snippet', 'test'] },
             { id: 'settings', title: 'Settings', icon: <Settings size={14} />, action: () => appStore.openTab('settings'), keywords: ['config', 'preferences'] },
             { id: 'profile', title: 'Profile', icon: <User size={14} />, action: () => appStore.openTab('profile'), keywords: ['account', 'user'] },
             { id: 'switch-net', title: 'Switch Network', subtitle: 'Toggle between Mainnet/Testnet', icon: <RotateCcw size={14} />, action: () => appStore.requestNetworkSwitch(appStore.getSnapshot().network === 'mainnet' ? 'testnet' : 'mainnet'), keywords: ['network', 'mainnet', 'testnet'] }
