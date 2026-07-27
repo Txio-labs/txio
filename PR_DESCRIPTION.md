@@ -8,7 +8,7 @@ Rather than redirecting the user to a completely separate page, the Sign In form
 2. An **OTP + New Password** step (reusing the exact 6-digit OTP UI pattern from `OTPPage.tsx`).
 
 ## Related Issues
-- **Closes**: (Insert Issue number here)
+- **Closes**: #290
 - **Related**: #11 (Backend implementation counterpart)
 
 ## Changes
