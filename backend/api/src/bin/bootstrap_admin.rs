@@ -16,7 +16,7 @@ use std::path::PathBuf;
 use txio_api::infra::db::establish_connection;
 use txio_api::model::user::User;
 use txio_api::repositories::user_repository::UserRepository;
-use txio_api::utils::config::{is_reserved_admin_email, Config};
+use txio_api::utils::config::{Config, is_reserved_admin_email};
 use txio_api::utils::error::AppError;
 
 #[derive(Parser, Debug)]
