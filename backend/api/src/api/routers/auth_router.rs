@@ -17,10 +17,21 @@ pub fn router(service: AuthService) -> Router {
             .expect("valid governor rate-limit configuration"),
     );
 
+    let login_rate_limiter = Arc::new(
+        GovernorConfigBuilder::default()
+            .per_millisecond(200)
+            .burst_size(10)
+            .finish()
+            .expect("valid governor rate-limit configuration"),
+    );
+
     Router::new()
         .route("/health", get(|| async { Json(json!({ "status": "ok" })) }))
         .route("/register", post(auth_handler::register))
-        .route("/login", post(auth_handler::login))
+        .route(
+            "/login",
+            post(auth_handler::login).layer(GovernorLayer::new(login_rate_limiter)),
+        )
         .route(
             "/request-otp",
             post(auth_handler::request_otp)
