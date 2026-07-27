@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { Box, Search, RefreshCw, ChevronLeft, Coins } from 'lucide-react';
 import { Network } from '../../../types';
 import { getObject } from '../../../services/suiService';
+import type { WalletChainFamily } from '../../../wallet';
 
 interface ObjectsTabProps {
   connectedAddress: string | null;
-  walletFamily: 'evm' | 'sui' | 'stellar' | null;
+  walletFamily: WalletChainFamily | null;
   network: Network;
   objects: any[];
   loadingObjects: boolean;
