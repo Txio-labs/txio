@@ -1,6 +1,9 @@
 import { app, BrowserWindow, shell, session } from "electron"
 import path from "path"
 import { fileURLToPath } from "url"
+import pkg from "electron-updater"
+
+const { autoUpdater } = pkg
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -65,6 +68,10 @@ app.whenReady().then(() => {
   })
 
   createWindow()
+
+  if (app.isPackaged) {
+    autoUpdater.checkForUpdatesAndNotify()
+  }
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
