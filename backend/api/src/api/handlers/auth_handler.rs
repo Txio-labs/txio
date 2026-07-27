@@ -344,6 +344,14 @@ pub async fn log_rpc_call(
     Ok(Json(json!({ "message": "RPC call logged" })))
 }
 
+pub async fn get_rpc_history(
+    State(service): State<AuthService>,
+    claims: crate::utils::auth_jwt::Claims,
+) -> Result<Json<Value>, AppError> {
+    let logs = service.get_rpc_history(&claims.email).await?;
+    Ok(Json(json!({ "history": logs })))
+}
+
 pub async fn switch_network(
     State(service): State<AuthService>,
     claims: crate::utils::auth_jwt::Claims,

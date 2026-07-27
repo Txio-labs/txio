@@ -156,15 +156,19 @@ export const GeneralTab: React.FC<TabProps & { onLogout: () => void }> = ({ user
 
                         <Field label="GitHub" hint="Publish recipes and sync gists.">
                             <div className={`${readonlyInput} flex items-center gap-2`}>
-                                <Github size={14} className="text-slate-500 shrink-0" />
-                                <span className="truncate">Not connected</span>
-                                <button
-                                    type="button"
-                                    onClick={() => window.location.href = `${process.env.NEXT_PUBLIC_API_BASE ?? ''}/auth/github/login`}
-                                    className="ml-auto text-[11px] text-electric-violet hover:text-soft-purple font-medium transition-colors"
-                                >
-                                    Connect →
-                                </button>
+                                <Github size={14} className={user.githubAccount ? "text-slate-200 shrink-0" : "text-slate-500 shrink-0"} />
+                                <span className={user.githubAccount ? "truncate text-slate-200" : "truncate text-slate-500"}>
+                                    {user.githubAccount ? `@${user.githubAccount.login}` : "Not connected"}
+                                </span>
+                                {!user.githubAccount && (
+                                    <button
+                                        type="button"
+                                        onClick={() => window.location.href = `${process.env.NEXT_PUBLIC_API_BASE ?? ''}/auth/github/login`}
+                                        className="ml-auto text-[11px] text-electric-violet hover:text-soft-purple font-medium transition-colors"
+                                    >
+                                        Connect →
+                                    </button>
+                                )}
                             </div>
                         </Field>
 
