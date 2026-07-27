@@ -236,7 +236,10 @@ export const Dashboard: React.FC = () => {
                             </div>
                             <h2 className="text-sm font-bold text-slate-200 uppercase tracking-[0.2em]">Live Workspace</h2>
                         </div>
-                        <button className="text-[11px] font-bold text-electric-violet hover:text-soft-purple transition-colors flex items-center gap-2 group">
+                        <button 
+                            onClick={() => appStore.openTab('history')}
+                            className="text-[11px] font-bold text-electric-violet hover:text-soft-purple transition-colors flex items-center gap-2 group"
+                        >
                             Full History
                             <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
                         </button>
