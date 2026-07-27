@@ -21,9 +21,18 @@ impl RpcRepository {
     pub async fn find_by_user_id(
         &self,
         user_id: mongodb::bson::oid::ObjectId,
+        limit: i64,
     ) -> Result<Vec<RpcLog>, AppError> {
-        let filter = mongodb::bson::doc! { "user_id": user_id };
-        let mut cursor = self.collection.find(filter, None).await?;
+        use mongodb::bson::doc;
+        use mongodb::options::FindOptions;
+
+        let filter = doc! { "user_id": user_id };
+        let opts = FindOptions::builder()
+            .sort(doc! { "_id": -1 })
+            .limit(Some(limit))
+            .build();
+
+        let mut cursor = self.collection.find(filter, Some(opts)).await?;
 
         let mut logs = Vec::new();
         while cursor.advance().await? {

@@ -26,3 +26,4 @@ indicatif = { workspace = true }
 dirs-next = { workspace = true }
 dialoguer = { workspace = true }
 bs58 = { workspace = true }
+stellar-strkey = "0.0.8"

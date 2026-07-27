@@ -76,6 +76,11 @@ const normalizeBackendNotificationPreferences = (
     };
 };
 
+interface BackendGitHubAccount {
+    id: string;
+    login: string;
+}
+
 interface BackendUserProfile {
     id?: MongoIdLike;
     _id?: MongoIdLike;
@@ -85,6 +90,8 @@ interface BackendUserProfile {
     bannerUrl?: string | null;
     notification_preferences?: BackendNotificationPreferences | null;
     notificationPreferences?: BackendNotificationPreferences | null;
+    github_account?: BackendGitHubAccount | null;
+    githubAccount?: BackendGitHubAccount | null;
 }
 
 interface BackendAuthResponse {
@@ -261,7 +268,8 @@ const normalizeUserProfile = (
                     user.notificationPreferences ||
                         user.notification_preferences
                 )
-            )
+            ),
+        githubAccount: user.githubAccount || user.github_account || undefined
     };
 };
 
@@ -794,6 +802,13 @@ class ApiService {
                         newPassword
                 })
             }
+        );
+    }
+
+    async unlinkGithub(): Promise<BackendMessageResponse> {
+        return this.request<BackendMessageResponse>(
+            '/auth/github/unlink',
+            { method: 'POST' }
         );
     }
 

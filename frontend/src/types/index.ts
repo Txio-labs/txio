@@ -285,6 +285,11 @@ export interface NotificationPreferences {
   inAppProductUpdates: boolean;
 }
 
+export interface GitHubAccount {
+  id: string;
+  login: string;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -292,6 +297,7 @@ export interface UserProfile {
   avatarUrl?: string;
   bannerUrl?: string;
   notificationPreferences?: NotificationPreferences;
+  githubAccount?: GitHubAccount;
 }
 
 export interface TeamMember {

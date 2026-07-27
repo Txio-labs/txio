@@ -1,3 +1,4 @@
+use crate::services::otp_service::OTP_VALIDITY_MINUTES;
 use crate::utils::error::AppError;
 use reqwest::Client;
 use serde_json::json;
@@ -31,7 +32,10 @@ impl EmailService {
             "sender": { "email": from_email, "name": from_name },
             "to": [{ "email": email }],
             "subject": "Your txio OTP",
-            "htmlContent": format!("<p>Your verification code is: <strong>{}</strong></p><p>This code will expire in 10 minutes.</p>", otp)
+            "htmlContent": format!(
+                "<p>Your verification code is: <strong>{}</strong></p><p>This code will expire in {} minutes.</p>",
+                otp, OTP_VALIDITY_MINUTES
+            )
         });
 
         let response = self

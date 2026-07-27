@@ -17,6 +17,7 @@ import {
 import { ADDRESS_FIRST_PARAM_METHODS } from '@/lib/constants';
 import { SignTransactionModal } from '../components/SignTransactionModal';
 import { NetworkSwitcherModal } from '../components/NetworkSwitcherModal';
+import { MainnetExecutionWarningModal } from '../components/MainnetExecutionWarningModal';
 import {
     ensureTerminalOpen,
     logCommandToTerminal
@@ -93,6 +94,7 @@ export const RPCBuilder: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSignModalOpen, setIsSignModalOpen] = useState(false);
     const [isNetworkSwitchOpen, setIsNetworkSwitchOpen] = useState(false);
+    const [isMainnetWarningOpen, setIsMainnetWarningOpen] = useState(false);
     const [isExecuteMode, setIsExecuteMode] = useState(false);
     const [pendingNetwork, setPendingNetwork] = useState<Network | null>(null);
 
@@ -120,6 +122,11 @@ export const RPCBuilder: React.FC = () => {
         network,
         request
     ]);
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setIsMainnetWarningOpen(false);
+    }, [network, connectedAddress]);
 
     const handleRequestChange = (updatedReq: RequestItem) => {
         if (activeTabId) {
@@ -275,11 +282,11 @@ export const RPCBuilder: React.FC = () => {
 
     const handleExecuteTransaction = async () => {
         if (!request || !connectedAddress) return;
+        if (isLoading || isMainnetWarningOpen) return;
 
-        // Check if trying to execute on mainnet - show network switch confirmation
+        // Check if trying to execute on mainnet - show execution confirmation
         if (network === 'mainnet') {
-            setPendingNetwork(network);
-            setIsNetworkSwitchOpen(true);
+            setIsMainnetWarningOpen(true);
             return;
         }
 
@@ -290,7 +297,7 @@ export const RPCBuilder: React.FC = () => {
         if (!request || !connectedAddress) return;
 
         setIsLoading(true);
-        setIsNetworkSwitchOpen(false);
+        setIsMainnetWarningOpen(false);
 
         await runHooks(request.hooks, 'pre', network);
 
@@ -417,6 +424,12 @@ export const RPCBuilder: React.FC = () => {
                 onConfirm={executeRealTransaction}
                 from={network}
                 to={pendingNetwork || network}
+            />
+
+            <MainnetExecutionWarningModal
+                isOpen={isMainnetWarningOpen}
+                onClose={() => setIsMainnetWarningOpen(false)}
+                onConfirm={executeRealTransaction}
             />
         </motion.div>
     );

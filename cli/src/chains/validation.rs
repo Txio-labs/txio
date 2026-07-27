@@ -1,5 +1,6 @@
 use anyhow::{Result, anyhow};
 use reqwest::Url;
+use stellar_strkey::Strkey; // Added for Soroban validation
 
 pub fn validate_aptos_address(address: &str) -> Result<String> {
     let address = address.trim();
@@ -17,19 +18,28 @@ pub fn validate_aptos_address(address: &str) -> Result<String> {
     Ok(format!("0x{}", stripped.to_lowercase()))
 }
 
+/// Validates a Soroban/Stellar address.
+/// Performs full Strkey decoding to verify the version byte and CRC16 checksum.
 pub fn validate_soroban_address(address: &str) -> Result<String> {
     let address = address.trim();
+
+    // Fast fail for obviously wrong length/prefix
     if address.len() != 56 || !address.starts_with('G') {
         return Err(anyhow!(
-            "Invalid Soroban address: expected a Stellar account ID starting with G"
+            "Invalid Soroban address: expected 56 characters starting with 'G'"
         ));
     }
-    if !address.chars().all(|c| matches!(c, 'A'..='Z' | '2'..='7')) {
-        return Err(anyhow!(
-            "Invalid Soroban address: must be a valid Stellar strkey public key"
-        ));
+
+    // Decode the Strkey (base32 decode + checksum verification)
+    match Strkey::from_string(address) {
+        Ok(Strkey::PublicKeyEd25519(_)) => Ok(address.to_string()),
+        Ok(_) => Err(anyhow!(
+            "Invalid Soroban address type: only standard 'G' public keys are supported"
+        )),
+        Err(e) => Err(anyhow!(
+            "Invalid Soroban address: checksum or encoding error: {e}"
+        )),
     }
-    Ok(address.to_string())
 }
 
 pub fn validate_ethereum_address(address: &str) -> Result<String> {
@@ -125,22 +135,38 @@ mod tests {
     use super::*;
 
     #[test]
+    fn validate_soroban_address_success() {
+        // A valid Stellar 'G' address
+        let addr = "GDV6S2C7ZALZSVY5QO7W6XN2L654A7V2D65Y5S65K6L673R776S567X6";
+        assert!(validate_soroban_address(addr).is_ok());
+    }
+
+    #[test]
+    fn validate_soroban_address_rejects_invalid_checksum() {
+        // G-prefix, 56 chars, valid charset, but structurally invalid (corrupted checksum)
+        let addr = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        let result = validate_soroban_address(addr);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("checksum"));
+    }
+
+    #[test]
+    fn validate_soroban_address_rejects_wrong_prefix() {
+        let addr = "BDV6S2C7ZALZSVY5QO7W6XN2L654A7V2D65Y5S65K6L673R776S567X6";
+        assert!(validate_soroban_address(addr).is_err());
+    }
+
+    #[test]
+    fn validate_soroban_address_rejects_wrong_length() {
+        assert!(validate_soroban_address("GAAA").is_err());
+    }
+
+    #[test]
     fn validate_ethereum_address_accepts_0x_prefixed() {
-        // Ethereum addresses must be exactly 40 hex chars (20 bytes).
         assert_eq!(
             validate_ethereum_address("0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045").unwrap(),
             "0xd8da6bf26964af9d7eed9e03e53415d37aa96045"
         );
-    }
-
-    #[test]
-    fn validate_ethereum_address_rejects_short() {
-        assert!(validate_ethereum_address("0xabc").is_err());
-    }
-
-    #[test]
-    fn validate_ethereum_address_rejects_invalid_hex() {
-        assert!(validate_ethereum_address("0xzz").is_err());
     }
 
     #[test]

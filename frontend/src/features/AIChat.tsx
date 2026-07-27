@@ -112,9 +112,9 @@ export const AIChat: React.FC = () => {
       setIsTyping(false);
     }
   };
-
-  handleSendRef.current = handleSend;
-
+  useEffect(() => {
+    handleSendRef.current = handleSend;
+  });
   const executeToolCall = (
     toolCall: AiToolCall
   ) => {
