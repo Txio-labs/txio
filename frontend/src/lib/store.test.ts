@@ -39,6 +39,13 @@ const user = {
     name: 'Ada Lovelace'
 };
 
+const defaultNotificationPreferences = {
+    emailDigests: true,
+    emailSecurityAlerts: true,
+    inAppActivityAlerts: true,
+    inAppProductUpdates: false
+};
+
 const workspace = {
     id: 'workspace-1',
     name: 'Core Protocol',
@@ -148,7 +155,11 @@ describe('appStore auth and session state', () => {
                     'txio_user'
                 ) || 'null'
             )
-        ).toEqual(user);
+        ).toEqual({
+            ...user,
+            notificationPreferences:
+                defaultNotificationPreferences
+        });
         expect(
             localStorage.getItem(
                 'txio_current_workspace'
@@ -258,8 +269,18 @@ describe('appStore auth and session state', () => {
             apiService,
             ApiError
         } = await loadStore();
+        apiService.getWorkspaces.mockResolvedValue(
+            []
+        );
         apiService.getProfile.mockRejectedValue(
             new ApiError('Unauthorized', 401)
+        );
+        // `initialize` kicks off the workspaces fetch alongside the profile
+        // fetch, so it must resolve to a promise even on the auth-failure path.
+        // Without this the mock returns `undefined` and the store throws before
+        // the session-clearing logic under test can run.
+        apiService.getWorkspaces.mockResolvedValue(
+            []
         );
         vi.spyOn(
             console,
@@ -411,6 +432,50 @@ describe('appStore auth and session state', () => {
                     'txio_user'
                 ) || 'null'
             )
-        ).toEqual(user);
+        ).toEqual({
+            ...user,
+            notificationPreferences: defaultNotificationPreferences
+        });
+    });
+});
+
+describe('appStore comments persistence', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        vi.resetAllMocks();
+    });
+
+    it('persists posted comments to localStorage and restores them on load', async () => {
+        localStorage.setItem('txio_token', 'cached-token');
+        localStorage.setItem('txio_user', JSON.stringify(user));
+
+        const { appStore, apiService } = await loadStore();
+        apiService.getProfile.mockResolvedValue(user);
+        apiService.getWorkspaces.mockResolvedValue([]);
+
+        await appStore.initialize();
+
+        const requestId = 'req-123';
+        appStore.postComment(requestId, 'Great API request structure!');
+
+        const snapshot = appStore.getSnapshot();
+        expect(snapshot.comments[requestId]).toBeDefined();
+        expect(snapshot.comments[requestId]).toHaveLength(1);
+        expect(snapshot.comments[requestId][0]).toMatchObject({
+            userName: user.name,
+            content: 'Great API request structure!'
+        });
+
+        const storedRaw = localStorage.getItem('txio_comments');
+        expect(storedRaw).not.toBeNull();
+        const storedComments = JSON.parse(storedRaw!);
+        expect(storedComments[requestId]).toHaveLength(1);
+        expect(storedComments[requestId][0].content).toBe('Great API request structure!');
+
+        // Reload store and verify comments are hydrated from localStorage
+        const reloaded = await loadStore();
+        const reloadedSnapshot = reloaded.appStore.getSnapshot();
+        expect(reloadedSnapshot.comments[requestId]).toHaveLength(1);
+        expect(reloadedSnapshot.comments[requestId][0].content).toBe('Great API request structure!');
     });
 });

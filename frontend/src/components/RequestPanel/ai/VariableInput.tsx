@@ -1,5 +1,5 @@
 import React from 'react';
-import { EnvironmentVariable } from '../../../types';
+import { EnvironmentVariable, Network } from '../../../types';
 
 interface VariableInputProps {
   value: string;
@@ -8,6 +8,7 @@ interface VariableInputProps {
   className?: string;
   disabled?: boolean;
   envVars: EnvironmentVariable[];
+  network?: Network;
 }
 
 export const VariableInput: React.FC<VariableInputProps> = ({ 
@@ -16,10 +17,13 @@ export const VariableInput: React.FC<VariableInputProps> = ({
   placeholder, 
   className, 
   disabled,
-  envVars 
+  envVars,
+  network 
 }) => {
   const hasVar = value.includes('{{');
-  const isVarResolved = hasVar && envVars.some(v => value.includes(`{{${v.key}}}`));
+  const isVarResolved = hasVar && envVars.some(v => 
+    v.enabled && (!v.network || v.network === 'all' || v.network === network) && value.includes(`{{${v.key}}}`)
+  );
 
   return (
     <div className="relative w-full group">
@@ -29,7 +33,7 @@ export const VariableInput: React.FC<VariableInputProps> = ({
         className={`${className} ${
           hasVar 
             ? (isVarResolved ? 'text-emerald-400 font-bold' : 'text-amber-500 font-bold') 
-            : 'text-slate-200'
+            : 'text-slate-700 dark:text-slate-200'
         } ${disabled ? 'opacity-50 cursor-not-allowed' : ''} transition-all`}
         value={value}
         onChange={(e) => onChange(e.target.value)}

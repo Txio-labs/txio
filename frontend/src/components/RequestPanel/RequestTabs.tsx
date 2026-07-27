@@ -1,21 +1,17 @@
 import React from 'react';
-import { Beaker, Workflow, Copy, Check } from 'lucide-react';
+import { Beaker, Workflow } from 'lucide-react';
 import { ActiveTab } from './types';
 
 interface RequestTabsProps {
   activeTab: ActiveTab;
   testsCount: number;
-  isSnippetCopied: boolean;
   onTabChange: (tab: ActiveTab) => void;
-  onCopySnippet: () => void;
 }
 
 export const RequestTabs: React.FC<RequestTabsProps> = ({
   activeTab,
   testsCount,
-  isSnippetCopied,
-  onTabChange,
-  onCopySnippet
+  onTabChange
 }) => {
   const tabs: { id: ActiveTab; label: string; icon?: React.ReactNode }[] = [
     { id: 'builder', label: 'Builder' },
@@ -26,7 +22,7 @@ export const RequestTabs: React.FC<RequestTabsProps> = ({
   ];
 
   return (
-    <div className="border-b border-white/10 px-4 flex justify-between bg-near-black items-center h-10">
+    <div className="border-b border-slate-200 dark:border-white/10 px-4 flex justify-between bg-slate-50 dark:bg-near-black items-center h-10">
       <div className="flex gap-6 h-full">
         {tabs.map((tab) => (
           <button 
@@ -35,7 +31,7 @@ export const RequestTabs: React.FC<RequestTabsProps> = ({
             className={`h-full text-[10px] font-bold uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 ${
               activeTab === tab.id 
                 ? 'border-sui-500 text-electric-violet' 
-                : 'border-transparent text-slate-500 hover:text-slate-300'
+                : 'border-transparent text-slate-500 hover:text-slate-600 dark:text-slate-300'
             }`}
           >
             {tab.icon}
@@ -47,15 +43,6 @@ export const RequestTabs: React.FC<RequestTabsProps> = ({
             )}
           </button>
         ))}
-      </div>
-      
-      <div className="flex items-center gap-2">
-        <button 
-          onClick={onCopySnippet}
-          className="h-[28px] px-3 bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10 hover:text-white rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all"
-        >
-          {isSnippetCopied ? <Check size={12} /> : <Copy size={12} />}
-        </button>
       </div>
     </div>
   );

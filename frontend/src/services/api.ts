@@ -1,21 +1,37 @@
 import {
+    ActiveSession,
     CollectionNode,
+    isNetwork,
     Network,
+    RecipeTemplate,
     RequestItem,
     RequestType,
     UserProfile,
+    NotificationPreferences,
     Workspace
 } from '../types';
 import { DEFAULT_MOVE_CALL } from '../lib/constants';
+import { normalizeNotificationPreferences } from '../lib/appConfig';
 
 const DEFAULT_API_BASE =
     process.env.NODE_ENV === 'development'
         ? 'http://localhost:8000/api/v1'
-        : 'https://txio.onrender.com/api/v1';
+        : 'https://txio-oyac.onrender.com/api/v1';
 
-export const API_BASE =
-    process.env.NEXT_PUBLIC_API_URL ||
-    DEFAULT_API_BASE;
+// NEXT_PUBLIC_API_URL is set per-environment (e.g. in Vercel) and is easy to
+// configure as just the backend origin, without the /api/v1 prefix every
+// backend route is actually mounted under. Normalize defensively so a
+// trailing slash or a missing /api/v1 doesn't silently 404 every request.
+const normalizeApiBase = (base: string): string => {
+    const trimmed = base.replace(/\/+$/, '');
+    return trimmed.endsWith('/api/v1')
+        ? trimmed
+        : `${trimmed}/api/v1`;
+};
+
+export const API_BASE = normalizeApiBase(
+    process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_BASE
+);
 
 const COMMAND_POLL_INTERVAL_MS = 500;
 
@@ -26,6 +42,40 @@ type MongoIdLike =
     | null
     | undefined;
 
+interface BackendNotificationPreferences {
+    emailDigests?: boolean;
+    emailSecurityAlerts?: boolean;
+    inAppActivityAlerts?: boolean;
+    inAppProductUpdates?: boolean;
+    email_digests?: boolean;
+    email_security_alerts?: boolean;
+    in_app_activity_alerts?: boolean;
+    in_app_product_updates?: boolean;
+}
+
+const normalizeBackendNotificationPreferences = (
+    preferences?: BackendNotificationPreferences | null
+): Partial<NotificationPreferences> | null => {
+    if (!preferences) {
+        return null;
+    }
+
+    return {
+        emailDigests:
+            preferences.emailDigests ??
+            preferences.email_digests,
+        emailSecurityAlerts:
+            preferences.emailSecurityAlerts ??
+            preferences.email_security_alerts,
+        inAppActivityAlerts:
+            preferences.inAppActivityAlerts ??
+            preferences.in_app_activity_alerts,
+        inAppProductUpdates:
+            preferences.inAppProductUpdates ??
+            preferences.in_app_product_updates
+    };
+};
+
 interface BackendUserProfile {
     id?: MongoIdLike;
     _id?: MongoIdLike;
@@ -33,6 +83,8 @@ interface BackendUserProfile {
     email: string;
     avatarUrl?: string | null;
     bannerUrl?: string | null;
+    notification_preferences?: BackendNotificationPreferences | null;
+    notificationPreferences?: BackendNotificationPreferences | null;
 }
 
 interface BackendAuthResponse {
@@ -57,6 +109,15 @@ interface BackendWorkspace {
     activeEnvId?: string | null;
 }
 
+interface BackendRecipeTemplate {
+    id?: MongoIdLike;
+    _id?: MongoIdLike;
+    title: string;
+    recipe_type: string;
+    description?: string | null;
+    payload?: Record<string, unknown>;
+}
+
 interface BackendSavedRequest {
     id?: MongoIdLike;
     _id?: MongoIdLike;
@@ -69,13 +130,6 @@ interface BackendSavedRequest {
     last_response?: unknown;
     last_executed_at?: string | null;
 }
-
-const isNetwork = (
-    value: string | null | undefined
-): value is Network =>
-    value === 'mainnet' ||
-    value === 'testnet' ||
-    value === 'devnet';
 
 interface BackendMessageResponse {
     message: string;
@@ -200,7 +254,14 @@ const normalizeUserProfile = (
         bannerUrl:
             typeof user.bannerUrl === 'string'
                 ? user.bannerUrl
-                : undefined
+                : undefined,
+        notificationPreferences:
+            normalizeNotificationPreferences(
+                normalizeBackendNotificationPreferences(
+                    user.notificationPreferences ||
+                        user.notification_preferences
+                )
+            )
     };
 };
 
@@ -255,6 +316,18 @@ const normalizeSavedRequest = (
             : undefined
     };
 };
+
+const normalizeRecipeTemplate = (
+    template: BackendRecipeTemplate
+): RecipeTemplate => ({
+    id:
+        extractId(template.id ?? template._id) ||
+        `${template.title}-${Date.now()}`,
+    title: template.title?.trim() || 'Untitled Template',
+    type: template.recipe_type || 'PTB',
+    description: template.description ?? undefined,
+    payload: template.payload ?? {}
+});
 
 const normalizeCollectionNode = (
     collection: BackendCollection,
@@ -745,6 +818,32 @@ class ApiService {
         return normalizeUserProfile(data.user);
     }
 
+    async updateNotificationPreferences(
+        notificationPreferences: NotificationPreferences
+    ): Promise<UserProfile> {
+        const data =
+            await this.request<BackendWrappedUserResponse>(
+                '/auth/notification-preferences',
+                {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        notification_preferences: {
+                            email_digests:
+                                notificationPreferences.emailDigests,
+                            email_security_alerts:
+                                notificationPreferences.emailSecurityAlerts,
+                            in_app_activity_alerts:
+                                notificationPreferences.inAppActivityAlerts,
+                            in_app_product_updates:
+                                notificationPreferences.inAppProductUpdates
+                        }
+                    })
+                }
+            );
+
+        return normalizeUserProfile(data.user);
+    }
+
     async updatePassword(
         email: string,
         newPassword: string
@@ -917,6 +1016,46 @@ class ApiService {
         >(`/collections/${id}`, {
             method: 'DELETE'
         });
+    }
+
+    // Recipe Templates
+    async getRecipeTemplates(): Promise<RecipeTemplate[]> {
+        const templates =
+            await this.request<BackendRecipeTemplate[]>(
+                '/recipe-templates'
+            );
+
+        return templates.map(normalizeRecipeTemplate);
+    }
+
+    async createRecipeTemplate(
+        title: string,
+        recipeType: string,
+        description?: string,
+        payload?: Record<string, unknown>
+    ): Promise<RecipeTemplate> {
+        const data =
+            await this.request<BackendRecipeTemplate>(
+                '/recipe-templates',
+                {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        title,
+                        recipe_type: recipeType,
+                        description,
+                        payload: payload ?? {}
+                    })
+                }
+            );
+
+        return normalizeRecipeTemplate(data);
+    }
+
+    async deleteRecipeTemplate(id: string): Promise<void> {
+        await this.request<BackendMessageResponse>(
+            `/recipe-templates/${id}`,
+            { method: 'DELETE' }
+        );
     }
 
     // Requests
@@ -1093,6 +1232,18 @@ class ApiService {
         }
 
         return response;
+    }
+
+    // Sessions
+    async getSessions(): Promise<ActiveSession[]> {
+        const data = await this.request<{ sessions: ActiveSession[] }>('/auth/sessions');
+        return data.sessions;
+    }
+
+    async revokeSession(sessionId: string): Promise<void> {
+        await this.request<void>(`/auth/sessions/${encodeURIComponent(sessionId)}`, {
+            method: 'DELETE',
+        });
     }
 
     async executeCommand(

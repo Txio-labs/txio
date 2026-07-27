@@ -29,6 +29,8 @@ import { WalletGlyph } from './WalletGlyph';
 const FAMILY_ORDER = [
     'evm',
     'sui',
+    'solana',
+    'aptos',
     'stellar'
 ] as const;
 
@@ -155,6 +157,9 @@ export function WalletModal() {
                     exit={{ opacity: 0 }}
                     className="fixed inset-0 z-[80] bg-black/75 backdrop-blur-xl"
                     onClick={closeModal}
+                    role="button"
+                    tabIndex={-1}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') closeModal(); }}
                 >
                     <motion.div
                         initial={{
@@ -180,7 +185,9 @@ export function WalletModal() {
                         onClick={(event) =>
                             event.stopPropagation()
                         }
-                        className="mx-auto mt-6 flex max-h-[calc(100vh-3rem)] w-[min(980px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(173,223,241,0.16),transparent_38%),linear-gradient(180deg,rgba(0,49,82,0.98),rgba(0,27,46,0.98))] shadow-[0_40px_140px_rgba(0,0,0,0.55)]"
+                        role="dialog"
+                        aria-label="Connect wallet"
+                        className="mx-auto mt-6 flex max-h-[calc(100vh-3rem)] w-[min(980px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(163,163,163,0.16),transparent_38%),linear-gradient(180deg,rgba(17,17,19,0.98),rgba(6,6,8,0.98))] shadow-[0_40px_140px_rgba(0,0,0,0.55)]"
                     >
                         <div className="border-b border-white/10 px-5 py-4 sm:px-6">
                             <div className="flex items-start justify-between gap-4">
@@ -198,7 +205,7 @@ export function WalletModal() {
                                         Connect a wallet
                                     </h2>
                                     <p className="mt-1 text-sm text-slate-400">
-                                        One connection surface for EVM, Sui, and Stellar flows.
+                                        One connection surface for EVM, Sui, Solana, Aptos, and Stellar flows.
                                     </p>
                                 </div>
                                 <button
@@ -493,7 +500,7 @@ function WalletCard({
             }}
             className={`group rounded-[24px] border p-4 transition-all ${
                 isCurrent
-                    ? 'border-electric-violet/30 bg-electric-violet/10 shadow-[0_24px_70px_rgba(173,223,241,0.18)]'
+                    ? 'border-electric-violet/30 bg-electric-violet/10 shadow-[0_24px_70px_rgba(163,163,163,0.18)]'
                     : 'border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05]'
             }`}
         >
@@ -601,7 +608,7 @@ function WalletCard({
                                 : wallet.isReady &&
                                     wallet.availability !==
                                         'coming-soon'
-                                  ? 'bg-gradient-to-r from-electric-violet to-soft-purple text-white shadow-[0_12px_30px_rgba(173,223,241,0.25)] hover:scale-[1.02]'
+                                  ? 'bg-gradient-to-r from-electric-violet to-soft-purple text-white shadow-[0_12px_30px_rgba(163,163,163,0.25)] hover:scale-[1.02]'
                                   : 'border border-white/10 bg-white/[0.03] text-slate-400'
                         }`}
                     >

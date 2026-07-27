@@ -1,10 +1,11 @@
 # Build Artifacts
 target/
 dist/
-build/
+/build/
 node_modules/
 .next/
 out/
+*.tsbuildinfo
 # Bun is not part of the toolchain (npm workspaces + package-lock.json are);
 # ignore its lockfile so it can't be swept into a commit by accident.
 bun.lock

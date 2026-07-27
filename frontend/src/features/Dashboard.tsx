@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Activity, Terminal, Layers, Globe, Zap, Fuel, Clock, Plus, ChevronRight, Shield, Cpu, Sparkles, ZapOff
+    Activity, Terminal, Layers, Globe, Zap, Fuel, Clock, Plus, ChevronRight, Shield, Cpu, Sparkles, ZapOff, Code2
 } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { RequestType } from '@/types';
@@ -97,7 +97,7 @@ export const Dashboard: React.FC = () => {
         >
             {/* Background Architecture */}
             <div className="absolute inset-0 pointer-events-none opacity-20">
-                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(173,223,241, 0.15) 1px, transparent 0)', backgroundSize: '40px 40px' }}></div>
+                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(163,163,163, 0.15) 1px, transparent 0)', backgroundSize: '40px 40px' }}></div>
                 <div className="absolute inset-0 bg-gradient-to-t from-near-black via-transparent to-transparent"></div>
             </div>
 
@@ -133,7 +133,7 @@ export const Dashboard: React.FC = () => {
                             className="flex items-center gap-2 mb-4"
                         >
                             <div className="h-0.5 w-16 bg-gradient-to-r from-electric-violet to-transparent rounded-full"></div>
-                            <span className="text-[11px] font-bold uppercase tracking-[0.4em] text-electric-violet drop-shadow-[0_0_5px_rgba(173,223,241,0.5)]">All systems good</span>
+                            <span className="text-[11px] font-bold uppercase tracking-[0.4em] text-electric-violet drop-shadow-[0_0_5px_rgba(163,163,163,0.5)]">All systems good</span>
                         </motion.div>
                         <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tighter leading-tight">
                             Good to see <br />
@@ -148,7 +148,7 @@ export const Dashboard: React.FC = () => {
                             <div className="absolute inset-0 bg-electric-violet/30 blur-3xl rounded-full group-hover:bg-electric-violet/50 transition-all duration-700"></div>
                             <button 
                                 onClick={() => appStore.openTab('new_request')}
-                                className="relative flex items-center gap-3 px-8 py-4 bg-white text-black rounded-2xl font-bold text-base hover:bg-electric-violet hover:text-white transition-all duration-500 hover:shadow-[0_0_40px_rgba(173,223,241,0.6)] active:scale-95 group"
+                                className="relative flex items-center gap-3 px-8 py-4 bg-white text-black rounded-2xl font-bold text-base hover:bg-electric-violet hover:text-white transition-all duration-500 hover:shadow-[0_0_40px_rgba(163,163,163,0.6)] active:scale-95 group"
                             >
                                 <Sparkles size={20} className="text-electric-violet group-hover:text-white transition-colors" />
                                 Start Building
@@ -203,6 +203,8 @@ export const Dashboard: React.FC = () => {
                     {[
                         { title: 'RPC Builder', desc: 'Interact with fullnodes via JSON-RPC', icon: Terminal, action: () => appStore.openTab('rpc'), hotkey: '⌘R' },
                         { title: 'TX Composer', desc: 'Batch operations into single transactions', icon: Layers, action: () => appStore.openTab('ptb'), hotkey: '⌘P' },
+                        { title: 'Move Builder', desc: 'Write and deploy Move contracts visually', icon: Code2, action: () => appStore.openTab('move'), hotkey: '⌘M' },
+                        { title: 'Playground', desc: 'Test SDK snippets against live state', icon: Sparkles, action: () => appStore.openTab('playground'), hotkey: '⌘G' },
                         { title: 'AI Debugger', desc: 'Explain transaction errors and audit code', icon: Shield, action: () => appStore.openTab('ai_chat'), hotkey: '⌘D' }
                     ].map((tool, i) => (
                         <button 
@@ -234,7 +236,10 @@ export const Dashboard: React.FC = () => {
                             </div>
                             <h2 className="text-sm font-bold text-slate-200 uppercase tracking-[0.2em]">Live Workspace</h2>
                         </div>
-                        <button className="text-[11px] font-bold text-electric-violet hover:text-soft-purple transition-colors flex items-center gap-2 group">
+                        <button 
+                            onClick={() => appStore.openTab('history')}
+                            className="text-[11px] font-bold text-electric-violet hover:text-soft-purple transition-colors flex items-center gap-2 group"
+                        >
                             Full History
                             <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
                         </button>

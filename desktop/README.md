@@ -16,4 +16,4 @@ That runs the frontend build, copies the output into `desktop/dist/`, and hands 
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](../LICENSE).

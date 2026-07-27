@@ -1,20 +1,36 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import {
     Mail,
     Lock,
     ArrowRight,
-    Github,
-    Twitter,
     ArrowLeft,
     ShieldCheck,
     Zap
 } from 'lucide-react';
+import { Github, Twitter } from '@/components/icons/BrandIcons';
 
 import { appStore, useAppStore } from '@/lib/store';
 import { API_BASE, apiService } from '@/services/api';
 import logoDark from '../assets/txio2.png';
+
+
+// Read and clear the short-lived OAuth token the backend hands off via a URL
+// fragment. A cookie can't be used: the backend and frontend are different
+// sites, so a cookie the backend's redirect response sets is never visible
+// to document.cookie on the frontend's origin.
+function consumeOAuthFragmentToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    const hash = window.location.hash;
+    const match = hash.match(/(?:^#|&)token=([^&]+)/);
+    if (!match) return null;
+    const remainingHash = hash.replace(/(?:^#|&)token=[^&]+/, '').replace(/^#&/, '#');
+    const url = new URL(window.location.href);
+    url.hash = remainingHash === '#' ? '' : remainingHash;
+    window.history.replaceState({}, '', url.toString());
+    return decodeURIComponent(match[1]);
+}
 
 export const SignInPage: React.FC = () => {
     const { theme } = useAppStore();
@@ -28,18 +44,25 @@ export const SignInPage: React.FC = () => {
         password: ''
     });
 
+    const [forgotPasswordStep, setForgotPasswordStep] = useState<'none' | 'email' | 'otp'>('none');
+    const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+    const [forgotPasswordOtp, setForgotPasswordOtp] = useState(['', '', '', '', '', '']);
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
     useEffect(() => {
         const initializeAuth = async () => {
             try {
-                // Read token from Google callback URL
-                const params = new URLSearchParams(window.location.search);
-                const urlToken = params.get('token');
+                // Read OAuth token from the URL fragment (backend appends it on
+                // OAuth callback redirect).
+                const fragmentToken = consumeOAuthFragmentToken();
 
                 // Read token from localStorage
                 const storedToken = localStorage.getItem('txio_token');
 
-                // Prefer Google callback token
-                const token = urlToken || storedToken;
+                // Prefer the freshly-issued OAuth token over a stored one
+                const token = fragmentToken || storedToken;
 
                 // No token
                 if (!token) {
@@ -89,20 +112,11 @@ export const SignInPage: React.FC = () => {
                         );
                     }
 
-                    // Success toast only after OAuth redirect
-                    if (urlToken) {
+                    // Success toast only after OAuth redirect (token arrived via fragment)
+                    if (fragmentToken) {
                         appStore.showToast(
                             'Successfully signed in with Google',
                             'success'
-                        );
-                    }
-
-                    // Remove token from URL
-                    if (urlToken) {
-                        window.history.replaceState(
-                            {},
-                            '',
-                            window.location.pathname
                         );
                     }
 
@@ -193,6 +207,83 @@ export const SignInPage: React.FC = () => {
         }, 2000);
     };
 
+    const handleForgotPasswordEmailSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+        try {
+            await apiService.forgotPassword(forgotPasswordEmail);
+            appStore.showToast('Verification code sent.', 'success');
+            setForgotPasswordStep('otp');
+        } catch (error) {
+            console.error(error);
+            appStore.showToast('Failed to send verification code.', 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleForgotPasswordResetSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const otpCode = forgotPasswordOtp.join('');
+        if (otpCode.length < 6) {
+            appStore.showToast('Enter the full 6 digits.', 'error');
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            appStore.showToast('Passwords do not match.', 'error');
+            return;
+        }
+        if (newPassword.length < 8) {
+            appStore.showToast('Password must be at least 8 characters.', 'error');
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            await apiService.resetPassword(forgotPasswordEmail, otpCode, newPassword);
+            appStore.showToast('Password reset successfully. Please sign in.', 'success');
+            setFormData(prev => ({ ...prev, email: forgotPasswordEmail, password: '' }));
+            setForgotPasswordStep('none');
+            setForgotPasswordOtp(['', '', '', '', '', '']);
+            setNewPassword('');
+            setConfirmPassword('');
+        } catch (error) {
+            console.error(error);
+            appStore.showToast('Failed to reset password.', 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleOtpChange = (index: number, value: string) => {
+        if (!/^\d*$/.test(value)) return;
+        const newOtp = [...forgotPasswordOtp];
+        newOtp[index] = value.slice(-1);
+        setForgotPasswordOtp(newOtp);
+        if (value && index < 5) {
+            otpInputRefs.current[index + 1]?.focus();
+        }
+    };
+
+    const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Backspace' && !forgotPasswordOtp[index] && index > 0) {
+            otpInputRefs.current[index - 1]?.focus();
+        }
+    };
+
+    const handleOtpPaste = (e: React.ClipboardEvent) => {
+        e.preventDefault();
+        const pastedData = e.clipboardData.getData('text').slice(0, 6);
+        if (!/^\d+$/.test(pastedData)) return;
+
+        const newOtp = [...forgotPasswordOtp];
+        pastedData.split('').forEach((char, i) => {
+            if (i < 6) newOtp[i] = char;
+        });
+        setForgotPasswordOtp(newOtp);
+        otpInputRefs.current[Math.min(pastedData.length, 5)]?.focus();
+    };
+
     // Loading screen while checking auth
     if (authChecking) {
         return (
@@ -222,7 +313,7 @@ export const SignInPage: React.FC = () => {
                     className="absolute inset-0 opacity-20"
                     style={{
                         backgroundImage:
-                            'radial-gradient(circle at 2px 2px, #ADDFF1 1px, transparent 0)',
+                            'radial-gradient(circle at 2px 2px, #a3a3a3 1px, transparent 0)',
                         backgroundSize: '30px 30px'
                     }}
                 />
@@ -230,7 +321,7 @@ export const SignInPage: React.FC = () => {
                 <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-electric-violet/10 blur-[150px] rounded-full"></div>
 
                 <div className="relative z-10">
-                    <div
+                    <button
                         className="flex items-center gap-3 mb-16 cursor-pointer"
                         onClick={() => {
                             appStore.setViewMode('landing');
@@ -246,12 +337,12 @@ export const SignInPage: React.FC = () => {
                         <span className="text-2xl font-bold tracking-tighter text-white">
                             txio
                         </span>
-                    </div>
+                    </button>
 
                     <div className="space-y-6">
                         <h1 className="text-6xl font-bold tracking-tight text-white leading-[1.1]">
                             Welcome back. <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet to-soft-purple">
+                            <span className="text-electric-violet">
                                 Let&apos;s get to it.
                             </span>
                         </h1>
@@ -297,8 +388,12 @@ export const SignInPage: React.FC = () => {
             <div className="flex-1 flex flex-col justify-center items-center p-8 md:p-16 relative">
                 <button
                     onClick={() => {
-                        appStore.setViewMode('landing');
-                        router.push('/');
+                        if (forgotPasswordStep !== 'none') {
+                            setForgotPasswordStep('none');
+                        } else {
+                            appStore.setViewMode('landing');
+                            router.push('/');
+                        }
                     }}
                     className="absolute top-8 left-8 flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-white transition-colors"
                 >
@@ -315,229 +410,409 @@ export const SignInPage: React.FC = () => {
                             : 'bg-white border-slate-200'
                     }`}
                 >
-                    <div className="text-center mb-10">
-                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-electric-violet/10 mb-6">
-                            <Lock
-                                className="text-electric-violet"
-                                size={32}
-                            />
-                        </div>
+                    {forgotPasswordStep === 'none' && (
+                        <>
+                            <div className="text-center mb-10">
+                                <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-electric-violet/10 mb-6">
+                                    <Lock
+                                        className="text-electric-violet"
+                                        size={32}
+                                    />
+                                </div>
 
-                        <h2 className="text-3xl font-bold tracking-tight mb-2">
-                            Sign In
-                        </h2>
+                                <h2 className="text-3xl font-bold tracking-tight mb-2">
+                                    Sign In
+                                </h2>
 
-                        <p className="text-sm text-slate-500">
-                            Email and password. That&apos;s all we need.
-                        </p>
-                    </div>
-
-                    <form
-                        onSubmit={handleLogin}
-                        className="space-y-5"
-                    >
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">
-                                Email
-                            </label>
-
-                            <div className="relative">
-                                <Mail
-                                    size={18}
-                                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                                />
-
-                                <input
-                                    type="email"
-                                    required
-                                    value={formData.email}
-                                    onChange={(e) =>
-                                        setFormData((current) => ({
-                                            ...current,
-                                            email: e.target.value
-                                        }))
-                                    }
-                                    placeholder="name@company.com"
-                                    className={`w-full pl-12 pr-4 py-4 rounded-2xl border outline-none transition-all ${
-                                        theme === 'dark'
-                                            ? 'bg-near-black border-white/5 focus:border-electric-violet/50'
-                                            : 'bg-slate-50 border-slate-200'
-                                    }`}
-                                />
+                                <p className="text-sm text-slate-500">
+                                    Email and password. That&apos;s all we need.
+                                </p>
                             </div>
-                        </div>
 
-                        <div className="space-y-2">
-                            <div className="flex justify-between items-center px-1">
-                                <label className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                                    Password
-                                </label>
+                            <form
+                                onSubmit={handleLogin}
+                                className="space-y-5"
+                            >
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">
+                                        Email
+                                    </label>
+
+                                    <div className="relative">
+                                        <Mail
+                                            size={18}
+                                            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                                        />
+
+                                        <input
+                                            type="email"
+                                            required
+                                            value={formData.email}
+                                            onChange={(e) =>
+                                                setFormData((current) => ({
+                                                    ...current,
+                                                    email: e.target.value
+                                                }))
+                                            }
+                                            placeholder="name@company.com"
+                                            className={`w-full pl-12 pr-4 py-4 rounded-2xl border outline-none transition-all ${
+                                                theme === 'dark'
+                                                    ? 'bg-near-black border-white/5 focus:border-electric-violet/50'
+                                                    : 'bg-slate-50 border-slate-200'
+                                            }`}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <div className="flex justify-between items-center px-1">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                                            Password
+                                        </label>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setForgotPasswordEmail(formData.email);
+                                                setForgotPasswordStep('email');
+                                            }}
+                                            className="text-[10px] font-bold text-electric-violet"
+                                        >
+                                            Forgot?
+                                        </button>
+                                    </div>
+
+                                    <div className="relative">
+                                        <Lock
+                                            size={18}
+                                            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                                        />
+
+                                        <input
+                                            type="password"
+                                            required
+                                            value={formData.password}
+                                            onChange={(e) =>
+                                                setFormData((current) => ({
+                                                    ...current,
+                                                    password: e.target.value
+                                                }))
+                                            }
+                                            placeholder="••••••••"
+                                            className={`w-full pl-12 pr-4 py-4 rounded-2xl border outline-none transition-all ${
+                                                theme === 'dark'
+                                                    ? 'bg-near-black border-white/5 focus:border-electric-violet/50'
+                                                    : 'bg-slate-50 border-slate-200'
+                                            }`}
+                                        />
+                                    </div>
+                                </div>
+
+                                <button
+                                    disabled={isLoading}
+                                    className="w-full py-4 bg-electric-violet text-white rounded-2xl font-bold text-lg hover:bg-soft-purple transition-all flex items-center justify-center gap-2 group shadow-xl"
+                                >
+                                    {isLoading ? (
+                                        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                    ) : (
+                                        <>
+                                            Sign In
+
+                                            <ArrowRight
+                                                size={20}
+                                                className="group-hover:translate-x-1 transition-transform"
+                                            />
+                                        </>
+                                    )}
+                                </button>
+                            </form>
+
+                            <div className="mt-8 space-y-3">
+                                <div className="relative flex items-center justify-center mb-6">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <div className="w-full border-t border-slate-200 dark:border-white/5"></div>
+                                    </div>
+
+                                    <span
+                                        className={`relative px-4 text-[10px] font-bold uppercase tracking-widest ${
+                                            theme === 'dark'
+                                                ? 'bg-[#0a0a0a] text-slate-600'
+                                                : 'bg-white text-slate-400'
+                                        }`}
+                                    >
+                                        Or continue with
+                                    </span>
+                                </div>
 
                                 <button
                                     type="button"
-                                    className="text-[10px] font-bold text-electric-violet"
-                                >
-                                    Forgot?
-                                </button>
-                            </div>
-
-                            <div className="relative">
-                                <Lock
-                                    size={18}
-                                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                                />
-
-                                <input
-                                    type="password"
-                                    required
-                                    value={formData.password}
-                                    onChange={(e) =>
-                                        setFormData((current) => ({
-                                            ...current,
-                                            password: e.target.value
-                                        }))
-                                    }
-                                    placeholder="••••••••"
-                                    className={`w-full pl-12 pr-4 py-4 rounded-2xl border outline-none transition-all ${
+                                    disabled={socialLoading !== null}
+                                    onClick={() => handleSocialLogin('Google')}
+                                    className={`w-full flex items-center justify-center gap-3 py-3 rounded-xl border transition-all ${
                                         theme === 'dark'
-                                            ? 'bg-near-black border-white/5 focus:border-electric-violet/50'
-                                            : 'bg-slate-50 border-slate-200'
+                                            ? 'border-white/10 bg-white/5 hover:bg-white/10 disabled:opacity-50'
+                                            : 'border-slate-200 bg-white hover:bg-slate-50 shadow-sm disabled:opacity-50'
                                     }`}
-                                />
-                            </div>
-                        </div>
-
-                        <button
-                            disabled={isLoading}
-                            className="w-full py-4 bg-electric-violet text-white rounded-2xl font-bold text-lg hover:bg-soft-purple transition-all flex items-center justify-center gap-2 group shadow-xl"
-                        >
-                            {isLoading ? (
-                                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                            ) : (
-                                <>
-                                    Sign In
-
-                                    <ArrowRight
-                                        size={20}
-                                        className="group-hover:translate-x-1 transition-transform"
-                                    />
-                                </>
-                            )}
-                        </button>
-                    </form>
-
-                    <div className="mt-8 space-y-3">
-                        <div className="relative flex items-center justify-center mb-6">
-                            <div className="absolute inset-0 flex items-center">
-                                <div className="w-full border-t border-slate-200 dark:border-white/5"></div>
-                            </div>
-
-                            <span
-                                className={`relative px-4 text-[10px] font-bold uppercase tracking-widest ${
-                                    theme === 'dark'
-                                        ? 'bg-[#001B2E] text-slate-600'
-                                        : 'bg-white text-slate-400'
-                                }`}
-                            >
-                                Or continue with
-                            </span>
-                        </div>
-
-                        <button
-                            type="button"
-                            disabled={socialLoading !== null}
-                            onClick={() => handleSocialLogin('Google')}
-                            className={`w-full flex items-center justify-center gap-3 py-3 rounded-xl border transition-all ${
-                                theme === 'dark'
-                                    ? 'border-white/10 bg-white/5 hover:bg-white/10 disabled:opacity-50'
-                                    : 'border-slate-200 bg-white hover:bg-slate-50 shadow-sm disabled:opacity-50'
-                            }`}
-                        >
-                            {socialLoading === 'Google' ? (
-                                <div className="w-5 h-5 border-2 border-slate-500 border-t-electric-violet rounded-full animate-spin"></div>
-                            ) : (
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    width="20"
-                                    height="20"
-                                    xmlns="http://www.w3.org/2000/svg"
                                 >
-                                    <path
-                                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                                        fill="#4285F4"
+                                    {socialLoading === 'Google' ? (
+                                        <div className="w-5 h-5 border-2 border-slate-500 border-t-electric-violet rounded-full animate-spin"></div>
+                                    ) : (
+                                        <svg
+                                            viewBox="0 0 24 24"
+                                            width="20"
+                                            height="20"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                        >
+                                            <path
+                                                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                                                fill="#4285F4"
+                                            />
+
+                                            <path
+                                                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                                                fill="#34A853"
+                                            />
+
+                                            <path
+                                                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                                                fill="#FBBC05"
+                                            />
+
+                                            <path
+                                                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                                                fill="#EA4335"
+                                            />
+                                        </svg>
+                                    )}
+
+                                    <span className="text-sm font-bold">
+                                        {socialLoading === 'Google'
+                                            ? 'Connecting...'
+                                            : 'Continue with Google'}
+                                    </span>
+                                </button>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        type="button"
+                                        disabled={socialLoading !== null}
+                                        onClick={() => handleSocialLogin('GitHub')}
+                                        className={`flex items-center justify-center gap-2 py-3 rounded-xl border transition-all ${
+                                            theme === 'dark'
+                                                ? 'border-white/5 bg-white/5 hover:bg-white/10 disabled:opacity-50'
+                                                : 'border-slate-200 bg-white hover:bg-slate-50 shadow-sm disabled:opacity-50'
+                                        }`}
+                                    >
+                                        {socialLoading === 'GitHub' ? (
+                                            <div className="w-4 h-4 border-2 border-slate-500 border-t-electric-violet rounded-full animate-spin"></div>
+                                        ) : (
+                                            <Github size={18} />
+                                        )}
+
+                                        <span className="text-sm font-bold">
+                                            GitHub
+                                        </span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        disabled={socialLoading !== null}
+                                        onClick={() => handleSocialLogin('Twitter')}
+                                        className={`flex items-center justify-center gap-2 py-3 rounded-xl border transition-all ${
+                                            theme === 'dark'
+                                                ? 'border-white/5 bg-white/5 hover:bg-white/10 disabled:opacity-50'
+                                                : 'border-slate-200 bg-white hover:bg-slate-50 shadow-sm disabled:opacity-50'
+                                        }`}
+                                    >
+                                        {socialLoading === 'Twitter' ? (
+                                            <div className="w-4 h-4 border-2 border-slate-500 border-t-electric-violet rounded-full animate-spin"></div>
+                                        ) : (
+                                            <Twitter
+                                                size={18}
+                                                className="text-slate-300"
+                                            />
+                                        )}
+
+                                        <span className="text-sm font-bold">
+                                            Twitter
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                        </>
+                    )}
+
+                    {forgotPasswordStep === 'email' && (
+                        <>
+                            <div className="text-center mb-10">
+                                <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-electric-violet/10 mb-6">
+                                    <Mail
+                                        className="text-electric-violet"
+                                        size={32}
                                     />
+                                </div>
 
-                                    <path
-                                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                                        fill="#34A853"
+                                <h2 className="text-3xl font-bold tracking-tight mb-2">
+                                    Forgot Password
+                                </h2>
+
+                                <p className="text-sm text-slate-500">
+                                    Enter your email to receive a recovery code.
+                                </p>
+                            </div>
+
+                            <form onSubmit={handleForgotPasswordEmailSubmit} className="space-y-5">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">
+                                        Email
+                                    </label>
+
+                                    <div className="relative">
+                                        <Mail
+                                            size={18}
+                                            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                                        />
+
+                                        <input
+                                            type="email"
+                                            required
+                                            value={forgotPasswordEmail}
+                                            onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                                            placeholder="name@company.com"
+                                            className={`w-full pl-12 pr-4 py-4 rounded-2xl border outline-none transition-all ${
+                                                theme === 'dark'
+                                                    ? 'bg-near-black border-white/5 focus:border-electric-violet/50'
+                                                    : 'bg-slate-50 border-slate-200'
+                                            }`}
+                                        />
+                                    </div>
+                                </div>
+
+                                <button
+                                    disabled={isLoading}
+                                    className="w-full py-4 bg-electric-violet text-white rounded-2xl font-bold text-lg hover:bg-soft-purple transition-all flex items-center justify-center gap-2 group shadow-xl"
+                                >
+                                    {isLoading ? (
+                                        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                    ) : (
+                                        <>
+                                            Send Code
+                                            <ArrowRight
+                                                size={20}
+                                                className="group-hover:translate-x-1 transition-transform"
+                                            />
+                                        </>
+                                    )}
+                                </button>
+                            </form>
+                        </>
+                    )}
+
+                    {forgotPasswordStep === 'otp' && (
+                        <>
+                            <div className="text-center mb-10">
+                                <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-electric-violet/10 mb-6">
+                                    <ShieldCheck
+                                        className="text-electric-violet"
+                                        size={32}
                                     />
+                                </div>
 
-                                    <path
-                                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                                        fill="#FBBC05"
-                                    />
+                                <h2 className="text-3xl font-bold tracking-tight mb-2">
+                                    Check your inbox
+                                </h2>
 
-                                    <path
-                                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                                        fill="#EA4335"
-                                    />
-                                </svg>
-                            )}
+                                <p className="text-sm text-slate-500">
+                                    We sent a 6-digit code to <span className="font-medium text-slate-900 dark:text-white">{forgotPasswordEmail}</span>
+                                </p>
+                            </div>
 
-                            <span className="text-sm font-bold">
-                                {socialLoading === 'Google'
-                                    ? 'Connecting...'
-                                    : 'Continue with Google'}
-                            </span>
-                        </button>
+                            <form onSubmit={handleForgotPasswordResetSubmit} className="space-y-6">
+                                <div className="flex justify-between gap-2" onPaste={handleOtpPaste}>
+                                    {forgotPasswordOtp.map((digit, index) => (
+                                        <div key={index} className="flex-1">
+                                            <input
+                                                ref={(el) => { otpInputRefs.current[index] = el; }}
+                                                type="text"
+                                                maxLength={1}
+                                                value={digit}
+                                                onChange={(e) => handleOtpChange(index, e.target.value)}
+                                                onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                                                className={`w-full aspect-square text-center text-2xl font-bold rounded-xl border outline-none transition-all duration-300 ${
+                                                    digit
+                                                        ? 'border-electric-violet bg-electric-violet/5'
+                                                        : theme === 'dark'
+                                                            ? 'bg-white/[0.03] border-white/10 focus:border-electric-violet/50'
+                                                            : 'bg-slate-50 border-slate-200 focus:border-electric-violet/30'
+                                                }`}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <button
-                                type="button"
-                                disabled={socialLoading !== null}
-                                onClick={() => handleSocialLogin('GitHub')}
-                                className={`flex items-center justify-center gap-2 py-3 rounded-xl border transition-all ${
-                                    theme === 'dark'
-                                        ? 'border-white/5 bg-white/5 hover:bg-white/10 disabled:opacity-50'
-                                        : 'border-slate-200 bg-white hover:bg-slate-50 shadow-sm disabled:opacity-50'
-                                }`}
-                            >
-                                {socialLoading === 'GitHub' ? (
-                                    <div className="w-4 h-4 border-2 border-slate-500 border-t-electric-violet rounded-full animate-spin"></div>
-                                ) : (
-                                    <Github size={18} />
-                                )}
+                                <div className="space-y-4 pt-2">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">
+                                            New Password
+                                        </label>
+                                        <div className="relative">
+                                            <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <input
+                                                type="password"
+                                                required
+                                                value={newPassword}
+                                                onChange={(e) => setNewPassword(e.target.value)}
+                                                placeholder="••••••••"
+                                                className={`w-full pl-12 pr-4 py-4 rounded-2xl border outline-none transition-all ${
+                                                    theme === 'dark'
+                                                        ? 'bg-near-black border-white/5 focus:border-electric-violet/50'
+                                                        : 'bg-slate-50 border-slate-200'
+                                                }`}
+                                            />
+                                        </div>
+                                    </div>
 
-                                <span className="text-sm font-bold">
-                                    GitHub
-                                </span>
-                            </button>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">
+                                            Confirm Password
+                                        </label>
+                                        <div className="relative">
+                                            <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <input
+                                                type="password"
+                                                required
+                                                value={confirmPassword}
+                                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                                placeholder="••••••••"
+                                                className={`w-full pl-12 pr-4 py-4 rounded-2xl border outline-none transition-all ${
+                                                    theme === 'dark'
+                                                        ? 'bg-near-black border-white/5 focus:border-electric-violet/50'
+                                                        : 'bg-slate-50 border-slate-200'
+                                                }`}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
 
-                            <button
-                                type="button"
-                                disabled={socialLoading !== null}
-                                onClick={() => handleSocialLogin('Twitter')}
-                                className={`flex items-center justify-center gap-2 py-3 rounded-xl border transition-all ${
-                                    theme === 'dark'
-                                        ? 'border-white/5 bg-white/5 hover:bg-white/10 disabled:opacity-50'
-                                        : 'border-slate-200 bg-white hover:bg-slate-50 shadow-sm disabled:opacity-50'
-                                }`}
-                            >
-                                {socialLoading === 'Twitter' ? (
-                                    <div className="w-4 h-4 border-2 border-slate-500 border-t-electric-violet rounded-full animate-spin"></div>
-                                ) : (
-                                    <Twitter
-                                        size={18}
-                                        className="text-sky-400"
-                                    />
-                                )}
-
-                                <span className="text-sm font-bold">
-                                    Twitter
-                                </span>
-                            </button>
-                        </div>
-                    </div>
+                                <button
+                                    disabled={isLoading}
+                                    className="w-full py-4 bg-electric-violet text-white rounded-2xl font-bold text-lg hover:bg-soft-purple transition-all flex items-center justify-center gap-2 group shadow-xl"
+                                >
+                                    {isLoading ? (
+                                        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                    ) : (
+                                        <>
+                                            Reset Password
+                                            <ArrowRight
+                                                size={20}
+                                                className="group-hover:translate-x-1 transition-transform"
+                                            />
+                                        </>
+                                    )}
+                                </button>
+                            </form>
+                        </>
+                    )}
 
                     <div className="mt-10 text-center">
                         <button

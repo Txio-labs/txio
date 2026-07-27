@@ -1,6 +1,33 @@
-export type Network = 'mainnet' | 'testnet' | 'devnet';
+// Canonical network identifiers. These lowercase strings are the wire
+// contract shared with the backend `Network` enum (see
+// backend/api/src/model/network.rs) and the CLI. Keep this union,
+// `ALL_NETWORKS`, and `isNetwork` in sync — they are the frontend's single
+// source of truth.
+export type Network = 'mainnet' | 'testnet' | 'devnet' | 'localnet';
 
-export type FeatureId = 'dashboard' | 'rpc' | 'ptb' | 'move' | 'playground' | 'history' | 'settings' | 'new_request' | 'profile' | 'ai_chat' | 'runner' | 'docs' | 'ecosystem' | 'features' | 'integrations' | 'infrastructure' | 'partners';
+// Every supported network, in canonical order. Iterate this instead of
+// hardcoding string arrays so new networks flow through the UI automatically.
+export const ALL_NETWORKS: readonly Network[] = [
+  'mainnet',
+  'testnet',
+  'devnet',
+  'localnet'
+];
+
+// Runtime guard that narrows an untrusted string to `Network`. Used at the
+// API boundary so unknown values are rejected rather than silently accepted.
+export const isNetwork = (
+  value: string | null | undefined
+): value is Network =>
+  typeof value === 'string' &&
+  (ALL_NETWORKS as readonly string[]).includes(value);
+
+// Chains the RPC Method Builder can target. Kept in sync with
+// `WalletChainFamily` (wallet/types.ts), which the wallet layer already uses.
+export type ChainId = 'sui' | 'evm' | 'stellar';
+
+export type FeatureId = 'dashboard' | 'rpc' | 'ptb' | 'move' | 'playground' | 'history' | 'settings' | 'new_request' | 'new_collection' | 'profile' | 'ai_chat' | 'runner' | 'docs' | 'ecosystem' | 'features' | 'integrations' | 'infrastructure' | 'partners';
+
 
 export interface TabItem {
   id: string;
@@ -32,13 +59,22 @@ export interface Environment {
   variables: Record<string, string>;
 }
 
+export type SuiExplorer = 'suiscan' | 'suiexplorer' | 'suivision';
+export type EvmExplorer = 'family' | 'blockscout';
+export type StellarExplorer = 'stellarexpert' | 'stellarchain';
+
 export interface AppSettings {
     theme: 'dark' | 'light';
     showLineNumbers: boolean;
     autoSave: boolean;
     telemetry: boolean;
     customRpc: Record<Network, string>;
-    explorer: 'suiscan' | 'suiexplorer' | 'suivision';
+    /** Preferred Sui block explorer. */
+    explorer: SuiExplorer;
+    /** Preferred EVM explorer family: chain-native (Etherscan-family) or Blockscout. */
+    evmExplorer: EvmExplorer;
+    /** Preferred Stellar block explorer. */
+    stellarExplorer: StellarExplorer;
 }
 
 export interface Notification {
@@ -118,6 +154,7 @@ export interface RequestItem {
   rpcParams: {
     method: string;
     params: any[];
+    chain?: ChainId; // Defaults to 'sui' when absent (pre-multi-chain requests).
   };
   txType?: TransactionKind;
   moveParams: MoveCallParams;
@@ -152,11 +189,24 @@ export interface CollectionNode {
   id: string;
   type: 'collection' | 'folder' | 'request';
   name: string;
+  description?: string;
   isExpanded?: boolean;
   children?: CollectionNode[];
   isShared?: boolean;
   requestData?: RequestItem;
   workspaceId?: string; // Added for workspace filtering
+}
+
+// A user-created transaction recipe template (Recipes page). `id` is a real
+// Mongo id for persisted templates, or a `local-*` id for built-in seed
+// templates that only exist client-side and cannot be deleted via the API.
+export interface RecipeTemplate {
+  id: string;
+  title: string;
+  type: string;
+  description?: string;
+  payload?: Record<string, unknown>;
+  isBuiltIn?: boolean;
 }
 
 // --- PTB Visualizer Types ---
@@ -228,12 +278,20 @@ export interface TeamUser {
   status: 'online' | 'offline' | 'busy';
 }
 
+export interface NotificationPreferences {
+  emailDigests: boolean;
+  emailSecurityAlerts: boolean;
+  inAppActivityAlerts: boolean;
+  inAppProductUpdates: boolean;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
   email: string;
   avatarUrl?: string;
   bannerUrl?: string;
+  notificationPreferences?: NotificationPreferences;
 }
 
 export interface TeamMember {
@@ -260,4 +318,22 @@ export interface Comment {
   userAvatarColor?: string;
   content: string;
   timestamp: number;
+}
+
+// --- Session Tracking ---
+
+/** A live sign-in session returned by GET /auth/sessions. */
+export interface ActiveSession {
+  /** MongoDB ObjectId of the session document — used as the revocation key. */
+  id: string;
+  /** Human-readable device label, e.g. "Chrome on macOS". */
+  device_label: string;
+  /** IP address recorded at sign-in time. */
+  ip_address: string;
+  /** ISO-8601 timestamp of when the session was created. */
+  created_at: string;
+  /** ISO-8601 timestamp of the last known activity. */
+  last_active_at: string;
+  /** True when this entry corresponds to the currently active JWT. */
+  is_current: boolean;
 }

@@ -1,5 +1,12 @@
-import { AppSettings, Network } from '../types';
+import { AppSettings, Network, NotificationPreferences } from '../types';
 import { NETWORKS } from './constants';
+
+export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
+    emailDigests: true,
+    emailSecurityAlerts: true,
+    inAppActivityAlerts: true,
+    inAppProductUpdates: false
+};
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
     theme: 'dark',
@@ -9,21 +16,43 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     customRpc: {
         mainnet: '',
         testnet: '',
-        devnet: ''
+        devnet: '',
+        localnet: ''
     },
-    explorer: 'suiscan'
+    explorer: 'suiscan',
+    evmExplorer: 'family',
+    stellarExplorer: 'stellarexpert'
 };
+
+export const normalizeNotificationPreferences = (
+    preferences?: Partial<NotificationPreferences> | null
+): NotificationPreferences => ({
+    ...DEFAULT_NOTIFICATION_PREFERENCES,
+    ...(preferences || {})
+});
 
 export const normalizeAppSettings = (
     settings?: Partial<AppSettings> | null
-): AppSettings => ({
-    ...DEFAULT_APP_SETTINGS,
-    ...settings,
-    customRpc: {
-        ...DEFAULT_APP_SETTINGS.customRpc,
-        ...(settings?.customRpc || {})
+): AppSettings => {
+    const merged: AppSettings = {
+        ...DEFAULT_APP_SETTINGS,
+        ...settings,
+        customRpc: {
+            ...DEFAULT_APP_SETTINGS.customRpc,
+            ...(settings?.customRpc || {})
+        }
+    };
+
+    // Backward-compat: older persisted state only had Sui `explorer`.
+    if (!settings?.evmExplorer) {
+        merged.evmExplorer = DEFAULT_APP_SETTINGS.evmExplorer;
     }
-});
+    if (!settings?.stellarExplorer) {
+        merged.stellarExplorer = DEFAULT_APP_SETTINGS.stellarExplorer;
+    }
+
+    return merged;
+};
 
 export const resolveRpcUrl = (
     network: Network,

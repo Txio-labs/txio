@@ -22,12 +22,6 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
   isReadOnly = false
 }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('builder');
-  const [isSnippetCopied, setIsSnippetCopied] = useState(false);
-
-  const handleCopySnippet = () => {
-    setIsSnippetCopied(true);
-    setTimeout(() => setIsSnippetCopied(false), 2000);
-  };
 
   const handleTypeChange = (type: RequestType) => {
     onChange({ ...request, type });
@@ -47,7 +41,12 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
         );
       
       case 'hooks':
-        return <HooksEditor />;
+        return (
+          <HooksEditor
+            hooks={request.hooks || []}
+            onChange={(hooks) => onChange({ ...request, hooks })}
+          />
+        );
       
       case 'raw':
         return <RawEditor request={request} onChange={onChange} />;
@@ -66,6 +65,7 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
                 request={request}
                 activeAddress={activeAddress}
                 envVars={envVars}
+                network={network}
                 isReadOnly={isReadOnly}
                 onChange={onChange}
               />
@@ -76,7 +76,7 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-near-black relative font-sans">
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-near-black relative font-sans">
       <HeaderBar 
         requestType={request.type}
         network={network}
@@ -90,12 +90,10 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
       <RequestTabs 
         activeTab={activeTab}
         testsCount={request.tests?.length || 0}
-        isSnippetCopied={isSnippetCopied}
         onTabChange={setActiveTab}
-        onCopySnippet={handleCopySnippet}
       />
 
-      <div className="flex-1 overflow-auto bg-dark-indigo-glow custom-scrollbar">
+      <div className="flex-1 overflow-auto bg-white dark:bg-dark-indigo-glow custom-scrollbar">
         {renderContent()}
       </div>
     </div>

@@ -2,17 +2,112 @@ use crate::dtos::{
     admin_dtos::RpcLogRequest,
     request::{
         LoginRequest, OTPRequest, RegisterUserRequest, ResetPasswordWithOTPRequest,
-        SwitchNetworkRequest, UpdateEmailRequest, UpdatePasswordRequest, VerifyOTPRequest,
+        SwitchNetworkRequest, UpdateEmailRequest, UpdateNotificationPreferencesRequest,
+        UpdatePasswordRequest, VerifyOTPRequest,
     },
     response::{AuthResponse, UserResponse},
 };
+use crate::model::user::GitHubAccount;
 use crate::services::auth_service::AuthService;
 use crate::utils::error::AppError;
-use axum::{Json, extract::State};
+use axum::{
+    Json,
+    extract::{ConnectInfo, Path, State},
+    http::{HeaderMap, header},
+    response::IntoResponse,
+};
+use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
+use hmac::{Hmac, KeyInit, Mac};
 use serde_json::{Value, json};
+use sha2::Sha256;
+use std::net::SocketAddr;
+
+type HmacSha256 = Hmac<Sha256>;
+
+/// Derive a short "Browser on OS" label from User-Agent for the sessions UI.
+fn device_label_from_headers(headers: &HeaderMap) -> String {
+    let ua = headers
+        .get(header::USER_AGENT)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    if ua.is_empty() {
+        return "Unknown device".to_string();
+    }
+
+    let browser = if ua.contains("Edg/") {
+        "Edge"
+    } else if ua.contains("Chrome/") {
+        "Chrome"
+    } else if ua.contains("Firefox/") {
+        "Firefox"
+    } else if ua.contains("Safari/") {
+        "Safari"
+    } else {
+        "Browser"
+    };
+
+    let os = if ua.contains("Windows") {
+        "Windows"
+    } else if ua.contains("Android") {
+        "Android"
+    } else if ua.contains("iPhone") || ua.contains("iPad") {
+        "iOS"
+    } else if ua.contains("Mac OS") || ua.contains("Macintosh") {
+        "macOS"
+    } else if ua.contains("Linux") {
+        "Linux"
+    } else {
+        "Unknown OS"
+    };
+
+    format!("{browser} on {os}")
+}
+
+/// Prefer reverse-proxy headers, then fall back to the TCP peer address.
+fn client_ip_from_request(headers: &HeaderMap, addr: &SocketAddr) -> String {
+    if let Some(xff) = headers.get("x-forwarded-for").and_then(|v| v.to_str().ok()) {
+        if let Some(first) = xff.split(',').next() {
+            let trimmed = first.trim();
+            if !trimmed.is_empty() {
+                return trimmed.to_string();
+            }
+        }
+    }
+    if let Some(real) = headers.get("x-real-ip").and_then(|v| v.to_str().ok()) {
+        if !real.is_empty() {
+            return real.to_string();
+        }
+    }
+    addr.ip().to_string()
+}
+
+/// Persist a sessions-collection row for a freshly issued JWT (best-effort).
+async fn record_login_session(
+    service: &AuthService,
+    token: &str,
+    headers: &HeaderMap,
+    addr: &SocketAddr,
+) {
+    let Ok(claims) = service.verify_token(token) else {
+        return;
+    };
+    let Some(jti) = claims.jti.as_deref().filter(|j| !j.is_empty()) else {
+        return;
+    };
+    let _ = service
+        .create_session(
+            &claims.sub,
+            jti,
+            &device_label_from_headers(headers),
+            &client_ip_from_request(headers, addr),
+        )
+        .await;
+}
 
 pub async fn register(
     State(service): State<AuthService>,
+    headers: HeaderMap,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Json(payload): Json<RegisterUserRequest>,
 ) -> Result<Json<AuthResponse>, AppError> {
     use validator::Validate;
@@ -21,12 +116,15 @@ pub async fn register(
         .map_err(|e| AppError::ValidationError(e.to_string()))?;
 
     let response = service.register_user(payload).await?;
+    record_login_session(&service, &response.token, &headers, &addr).await;
 
     Ok(Json(response))
 }
 
 pub async fn login(
     State(service): State<AuthService>,
+    headers: HeaderMap,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Json(payload): Json<LoginRequest>,
 ) -> Result<Json<AuthResponse>, AppError> {
     use validator::Validate;
@@ -35,8 +133,30 @@ pub async fn login(
         .map_err(|e| AppError::ValidationError(e.to_string()))?;
 
     let response = service.login_user(payload).await?;
+    record_login_session(&service, &response.token, &headers, &addr).await;
 
     Ok(Json(response))
+}
+
+/// GET /auth/sessions — list active sessions for the authenticated user.
+pub async fn list_sessions(
+    State(service): State<AuthService>,
+    claims: crate::utils::auth_jwt::Claims,
+) -> Result<Json<Value>, AppError> {
+    let sessions = service
+        .list_sessions(&claims.sub, claims.jti.as_deref())
+        .await?;
+    Ok(Json(json!({ "sessions": sessions })))
+}
+
+/// DELETE /auth/sessions/:session_id — revoke one session owned by the caller.
+pub async fn revoke_session(
+    State(service): State<AuthService>,
+    claims: crate::utils::auth_jwt::Claims,
+    Path(session_id): Path<String>,
+) -> Result<Json<Value>, AppError> {
+    service.revoke_session(&claims.sub, &session_id).await?;
+    Ok(Json(json!({ "message": "Session revoked" })))
 }
 
 pub async fn request_otp(
@@ -88,21 +208,19 @@ pub async fn github_unlink(
     State(service): State<AuthService>,
     claims: crate::utils::auth_jwt::Claims,
 ) -> Result<Json<Value>, AppError> {
-    let mut user = service.get_user_profile_by_email(&claims.email).await?;
+    let user = service.get_user_profile_by_email(&claims.email).await?;
 
     if user.github_account.is_none() {
         return Err(AppError::BadRequest("No GitHub account linked".into()));
     }
 
-    user.github_account = None;
+    service
+        .update_user_github_account(&claims.email, None)
+        .await?;
 
-    let updated_user = service.update_user_github_account(&user, &GitHubAccount {
-        id: String::new(),
-        login: String::new(),
-        access_token: None,
-    }).await?;
-
-    Ok(Json(json!({ "message": "GitHub account unlinked successfully" })))
+    Ok(Json(
+        json!({ "message": "GitHub account unlinked successfully" }),
+    ))
 }
 
 pub async fn get_user_profile(
@@ -131,6 +249,18 @@ pub async fn update_user_email(
     Ok(Json(json!({ "user": user })))
 }
 
+pub async fn update_notification_preferences(
+    State(service): State<AuthService>,
+    claims: crate::utils::auth_jwt::Claims,
+    Json(payload): Json<UpdateNotificationPreferencesRequest>,
+) -> Result<Json<Value>, AppError> {
+    let user = service
+        .update_notification_preferences_by_email(&claims.email, payload.notification_preferences)
+        .await?;
+
+    Ok(Json(json!({ "user": user })))
+}
+
 pub async fn update_user_password(
     State(service): State<AuthService>,
     claims: crate::utils::auth_jwt::Claims,
@@ -142,7 +272,11 @@ pub async fn update_user_password(
         .map_err(|e| AppError::ValidationError(e.to_string()))?;
 
     let user = service
-        .update_user_password_by_email(&claims.email, &payload.new_password)
+        .update_user_password_by_email(
+            &claims.email,
+            &payload.current_password,
+            &payload.new_password,
+        )
         .await?;
 
     Ok(Json(json!({ "user": user })))
@@ -231,12 +365,91 @@ pub async fn switch_network(
     })))
 }
 
+fn oauth_signing_key() -> Result<Vec<u8>, AppError> {
+    let secret = std::env::var("JWT_SECRET")
+        .map_err(|_| AppError::InternalError("JWT_SECRET not set".into()))?;
+    Ok(secret.into_bytes())
+}
+
+fn generate_oauth_state() -> Result<String, AppError> {
+    let nonce: Vec<u8> = (0..32).map(|_| rand::random::<u8>()).collect();
+    let key = oauth_signing_key()?;
+    let mut mac = HmacSha256::new_from_slice(&key)
+        .map_err(|_| AppError::InternalError("HMAC key error".into()))?;
+    mac.update(&nonce);
+    let signature = mac.finalize().into_bytes();
+    let mut payload = nonce;
+    payload.extend_from_slice(&signature);
+    Ok(URL_SAFE_NO_PAD.encode(&payload))
+}
+
+fn verify_oauth_state(state: &str) -> Result<(), AppError> {
+    let decoded = URL_SAFE_NO_PAD
+        .decode(state)
+        .map_err(|_| AppError::BadRequest("Invalid OAuth state parameter".into()))?;
+    if decoded.len() < 32 + 32 {
+        return Err(AppError::BadRequest("Invalid OAuth state parameter".into()));
+    }
+    let (nonce, signature) = decoded.split_at(decoded.len() - 32);
+    let key = oauth_signing_key()?;
+    let mut mac = HmacSha256::new_from_slice(&key)
+        .map_err(|_| AppError::InternalError("HMAC key error".into()))?;
+    mac.update(nonce);
+    mac.verify_slice(signature)
+        .map_err(|_| AppError::BadRequest("Invalid or expired OAuth state parameter".into()))
+}
+
+fn constant_time_eq(a: &str, b: &str) -> bool {
+    let (a, b) = (a.as_bytes(), b.as_bytes());
+    if a.len() != b.len() {
+        return false;
+    }
+    let mut diff = 0u8;
+    for (x, y) in a.iter().zip(b.iter()) {
+        diff |= x ^ y;
+    }
+    diff == 0
+}
+
+// GOOGLE_REDIRECT_URL / GITHUB_REDIRECT_URL are easy to forget when
+// provisioning a new deployment; falling back to localhost there means
+// OAuth silently redirects users to a dead address in production. Only
+// default to localhost in debug builds (`cargo build`, not the `--release`
+// build every Docker/Render deploy uses) — otherwise fall back to the
+// current production backend.
+fn default_oauth_redirect_uri(provider: &str) -> String {
+    if cfg!(debug_assertions) {
+        format!("http://localhost:8000/api/v1/auth/{provider}/callback")
+    } else {
+        format!("https://txio-oyac.onrender.com/api/v1/auth/{provider}/callback")
+    }
+}
+
+fn set_cookie(headers: &mut axum::http::HeaderMap, name: &str, value: &str) {
+    let cookie = format!("{name}={value}; Path=/; Max-Age=600; SameSite=Lax; HttpOnly");
+    headers.append(header::SET_COOKIE, cookie.parse().unwrap());
+}
+
+fn get_cookie(headers: &axum::http::HeaderMap, name: &str) -> Option<String> {
+    let cookie_header = headers.get(header::COOKIE)?.to_str().ok()?;
+    for part in cookie_header.split(';') {
+        let mut kv = part.trim().splitn(2, '=');
+        if let (Some(k), Some(v)) = (kv.next(), kv.next()) {
+            if k.trim() == name {
+                return Some(v.to_string());
+            }
+        }
+    }
+    None
+}
+
 #[derive(serde::Deserialize)]
 pub struct OAuthCallbackQuery {
     pub code: String,
+    pub state: Option<String>,
 }
 
-pub async fn google_login() -> Result<axum::response::Redirect, AppError> {
+pub async fn google_login() -> Result<axum::response::Response, AppError> {
     let client_id = std::env::var("GOOGLE_CLIENT_ID").unwrap_or_default();
     if client_id.trim().is_empty() {
         return Err(AppError::BadRequest(
@@ -244,19 +457,47 @@ pub async fn google_login() -> Result<axum::response::Redirect, AppError> {
         ));
     }
     let redirect_uri = std::env::var("GOOGLE_REDIRECT_URL")
-        .unwrap_or_else(|_| "http://localhost:8000/api/v1/auth/google/callback".to_string());
+        .unwrap_or_else(|_| default_oauth_redirect_uri("google"));
+
+    let state = generate_oauth_state()?;
+
+    let mut headers = axum::http::HeaderMap::new();
+    set_cookie(&mut headers, "oauth_state", &state);
 
     let url = format!(
-        "https://accounts.google.com/o/oauth2/v2/auth?client_id={}&redirect_uri={}&response_type=code&scope=email profile",
-        client_id, redirect_uri
+        "https://accounts.google.com/o/oauth2/v2/auth?client_id={}&redirect_uri={}&response_type=code&scope=email+profile&state={}",
+        urlencoding::encode(&client_id),
+        urlencoding::encode(&redirect_uri),
+        urlencoding::encode(&state),
     );
-    Ok(axum::response::Redirect::temporary(&url))
+
+    let mut response = axum::response::Redirect::temporary(&url).into_response();
+    response.headers_mut().extend(headers);
+    Ok(response)
 }
 
 pub async fn google_callback(
     State(service): State<AuthService>,
     axum::extract::Query(query): axum::extract::Query<OAuthCallbackQuery>,
-) -> Result<axum::response::Redirect, AppError> {
+    headers: axum::http::HeaderMap,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+) -> Result<axum::response::Response, AppError> {
+    let cookie_state = get_cookie(&headers, "oauth_state")
+        .ok_or(AppError::BadRequest("Missing OAuth state cookie".into()))?;
+
+    let query_state = query
+        .state
+        .as_deref()
+        .ok_or(AppError::BadRequest("Missing OAuth state parameter".into()))?;
+
+    if !constant_time_eq(&cookie_state, query_state) {
+        return Err(AppError::BadRequest(
+            "OAuth state mismatch — possible CSRF attack".into(),
+        ));
+    }
+
+    verify_oauth_state(query_state)?;
+
     let client_id = std::env::var("GOOGLE_CLIENT_ID").unwrap_or_default();
     let client_secret = std::env::var("GOOGLE_CLIENT_SECRET").unwrap_or_default();
     if client_id.trim().is_empty() || client_secret.trim().is_empty() {
@@ -265,7 +506,7 @@ pub async fn google_callback(
         ));
     }
     let redirect_uri = std::env::var("GOOGLE_REDIRECT_URL")
-        .unwrap_or_else(|_| "http://localhost:8000/api/v1/auth/google/callback".to_string());
+        .unwrap_or_else(|_| default_oauth_redirect_uri("google"));
     let frontend_url =
         std::env::var("FRONTEND_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
 
@@ -305,22 +546,47 @@ pub async fn google_callback(
         .json()
         .await
         .map_err(|_| AppError::InternalError("Failed to parse Google user info".into()))?;
+
+    let verified_email = user_data["verified_email"].as_bool().unwrap_or(false);
+    if !verified_email {
+        return Err(AppError::Unauthorized(
+            "Google email address is not verified".into(),
+        ));
+    }
+
+    let google_sub = user_data["id"].as_str().ok_or(AppError::InternalError(
+        "No Google subject in profile".into(),
+    ))?;
     let email = user_data["email"]
         .as_str()
         .ok_or(AppError::InternalError("No email in Google profile".into()))?;
 
-    let auth_res = service.oauth_login_or_register(email.to_string()).await?;
+    let auth_res = service
+        .oauth_login_or_register(google_sub.to_string(), email.to_string())
+        .await?;
 
+    record_login_session(&service, &auth_res.token, &headers, &addr).await;
+
+    // Hand the JWT to the frontend via a URL fragment, not a cookie: the
+    // backend (this Render service) and the frontend (Vercel, a different
+    // eTLD+1) are different sites, so a cookie this response sets via
+    // Set-Cookie is scoped to *this* domain and is never visible to
+    // document.cookie on the frontend's origin after the redirect — the
+    // browser simply has no shared storage to bridge them. A URL fragment
+    // (`#...`) is never sent to any server (not this one on the redirect,
+    // not the frontend's on page load) and is stripped from Referer
+    // headers, so it keeps most of the leakage protection a cookie would
+    // have given if the two apps shared a parent domain.
     let redirect_to = format!(
-        "{}/?token={}",
+        "{}/#token={}",
         frontend_url.trim_end_matches('/'),
-        auth_res.token
+        urlencoding::encode(&auth_res.token)
     );
 
-    Ok(axum::response::Redirect::temporary(&redirect_to))
+    Ok(axum::response::Redirect::temporary(&redirect_to).into_response())
 }
 
-pub async fn github_login() -> Result<axum::response::Redirect, AppError> {
+pub async fn github_login() -> Result<axum::response::Response, AppError> {
     let client_id = std::env::var("GITHUB_CLIENT_ID").unwrap_or_default();
     let client_secret = std::env::var("GITHUB_CLIENT_SECRET").unwrap_or_default();
     if client_id.trim().is_empty() || client_secret.trim().is_empty() {
@@ -328,23 +594,48 @@ pub async fn github_login() -> Result<axum::response::Redirect, AppError> {
             "GitHub OAuth is not configured. Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET.".into(),
         ));
     }
-
     let redirect_uri = std::env::var("GITHUB_REDIRECT_URL")
-        .unwrap_or_else(|_| "http://localhost:8000/api/v1/auth/github/callback".to_string());
+        .unwrap_or_else(|_| default_oauth_redirect_uri("github"));
+
+    let state = generate_oauth_state()?;
+
+    let mut headers = axum::http::HeaderMap::new();
+    set_cookie(&mut headers, "oauth_state", &state);
 
     let url = format!(
-        "https://github.com/login/oauth/authorize?client_id={}&redirect_uri={}&scope=user:email&allow_signup=true",
-        client_id,
-        redirect_uri
+        "https://github.com/login/oauth/authorize?client_id={}&redirect_uri={}&scope=read:user+user:email&state={}",
+        urlencoding::encode(&client_id),
+        urlencoding::encode(&redirect_uri),
+        urlencoding::encode(&state),
     );
 
-    Ok(axum::response::Redirect::temporary(&url))
+    let mut response = axum::response::Redirect::temporary(&url).into_response();
+    response.headers_mut().extend(headers);
+    Ok(response)
 }
 
 pub async fn github_callback(
     State(service): State<AuthService>,
     axum::extract::Query(query): axum::extract::Query<OAuthCallbackQuery>,
-) -> Result<axum::response::Redirect, AppError> {
+    headers: axum::http::HeaderMap,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+) -> Result<axum::response::Response, AppError> {
+    let cookie_state = get_cookie(&headers, "oauth_state")
+        .ok_or(AppError::BadRequest("Missing OAuth state cookie".into()))?;
+
+    let query_state = query
+        .state
+        .as_deref()
+        .ok_or(AppError::BadRequest("Missing OAuth state parameter".into()))?;
+
+    if !constant_time_eq(&cookie_state, query_state) {
+        return Err(AppError::BadRequest(
+            "OAuth state mismatch — possible CSRF attack".into(),
+        ));
+    }
+
+    verify_oauth_state(query_state)?;
+
     let client_id = std::env::var("GITHUB_CLIENT_ID").unwrap_or_default();
     let client_secret = std::env::var("GITHUB_CLIENT_SECRET").unwrap_or_default();
     if client_id.trim().is_empty() || client_secret.trim().is_empty() {
@@ -352,11 +643,10 @@ pub async fn github_callback(
             "GitHub OAuth is not configured. Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET.".into(),
         ));
     }
-
     let redirect_uri = std::env::var("GITHUB_REDIRECT_URL")
-        .unwrap_or_else(|_| "http://localhost:8000/api/v1/auth/github/callback".to_string());
-    let frontend_url = std::env::var("FRONTEND_URL")
-        .unwrap_or_else(|_| "http://localhost:3000".to_string());
+        .unwrap_or_else(|_| default_oauth_redirect_uri("github"));
+    let frontend_url =
+        std::env::var("FRONTEND_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
 
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(30))
@@ -365,7 +655,7 @@ pub async fn github_callback(
 
     let token_res = client
         .post("https://github.com/login/oauth/access_token")
-        .header("Accept", "application/json")
+        .header(header::ACCEPT, "application/json")
         .form(&[
             ("client_id", client_id.as_str()),
             ("client_secret", client_secret.as_str()),
@@ -384,9 +674,10 @@ pub async fn github_callback(
         .as_str()
         .ok_or(AppError::InternalError("No access token".into()))?;
 
+    // GitHub requires a User-Agent header on all API requests.
     let user_res = client
         .get("https://api.github.com/user")
-        .header("User-Agent", "txio")
+        .header(header::USER_AGENT, "txio")
         .bearer_auth(access_token)
         .send()
         .await
@@ -397,83 +688,68 @@ pub async fn github_callback(
         .await
         .map_err(|_| AppError::InternalError("Failed to parse GitHub user info".into()))?;
 
-    let email = user_data["email"].as_str().map(|s| s.to_string());
-    let email = match email {
-        Some(email) => email,
-        None => {
-            let emails_res = client
-                .get("https://api.github.com/user/emails")
-                .header("User-Agent", "txio")
-                .bearer_auth(access_token)
-                .send()
-                .await
-                .map_err(|_| AppError::InternalError("Failed to get GitHub emails".into()))?;
+    let github_id = user_data["id"].as_i64().ok_or(AppError::InternalError(
+        "No GitHub subject in profile".into(),
+    ))?;
 
-            let emails_value: Value = emails_res
-                .json()
-                .await
-                .map_err(|_| AppError::InternalError("Failed to parse GitHub emails".into()))?;
+    // The primary email may be private, in which case `/user` omits it and
+    // it must be looked up via the dedicated emails endpoint instead.
+    let email = if let Some(email) = user_data["email"].as_str() {
+        email.to_string()
+    } else {
+        let emails_res = client
+            .get("https://api.github.com/user/emails")
+            .header(header::USER_AGENT, "txio")
+            .bearer_auth(access_token)
+            .send()
+            .await
+            .map_err(|_| AppError::InternalError("Failed to get GitHub email".into()))?;
 
-            emails_value
-                .as_array()
-                .and_then(|emails| {
-                    emails.iter().find_map(|email| {
-                        let verified = email["verified"].as_bool().unwrap_or(false);
-                        let primary = email["primary"].as_bool().unwrap_or(false);
-                        if verified && primary {
-                            return email["email"].as_str().map(|s| s.to_string());
-                        }
-                        None
-                    })
+        let emails: Value = emails_res
+            .json()
+            .await
+            .map_err(|_| AppError::InternalError("Failed to parse GitHub email".into()))?;
+
+        emails
+            .as_array()
+            .and_then(|entries| {
+                entries.iter().find(|entry| {
+                    entry["primary"].as_bool().unwrap_or(false)
+                        && entry["verified"].as_bool().unwrap_or(false)
                 })
-                .or_else(|| {
-                    emails_value.as_array().and_then(|emails| {
-                        emails.iter().find_map(|email| {
-                            let verified = email["verified"].as_bool().unwrap_or(false);
-                            if verified {
-                                return email["email"].as_str().map(|s| s.to_string());
-                            }
-                            None
-                        })
-                    })
-                })
-                .ok_or(AppError::InternalError(
-                    "No email address available from GitHub profile".into(),
-                ))?
-        }
+            })
+            .and_then(|entry| entry["email"].as_str())
+            .ok_or(AppError::Unauthorized(
+                "No verified primary email on GitHub account".into(),
+            ))?
+            .to_string()
     };
 
-    let auth_res = service.oauth_login_or_register(email).await?;
+    let auth_res = service
+        .oauth_login_or_register(github_id.to_string(), email)
+        .await?;
 
-    let mut user = service.get_user_profile_by_email(&auth_res.user.email).await?;
-
-    if user.github_account.is_none() {
+    if auth_res.user.github_account.is_none() {
         let github_account = GitHubAccount {
             id: user_data["id"].to_string(),
             login: user_data["login"].as_str().unwrap_or("").to_string(),
-            access_token: Some(access_token),
+            access_token: Some(access_token.to_string()),
         };
-        user.github_account = Some(github_account);
-
-        let updated_user = service.update_user_github_account(&user, &github_account).await?;
-        let updated_user_response = AuthResponse {
-            token: auth_res.token,
-            user: Self::to_user_response(&updated_user),
-        };
-        let redirect_to = format!(
-            "{}/?token={}",
-            frontend_url.trim_end_matches('/'),
-            updated_user_response.token
-        );
-
-        Ok(axum::response::Redirect::temporary(&redirect_to))
-    } else {
-        let redirect_to = format!(
-            "{}/?token={}",
-            frontend_url.trim_end_matches('/'),
-            auth_res.token
-        );
-
-        Ok(axum::response::Redirect::temporary(&redirect_to))
+        service
+            .update_user_github_account(&auth_res.user.email, Some(github_account))
+            .await?;
     }
+
+    record_login_session(&service, &auth_res.token, &headers, &addr).await;
+
+    // See the matching comment in google_callback: a cookie can't bridge
+    // the backend's and frontend's separate domains, so the token goes in
+    // a URL fragment instead, which never reaches any server.
+    let redirect_to = format!(
+        "{}/#token={}",
+        frontend_url.trim_end_matches('/'),
+        urlencoding::encode(&auth_res.token)
+    );
+
+    Ok(axum::response::Redirect::temporary(&redirect_to).into_response())
 }

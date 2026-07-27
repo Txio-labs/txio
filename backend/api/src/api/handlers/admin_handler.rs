@@ -36,7 +36,9 @@ pub async fn delete_user(
 
     let deleted_email = service.delete_user(&claims, &payload.email).await?;
 
-    Ok(Json(json!({ "message": "User deleted", "email": deleted_email })))
+    Ok(Json(
+        json!({ "message": "User deleted", "email": deleted_email }),
+    ))
 }
 
 pub async fn stats(
@@ -52,7 +54,10 @@ pub async fn list_logs(
     claims: Claims,
     axum::extract::Query(query): axum::extract::Query<LogsQuery>,
 ) -> Result<Json<Vec<AdminLogEntry>>, AppError> {
-    let limit = query.limit.unwrap_or(DEFAULT_LOG_LIMIT).clamp(1, MAX_LOG_LIMIT);
+    let limit = query
+        .limit
+        .unwrap_or(DEFAULT_LOG_LIMIT)
+        .clamp(1, MAX_LOG_LIMIT);
     let logs = service.list_logs(&claims, limit).await?;
     Ok(Json(logs))
 }

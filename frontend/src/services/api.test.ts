@@ -82,7 +82,13 @@ describe('apiService', () => {
                 email: 'ada@example.com',
                 name: 'Ada Lovelace',
                 avatarUrl: undefined,
-                bannerUrl: undefined
+                bannerUrl: undefined,
+                notificationPreferences: {
+                    emailDigests: true,
+                    emailSecurityAlerts: true,
+                    inAppActivityAlerts: true,
+                    inAppProductUpdates: false
+                }
             }
         });
         expect(
@@ -222,5 +228,78 @@ describe('apiService', () => {
             `${API_BASE}/terminal/executions/execution-1`,
             `${API_BASE}/terminal/executions/execution-1`
         ]);
+    });
+
+    it('fetches and normalizes recipe templates', async () => {
+        fetchMock.mockResolvedValue(
+            jsonResponse([
+                {
+                    _id: { $oid: 'tpl-1' },
+                    title: 'Batch Transfer',
+                    recipe_type: 'PTB',
+                    description: null,
+                    payload: { commands: [] }
+                }
+            ])
+        );
+
+        const templates =
+            await apiService.getRecipeTemplates();
+
+        expect(fetchMock).toHaveBeenCalledWith(
+            `${API_BASE}/recipe-templates`,
+            expect.anything()
+        );
+        expect(templates).toEqual([
+            {
+                id: 'tpl-1',
+                title: 'Batch Transfer',
+                type: 'PTB',
+                description: undefined,
+                payload: { commands: [] }
+            }
+        ]);
+    });
+
+    it('creates a recipe template with the given fields', async () => {
+        fetchMock.mockResolvedValue(
+            jsonResponse({
+                _id: { $oid: 'tpl-2' },
+                title: 'Stake to Validator',
+                recipe_type: 'MoveCall',
+                description: 'Stakes SUI to a chosen validator'
+            })
+        );
+
+        const template =
+            await apiService.createRecipeTemplate(
+                'Stake to Validator',
+                'MoveCall',
+                'Stakes SUI to a chosen validator'
+            );
+
+        const [url, options] =
+            fetchMock.mock.calls[0];
+        expect(url).toBe(
+            `${API_BASE}/recipe-templates`
+        );
+        expect(options).toMatchObject({
+            method: 'POST',
+            body: JSON.stringify({
+                title: 'Stake to Validator',
+                recipe_type: 'MoveCall',
+                description:
+                    'Stakes SUI to a chosen validator',
+                payload: {}
+            })
+        });
+        expect(template).toEqual({
+            id: 'tpl-2',
+            title: 'Stake to Validator',
+            type: 'MoveCall',
+            description:
+                'Stakes SUI to a chosen validator',
+            payload: {}
+        });
     });
 });

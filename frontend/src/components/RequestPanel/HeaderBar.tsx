@@ -48,7 +48,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   }, [network, endpoint]);
 
   return (
-    <div className="p-3 border-b border-white/10 bg-near-black/50 flex flex-wrap gap-3 items-center backdrop-blur-sm">
+    <div className="p-3 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-near-black/50 flex flex-wrap gap-3 items-center backdrop-blur-sm">
       <div className="w-full sm:w-40 shrink-0">
         <Select 
           value={requestType}
@@ -62,16 +62,16 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
       </div>
       
       {/* Enhanced Endpoint Context */}
-      <div className="flex-1 flex items-center bg-near-black border border-white/10 rounded-lg px-3 py-1.5 h-[38px] min-w-[200px] group focus-within:border-white/20 transition-colors">
-        <div className="flex items-center gap-2 mr-3 border-r border-white/10 pr-3">
+      <div className="flex-1 flex items-center bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1.5 h-[38px] min-w-[200px] group focus-within:border-slate-300 dark:border-white/20 transition-colors">
+        <div className="flex items-center gap-2 mr-3 border-r border-slate-200 dark:border-white/10 pr-3">
           <Server size={12} className="text-slate-500" />
-          <span className="text-[10px] font-bold text-slate-300 uppercase">{network}</span>
+          <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase">{network}</span>
         </div>
         <div className="flex-1 flex items-center gap-2 overflow-hidden">
           <span className="text-xs font-mono text-slate-500 truncate" title={endpoint}>{endpoint}</span>
         </div>
         {rpcHealth && (
-          <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-white/10" title={`Status: ${rpcHealth.status}`}>
+          <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-slate-200 dark:border-white/10" title={`Status: ${rpcHealth.status}`}>
             <div className={`w-1.5 h-1.5 rounded-full ${rpcHealth.status === 'healthy' ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]' : rpcHealth.status === 'degraded' ? 'bg-amber-500' : 'bg-red-500'}`}></div>
             <span className={`text-[10px] font-mono ${rpcHealth.status === 'healthy' ? 'text-emerald-500' : rpcHealth.status === 'degraded' ? 'text-amber-500' : 'text-red-400'}`}>
               {Math.round(rpcHealth.latency[rpcHealth.latency.length-1])}ms

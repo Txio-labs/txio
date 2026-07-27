@@ -1,11 +1,11 @@
 use crate::chains::traits::ChainAdapter;
 use crate::chains::validation::validate_sui_address;
 use crate::cli::parser::Network;
-use async_trait::async_trait;
-use serde_json::{json, Value};
 use anyhow::{Context, Result, anyhow};
-use reqwest::Client;
+use async_trait::async_trait;
 use regex::Regex;
+use reqwest::Client;
+use serde_json::{Value, json};
 use std::sync::LazyLock;
 
 /// Matches a candidate SuiNS token (`<label>.sui`).  The regex itself is
@@ -23,7 +23,10 @@ static SUINS_REGEX: LazyLock<Regex> =
 /// ending there is part of a longer token and should **not** be treated as a
 /// SuiNS name.
 fn is_name_continuation(s: &str, end: usize) -> bool {
-    s[end..].chars().next().map_or(false, |c| c.is_ascii_alphanumeric() || c == '.' || c == '-')
+    s[end..]
+        .chars()
+        .next()
+        .is_some_and(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-')
 }
 
 pub struct SuiAdapter {
@@ -32,6 +35,7 @@ pub struct SuiAdapter {
 }
 
 impl SuiAdapter {
+    #[allow(dead_code)]
     pub fn new() -> Self {
         Self::with_rpc(None, Network::Mainnet)
     }
@@ -61,23 +65,28 @@ impl SuiAdapter {
             "params": params
         });
 
-        let response = self.client.post(&self.rpc_url)
+        let response = self
+            .client
+            .post(&self.rpc_url)
             .json(&payload)
             .send()
             .await?;
 
         let body: Value = response.json().await?;
         if let Some(error) = body.get("error") {
-            let msg = error.get("message").and_then(|m| m.as_str()).unwrap_or("Unknown RPC Error");
+            let msg = error
+                .get("message")
+                .and_then(|m| m.as_str())
+                .unwrap_or("Unknown RPC Error");
             let data = error.get("data").and_then(|d| d.as_str()).unwrap_or("");
             let code = error.get("code").and_then(|c| c.as_i64()).unwrap_or(0);
 
             let err_str = if data.is_empty() {
-                format!("{} (Code: {})", msg, code)
+                format!("{msg} (Code: {code})")
             } else {
-                format!("{} - {} (Code: {})", msg, data, code)
+                format!("{msg} - {data} (Code: {code})")
             };
-            return Err(anyhow!("{}", err_str));
+            return Err(anyhow!("{err_str}"));
         }
 
         Ok(body.get("result").cloned().unwrap_or(Value::Null))
@@ -86,36 +95,48 @@ impl SuiAdapter {
     async fn resolve_names_in_value(&self, value: &mut Value) -> Result<()> {
         match value {
             Value::String(s) => {
-                // Collect the unique, boundary-checked SuiNS names present in
-                // this string.  Using a Vec (with dedup) rather than a HashSet
-                // preserves a stable iteration order for deterministic tests
-                // while still preventing duplicate RPC round-trips.
-                let mut unique_names: Vec<String> = Vec::new();
-                for m in SUINS_REGEX.find_iter(s) {
-                    // Post-match boundary check: reject matches that are
-                    // immediately followed by a name-continuation character
-                    // (e.g. `alice.sui2` → skip, `alice.sui.evil.com` → skip).
-                    if is_name_continuation(s, m.end()) {
-                        continue;
-                    }
-                    let name = m.as_str().to_string();
-                    if !unique_names.contains(&name) {
-                        unique_names.push(name);
-                    }
-                }
+                // Collect boundary-validated match spans.  Tracking spans (not
+                // just name strings) lets us rebuild the output by substituting
+                // only the exact regex-matched positions, which prevents the
+                // String::replace bug where replacing "alice.sui" also rewrites
+                // the prefix inside "alice.sui2".
+                let spans: Vec<(usize, usize, String)> = SUINS_REGEX
+                    .find_iter(s)
+                    .filter(|m| !is_name_continuation(s, m.end()))
+                    .map(|m| (m.start(), m.end(), m.as_str().to_string()))
+                    .collect();
 
-                if !unique_names.is_empty() {
-                    // Resolve each unique name once, then apply all replacements.
-                    let mut new_string = s.to_string();
-                    for name in unique_names {
-                        if let Some(addr) = self
-                            .resolve_name(&name)
-                            .await
-                            .with_context(|| format!("resolving Sui name {name}"))?
-                        {
-                            new_string = new_string.replace(&name, &addr);
+                if !spans.is_empty() {
+                    // Resolve each unique name exactly once (dedup for RPC
+                    // efficiency — a name that appears multiple times in the
+                    // same string value should only trigger one resolution call).
+                    let mut name_to_addr: std::collections::HashMap<String, Option<String>> =
+                        std::collections::HashMap::new();
+                    for (_, _, name) in &spans {
+                        if !name_to_addr.contains_key(name) {
+                            let addr = self
+                                .resolve_name(name)
+                                .await
+                                .with_context(|| format!("resolving Sui name {name}"))?;
+                            name_to_addr.insert(name.clone(), addr);
                         }
                     }
+
+                    // Rebuild the string from validated span positions only,
+                    // leaving any non-matched content (including longer names
+                    // like alice.sui2) completely unchanged.
+                    let original = s.clone();
+                    let mut new_string = String::with_capacity(original.len());
+                    let mut last_end = 0usize;
+                    for (start, end, name) in spans {
+                        new_string.push_str(&original[last_end..start]);
+                        match name_to_addr.get(&name) {
+                            Some(Some(addr)) => new_string.push_str(addr),
+                            _ => new_string.push_str(&original[start..end]),
+                        }
+                        last_end = end;
+                    }
+                    new_string.push_str(&original[last_end..]);
                     *s = new_string;
                 }
             }
@@ -155,7 +176,9 @@ impl ChainAdapter for SuiAdapter {
             return Ok(None);
         }
         let params = json!([name]);
-        let result = self.call_rpc_internal("suix_resolveNameServiceAddress", params).await?;
+        let result = self
+            .call_rpc_internal("suix_resolveNameServiceAddress", params)
+            .await?;
         Ok(result.as_str().map(|s| s.to_string()))
     }
 
@@ -176,7 +199,8 @@ impl ChainAdapter for SuiAdapter {
                 "showBalanceChanges": true
             }
         ]);
-        self.call_rpc_internal("sui_getTransactionBlock", params).await
+        self.call_rpc_internal("sui_getTransactionBlock", params)
+            .await
     }
 
     async fn get_block(&self, block: Option<u64>) -> Result<Value> {
@@ -184,14 +208,17 @@ impl ChainAdapter for SuiAdapter {
             let params = json!([seq.to_string()]);
             self.call_rpc_internal("sui_getCheckpoint", params).await
         } else {
-            let seq = self.call_rpc_internal("sui_getLatestCheckpointSequenceNumber", json!([])).await?;
+            let seq = self
+                .call_rpc_internal("sui_getLatestCheckpointSequenceNumber", json!([]))
+                .await?;
             let params = json!([seq]);
             self.call_rpc_internal("sui_getCheckpoint", params).await
         }
     }
 
     async fn get_gas_price(&self) -> Result<Value> {
-        self.call_rpc_internal("suix_getReferenceGasPrice", json!([])).await
+        self.call_rpc_internal("suix_getReferenceGasPrice", json!([]))
+            .await
     }
 
     async fn get_account(&self, id: &str) -> Result<Value> {
@@ -213,13 +240,16 @@ impl ChainAdapter for SuiAdapter {
             limit,
             true
         ]);
-        self.call_rpc_internal("suix_queryTransactionBlocks", params).await
+        self.call_rpc_internal("suix_queryTransactionBlocks", params)
+            .await
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    use tokio::net::TcpListener;
 
     #[test]
     fn suins_regex_matches_name_inside_string() {
@@ -298,9 +328,6 @@ mod tests {
 
     #[tokio::test]
     async fn unresolvable_name_is_left_as_literal() {
-        use tokio::io::{AsyncReadExt, AsyncWriteExt};
-        use tokio::net::TcpListener;
-
         // Minimal mock JSON-RPC server. First request is the SuiNS lookup and
         // answers `result: null` (name has no record => Ok(None)); the second is
         // the real method call, whose params must still carry the literal name.
@@ -353,28 +380,28 @@ mod tests {
     /// single resolution RPC (the memo/dedup path).
     #[tokio::test]
     async fn duplicate_name_triggers_single_resolution_rpc() {
-        use tokio::io::{AsyncReadExt, AsyncWriteExt};
-        use tokio::net::TcpListener;
-
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap();
         let resolve_count = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
         let counter = resolve_count.clone();
 
         let server = tokio::spawn(async move {
-            // Allow up to 3 requests but record how many resolve calls arrive.
-            for _ in 0..3 {
-                let Ok((mut socket, _)) = listener.accept().await else { break };
+            // Accept exactly two requests: one resolve call and one final RPC call.
+            for _ in 0..2 {
+                let Ok((mut socket, _)) = listener.accept().await else {
+                    break;
+                };
                 let mut buf = vec![0u8; 8192];
-                let Ok(n) = socket.read(&mut buf).await else { break };
+                let Ok(n) = socket.read(&mut buf).await else {
+                    break;
+                };
                 let request = String::from_utf8_lossy(&buf[..n]).to_string();
-                let (result, is_resolve) =
-                    if request.contains("suix_resolveNameServiceAddress") {
-                        counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-                        ("\"0xdeadbeef\"", true)
-                    } else {
-                        ("\"ok\"", false)
-                    };
+                let (result, is_resolve) = if request.contains("suix_resolveNameServiceAddress") {
+                    counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                    ("\"0xdeadbeef\"", true)
+                } else {
+                    ("\"ok\"", false)
+                };
                 let _ = is_resolve;
                 let body = format!("{{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{result}}}");
                 let response = format!(

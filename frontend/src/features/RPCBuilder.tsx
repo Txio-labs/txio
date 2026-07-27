@@ -21,6 +21,7 @@ import {
     ensureTerminalOpen,
     logCommandToTerminal
 } from '@/lib/terminalLog';
+import { runHooks } from '@/lib/hooksEngine';
 
 const ZERO_ADDRESS =
     '0x0000000000000000000000000000000000000000000000000000000000000000';
@@ -141,7 +142,12 @@ export const RPCBuilder: React.FC = () => {
 
         setIsLoading(true);
 
-        const resolved = resolveRequestVars(request, envVariables);
+        await runHooks(request.hooks, 'pre', network);
+
+        const activeEnvVars = appStore.getSnapshot().envVariables.filter(
+            v => v.enabled && (!v.network || v.network === 'all' || v.network === network)
+        );
+        const resolved = resolveRequestVars(request, activeEnvVars);
 
         // Auto-resolve SuiNS in the first param for address-taking RPC methods.
         if (
@@ -216,6 +222,8 @@ export const RPCBuilder: React.FC = () => {
 
             const { result, duration, status } = res;
 
+            await runHooks(request.hooks, 'post', network, result);
+
             appStore.addToHistory(request, status, duration);
 
             logCommandToTerminal({
@@ -284,7 +292,12 @@ export const RPCBuilder: React.FC = () => {
         setIsLoading(true);
         setIsNetworkSwitchOpen(false);
 
-        const resolved = resolveRequestVars(request, envVariables);
+        await runHooks(request.hooks, 'pre', network);
+
+        const activeEnvVars = appStore.getSnapshot().envVariables.filter(
+            v => v.enabled && (!v.network || v.network === 'all' || v.network === network)
+        );
+        const resolved = resolveRequestVars(request, activeEnvVars);
 
         const commandLine =
             resolved.type === RequestType.TRANSACTION
@@ -324,6 +337,8 @@ export const RPCBuilder: React.FC = () => {
             }
 
             const { result, duration, status } = res;
+
+            await runHooks(request.hooks, 'post', network, result);
 
             appStore.addToHistory(request, status, duration);
 

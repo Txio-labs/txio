@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { PanelLeft, PanelRight, Settings, ChevronDown, Globe, Loader2, Key, LayoutGrid, User, LogOut, MoreVertical, Trash2, Save, RotateCcw, Bookmark, Plus, Layers, Command, Sparkles, Search, X, CheckCircle, AlertCircle, Info, Server, Check, Terminal } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { Tab } from './ui/Tabs';
-import { TabItem, Network, RPCHealthMetric } from '../types';
+import { ALL_NETWORKS, TabItem, Network, RPCHealthMetric } from '../types';
 import { NetworkSwitcherModal } from './NetworkSwitcherModal';
 import { Avatar } from './ui/Avatar';
 import { CommandPalette } from './CommandPalette';
@@ -65,7 +65,8 @@ export const Layout: React.FC<LayoutProps> = ({
         isSyncing,
         scanStep,
         notifications,
-        isTerminalOpen
+        isTerminalOpen,
+        pendingNetworkSwitch
     } = useAppStore();
     const [rpcHealth, setRpcHealth] =
         useState<RPCHealthMetric | null>(
@@ -103,22 +104,33 @@ export const Layout: React.FC<LayoutProps> = ({
     }, []);
 
     const handleNetworkSwitch = (newNetwork: Network) => {
-        appStore.setNetwork(newNetwork);
+        if (newNetwork === network) {
+            setIsNetworkMenuOpen(false);
+            return;
+        }
+        appStore.requestNetworkSwitch(newNetwork);
         setIsNetworkMenuOpen(false);
     };
 
     return (
-        <div className="flex flex-col h-screen bg-near-black text-slate-200 overflow-hidden font-sans relative selection:bg-electric-violet/30">
+        <div className="flex flex-col h-screen bg-slate-50 dark:bg-near-black text-slate-700 dark:text-slate-200 overflow-hidden font-sans relative selection:bg-electric-violet/30">
             <CommandPalette />
+            <NetworkSwitcherModal
+                isOpen={pendingNetworkSwitch !== null}
+                onClose={() => appStore.cancelNetworkSwitch()}
+                onConfirm={() => appStore.confirmNetworkSwitch()}
+                from={network}
+                to={pendingNetworkSwitch || network}
+            />
 
             {/* Top Energy Line */}
-            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-cyan-400 via-blue-500 to-sky-500 z-50 shadow-[0_0_15px_rgba(14,165,233,0.6)]"></div>
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-slate-400 z-50 shadow-[0_0_15px_rgba(163,163,163,0.4)]"></div>
 
             {/* Notification Toasts */}
             <div className="fixed top-16 right-6 z-[120] flex flex-col gap-3 pointer-events-none">
                 {notifications.map(n => (
                     <div key={n.id} className="animate-in slide-in-from-right-10 fade-in duration-300 pointer-events-auto">
-                        <div className="bg-dark-indigo-glow border border-white/10 text-slate-200 px-4 py-3 rounded-lg shadow-2xl flex items-center gap-3 min-w-[300px]">
+                        <div className="bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 px-4 py-3 rounded-lg shadow-2xl flex items-center gap-3 min-w-[300px]">
                             {n.type === 'success' && <CheckCircle size={16} className="text-emerald-400" />}
                             {n.type === 'error' && <AlertCircle size={16} className="text-red-400" />}
                             {n.type === 'info' && <Info size={16} className="text-blue-400" />}
@@ -129,40 +141,40 @@ export const Layout: React.FC<LayoutProps> = ({
             </div>
 
             {isSyncing && (
-                <div className="fixed inset-0 z-[110] bg-near-black/90 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in duration-300">
+                <div className="fixed inset-0 z-[110] bg-white/90 dark:bg-near-black/90 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in duration-300">
                     <div className="relative">
                         <Loader2 className="text-electric-violet animate-spin mb-4 drop-shadow-[0_0_10px_rgba(56,189,248,0.8)]" size={48} />
                         <div className="absolute inset-0 bg-electric-violet/20 blur-xl rounded-full animate-pulse"></div>
                     </div>
-                    <p className="text-white text-sm font-mono tracking-wider font-bold">{scanStep || 'Syncing...'}</p>
+                    <p className="text-slate-900 dark:text-white text-sm font-mono tracking-wider font-bold">{scanStep || 'Syncing...'}</p>
                 </div>
             )}
 
-            <header className="h-12 bg-near-black border-b border-white/10 flex items-center justify-between px-3 shrink-0 z-20">
+            <header className="h-12 bg-slate-50 dark:bg-near-black border-b border-slate-200 dark:border-white/10 flex items-center justify-between px-3 shrink-0 z-20">
                 <div className="flex items-center gap-2">
-                    <div 
-                        className="flex items-center gap-1.5 font-bold text-slate-100 group cursor-pointer"
+                    <button 
+                        className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-slate-100 group cursor-pointer"
                         onClick={() => appStore.setActiveTab(null)}
                     >
                         <div className="w-5 h-5 rounded flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                             <TxioLogoSmall />
                         </div>
                         <span className="text-xs tracking-tight group-hover:text-sui-300 transition-colors">txio</span>
-                    </div>
+                    </button>
                     <div className="h-3 w-px bg-white/10 mx-1.5"></div>
-                    <button onClick={() => appStore.toggleSidebar()} className={`p-1.5 rounded hover:bg-white/10 transition-colors ${isSidebarOpen ? 'text-electric-violet' : 'text-slate-500'}`} title="Toggle sidebar">
+                    <button onClick={() => appStore.toggleSidebar()} className={`p-1.5 rounded hover:bg-slate-100 dark:hover:bg-white/10 transition-colors ${isSidebarOpen ? 'text-electric-violet' : 'text-slate-500'}`} title="Toggle sidebar">
                         <PanelLeft size={14} />
                     </button>
                     <button 
                         onClick={() => appStore.setCommandPalette(true)}
-                        className="flex items-center gap-1.5 bg-dark-indigo-glow border border-white/5 hover:border-white/20 hover:bg-[#111] px-2 py-1 rounded-full text-xs text-slate-400 w-48 transition-all group shadow-inner"
+                        className="flex items-center gap-1.5 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 hover:border-slate-300 dark:border-white/20 hover:bg-slate-100 dark:hover:bg-[#111] px-2 py-1 rounded-full text-xs text-slate-400 w-48 transition-all group shadow-inner"
                         title="Search commands (Ctrl+K)"
                     >
                         <Search size={11} className="group-hover:text-electric-violet" />
                         <span className="whitespace-nowrap">Search...</span>
                         <div className="ml-auto hidden md:flex items-center gap-0.5">
-                            <span className="bg-white/5 px-1 rounded text-[9px] text-slate-500 group-hover:text-slate-300">⌘</span>
-                            <span className="bg-white/5 px-1 rounded text-[9px] text-slate-500 group-hover:text-slate-300">K</span>
+                            <span className="bg-slate-100 dark:bg-white/5 px-1 rounded text-[9px] text-slate-500 group-hover:text-slate-600 dark:text-slate-300">⌘</span>
+                            <span className="bg-slate-100 dark:bg-white/5 px-1 rounded text-[9px] text-slate-500 group-hover:text-slate-600 dark:text-slate-300">K</span>
                         </div>
                     </button>
                 </div>
@@ -171,25 +183,25 @@ export const Layout: React.FC<LayoutProps> = ({
                     <div className="relative" ref={networkMenuRef}>
                         <button 
                             onClick={() => setIsNetworkMenuOpen(!isNetworkMenuOpen)}
-                            className={`flex items-center gap-1 px-2 py-1 rounded-full bg-dark-indigo-glow border border-white/10 text-xs hover:bg-[#111] transition-all hover:border-white/20 shadow-sm ${isNetworkMenuOpen ? 'border-slate-600 bg-slate-800' : ''} w-24`}
+                            className={`flex items-center gap-1 px-2 py-1 rounded-full bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 text-xs hover:bg-slate-100 dark:hover:bg-[#111] transition-all hover:border-slate-300 dark:border-white/20 shadow-sm ${isNetworkMenuOpen ? 'border-slate-600 bg-slate-200 dark:bg-slate-800' : ''} w-24`}
                             title="Network"
                         >
                             <div className={`w-1.5 h-1.5 rounded-full ${rpcHealth?.status === 'healthy' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' : rpcHealth?.status === 'degraded' ? 'bg-amber-500' : 'bg-red-500'} animate-pulse`}></div>
-                            <span className="text-slate-300 capitalize font-medium truncate max-w-[40px]">{network}</span>
+                            <span className="text-slate-600 dark:text-slate-300 capitalize font-medium truncate max-w-[40px]">{network}</span>
                             <ChevronDown size={10} className={`text-slate-500 transition-transform duration-200 shrink-0 ${isNetworkMenuOpen ? 'rotate-180' : ''}`}/>
                         </button>
 
                         {isNetworkMenuOpen && (
-                            <div className="absolute top-full right-0 mt-2 w-44 bg-[#003152] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
+                            <div className="absolute top-full right-0 mt-2 w-44 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
                                 <div className="p-1">
-                                    {(['mainnet', 'testnet', 'devnet'] as Network[]).map((net) => (
+                                    {ALL_NETWORKS.map((net) => (
                                         <button
                                             key={net}
                                             onClick={() => handleNetworkSwitch(net)}
                                             className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold capitalize transition-colors ${
                                                 network === net 
-                                                ? 'bg-white/10 text-white' 
-                                                : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                                                ? 'bg-white/10 text-slate-900 dark:text-white' 
+                                                : 'text-slate-400 hover:bg-slate-100 dark:bg-white/5 hover:text-slate-700 dark:text-slate-200'
                                             }`}
                                         >
                                             <div className="flex items-center gap-1.5">
@@ -204,7 +216,7 @@ export const Layout: React.FC<LayoutProps> = ({
                                         </button>
                                     ))}
                                 </div>
-                                <div className="border-t border-white/10 p-1.5 bg-near-black/20">
+                                <div className="border-t border-slate-200 dark:border-white/10 p-1.5 bg-slate-100/60 dark:bg-near-black/20">
                                     <div className="flex justify-between text-[8px] text-slate-500 font-mono">
                                         <span>Latency</span>
                                         <span className={rpcHealth?.status === 'healthy' ? 'text-emerald-500' : rpcHealth?.status === 'degraded' ? 'text-amber-500' : 'text-red-400'}>
@@ -218,7 +230,7 @@ export const Layout: React.FC<LayoutProps> = ({
                         )}
                     </div>
                     
-                    <button onClick={() => appStore.toggleInspector()} className={`p-1.5 rounded hover:bg-white/10 transition-colors ${isInspectorOpen ? 'text-electric-violet' : 'text-slate-500'}`} title="Toggle inspector">
+                    <button onClick={() => appStore.toggleInspector()} className={`p-1.5 rounded hover:bg-slate-100 dark:hover:bg-white/10 transition-colors ${isInspectorOpen ? 'text-electric-violet' : 'text-slate-500'}`} title="Toggle inspector">
                         <PanelRight size={14} />
                     </button>
                     
@@ -230,13 +242,13 @@ export const Layout: React.FC<LayoutProps> = ({
 
             <div className="flex-1 flex overflow-hidden">
                 {isSidebarOpen && (
-                    <aside className="w-64 flex flex-col shrink-0 z-10 bg-near-black">
+                    <aside className="w-64 flex flex-col shrink-0 z-10 bg-slate-50 dark:bg-near-black">
                         {sidebar}
                     </aside>
                 )}
 
-                <main className="flex-1 flex flex-col min-w-0 bg-near-black relative">
-                    <div className="h-9 bg-near-black border-b border-white/10 flex items-center overflow-x-auto no-scrollbar">
+                <main className="flex-1 flex flex-col min-w-0 bg-slate-50 dark:bg-near-black relative">
+                    <div className="h-9 bg-slate-50 dark:bg-near-black border-b border-slate-200 dark:border-white/10 flex items-center overflow-x-auto no-scrollbar">
                         {tabs.map(tab => (
                             <Tab 
                                 key={tab.id}
@@ -251,7 +263,7 @@ export const Layout: React.FC<LayoutProps> = ({
                         ))}
                         <button 
                             onClick={onNewTab}
-                            className="p-2 text-slate-500 hover:text-electric-violet hover:bg-white/5 transition-colors"
+                            className="p-2 text-slate-500 hover:text-electric-violet hover:bg-slate-100 dark:bg-white/5 transition-colors"
                         >
                             <Plus size={14} />
                         </button>
@@ -263,7 +275,7 @@ export const Layout: React.FC<LayoutProps> = ({
                 </main>
 
                 {isInspectorOpen && (
-                    <aside className="w-80 bg-near-black border-l border-white/10 flex flex-col shrink-0 z-10 shadow-2xl">
+                    <aside className="w-80 bg-slate-50 dark:bg-near-black border-l border-slate-200 dark:border-white/10 flex flex-col shrink-0 z-10 shadow-2xl">
                         {inspector}
                     </aside>
                 )}
@@ -271,32 +283,32 @@ export const Layout: React.FC<LayoutProps> = ({
 
             <TerminalPanel />
             
-            <footer className="h-7 bg-near-black border-t border-white/10 flex items-center justify-between px-3 text-[10px] text-slate-500 select-none z-20">
+            <footer className="h-7 bg-slate-50 dark:bg-near-black border-t border-slate-200 dark:border-white/10 flex items-center justify-between px-3 text-[10px] text-slate-500 select-none z-20">
                 <div className="flex items-center gap-4">
-                    <span 
+                    <button 
                         onClick={() => appStore.openTab('settings')}
                         className="flex items-center gap-1 hover:text-electric-violet cursor-pointer transition-colors"
                     >
                         <Settings size={10} /> v2.6.0-beta
-                    </span>
-                    <span 
+                    </button>
+                    <button 
                         onClick={() => appStore.showToast('System operational. No errors.', 'success')}
                         className="hover:text-emerald-400 cursor-pointer transition-colors flex items-center gap-1"
                     >
                         <div className="w-1 h-1 bg-emerald-500 rounded-full"></div> System Optimal
-                    </span>
-                    <span
+                    </button>
+                    <button
                         onClick={() =>
                             appStore.toggleTerminal()
                         }
                         className={`flex items-center gap-1 cursor-pointer transition-colors ${
                             isTerminalOpen
                                 ? 'text-electric-violet'
-                                : 'hover:text-slate-300'
+                                : 'hover:text-slate-600 dark:text-slate-300'
                         }`}
                     >
                         <Terminal size={10} /> Terminal
-                    </span>
+                    </button>
                 </div>
                 <div className="flex items-center gap-4">
                      <span className="font-mono text-slate-600">GAS: <span className="text-amber-500">AUTO</span></span>
