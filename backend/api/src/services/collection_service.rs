@@ -271,12 +271,7 @@ impl CollectionService {
             url.clone()
         } else {
             let network_enum = if let Some(ref net_str) = req.network {
-                match net_str.to_lowercase().as_str() {
-                    "mainnet" => crate::model::network::Network::Mainnet,
-                    "testnet" => crate::model::network::Network::Testnet,
-                    "devnet" => crate::model::network::Network::Devnet,
-                    _ => crate::model::network::Network::Mainnet,
-                }
+                Self::resolve_network_str(net_str)?
             } else {
                 let user = self.user_repo.find_by_id(&user_id).await?;
                 user.network
@@ -347,6 +342,14 @@ impl CollectionService {
 
         Ok((req, result))
     }
+
+    pub(crate) fn resolve_network_str(
+        net_str: &str,
+    ) -> Result<crate::model::network::Network, AppError> {
+        net_str
+            .parse::<crate::model::network::Network>()
+            .map_err(|e| AppError::BadRequest(e.to_string()))
+    }
 }
 
 #[cfg(test)]
@@ -395,5 +398,48 @@ mod tests {
     fn test_validate_url_invalid_urls() {
         assert!(CollectionService::validate_url("not_a_url").is_err());
         assert!(CollectionService::validate_url("https://").is_err());
+    }
+
+    #[test]
+    fn test_resolve_network_str_localnet() {
+        assert_eq!(
+            CollectionService::resolve_network_str("localnet").unwrap(),
+            crate::model::network::Network::Localnet
+        );
+    }
+
+    #[test]
+    fn test_resolve_network_str_invalid() {
+        let err = CollectionService::resolve_network_str("testnet2").unwrap_err();
+        match err {
+            AppError::BadRequest(msg) => {
+                assert!(msg.contains("invalid network 'testnet2'"));
+            }
+            _ => panic!("Expected BadRequest"),
+        }
+    }
+
+    #[test]
+    fn test_resolve_network_str_regression() {
+        assert_eq!(
+            CollectionService::resolve_network_str("mainnet").unwrap(),
+            crate::model::network::Network::Mainnet
+        );
+        assert_eq!(
+            CollectionService::resolve_network_str("testnet").unwrap(),
+            crate::model::network::Network::Testnet
+        );
+        assert_eq!(
+            CollectionService::resolve_network_str("devnet").unwrap(),
+            crate::model::network::Network::Devnet
+        );
+    }
+
+    #[test]
+    fn test_resolve_network_str_normalization() {
+        assert_eq!(
+            CollectionService::resolve_network_str("  LocalNet  ").unwrap(),
+            crate::model::network::Network::Localnet
+        );
     }
 }
