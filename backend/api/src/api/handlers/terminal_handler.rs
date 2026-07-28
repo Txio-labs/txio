@@ -13,13 +13,12 @@ pub async fn execute(
     State(service): State<TerminalService>,
     Json(payload): Json<TerminalCommandRequest>,
 ) -> Result<Json<CommandExecutionResponse>, AppError> {
-    let _ = claims;
     payload
         .validate()
         .map_err(|error| AppError::ValidationError(error.to_string()))?;
 
     let result = service
-        .execute(payload.command.trim())
+        .execute(&claims.sub, payload.command.trim())
         .await
         .map_err(AppError::BadRequest)?;
 
@@ -31,9 +30,8 @@ pub async fn get_execution(
     State(service): State<TerminalService>,
     Path(execution_id): Path<String>,
 ) -> Result<Json<CommandExecutionResponse>, AppError> {
-    let _ = claims;
     let result = service
-        .get_execution(&execution_id)
+        .get_execution(&execution_id, &claims.sub)
         .await
         .ok_or_else(|| AppError::NotFound("Execution not found.".to_string()))?;
 
@@ -45,9 +43,8 @@ pub async fn cancel_execution(
     State(service): State<TerminalService>,
     Path(execution_id): Path<String>,
 ) -> Result<Json<CommandExecutionResponse>, AppError> {
-    let _ = claims;
     let result = service
-        .cancel_execution(&execution_id)
+        .cancel_execution(&execution_id, &claims.sub)
         .await
         .map_err(|error| match error.as_str() {
             "Execution not found." => AppError::NotFound(error),

@@ -47,6 +47,7 @@ pub struct CommandExecutionResponse {
 #[derive(Debug)]
 struct CommandExecutionRecord {
     execution_id: String,
+    user_id: String,
     command: String,
     state: CommandExecutionState,
     output: Option<String>,
@@ -74,9 +75,10 @@ enum WaitOutcome {
 }
 
 impl CommandExecutionRecord {
-    fn running(execution_id: String, command: String, cancel_tx: oneshot::Sender<()>) -> Self {
+    fn running(execution_id: String, user_id: String, command: String, cancel_tx: oneshot::Sender<()>) -> Self {
         Self {
             execution_id,
+            user_id,
             command,
             state: CommandExecutionState::Running,
             output: None,
@@ -116,7 +118,7 @@ impl TerminalService {
         }
     }
 
-    pub async fn execute(&self, command_str: &str) -> Result<CommandExecutionResponse, String> {
+    pub async fn execute(&self, user_id: &str, command_str: &str) -> Result<CommandExecutionResponse, String> {
         let trimmed_command = command_str.trim();
 
         if trimmed_command.is_empty() {
@@ -127,7 +129,7 @@ impl TerminalService {
         let command = trimmed_command.to_string();
         let (cancel_tx, cancel_rx) = oneshot::channel();
         let record =
-            CommandExecutionRecord::running(execution_id.clone(), command.clone(), cancel_tx);
+            CommandExecutionRecord::running(execution_id.clone(), user_id.to_string(), command.clone(), cancel_tx);
 
         {
             let mut executions = self.executions.write().await;
@@ -149,27 +151,36 @@ impl TerminalService {
 
         self.spawn_execution_task(execution_id.clone(), command, cancel_rx);
 
-        self.get_execution(&execution_id)
-            .await
+        // No user_id check here — the record was just created by this user
+        let executions = self.executions.read().await;
+        executions
+            .get(&execution_id)
+            .map(CommandExecutionRecord::snapshot)
             .ok_or_else(|| "Execution was not registered.".to_string())
     }
 
-    pub async fn get_execution(&self, execution_id: &str) -> Option<CommandExecutionResponse> {
+    pub async fn get_execution(&self, execution_id: &str, user_id: &str) -> Option<CommandExecutionResponse> {
         let executions = self.executions.read().await;
 
         executions
             .get(execution_id)
+            .filter(|record| record.user_id == user_id)
             .map(CommandExecutionRecord::snapshot)
     }
 
     pub async fn cancel_execution(
         &self,
         execution_id: &str,
+        user_id: &str,
     ) -> Result<CommandExecutionResponse, String> {
         let mut executions = self.executions.write().await;
         let Some(record) = executions.get_mut(execution_id) else {
             return Err("Execution not found.".to_string());
         };
+
+        if record.user_id != user_id {
+            return Err("Execution not found.".to_string());
+        }
 
         if record.state != CommandExecutionState::Running {
             return Ok(record.snapshot());
@@ -598,7 +609,7 @@ mod tests {
             let id = format!("exec_{}", i);
             let (tx, _rx) = tokio::sync::oneshot::channel();
             let mut record =
-                CommandExecutionRecord::running(id.clone(), "txio --version".to_string(), tx);
+                CommandExecutionRecord::running(id.clone(), "test_user".to_string(), "txio --version".to_string(), tx);
 
             // Mark as completed
             record.state = CommandExecutionState::Success;
@@ -614,7 +625,7 @@ mod tests {
 
         // Executions is at 1000. exec_0 has the oldest created_at.
         // Calling execute will trigger eviction.
-        let _ = service.execute("txio status").await.unwrap();
+        let _ = service.execute("test_user", "txio status").await.unwrap();
 
         let executions = service.executions.read().await;
         // 1 evicted, 1 added => length remains 1000
@@ -635,7 +646,7 @@ mod tests {
             let id = format!("exec_{}", i);
             let (tx, _rx) = tokio::sync::oneshot::channel();
             let mut record =
-                CommandExecutionRecord::running(id.clone(), "txio status".to_string(), tx);
+                CommandExecutionRecord::running(id.clone(), "test_user".to_string(), "txio status".to_string(), tx);
             record.created_at = std::time::Instant::now() - std::time::Duration::from_millis(10000); // Very old
 
             let mut executions = service.executions.write().await;
@@ -643,7 +654,7 @@ mod tests {
         }
 
         // Trigger an execution
-        let _ = service.execute("txio --help").await.unwrap();
+        let _ = service.execute("test_user", "txio --help").await.unwrap();
 
         let executions = service.executions.read().await;
         // Since none were completed, none should have been evicted.
@@ -658,6 +669,7 @@ mod tests {
         let (tx, _rx) = tokio::sync::oneshot::channel();
         let mut record = CommandExecutionRecord::running(
             "old_exec".to_string(),
+            "test_user".to_string(),
             "txio --version".to_string(),
             tx,
         );
@@ -672,19 +684,19 @@ mod tests {
                 let id = format!("filler_{}", i);
                 let (tx, _rx) = tokio::sync::oneshot::channel();
                 let filler =
-                    CommandExecutionRecord::running(id.clone(), "txio status".to_string(), tx);
+                    CommandExecutionRecord::running(id.clone(), "test_user".to_string(), "txio status".to_string(), tx);
                 executions.insert(id, filler);
             }
         }
 
-        let _ = service.execute("txio status").await.unwrap();
+        let _ = service.execute("test_user", "txio status").await.unwrap();
 
         // old_exec should be evicted
-        let res = service.get_execution("old_exec").await;
+        let res = service.get_execution("old_exec", "test_user").await;
         assert!(res.is_none());
 
         // unknown exec also returns None
-        let res_unknown = service.get_execution("never_existed").await;
+        let res_unknown = service.get_execution("never_existed", "test_user").await;
         assert!(res_unknown.is_none());
     }
 
@@ -694,6 +706,7 @@ mod tests {
         let (tx, _rx) = tokio::sync::oneshot::channel();
         let mut record = CommandExecutionRecord::running(
             "concurrent_exec".to_string(),
+            "test_user".to_string(),
             "txio --version".to_string(),
             tx,
         );
@@ -706,7 +719,7 @@ mod tests {
                 let id = format!("filler_{}", i);
                 let (tx, _rx) = tokio::sync::oneshot::channel();
                 let filler =
-                    CommandExecutionRecord::running(id.clone(), "txio status".to_string(), tx);
+                    CommandExecutionRecord::running(id.clone(), "test_user".to_string(), "txio status".to_string(), tx);
                 executions.insert(id, filler);
             }
         }
@@ -716,14 +729,57 @@ mod tests {
         // Spawn a reader
         let reader = tokio::spawn(async move {
             for _ in 0..100 {
-                let _ = svc_clone.get_execution("concurrent_exec").await;
+                let _ = svc_clone.get_execution("concurrent_exec", "test_user").await;
                 tokio::task::yield_now().await;
             }
         });
 
         // Trigger eviction
-        let _ = service.execute("txio status").await.unwrap();
+        let _ = service.execute("test_user", "txio status").await.unwrap();
 
         reader.await.unwrap();
     }
+    #[tokio::test]
+    async fn test_get_execution_rejects_other_user() {
+        let service = TerminalService::new();
+        let response = service
+            .execute("user_a", "txio --version")
+            .await
+            .unwrap();
+
+        // Owner can read their own execution
+        let own = service
+            .get_execution(&response.execution_id, "user_a")
+            .await;
+        assert!(own.is_some());
+
+        // Different user must not see it (IDOR guard)
+        let other = service
+            .get_execution(&response.execution_id, "user_b")
+            .await;
+        assert!(other.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_cancel_execution_rejects_other_user() {
+        let service = TerminalService::new();
+        let response = service
+            .execute("user_a", "txio --version")
+            .await
+            .unwrap();
+
+        // Different user cannot cancel
+        let err = service
+            .cancel_execution(&response.execution_id, "user_b")
+            .await;
+        assert!(err.is_err());
+        assert_eq!(err.unwrap_err(), "Execution not found.");
+
+        // Owner can cancel (or get current state if already finished)
+        let own = service
+            .cancel_execution(&response.execution_id, "user_a")
+            .await;
+        assert!(own.is_ok());
+    }
+
 }
