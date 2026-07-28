@@ -38,3 +38,7 @@ sha2 = { workspace = true }
 urlencoding = { workspace = true }
 url = "2.5"
 serde_with = "3.8"
+
+[[bin]]
+name = "bootstrap_admin"
+path = "src/bin/bootstrap_admin.rs"
