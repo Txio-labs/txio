@@ -54,6 +54,8 @@ const settingsStorageKey =
     'txio_settings';
 const networkStorageKey =
     'txio_network';
+const commentsStorageKey =
+    'txio_comments';
 
 const emit = () => {
     listeners.forEach((l) => l());
@@ -316,6 +318,55 @@ const persistNetwork = (
     );
 };
 
+const readStoredComments = (): Record<string, Comment[]> => {
+    if (typeof window === 'undefined') {
+        return {};
+    }
+
+    try {
+        const raw = localStorage.getItem(
+            commentsStorageKey
+        );
+
+        if (!raw) {
+            return {};
+        }
+
+        const parsed = JSON.parse(raw);
+        if (
+            parsed &&
+            typeof parsed === 'object' &&
+            !Array.isArray(parsed)
+        ) {
+            return parsed as Record<
+                string,
+                Comment[]
+            >;
+        }
+
+        return {};
+    } catch {
+        return {};
+    }
+};
+
+const persistComments = (
+    comments: Record<string, Comment[]>
+) => {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    try {
+        localStorage.setItem(
+            commentsStorageKey,
+            JSON.stringify(comments)
+        );
+    } catch {
+        // Ignore storage errors
+    }
+};
+
 const resolveWorkspaceSelection = (
     workspaces: Workspace[],
     preferredId?: string
@@ -564,6 +615,8 @@ interface AppState {
         | 'integrations'
         | 'infrastructure'
         | 'partners';
+
+    pendingAiPrompt: string | null;
 }
 
 // --- INITIAL STATE ---
@@ -625,7 +678,7 @@ let state: AppState = {
 
     activityLogs: [],
 
-    comments: {},
+    comments: readStoredComments(),
 
     settings: initialSettings,
 
@@ -635,7 +688,9 @@ let state: AppState = {
 
     // IMPORTANT:
     // restore app mode if token exists
-    viewMode: hasToken ? 'app' : 'landing'
+    viewMode: hasToken ? 'app' : 'landing',
+
+    pendingAiPrompt: null
 };
 
 // Sync telemetry gate with persisted settings on boot.
@@ -2038,6 +2093,16 @@ export const appStore = {
         state = {
             ...state,
             comments: newComments
+        };
+
+        persistComments(newComments);
+        emit();
+    },
+
+    setPendingAiPrompt(prompt: string | null) {
+        state = {
+            ...state,
+            pendingAiPrompt: prompt
         };
 
         emit();

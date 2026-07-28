@@ -19,15 +19,12 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
   onExecute,
   activeAddress,
   envVars,
-  isReadOnly = false
+  isReadOnly = false,
+  testResults = []
 }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('builder');
-  const [isSnippetCopied, setIsSnippetCopied] = useState(false);
 
-  const handleCopySnippet = () => {
-    setIsSnippetCopied(true);
-    setTimeout(() => setIsSnippetCopied(false), 2000);
-  };
+  const chain = request.type === RequestType.RPC ? request.rpcParams.chain : undefined;
 
   const handleTypeChange = (type: RequestType) => {
     onChange({ ...request, type });
@@ -40,9 +37,10 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
       
       case 'tests':
         return (
-          <TestsEditor 
+          <TestsEditor
             tests={request.tests || []}
             onChange={(tests) => onChange({ ...request, tests })}
+            results={testResults}
           />
         );
       
@@ -91,14 +89,18 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
         onTypeChange={handleTypeChange}
         onSend={onSend}
         onExecute={onExecute}
+        chain={chain}
       />
 
-      <RequestTabs 
+      <RequestTabs
         activeTab={activeTab}
         testsCount={request.tests?.length || 0}
-        isSnippetCopied={isSnippetCopied}
+        testSummary={
+          testResults.length > 0
+            ? { passed: testResults.filter((r) => r.passed).length, total: testResults.length }
+            : undefined
+        }
         onTabChange={setActiveTab}
-        onCopySnippet={handleCopySnippet}
       />
 
       <div className="flex-1 overflow-auto bg-white dark:bg-dark-indigo-glow custom-scrollbar">

@@ -7,7 +7,10 @@ import fs from "fs"
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const PACKAGED_ORIGIN = "file://"
+// Scope navigation to the app's own packaged directory, not the entire file:// scheme.
+// This prevents a compromised renderer from navigating to arbitrary local files
+// (e.g. file:///etc/passwd) while still allowing in-app navigation.
+const APP_ROOT_URL = pathToFileURL(path.join(__dirname, "..")).href
 
 const CSP_NONCE = crypto.randomBytes(16).toString("base64")
 
@@ -28,7 +31,7 @@ const createWindow = () => {
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
-    icon: path.join(__dirname, "assets/logo/512x512.png"),
+    icon: path.join(__dirname, "assets", "logo-B-VeRwKK.png"),
     webPreferences: {
       sandbox: true,
       contextIsolation: true,
@@ -56,7 +59,7 @@ const createWindow = () => {
   })
 
   win.webContents.on("will-navigate", (event, url) => {
-    if (!url.startsWith(PACKAGED_ORIGIN)) {
+    if (!url.startsWith(APP_ROOT_URL)) {
       event.preventDefault()
     }
   })

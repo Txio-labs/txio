@@ -109,6 +109,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         jwt_helper.clone(),
         otp_service,
         email_service,
+        config.admin_emails.clone(),
     );
 
     let collection_service = services::collection_service::CollectionService::new(
@@ -125,11 +126,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let recipe_template_service =
         services::recipe_template_service::RecipeTemplateService::new(recipe_template_repo);
 
-    let admin_service = services::admin_service::AdminService::new(
-        user_repo.clone(),
-        rpc_repo.clone(),
-        config.admin_emails.clone(),
-    );
+    let admin_service =
+        services::admin_service::AdminService::new(user_repo.clone(), rpc_repo.clone());
 
     let terminal_service = services::terminal_service::TerminalService::new();
     let ai_service = services::ai_service::AiService::from_env();

@@ -9,6 +9,18 @@ use mongodb::bson::oid::ObjectId;
 use serde_json::Value;
 use url::{Host, Url};
 
+/// Returns `true` when the character at byte position `end` in `s` is a
+/// name-continuation character (`[A-Za-z0-9.-]`), meaning the regex match
+/// ending there is part of a longer token and should **not** be treated as a
+/// SuiNS name.
+/// Ported from `cli/src/chains/sui.rs` to fix the same class of bug as issue #73.
+fn is_name_continuation(s: &str, end: usize) -> bool {
+    s[end..]
+        .chars()
+        .next()
+        .is_some_and(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-')
+}
+
 #[derive(Clone)]
 pub struct CollectionService {
     collection_repo: CollectionRepository,
@@ -271,12 +283,7 @@ impl CollectionService {
             url.clone()
         } else {
             let network_enum = if let Some(ref net_str) = req.network {
-                match net_str.to_lowercase().as_str() {
-                    "mainnet" => crate::model::network::Network::Mainnet,
-                    "testnet" => crate::model::network::Network::Testnet,
-                    "devnet" => crate::model::network::Network::Devnet,
-                    _ => crate::model::network::Network::Mainnet,
-                }
+                Self::resolve_network_str(net_str)?
             } else {
                 let user = self.user_repo.find_by_id(&user_id).await?;
                 user.network
@@ -285,53 +292,17 @@ impl CollectionService {
         };
         Self::validate_url(&final_url)?;
         // 1. Resolve Parameters (SuiNS)
-        let suins_regex = regex::Regex::new(r"([a-zA-Z0-9-]+\.sui)").unwrap();
         let mut final_params = req.params.clone();
-        if let Some(arr) = final_params.as_array_mut() {
-            for v in arr.iter_mut() {
-                if let Some(s) = v.as_str() {
-                    if suins_regex.is_match(s) {
-                        let mut new_string = s.to_string();
-                        let mut replacements = Vec::new();
-                        for cap in suins_regex.captures_iter(s) {
-                            if let Some(m) = cap.get(0) {
-                                replacements.push(m.as_str().to_string());
-                            }
-                        }
-
-                        for name in replacements {
-                            match self
-                                .sui_service
-                                .resolve_name_service_address(&final_url, &name)
-                                .await
-                            {
-                                Ok(addr) => {
-                                    new_string = new_string.replace(&name, &addr);
-                                }
-                                Err(e) => {
-                                    // Synthesis: Return resolution error as JSON-RPC error
-                                    let err_val = self.sui_service.error_response(
-                                        -32002,
-                                        &format!("SuiNS Resolution Error for '{name}': {e}"),
-                                    );
-
-                                    // Update history before early return
-                                    let mut updated_req = req.clone();
-                                    updated_req.last_response = Some(err_val.clone());
-                                    updated_req.last_executed_at = Some(chrono::Utc::now());
-                                    self.request_repo.update(&updated_req).await?;
-
-                                    return Ok((updated_req, err_val));
-                                }
-                            }
-                        }
-
-                        if new_string != *s {
-                            *v = Value::String(new_string);
-                        }
-                    }
-                }
-            }
+        if let Err((code, msg)) = self
+            .resolve_suins_params(&final_url, &mut final_params)
+            .await
+        {
+            let err_val = self.sui_service.error_response(code, &msg);
+            let mut updated_req = req.clone();
+            updated_req.last_response = Some(err_val.clone());
+            updated_req.last_executed_at = Some(chrono::Utc::now());
+            self.request_repo.update(&updated_req).await?;
+            return Ok((updated_req, err_val));
         }
 
         // 3. Execute
@@ -346,6 +317,66 @@ impl CollectionService {
         self.request_repo.update(&req).await?;
 
         Ok((req, result))
+    }
+
+    async fn resolve_suins_params(
+        &self,
+        final_url: &str,
+        final_params: &mut Value,
+    ) -> Result<(), (i32, String)> {
+        let suins_regex = regex::Regex::new(r"[a-zA-Z0-9-]+\.sui").unwrap();
+        if let Some(arr) = final_params.as_array_mut() {
+            for v in arr.iter_mut() {
+                if let Some(s) = v.as_str() {
+                    let mut spans: Vec<(usize, usize, String)> = Vec::new();
+                    for m in suins_regex.find_iter(s) {
+                        if !is_name_continuation(s, m.end()) {
+                            spans.push((m.start(), m.end(), m.as_str().to_string()));
+                        }
+                    }
+
+                    if !spans.is_empty() {
+                        let mut name_to_addr = std::collections::HashMap::new();
+                        for (_, _, name) in &spans {
+                            if !name_to_addr.contains_key(name) {
+                                match self
+                                    .sui_service
+                                    .resolve_name_service_address(final_url, name)
+                                    .await
+                                {
+                                    Ok(addr) => {
+                                        name_to_addr.insert(name.clone(), addr);
+                                    }
+                                    Err(e) => {
+                                        return Err((
+                                            -32002,
+                                            format!("SuiNS Resolution Error for '{name}': {e}"),
+                                        ));
+                                    }
+                                }
+                            }
+                        }
+
+                        let original = s;
+                        let mut new_string = String::with_capacity(original.len());
+                        let mut last_end = 0usize;
+                        for (start, end, name) in spans {
+                            new_string.push_str(&original[last_end..start]);
+                            if let Some(addr) = name_to_addr.get(&name) {
+                                new_string.push_str(addr);
+                            } else {
+                                new_string.push_str(&original[start..end]);
+                            }
+                            last_end = end;
+                        }
+                        new_string.push_str(&original[last_end..]);
+
+                        *v = Value::String(new_string);
+                    }
+                }
+            }
+        }
+        Ok(())
     }
 }
 
@@ -395,5 +426,184 @@ mod tests {
     fn test_validate_url_invalid_urls() {
         assert!(CollectionService::validate_url("not_a_url").is_err());
         assert!(CollectionService::validate_url("https://").is_err());
+    }
+
+    // --- Mocking utilities for testing resolve_suins_params ---
+    use mongodb::Client;
+
+    async fn dummy_collection_service() -> CollectionService {
+        let client = Client::with_uri_str("mongodb://localhost:27017")
+            .await
+            .expect("parsing a well-formed URI must not require a live connection");
+        let db = client.database("txio_db");
+
+        let collection_repo = CollectionRepository::new(&db);
+        let request_repo = RequestRepository::new(&db);
+        let user_repo = UserRepository::new(&db);
+        let workspace_repo = WorkspaceRepository::new(&db);
+        let rpc_repo = crate::repositories::rpc_repository::RpcRepository::new(&db);
+
+        let sui_service = SuiService::new(rpc_repo, "https://dummy.sui.io".to_string());
+
+        CollectionService::new(
+            collection_repo,
+            request_repo,
+            user_repo,
+            workspace_repo,
+            sui_service,
+        )
+    }
+
+    #[tokio::test]
+    async fn suins_standalone_name_resolves() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut buf = vec![0u8; 8192];
+            let _ = socket.read(&mut buf).await.unwrap();
+
+            let body = "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"0x123\"}".to_string();
+            let response = format!(
+                "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            socket.write_all(response.as_bytes()).await.unwrap();
+        });
+
+        let service = dummy_collection_service().await;
+        let mut params = serde_json::json!(["send 5 SUI to alice.sui now"]);
+
+        service
+            .resolve_suins_params(&format!("http://{addr}"), &mut params)
+            .await
+            .unwrap();
+
+        assert_eq!(params[0].as_str().unwrap(), "send 5 SUI to 0x123 now");
+        server.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn suins_embedded_substring_untouched() {
+        let service = dummy_collection_service().await;
+        // Since there is no mock server, if it tries to resolve, it will fail and return Err.
+        let mut params = serde_json::json!(["invoice.suicide"]);
+        service
+            .resolve_suins_params("http://127.0.0.1:1", &mut params)
+            .await
+            .unwrap();
+        assert_eq!(params[0].as_str().unwrap(), "invoice.suicide");
+    }
+
+    #[tokio::test]
+    async fn suins_embedded_in_url_untouched() {
+        let service = dummy_collection_service().await;
+        let mut params = serde_json::json!(["attacker.sui.evil.com"]);
+        service
+            .resolve_suins_params("http://127.0.0.1:1", &mut params)
+            .await
+            .unwrap();
+        assert_eq!(params[0].as_str().unwrap(), "attacker.sui.evil.com");
+    }
+
+    #[tokio::test]
+    async fn suins_mixed_case() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut buf = vec![0u8; 8192];
+            let n = socket.read(&mut buf).await.unwrap();
+            let request = String::from_utf8_lossy(&buf[..n]).to_string();
+            assert!(request.contains("alice.sui"));
+
+            let body = "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"0x123\"}".to_string();
+            let response = format!(
+                "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            socket.write_all(response.as_bytes()).await.unwrap();
+        });
+
+        let service = dummy_collection_service().await;
+        let mut params =
+            serde_json::json!(["alice.sui and invoice.suicide and attacker.sui.evil.com"]);
+
+        service
+            .resolve_suins_params(&format!("http://{addr}"), &mut params)
+            .await
+            .unwrap();
+
+        assert_eq!(
+            params[0].as_str().unwrap(),
+            "0x123 and invoice.suicide and attacker.sui.evil.com"
+        );
+        server.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn suins_nested_json_params_untouched() {
+        let service = dummy_collection_service().await;
+        // The original logic only scanned strings directly in the params array.
+        // Nested objects/arrays containing strings with .sui shouldn't be matched.
+        let mut params = serde_json::json!([
+            { "name": "alice.sui" },
+            ["bob.sui"]
+        ]);
+
+        // This will succeed instantly without hitting the (nonexistent) server
+        service
+            .resolve_suins_params("http://127.0.0.1:1", &mut params)
+            .await
+            .unwrap();
+
+        assert_eq!(params[0]["name"].as_str().unwrap(), "alice.sui");
+        assert_eq!(params[1][0].as_str().unwrap(), "bob.sui");
+    }
+
+    #[tokio::test]
+    async fn suins_unregistered_resolution_errors() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut buf = vec![0u8; 8192];
+            let _ = socket.read(&mut buf).await.unwrap();
+
+            // result: null indicates no resolution found
+            let body = "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":null}".to_string();
+            let response = format!(
+                "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            socket.write_all(response.as_bytes()).await.unwrap();
+        });
+
+        let service = dummy_collection_service().await;
+        let mut params = serde_json::json!(["unknown.sui"]);
+
+        let err = service
+            .resolve_suins_params(&format!("http://{addr}"), &mut params)
+            .await
+            .unwrap_err();
+        assert_eq!(err.0, -32002);
+        assert!(err.1.contains("SuiNS Resolution Error for 'unknown.sui'"));
+
+        server.await.unwrap();
     }
 }

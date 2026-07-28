@@ -5,9 +5,10 @@ import { useAppStore, appStore } from '@/lib/store';
 import { useWallet } from '@/wallet';
 import { useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 import { RequestPanel } from '../components/RequestPanel/RequestPanel';
-import { RequestItem, RequestType, Network } from '../types';
+import { RequestItem, RequestType, Network, AssertionResult } from '../types';
 import {
     executeSuiRpc,
+    executeChainRpc,
     looksLikeSuiNs,
     resolveSuiAddress,
     simulateMoveCall,
@@ -17,11 +18,13 @@ import {
 import { ADDRESS_FIRST_PARAM_METHODS } from '@/lib/constants';
 import { SignTransactionModal } from '../components/SignTransactionModal';
 import { NetworkSwitcherModal } from '../components/NetworkSwitcherModal';
+import { MainnetExecutionWarningModal } from '../components/MainnetExecutionWarningModal';
 import {
     ensureTerminalOpen,
     logCommandToTerminal
 } from '@/lib/terminalLog';
 import { runHooks } from '@/lib/hooksEngine';
+import { evaluateAssertions, logAssertionResults } from '@/lib/assertionsEngine';
 
 const ZERO_ADDRESS =
     '0x0000000000000000000000000000000000000000000000000000000000000000';
@@ -93,10 +96,17 @@ export const RPCBuilder: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSignModalOpen, setIsSignModalOpen] = useState(false);
     const [isNetworkSwitchOpen, setIsNetworkSwitchOpen] = useState(false);
+    const [isMainnetWarningOpen, setIsMainnetWarningOpen] = useState(false);
     const [isExecuteMode, setIsExecuteMode] = useState(false);
     const [pendingNetwork, setPendingNetwork] = useState<Network | null>(null);
+    const [testResults, setTestResults] = useState<AssertionResult[]>([]);
 
     const request = activeTab?.data as RequestItem;
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setTestResults([]);
+    }, [activeTabId]);
 
     useEffect(() => {
         if (
@@ -120,6 +130,11 @@ export const RPCBuilder: React.FC = () => {
         network,
         request
     ]);
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setIsMainnetWarningOpen(false);
+    }, [network, connectedAddress]);
 
     const handleRequestChange = (updatedReq: RequestItem) => {
         if (activeTabId) {
@@ -176,13 +191,13 @@ export const RPCBuilder: React.FC = () => {
         }
 
         const commandLine =
-            resolved.type === RequestType.TRANSACTION
-                ? `txio sui simulate ${resolved.moveParams.packageId}::${resolved.moveParams.module}::${resolved.moveParams.function}`
-                : `txio sui call --method ${resolved.rpcParams.method}${
-                      resolved.rpcParams.params?.length
-                          ? ` --params ${JSON.stringify(resolved.rpcParams.params)}`
-                          : ''
-                  }`;
+                resolved.type === RequestType.TRANSACTION
+                    ? `txio sui simulate ${resolved.moveParams.packageId}::${resolved.moveParams.module}::${resolved.moveParams.function}`
+                    : `txio ${resolved.rpcParams.chain ?? 'sui'} call --method ${resolved.rpcParams.method}${
+                          resolved.rpcParams.params?.length
+                              ? ` --params ${JSON.stringify(resolved.rpcParams.params)}`
+                              : ''
+                      }`;
 
         ensureTerminalOpen();
 
@@ -213,7 +228,8 @@ export const RPCBuilder: React.FC = () => {
                     );
             } else {
                 res =
-                    await executeSuiRpc(
+                    await executeChainRpc(
+                        resolved.rpcParams.chain ?? 'sui',
                         network,
                         resolved.rpcParams.method,
                         resolved.rpcParams.params
@@ -237,6 +253,16 @@ export const RPCBuilder: React.FC = () => {
                         ? 'executed'
                         : 'simulated'
             });
+
+            const results = evaluateAssertions(request.tests, {
+                requestType: resolved.type,
+                httpStatus: status,
+                duration,
+                result,
+                sender: simulationSender
+            });
+            setTestResults(results);
+            logAssertionResults(results, network);
         } catch (error) {
             const rpcError =
                 error instanceof SuiRpcError
@@ -261,6 +287,16 @@ export const RPCBuilder: React.FC = () => {
                 status: rpcError?.status ?? 500,
                 duration: rpcError?.duration
             });
+
+            const results = evaluateAssertions(request.tests, {
+                requestType: resolved.type,
+                httpStatus: rpcError?.status ?? 500,
+                duration: rpcError?.duration,
+                error: message,
+                sender: simulationSender
+            });
+            setTestResults(results);
+            logAssertionResults(results, network);
         } finally {
             setIsLoading(false);
         }
@@ -275,11 +311,11 @@ export const RPCBuilder: React.FC = () => {
 
     const handleExecuteTransaction = async () => {
         if (!request || !connectedAddress) return;
+        if (isLoading || isMainnetWarningOpen) return;
 
-        // Check if trying to execute on mainnet - show network switch confirmation
+        // Check if trying to execute on mainnet - show execution confirmation
         if (network === 'mainnet') {
-            setPendingNetwork(network);
-            setIsNetworkSwitchOpen(true);
+            setIsMainnetWarningOpen(true);
             return;
         }
 
@@ -290,7 +326,7 @@ export const RPCBuilder: React.FC = () => {
         if (!request || !connectedAddress) return;
 
         setIsLoading(true);
-        setIsNetworkSwitchOpen(false);
+        setIsMainnetWarningOpen(false);
 
         await runHooks(request.hooks, 'pre', network);
 
@@ -351,6 +387,16 @@ export const RPCBuilder: React.FC = () => {
                 successLabel: 'executed',
                 isExecution: true
             });
+
+            const results = evaluateAssertions(request.tests, {
+                requestType: resolved.type,
+                httpStatus: status,
+                duration,
+                result,
+                sender: connectedAddress ?? undefined
+            });
+            setTestResults(results);
+            logAssertionResults(results, network);
         } catch (error) {
             const rpcError =
                 error instanceof SuiRpcError
@@ -375,6 +421,16 @@ export const RPCBuilder: React.FC = () => {
                 status: rpcError?.status ?? 500,
                 duration: rpcError?.duration
             });
+
+            const results = evaluateAssertions(request.tests, {
+                requestType: resolved.type,
+                httpStatus: rpcError?.status ?? 500,
+                duration: rpcError?.duration,
+                error: message,
+                sender: connectedAddress ?? undefined
+            });
+            setTestResults(results);
+            logAssertionResults(results, network);
         } finally {
             setIsLoading(false);
         }
@@ -398,6 +454,7 @@ export const RPCBuilder: React.FC = () => {
                     onExecute={() => setIsSignModalOpen(true)}
                     activeAddress={connectedAddress}
                     envVars={envVariables}
+                    testResults={testResults}
                 />
             </div>
 
@@ -417,6 +474,12 @@ export const RPCBuilder: React.FC = () => {
                 onConfirm={executeRealTransaction}
                 from={network}
                 to={pendingNetwork || network}
+            />
+
+            <MainnetExecutionWarningModal
+                isOpen={isMainnetWarningOpen}
+                onClose={() => setIsMainnetWarningOpen(false)}
+                onConfirm={executeRealTransaction}
             />
         </motion.div>
     );

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Terminal, Layers, RefreshCw, Copy, Check, Plus } from 'lucide-react';
-import { appStore } from '@/lib/store';
+import { appStore, useAppStore } from '@/lib/store';
 import { DEFAULT_MOVE_CALL } from '@/lib/constants';
 import { apiService, AiChatMessage, AiToolCall } from '@/services/api';
 import { RequestType } from '../types';
@@ -16,6 +16,7 @@ const INITIAL_MESSAGE: Message = {
 };
 
 export const AIChat: React.FC = () => {
+  const { pendingAiPrompt } = useAppStore();
   const [messages, setMessages] = useState<Message[]>([
     INITIAL_MESSAGE
   ]);
@@ -23,12 +24,22 @@ export const AIChat: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const pendingPromptRef = useRef<string | null>(null);
+  const handleSendRef = useRef<(msg: string) => Promise<void>>(null!);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isTyping]);
+
+  useEffect(() => {
+    if (pendingAiPrompt && !pendingPromptRef.current) {
+      pendingPromptRef.current = pendingAiPrompt;
+      appStore.setPendingAiPrompt(null);
+      void handleSendRef.current(pendingAiPrompt);
+    }
+  }, [pendingAiPrompt]);
 
   const handleCopy = (text: string, index: number) => {
     navigator.clipboard.writeText(text);
@@ -101,7 +112,9 @@ export const AIChat: React.FC = () => {
       setIsTyping(false);
     }
   };
-
+  useEffect(() => {
+    handleSendRef.current = handleSend;
+  });
   const executeToolCall = (
     toolCall: AiToolCall
   ) => {
@@ -161,7 +174,7 @@ export const AIChat: React.FC = () => {
     <div className="flex flex-col h-full bg-near-black font-sans">
       <div className="px-4 py-2 border-b border-white/5 bg-dark-indigo-glow flex justify-between items-center shrink-0">
         <span className="font-bold text-slate-400 text-xs">AI Console</span>
-        <button onClick={() => setMessages([INITIAL_MESSAGE])} className="p-1 text-slate-500 hover:text-white"><RefreshCw size={14}/></button>
+        <button onClick={() => setMessages([INITIAL_MESSAGE])} aria-label="Clear chat history" title="Clear chat history" className="p-1 text-slate-500 hover:text-white"><RefreshCw size={14}/></button>
       </div>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
@@ -176,7 +189,7 @@ export const AIChat: React.FC = () => {
                  <div className={`p-3 rounded text-xs font-mono whitespace-pre-wrap relative group ${m.role === 'user' ? 'bg-slate-800 text-slate-200' : 'bg-near-black border border-white/5 text-slate-300'}`}>
                      {m.text}
                      {m.role === 'model' && (
-                        <button onClick={() => handleCopy(m.text, i)} className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 text-slate-500 hover:text-white">
+                        <button onClick={() => handleCopy(m.text, i)} aria-label="Copy response" title="Copy response" className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 text-slate-500 hover:text-white">
                             {copiedId === i ? <Check size={12}/> : <Copy size={12}/>}
                         </button>
                      )}
@@ -187,7 +200,7 @@ export const AIChat: React.FC = () => {
                              {m.toolCall.name === 'create_rpc_request' ? <Terminal size={12}/> : <Layers size={12}/>}
                              {resolveToolCallLabel(m.toolCall)}
                          </div>
-                         <button onClick={() => executeToolCall(m.toolCall!)} className="p-1 bg-sui-700 text-white rounded hover:bg-electric-violet"><Plus size={12}/></button>
+                         <button onClick={() => executeToolCall(m.toolCall!)} aria-label="Apply suggested action" title="Apply suggested action" className="p-1 bg-sui-700 text-white rounded hover:bg-electric-violet"><Plus size={12}/></button>
                      </div>
                  )}
              </div>

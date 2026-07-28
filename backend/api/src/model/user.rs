@@ -28,6 +28,14 @@ pub struct User {
     pub github_account: Option<GitHubAccount>,
     #[serde(default)]
     pub notification_preferences: NotificationPreferences,
+    #[serde(default)]
+    pub failed_login_attempts: i32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub locked_until: Option<DateTime<Utc>>,
+    /// Durable admin privilege. Set only via out-of-band bootstrap — never by
+    /// matching `claims.email` against `ADMIN_EMAILS` at request time.
+    #[serde(default)]
+    pub is_admin: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -68,6 +76,9 @@ impl User {
             created_at: Utc::now(),
             github_account: None,
             notification_preferences: NotificationPreferences::default(),
+            failed_login_attempts: 0,
+            locked_until: None,
+            is_admin: false,
         }
     }
 

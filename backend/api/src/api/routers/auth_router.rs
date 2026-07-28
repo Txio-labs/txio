@@ -17,10 +17,21 @@ pub fn router(service: AuthService) -> Router {
             .expect("valid governor rate-limit configuration"),
     );
 
+    let login_rate_limiter = Arc::new(
+        GovernorConfigBuilder::default()
+            .per_millisecond(200)
+            .burst_size(10)
+            .finish()
+            .expect("valid governor rate-limit configuration"),
+    );
+
     Router::new()
         .route("/health", get(|| async { Json(json!({ "status": "ok" })) }))
         .route("/register", post(auth_handler::register))
-        .route("/login", post(auth_handler::login))
+        .route(
+            "/login",
+            post(auth_handler::login).layer(GovernorLayer::new(login_rate_limiter)),
+        )
         .route(
             "/request-otp",
             post(auth_handler::request_otp)
@@ -31,6 +42,10 @@ pub fn router(service: AuthService) -> Router {
         .route("/get-user-profile", post(auth_handler::get_user_profile))
         .route("/update-email", post(auth_handler::update_user_email))
         .route("/update-password", post(auth_handler::update_user_password))
+        .route(
+            "/update-notification-preferences",
+            post(auth_handler::update_notification_preferences),
+        )
         .route("/delete-user", post(auth_handler::delete_user))
         .route(
             "/forgot-password",
@@ -43,6 +58,7 @@ pub fn router(service: AuthService) -> Router {
         )
         .route("/switch-network", post(auth_handler::switch_network))
         .route("/rpc-log", post(auth_handler::log_rpc_call))
+        .route("/rpc-history", get(auth_handler::get_rpc_history))
         .route("/logout", post(auth_handler::logout))
         .route("/sessions", get(auth_handler::list_sessions))
         .route(

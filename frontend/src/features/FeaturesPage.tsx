@@ -238,9 +238,6 @@ export const FeaturesPage: React.FC<
                                 </div>
                             ))}
                         </div>
-                        <button className="px-8 py-4 bg-white/5 border border-white/10 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all active:scale-95">
-                            Read the Whitepaper
-                        </button>
                     </div>
 
                     <div className="relative">

@@ -1,15 +1,17 @@
 import React from 'react';
-import { Plus, X, Beaker } from 'lucide-react';
+import { Plus, X, Beaker, CheckCircle2, XCircle } from 'lucide-react';
 import { Select } from '../../Select';
-import { Assertion, TestCategory, TestOperator } from '../../../types';
+import { Assertion, AssertionResult, TestCategory, TestOperator } from '../../../types';
 import { appStore } from '@/lib/store';
 
 interface TestsEditorProps {
   tests: Assertion[];
   onChange: (tests: Assertion[]) => void;
+  results?: AssertionResult[];
 }
 
-export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange }) => {
+export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange, results = [] }) => {
+  const resultsById = new Map(results.map((r) => [r.id, r]));
   const addTest = () => {
     const newTest: Assertion = {
       id: Date.now().toString(),
@@ -75,19 +77,43 @@ export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange }
           <Plus size={12} strokeWidth={3}/> Add Test
         </button>
       </div>
-      
+
+      {results.length > 0 && (
+        <div
+          className={`mb-4 text-xs font-bold px-3 py-2 rounded-lg border ${
+            results.every((r) => r.passed)
+              ? 'text-emerald-400 border-emerald-900/30 bg-emerald-900/10'
+              : 'text-red-400 border-red-900/30 bg-red-900/10'
+          }`}
+        >
+          {results.filter((r) => r.passed).length}/{results.length} assertions passed on last run
+        </div>
+      )}
+
       <div className="space-y-3">
-        {tests.map((test, idx) => (
+        {tests.map((test, idx) => {
+          const result = resultsById.get(test.id);
+          return (
           <div key={test.id} className="group flex items-start gap-3 p-3 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 rounded-lg hover:border-slate-300 dark:border-white/20 transition-all">
             <div className="pt-2">
-              <input 
-                type="checkbox" 
-                checked={test.enabled} 
-                onChange={() => updateTest(idx, { enabled: !test.enabled })} 
+              <input
+                type="checkbox"
+                checked={test.enabled}
+                onChange={() => updateTest(idx, { enabled: !test.enabled })}
                 className="accent-sui-500 cursor-pointer"
               />
             </div>
-            
+
+            {result && (
+              <div className="pt-2" title={result.message}>
+                {result.passed ? (
+                  <CheckCircle2 size={14} className="text-emerald-400" />
+                ) : (
+                  <XCircle size={14} className="text-red-400" />
+                )}
+              </div>
+            )}
+
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-3">
               {/* Category */}
               <div className="sm:col-span-2">
@@ -183,11 +209,12 @@ export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange }
               </div>
             </div>
 
-            <button onClick={() => removeTest(idx)} className="mt-6 text-slate-600 hover:text-red-400 p-1 transition-colors">
+            <button onClick={() => removeTest(idx)} aria-label="Remove test" title="Remove test" className="mt-6 text-slate-600 hover:text-red-400 p-1 transition-colors">
               <X size={14}/>
             </button>
           </div>
-        ))}
+          );
+        })}
         {tests.length === 0 && (
           <div className="text-center py-12 border-2 border-dashed border-slate-200 dark:border-white/5 rounded-xl bg-slate-100/70 dark:bg-white/[0.02]">
             <Beaker size={32} className="mx-auto text-slate-600 mb-3" />

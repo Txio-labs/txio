@@ -50,11 +50,23 @@ impl Config {
 
 /// Parses a comma-separated ADMIN_EMAILS env var into a normalized
 /// (trimmed, lower-cased, empty entries dropped) list of email addresses.
-fn parse_admin_emails(raw: &str) -> Vec<String> {
+///
+/// These addresses are **reserved**: they cannot be claimed via self-service
+/// registration / OAuth signup / email change. Admin privilege itself lives on
+/// `User.is_admin` and is granted only via `bootstrap_admin`.
+pub fn parse_admin_emails(raw: &str) -> Vec<String> {
     raw.split(',')
         .map(|s| s.trim().to_ascii_lowercase())
         .filter(|s| !s.is_empty())
         .collect()
+}
+
+/// Returns true when `email` is on the reserved ADMIN_EMAILS roster.
+pub fn is_reserved_admin_email(email: &str, reserved: &[String]) -> bool {
+    let normalized = email.trim().to_ascii_lowercase();
+    reserved
+        .iter()
+        .any(|admin_email| admin_email.eq_ignore_ascii_case(&normalized))
 }
 
 #[cfg(test)]
@@ -79,5 +91,13 @@ mod tests {
     fn empty_admin_emails_yields_empty_list() {
         assert!(parse_admin_emails("").is_empty());
         assert!(parse_admin_emails("   ").is_empty());
+    }
+
+    #[test]
+    fn reserved_email_match_is_case_insensitive() {
+        let reserved = parse_admin_emails("Admin@Txio.io");
+        assert!(is_reserved_admin_email("admin@txio.io", &reserved));
+        assert!(is_reserved_admin_email(" ADMIN@TXIO.IO ", &reserved));
+        assert!(!is_reserved_admin_email("user@txio.io", &reserved));
     }
 }
