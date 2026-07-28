@@ -2,6 +2,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { Play, Pause, RotateCcw, CheckCircle2, XCircle, Clock, AlertTriangle, FileText, ArrowRight, Square } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
+import { useWallet } from '@/wallet';
 import { AssertionResult, CollectionNode, RequestItem, RequestType } from '../types';
 import { executeSuiRpc, simulateMoveCall, SuiRpcError } from '../services/suiService';
 import { evaluateAssertions } from '@/lib/assertionsEngine';
@@ -52,6 +53,8 @@ interface CollectionRunnerProps {
 
 export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId }) => {
     const { collections, currentWorkspaceId, network, envVariables } = useAppStore();
+    const { currentWallet } = useWallet();
+    const connectedAddress = currentWallet?.family === 'sui' ? currentWallet.address : null;
     const [isRunning, setIsRunning] = useState(false);
     const [progress, setProgress] = useState(0);
     const [currentReqIndex, setCurrentReqIndex] = useState(-1);
@@ -123,9 +126,10 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
             try {
                 if (resolved.type === RequestType.TRANSACTION) {
                     const { packageId, module, function: func, typeArguments, arguments: args } = resolved.moveParams;
+                    const simulationSender = connectedAddress || ZERO_ADDRESS;
                     const { result, status, duration } = await simulateMoveCall(
                         network,
-                        ZERO_ADDRESS,
+                        simulationSender,
                         packageId,
                         module,
                         func,
@@ -137,7 +141,7 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                         httpStatus: status,
                         duration,
                         result,
-                        sender: ZERO_ADDRESS,
+                        sender: simulationSender,
                     });
                     setRunList((prev) =>
                         abortRef.current
