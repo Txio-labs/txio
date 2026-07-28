@@ -2,6 +2,7 @@ use crate::chains::factory::ChainFactory;
 use crate::chains::traits::ChainAdapter;
 use crate::cli::format::format_units_fixed;
 use crate::cli::parser::{ChainCommand, Cli, Commands, ConfigAction, DbAction};
+use crate::cli::ui;
 use crate::utils;
 use anyhow::{Result, anyhow};
 use colored::*;
@@ -59,18 +60,17 @@ impl CommandHandler {
             Commands::Switch { chain } => {
                 if ChainFactory::list_chains().contains(&chain.to_lowercase().as_str()) {
                     utils::save_current_chain(&chain.to_lowercase())?;
-                    println!(
-                        "{} Switched default chain to {}",
-                        "✔".green(),
+                    ui::print_success(&format!(
+                        "Switched default chain to {}",
                         chain.bold().cyan()
-                    );
+                    ));
                 } else {
                     let msg = format!("Unknown chain '{chain}'");
                     let suggestion = ChainFactory::suggest_chain(&chain);
                     if let Some(s) = suggestion {
-                        println!("{} {} \n\nDid you mean:\n  {}", "✖".red(), msg, s.green());
+                        ui::print_error(&format!("{msg} \n\nDid you mean:\n  {}", s.green()));
                     } else {
-                        println!("{} {}", "✖".red(), msg);
+                        ui::print_error(&msg);
                     }
                 }
             }
@@ -79,7 +79,7 @@ impl CommandHandler {
             }
             Commands::Logout => {
                 utils::remove_token()?;
-                println!("{} Logged out successfully.", "✔".green());
+                ui::print_success("Logged out successfully.");
             }
             Commands::Status => {
                 let chain = utils::get_current_chain().unwrap_or_else(|| "sui".to_string());
@@ -135,15 +135,15 @@ impl CommandHandler {
                 }
                 ConfigAction::Get { key } => match utils::get_config(&key)? {
                     Some(v) => println!("{} = {}", key.yellow(), v.green()),
-                    None => println!("{} Key '{}' not found.", "✖".red(), key),
+                    None => ui::print_error(&format!("Key '{}' not found.", key)),
                 },
                 ConfigAction::Set { key, value } => {
                     utils::save_config(&key, &value)?;
-                    println!("{} Set {} = {}", "✔".green(), key.yellow(), value.green());
+                    ui::print_success(&format!("Set {} = {}", key.yellow(), value.green()));
                 }
                 ConfigAction::Unset { key } => {
                     utils::remove_config(&key)?;
-                    println!("{} Removed key '{}'.", "✔".green(), key.yellow());
+                    ui::print_success(&format!("Removed key '{}'.", key.yellow()));
                 }
             },
             Commands::Sui { command } => {
@@ -193,11 +193,10 @@ impl CommandHandler {
         let token = match utils::get_token() {
             Some(token) => token,
             None => {
-                println!(
-                    "{} Not logged in. Run {} first.",
-                    "✖".red(),
+                ui::print_error(&format!(
+                    "Not logged in. Run {} first.",
                     "txio login".cyan()
-                );
+                ));
                 return Ok(());
             }
         };
@@ -214,7 +213,7 @@ impl CommandHandler {
                     .await?;
 
                 if let Some(body) = Self::handle_admin_error(response.status()) {
-                    println!("{body}");
+                    ui::print_error(&body);
                     return Ok(());
                 }
 
@@ -238,7 +237,7 @@ impl CommandHandler {
                     .interact()?;
 
                 if !confirmed {
-                    println!("{} Aborted.", "✖".red());
+                    ui::print_error("Aborted.");
                     return Ok(());
                 }
 
@@ -250,11 +249,11 @@ impl CommandHandler {
                     .await?;
 
                 if let Some(body) = Self::handle_admin_error(response.status()) {
-                    println!("{body}");
+                    ui::print_error(&body);
                     return Ok(());
                 }
 
-                println!("{} User '{}' deleted.", "✔".green(), email.bold());
+                ui::print_success(&format!("User '{}' deleted.", email.bold()));
             }
             DbAction::Stats => {
                 let response = client
@@ -264,7 +263,7 @@ impl CommandHandler {
                     .await?;
 
                 if let Some(body) = Self::handle_admin_error(response.status()) {
-                    println!("{body}");
+                    ui::print_error(&body);
                     return Ok(());
                 }
 
@@ -290,7 +289,7 @@ impl CommandHandler {
                     .await?;
 
                 if let Some(body) = Self::handle_admin_error(response.status()) {
-                    println!("{body}");
+                    ui::print_error(&body);
                     return Ok(());
                 }
 
@@ -329,13 +328,12 @@ impl CommandHandler {
     fn handle_admin_error(status: reqwest::StatusCode) -> Option<String> {
         match status {
             reqwest::StatusCode::UNAUTHORIZED => Some(format!(
-                "{} Session expired or invalid. Run {} again.",
-                "✖".red(),
+                "Session expired or invalid. Run {} again.",
                 "txio login".cyan()
             )),
-            reqwest::StatusCode::FORBIDDEN => Some(format!("{} Admin access required.", "✖".red())),
+            reqwest::StatusCode::FORBIDDEN => Some("Admin access required.".to_string()),
             status if status.is_success() => None,
-            status => Some(format!("{} Request failed ({}).", "✖".red(), status)),
+            status => Some(format!("Request failed ({}).", status)),
         }
     }
 
@@ -368,23 +366,17 @@ impl CommandHandler {
         if response.status().is_success() {
             let auth_response: AuthResponse = response.json().await?;
             utils::save_token(&auth_response.token)?;
-            println!(
-                "{} Login successful! Welcome, {}.",
-                "✔".green(),
+            ui::print_success(&format!(
+                "Login successful! Welcome, {}.",
                 auth_response.user.email.bold().cyan()
-            );
+            ));
         } else {
             let status = response.status();
             let error_body = response
                 .text()
                 .await
                 .unwrap_or_else(|_| "Unknown error".to_string());
-            println!(
-                "{} Login failed ({}): {}",
-                "✖".red(),
-                status,
-                error_body.red()
-            );
+            ui::print_error(&format!("Login failed ({}): {}", status, error_body.red()));
         }
 
         Ok(())
