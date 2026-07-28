@@ -1,7 +1,7 @@
 use crate::chains::traits::ChainAdapter;
 use crate::chains::validation::validate_solana_address;
 use crate::cli::parser::Network;
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use async_trait::async_trait;
 use reqwest::Client;
 use serde_json::{Value, json};
@@ -61,6 +61,15 @@ impl ChainAdapter for SolanaAdapter {
             .await?;
 
         let body: Value = response.json().await?;
+        if let Some(error) = body.get("error") {
+            let msg = error
+                .get("message")
+                .and_then(|m| m.as_str())
+                .unwrap_or("Unknown RPC Error");
+            let code = error.get("code").and_then(|c| c.as_i64()).unwrap_or(0);
+            return Err(anyhow!("{msg} (Code: {code})"));
+        }
+
         Ok(body.get("result").cloned().unwrap_or(Value::Null))
     }
 
