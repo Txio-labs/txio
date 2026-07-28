@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Play, Zap, Loader2, Server, Terminal, Layers } from 'lucide-react';
 import { Select } from '../Select';
-import { RequestType, Network, RPCHealthMetric } from '../../types';
+import { RequestType, Network, ChainId, RPCHealthMetric } from '../../types';
 import { useAppStore } from '@/lib/store';
-import { resolveRpcUrl } from '@/lib/appConfig';
-import { getSuiRpcHealth } from '../../services/suiService';
+import { resolveChainRpcUrl, getChainRpcHealth } from '../../services/suiService';
 
 interface HeaderBarProps {
   requestType: RequestType;
@@ -14,6 +13,7 @@ interface HeaderBarProps {
   onTypeChange: (type: RequestType) => void;
   onSend: () => void;
   onExecute?: () => void;
+  chain?: ChainId;
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
@@ -23,17 +23,19 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   activeAddress,
   onTypeChange,
   onSend,
-  onExecute
+  onExecute,
+  chain: chainProp
 }) => {
   const { settings } = useAppStore();
   const [rpcHealth, setRpcHealth] = useState<RPCHealthMetric | null>(null);
-  const endpoint = resolveRpcUrl(network, settings);
+  const chain: ChainId = chainProp ?? 'sui';
+  const endpoint = resolveChainRpcUrl(chain, network);
 
   useEffect(() => {
     let mounted = true;
 
     const getHealth = async () => {
-      const health = await getSuiRpcHealth(network);
+      const health = await getChainRpcHealth(chain, network);
 
       if (mounted) {
         setRpcHealth(health);
@@ -45,7 +47,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
     return () => {
       mounted = false;
     };
-  }, [network, endpoint]);
+  }, [chain, network, endpoint]);
 
   return (
     <div className="p-3 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-near-black/50 flex flex-wrap gap-3 items-center backdrop-blur-sm">
