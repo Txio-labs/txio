@@ -838,7 +838,7 @@ class ApiService {
     ): Promise<UserProfile> {
         const data =
             await this.request<BackendWrappedUserResponse>(
-                '/auth/notification-preferences',
+                '/auth/update-notification-preferences',
                 {
                     method: 'POST',
                     body: JSON.stringify({
