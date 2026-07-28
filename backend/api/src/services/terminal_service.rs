@@ -75,7 +75,12 @@ enum WaitOutcome {
 }
 
 impl CommandExecutionRecord {
-    fn running(execution_id: String, user_id: String, command: String, cancel_tx: oneshot::Sender<()>) -> Self {
+    fn running(
+        execution_id: String,
+        user_id: String,
+        command: String,
+        cancel_tx: oneshot::Sender<()>,
+    ) -> Self {
         Self {
             execution_id,
             user_id,
@@ -118,7 +123,11 @@ impl TerminalService {
         }
     }
 
-    pub async fn execute(&self, user_id: &str, command_str: &str) -> Result<CommandExecutionResponse, String> {
+    pub async fn execute(
+        &self,
+        user_id: &str,
+        command_str: &str,
+    ) -> Result<CommandExecutionResponse, String> {
         let trimmed_command = command_str.trim();
 
         if trimmed_command.is_empty() {
@@ -128,8 +137,12 @@ impl TerminalService {
         let execution_id = Uuid::new_v4().to_string();
         let command = trimmed_command.to_string();
         let (cancel_tx, cancel_rx) = oneshot::channel();
-        let record =
-            CommandExecutionRecord::running(execution_id.clone(), user_id.to_string(), command.clone(), cancel_tx);
+        let record = CommandExecutionRecord::running(
+            execution_id.clone(),
+            user_id.to_string(),
+            command.clone(),
+            cancel_tx,
+        );
 
         {
             let mut executions = self.executions.write().await;
@@ -159,7 +172,11 @@ impl TerminalService {
             .ok_or_else(|| "Execution was not registered.".to_string())
     }
 
-    pub async fn get_execution(&self, execution_id: &str, user_id: &str) -> Option<CommandExecutionResponse> {
+    pub async fn get_execution(
+        &self,
+        execution_id: &str,
+        user_id: &str,
+    ) -> Option<CommandExecutionResponse> {
         let executions = self.executions.read().await;
 
         executions
@@ -608,8 +625,12 @@ mod tests {
         for i in 0..1000 {
             let id = format!("exec_{}", i);
             let (tx, _rx) = tokio::sync::oneshot::channel();
-            let mut record =
-                CommandExecutionRecord::running(id.clone(), "test_user".to_string(), "txio --version".to_string(), tx);
+            let mut record = CommandExecutionRecord::running(
+                id.clone(),
+                "test_user".to_string(),
+                "txio --version".to_string(),
+                tx,
+            );
 
             // Mark as completed
             record.state = CommandExecutionState::Success;
@@ -645,8 +666,12 @@ mod tests {
         for i in 0..1000 {
             let id = format!("exec_{}", i);
             let (tx, _rx) = tokio::sync::oneshot::channel();
-            let mut record =
-                CommandExecutionRecord::running(id.clone(), "test_user".to_string(), "txio status".to_string(), tx);
+            let mut record = CommandExecutionRecord::running(
+                id.clone(),
+                "test_user".to_string(),
+                "txio status".to_string(),
+                tx,
+            );
             record.created_at = std::time::Instant::now() - std::time::Duration::from_millis(10000); // Very old
 
             let mut executions = service.executions.write().await;
@@ -683,8 +708,12 @@ mod tests {
             for i in 0..999 {
                 let id = format!("filler_{}", i);
                 let (tx, _rx) = tokio::sync::oneshot::channel();
-                let filler =
-                    CommandExecutionRecord::running(id.clone(), "test_user".to_string(), "txio status".to_string(), tx);
+                let filler = CommandExecutionRecord::running(
+                    id.clone(),
+                    "test_user".to_string(),
+                    "txio status".to_string(),
+                    tx,
+                );
                 executions.insert(id, filler);
             }
         }
@@ -718,8 +747,12 @@ mod tests {
             for i in 0..999 {
                 let id = format!("filler_{}", i);
                 let (tx, _rx) = tokio::sync::oneshot::channel();
-                let filler =
-                    CommandExecutionRecord::running(id.clone(), "test_user".to_string(), "txio status".to_string(), tx);
+                let filler = CommandExecutionRecord::running(
+                    id.clone(),
+                    "test_user".to_string(),
+                    "txio status".to_string(),
+                    tx,
+                );
                 executions.insert(id, filler);
             }
         }
@@ -729,7 +762,9 @@ mod tests {
         // Spawn a reader
         let reader = tokio::spawn(async move {
             for _ in 0..100 {
-                let _ = svc_clone.get_execution("concurrent_exec", "test_user").await;
+                let _ = svc_clone
+                    .get_execution("concurrent_exec", "test_user")
+                    .await;
                 tokio::task::yield_now().await;
             }
         });
@@ -742,10 +777,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_execution_rejects_other_user() {
         let service = TerminalService::new();
-        let response = service
-            .execute("user_a", "txio --version")
-            .await
-            .unwrap();
+        let response = service.execute("user_a", "txio --version").await.unwrap();
 
         // Owner can read their own execution
         let own = service
@@ -763,10 +795,7 @@ mod tests {
     #[tokio::test]
     async fn test_cancel_execution_rejects_other_user() {
         let service = TerminalService::new();
-        let response = service
-            .execute("user_a", "txio --version")
-            .await
-            .unwrap();
+        let response = service.execute("user_a", "txio --version").await.unwrap();
 
         // Different user cannot cancel
         let err = service
@@ -781,5 +810,4 @@ mod tests {
             .await;
         assert!(own.is_ok());
     }
-
 }
