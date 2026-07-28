@@ -16,12 +16,24 @@ impl UserRepository {
     }
 
     // Ensures the unique email index exists; called once during startup.
+    //
+    // The index uses a case-insensitive collation (locale "en", strength 2)
+    // as defense in depth: application code normalizes emails to lowercase
+    // before every read/write (see `AuthService::normalize_email`), but this
+    // makes "two emails differing only in case" a genuine duplicate at the
+    // database level too, regardless of call site.
     pub async fn ensure_indices(&self) -> Result<(), AppError> {
+        let case_insensitive = mongodb::options::Collation::builder()
+            .locale("en")
+            .strength(mongodb::options::CollationStrength::Secondary)
+            .build();
+
         let index_model = mongodb::IndexModel::builder()
             .keys(mongodb::bson::doc! { "email": 1 })
             .options(
                 mongodb::options::IndexOptions::builder()
                     .unique(true)
+                    .collation(case_insensitive)
                     .build(),
             )
             .build();

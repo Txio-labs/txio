@@ -64,6 +64,14 @@ impl AuthService {
         }
     }
 
+    /// Case-normalizes an email address so two requests differing only in
+    /// casing (`User@Example.com` vs `user@example.com`) always resolve to
+    /// the same account. Matches the normalization already used for the
+    /// `ADMIN_EMAILS` roster in `utils::config`.
+    fn normalize_email(email: &str) -> String {
+        email.trim().to_ascii_lowercase()
+    }
+
     fn reject_reserved_email(&self, email: &str) -> Result<(), AppError> {
         if is_reserved_admin_email(email, &self.reserved_admin_emails) {
             return Err(AppError::BadRequest(
@@ -159,21 +167,24 @@ impl AuthService {
     // ── OTP ──────────────────────────────────────────────────────────────────
 
     pub async fn request_otp(&self, email: String) -> Result<(), AppError> {
+        let email = Self::normalize_email(&email);
         let otp = self.otp_service.generate_otp(&email).await?;
         self.email_service.send_otp_email(&email, &otp).await?;
         Ok(())
     }
 
     pub async fn verify_otp(&self, email: String, code: String) -> Result<bool, AppError> {
+        let email = Self::normalize_email(&email);
         self.otp_service.verify_otp(&email, &code).await
     }
 
     // ── Auth ─────────────────────────────────────────────────────────────────
 
     pub async fn register_user(&self, req: RegisterUserRequest) -> Result<AuthResponse, AppError> {
-        self.reject_reserved_email(&req.email)?;
+        let email = Self::normalize_email(&req.email);
+        self.reject_reserved_email(&email)?;
 
-        match self.repo.find_by_email(&req.email).await {
+        match self.repo.find_by_email(&email).await {
             Ok(_) => return Err(AppError::BadRequest("Email already registered".into())),
             Err(AppError::NotFound(_)) => (),
             Err(e) => return Err(e),
@@ -182,7 +193,7 @@ impl AuthService {
         let password_hash = bcrypt::hash(req.password.as_bytes(), bcrypt::DEFAULT_COST)
             .map_err(|_| AppError::InternalError("Failed to hash password".into()))?;
 
-        let new_user = User::new(req.email, password_hash);
+        let new_user = User::new(email, password_hash);
         let saved_user = self.repo.save(&new_user).await?;
 
         let user_id = saved_user.id.map(|id| id.to_string()).unwrap_or_default();
@@ -202,7 +213,8 @@ impl AuthService {
         const MAX_FAILED_ATTEMPTS: i32 = 5;
         const LOCKOUT_MINUTES: i64 = 15;
 
-        let user_result = self.repo.find_by_email(&req.email).await;
+        let email = Self::normalize_email(&req.email);
+        let user_result = self.repo.find_by_email(&email).await;
 
         if let Err(e) = &user_result {
             if !matches!(e, AppError::NotFound(_)) {
@@ -241,7 +253,7 @@ impl AuthService {
                 };
                 let _ = self
                     .repo
-                    .update_login_attempts(&req.email, attempts, locked_until)
+                    .update_login_attempts(&email, attempts, locked_until)
                     .await;
             }
             return Err(AppError::Unauthorized("Invalid credentials".into()));
@@ -292,18 +304,21 @@ impl AuthService {
         old_email: &str,
         new_email: &str,
     ) -> Result<UserResponse, AppError> {
-        let mut user = self.repo.find_by_email(old_email).await?;
+        let old_email = Self::normalize_email(old_email);
+        let new_email = Self::normalize_email(new_email);
+
+        let mut user = self.repo.find_by_email(&old_email).await?;
 
         if new_email != old_email {
-            self.reject_reserved_email(new_email)?;
-            match self.repo.find_by_email(new_email).await {
+            self.reject_reserved_email(&new_email)?;
+            match self.repo.find_by_email(&new_email).await {
                 Ok(_) => return Err(AppError::BadRequest("Email already in use".into())),
                 Err(AppError::NotFound(_)) => (),
                 Err(e) => return Err(e),
             };
         }
 
-        user.email = new_email.to_string();
+        user.email = new_email;
         let updated_user = self.repo.update(&user).await?;
         Ok(Self::to_user_response(&updated_user))
     }
@@ -342,12 +357,13 @@ impl AuthService {
         otp: &str,
         new_password: &str,
     ) -> Result<(), AppError> {
-        let is_valid = self.otp_service.verify_otp(email, otp).await?;
+        let email = Self::normalize_email(email);
+        let is_valid = self.otp_service.verify_otp(&email, otp).await?;
         if !is_valid {
             return Err(AppError::BadRequest("Invalid or expired OTP".into()));
         }
 
-        let mut user = self.repo.find_by_email(email).await?;
+        let mut user = self.repo.find_by_email(&email).await?;
 
         let password_hash = bcrypt::hash(new_password.as_bytes(), bcrypt::DEFAULT_COST)
             .map_err(|_| AppError::InternalError("Failed to hash password".into()))?;
@@ -403,6 +419,13 @@ impl AuthService {
         google_sub: String,
         email: String,
     ) -> Result<AuthResponse, AppError> {
+        // Normalize casing here too: the provider's casing for the same
+        // mailbox can vary between the account that originally registered
+        // with a password and the one returned by a later OAuth login, and
+        // an exact-match lookup below would otherwise miss the existing
+        // account (the same class of bug as issue #359, just via OAuth).
+        let email = Self::normalize_email(&email);
+
         // Treat NotFound as absence but propagate every other error.
         // .ok() would silently turn a database outage into "user not found",
         // causing an existing account to be re-registered under a new record.
@@ -486,6 +509,25 @@ fn resolve_oauth_account(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn normalize_email_lowercases_and_trims() {
+        assert_eq!(
+            AuthService::normalize_email("User@Example.com"),
+            "user@example.com"
+        );
+        assert_eq!(
+            AuthService::normalize_email("  Mixed.Case@Domain.IO  "),
+            "mixed.case@domain.io"
+        );
+    }
+
+    #[test]
+    fn normalize_email_is_idempotent() {
+        let once = AuthService::normalize_email("User@Example.com");
+        let twice = AuthService::normalize_email(&once);
+        assert_eq!(once, twice);
+    }
 
     #[test]
     fn verify_current_password_rejects_mismatched_password() {
