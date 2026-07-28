@@ -1,7 +1,9 @@
 export type WalletChainFamily =
     | 'evm'
     | 'sui'
-    | 'stellar';
+    | 'stellar'
+    | 'solana'
+    | 'aptos';
 
 export type WalletConnectionStatus =
     | 'disconnected'
@@ -41,7 +43,12 @@ export type WalletId =
     | 'albedo'
     | 'xbull'
     | 'rabet'
-    | 'hana-wallet';
+    | 'hana-wallet'
+    | 'phantom-solana'
+    | 'solflare'
+    | 'backpack'
+    | 'petra'
+    | 'martian';
 
 export interface WalletDescriptor {
     id: WalletId;

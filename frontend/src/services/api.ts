@@ -76,6 +76,11 @@ const normalizeBackendNotificationPreferences = (
     };
 };
 
+interface BackendGitHubAccount {
+    id: string;
+    login: string;
+}
+
 interface BackendUserProfile {
     id?: MongoIdLike;
     _id?: MongoIdLike;
@@ -85,6 +90,8 @@ interface BackendUserProfile {
     bannerUrl?: string | null;
     notification_preferences?: BackendNotificationPreferences | null;
     notificationPreferences?: BackendNotificationPreferences | null;
+    github_account?: BackendGitHubAccount | null;
+    githubAccount?: BackendGitHubAccount | null;
 }
 
 interface BackendAuthResponse {
@@ -261,7 +268,8 @@ const normalizeUserProfile = (
                     user.notificationPreferences ||
                         user.notification_preferences
                 )
-            )
+            ),
+        githubAccount: user.githubAccount || user.github_account || undefined
     };
 };
 
@@ -797,6 +805,13 @@ class ApiService {
         );
     }
 
+    async unlinkGithub(): Promise<BackendMessageResponse> {
+        return this.request<BackendMessageResponse>(
+            '/auth/github/unlink',
+            { method: 'POST' }
+        );
+    }
+
     async updateEmail(
         oldEmail: string,
         newEmail: string
@@ -823,7 +838,7 @@ class ApiService {
     ): Promise<UserProfile> {
         const data =
             await this.request<BackendWrappedUserResponse>(
-                '/auth/notification-preferences',
+                '/auth/update-notification-preferences',
                 {
                     method: 'POST',
                     body: JSON.stringify({

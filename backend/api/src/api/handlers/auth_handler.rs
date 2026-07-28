@@ -344,6 +344,14 @@ pub async fn log_rpc_call(
     Ok(Json(json!({ "message": "RPC call logged" })))
 }
 
+pub async fn get_rpc_history(
+    State(service): State<AuthService>,
+    claims: crate::utils::auth_jwt::Claims,
+) -> Result<Json<Value>, AppError> {
+    let logs = service.get_rpc_history(&claims.email).await?;
+    Ok(Json(json!({ "history": logs })))
+}
+
 pub async fn switch_network(
     State(service): State<AuthService>,
     claims: crate::utils::auth_jwt::Claims,
@@ -426,7 +434,11 @@ fn default_oauth_redirect_uri(provider: &str) -> String {
 }
 
 fn set_cookie(headers: &mut axum::http::HeaderMap, name: &str, value: &str) {
-    let cookie = format!("{name}={value}; Path=/; Max-Age=600; SameSite=Lax; HttpOnly");
+    let mut cookie = format!("{name}={value}; Path=/; Max-Age=600; SameSite=Lax; HttpOnly");
+    // Add Secure flag in production; skip in dev mode so local HTTP OAuth flow still works
+    if !cfg!(debug_assertions) && std::env::var("DEV_MODE").is_err() {
+        cookie.push_str("; Secure");
+    }
     headers.append(header::SET_COOKIE, cookie.parse().unwrap());
 }
 

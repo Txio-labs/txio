@@ -137,21 +137,19 @@ export const SecurityTab: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const response = await apiClient.post('/auth/update-password', {
+      await apiClient.post('/auth/update-password', {
         current_password: formData.currentPassword,
         new_password: formData.newPassword,
         confirm_password: formData.confirmPassword,
       });
 
-      if (response.data.success) {
-        appStore.showToast('Password rotated successfully!', 'success');
-        setFormData({
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: '',
-        });
-        setIsPasswordFormVisible(false);
-      }
+      appStore.showToast('Password rotated successfully!', 'success');
+      setFormData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+      setIsPasswordFormVisible(false);
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || 'Failed to rotate password';
       appStore.showToast(errorMessage, 'error');

@@ -5,7 +5,7 @@ use crate::utils::generate_otp::generate_otp;
 use chrono::{Duration, Utc};
 
 const OTP_LENGTH: usize = 6;
-const OTP_VALIDITY_MINUTES: i64 = 5;
+pub(crate) const OTP_VALIDITY_MINUTES: i64 = 5;
 const OTP_SEND_COOLDOWN_SECONDS: i64 = 60;
 const OTP_MAX_FAILED_ATTEMPTS: i32 = 5;
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Activity, Terminal, Layers, Globe, Zap, Fuel, Clock, Plus, ChevronRight, Shield, Cpu, Sparkles, ZapOff
+    Activity, Terminal, Layers, Globe, Zap, Fuel, Clock, Plus, ChevronRight, Shield, Cpu, Sparkles, ZapOff, Code2
 } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { RequestType } from '@/types';
@@ -203,6 +203,8 @@ export const Dashboard: React.FC = () => {
                     {[
                         { title: 'RPC Builder', desc: 'Interact with fullnodes via JSON-RPC', icon: Terminal, action: () => appStore.openTab('rpc'), hotkey: '⌘R' },
                         { title: 'TX Composer', desc: 'Batch operations into single transactions', icon: Layers, action: () => appStore.openTab('ptb'), hotkey: '⌘P' },
+                        { title: 'Move Builder', desc: 'Write and deploy Move contracts visually', icon: Code2, action: () => appStore.openTab('move'), hotkey: '⌘M' },
+                        { title: 'Playground', desc: 'Test SDK snippets against live state', icon: Sparkles, action: () => appStore.openTab('playground'), hotkey: '⌘G' },
                         { title: 'AI Debugger', desc: 'Explain transaction errors and audit code', icon: Shield, action: () => appStore.openTab('ai_chat'), hotkey: '⌘D' }
                     ].map((tool, i) => (
                         <button 
@@ -234,7 +236,10 @@ export const Dashboard: React.FC = () => {
                             </div>
                             <h2 className="text-sm font-bold text-slate-200 uppercase tracking-[0.2em]">Live Workspace</h2>
                         </div>
-                        <button className="text-[11px] font-bold text-electric-violet hover:text-soft-purple transition-colors flex items-center gap-2 group">
+                        <button 
+                            onClick={() => appStore.openTab('history')}
+                            className="text-[11px] font-bold text-electric-violet hover:text-soft-purple transition-colors flex items-center gap-2 group"
+                        >
                             Full History
                             <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
                         </button>

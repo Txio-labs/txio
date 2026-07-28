@@ -1,4 +1,4 @@
-import { RequestItem, RequestType, Network, RPCHealthMetric, EnvironmentVariable } from '../../types';
+import { RequestItem, RequestType, Network, RPCHealthMetric, EnvironmentVariable, AssertionResult } from '../../types';
 
 export interface RequestPanelProps {
   request: RequestItem;
@@ -10,6 +10,7 @@ export interface RequestPanelProps {
   activeAddress: string | null;
   envVars: EnvironmentVariable[];
   isReadOnly?: boolean;
+  testResults?: AssertionResult[];
 }
 
 export interface BuilderTabProps {

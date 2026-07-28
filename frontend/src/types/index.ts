@@ -97,6 +97,18 @@ export interface Assertion {
   enabled: boolean;
 }
 
+// Result of evaluating a single Assertion against a request/response cycle.
+export interface AssertionResult {
+  id: string;
+  category: TestCategory;
+  target: string;
+  operator: TestOperator;
+  expected?: string;
+  actual: string;
+  passed: boolean;
+  message: string;
+}
+
 export interface Hook {
   id: string;
   type: 'pre' | 'post';
@@ -285,6 +297,11 @@ export interface NotificationPreferences {
   inAppProductUpdates: boolean;
 }
 
+export interface GitHubAccount {
+  id: string;
+  login: string;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -292,6 +309,7 @@ export interface UserProfile {
   avatarUrl?: string;
   bannerUrl?: string;
   notificationPreferences?: NotificationPreferences;
+  githubAccount?: GitHubAccount;
 }
 
 export interface TeamMember {

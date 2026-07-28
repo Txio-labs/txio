@@ -5,6 +5,7 @@ import {
     Smartphone, Mail, Lock, Sparkles
 } from 'lucide-react';
 import { appStore, useAppStore } from '@/lib/store';
+import { apiService } from '@/services/api';
 import logoDark from '../assets/txio2.png';
 import gsap from 'gsap';
 
@@ -87,7 +88,7 @@ export const OTPPage: React.FC = () => {
         inputRefs.current[Math.min(pastedData.length, 5)]?.focus();
     };
 
-    const handleVerify = (e: React.FormEvent) => {
+    const handleVerify = async (e: React.FormEvent) => {
         e.preventDefault();
         const code = otp.join('');
         if (code.length < 6) {
@@ -96,15 +97,28 @@ export const OTPPage: React.FC = () => {
         }
 
         setIsLoading(true);
-        // Mock verification
-        setTimeout(() => {
+        try {
+            const email = appStore.user?.email;
+            if (!email) {
+                appStore.showToast('Email not found in store.', 'error');
+                setIsLoading(false);
+                return;
+            }
+            const response = await apiService.verifyOtp(email, code);
+            if (response) {
+                setIsVerified(true);
+                appStore.showToast('Authentication Successful!', 'success');
+                setTimeout(() => {
+                    appStore.setViewMode('landing');
+                }, 1500);
+            } else {
+                appStore.showToast('Invalid OTP', 'error');
+            }
+        } catch (error) {
+            appStore.showToast('Failed to verify OTP', 'error');
+        } finally {
             setIsLoading(false);
-            setIsVerified(true);
-            appStore.showToast('Authentication Successful!', 'success');
-            setTimeout(() => {
-                appStore.setViewMode('landing');
-            }, 1500);
-        }, 2000);
+        }
     };
 
     const handleResend = () => {

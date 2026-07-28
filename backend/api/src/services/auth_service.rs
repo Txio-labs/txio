@@ -10,7 +10,9 @@ use crate::repositories::user_repository::UserRepository;
 use crate::services::email_service::EmailService;
 use crate::services::otp_service::OTPService;
 use crate::utils::auth_jwt::{Claims, JwtHelper};
+use crate::utils::config::is_reserved_admin_email;
 use crate::utils::error::AppError;
+use chrono::Utc;
 
 #[derive(Clone)]
 pub struct AuthService {
@@ -20,6 +22,8 @@ pub struct AuthService {
     jwt_helper: JwtHelper,
     otp_service: OTPService,
     email_service: EmailService,
+    /// Emails listed in ADMIN_EMAILS — reserved from self-service account creation.
+    reserved_admin_emails: Vec<String>,
 }
 
 impl AuthService {
@@ -47,6 +51,7 @@ impl AuthService {
         jwt_helper: JwtHelper,
         otp_service: OTPService,
         email_service: EmailService,
+        reserved_admin_emails: Vec<String>,
     ) -> Self {
         Self {
             repo,
@@ -55,7 +60,18 @@ impl AuthService {
             jwt_helper,
             otp_service,
             email_service,
+            reserved_admin_emails,
         }
+    }
+
+    fn reject_reserved_email(&self, email: &str) -> Result<(), AppError> {
+        if is_reserved_admin_email(email, &self.reserved_admin_emails) {
+            return Err(AppError::BadRequest(
+                "This email is reserved for administrator provisioning and cannot be registered or claimed via self-service. Use the bootstrap_admin tool instead."
+                    .into(),
+            ));
+        }
+        Ok(())
     }
 
     /// Verify a JWT and return its claims.
@@ -155,6 +171,8 @@ impl AuthService {
     // ── Auth ─────────────────────────────────────────────────────────────────
 
     pub async fn register_user(&self, req: RegisterUserRequest) -> Result<AuthResponse, AppError> {
+        self.reject_reserved_email(&req.email)?;
+
         match self.repo.find_by_email(&req.email).await {
             Ok(_) => return Err(AppError::BadRequest("Email already registered".into())),
             Err(AppError::NotFound(_)) => (),
@@ -181,32 +199,62 @@ impl AuthService {
 
     pub async fn login_user(&self, req: LoginRequest) -> Result<AuthResponse, AppError> {
         const DUMMY_HASH: &str = "$2b$12$K4IzU6d5TqmqRKFLJZdqOeVLqZJ3mJHvJZdqOeVLqZJ3mJHvJZdq.";
+        const MAX_FAILED_ATTEMPTS: i32 = 5;
+        const LOCKOUT_MINUTES: i64 = 15;
 
         let user_result = self.repo.find_by_email(&req.email).await;
 
-        // Only NotFound is expected during normal login; any other error
-        // (timeout, connection failure, etc.) must be surfaced so the caller
-        // can distinguish a real infrastructure problem from a bad password.
         if let Err(e) = &user_result {
             if !matches!(e, AppError::NotFound(_)) {
                 return Err(user_result.unwrap_err());
             }
         }
 
+        // Check lockout before doing anything else.
+        if let Ok(ref user) = user_result {
+            if let Some(locked_until) = user.locked_until {
+                if Utc::now() < locked_until {
+                    return Err(AppError::Unauthorized(
+                        "Account is temporarily locked. Try again later.".into(),
+                    ));
+                }
+            }
+        }
+
         let (hash_to_verify, user_found) = match &user_result {
             Ok(user) => (user.password_hash.as_str(), true),
-            Err(_) => (DUMMY_HASH, false), // only NotFound reaches here
+            Err(_) => (DUMMY_HASH, false),
         };
 
         let is_valid = bcrypt::verify(req.password.as_bytes(), hash_to_verify).unwrap_or(false);
 
         if !user_found || !is_valid {
+            // Only track attempts for real accounts — don't create a user-enumeration
+            // oracle by behaving differently, but also don't write to a nonexistent doc.
+            if user_found {
+                let user = user_result.as_ref().unwrap();
+                let attempts = user.failed_login_attempts + 1;
+                let locked_until = if attempts >= MAX_FAILED_ATTEMPTS {
+                    Some(Utc::now() + chrono::Duration::minutes(LOCKOUT_MINUTES))
+                } else {
+                    None
+                };
+                let _ = self
+                    .repo
+                    .update_login_attempts(&req.email, attempts, locked_until)
+                    .await;
+            }
             return Err(AppError::Unauthorized("Invalid credentials".into()));
         }
 
         let user = user_result.unwrap();
-        let user_id = user.id.map(|id| id.to_string()).unwrap_or_default();
 
+        // Reset counter on successful login.
+        if user.failed_login_attempts > 0 {
+            let _ = self.repo.update_login_attempts(&user.email, 0, None).await;
+        }
+
+        let user_id = user.id.map(|id| id.to_string()).unwrap_or_default();
         let (token, _jti) = self.jwt_helper.generate_token(&user_id, &user.email)?;
 
         Ok(AuthResponse {
@@ -245,6 +293,16 @@ impl AuthService {
         new_email: &str,
     ) -> Result<UserResponse, AppError> {
         let mut user = self.repo.find_by_email(old_email).await?;
+
+        if new_email != old_email {
+            self.reject_reserved_email(new_email)?;
+            match self.repo.find_by_email(new_email).await {
+                Ok(_) => return Err(AppError::BadRequest("Email already in use".into())),
+                Err(AppError::NotFound(_)) => (),
+                Err(e) => return Err(e),
+            };
+        }
+
         user.email = new_email.to_string();
         let updated_user = self.repo.update(&user).await?;
         Ok(Self::to_user_response(&updated_user))
@@ -311,7 +369,7 @@ impl AuthService {
     pub async fn get_rpc_history(&self, email: &str) -> Result<Vec<RpcLog>, AppError> {
         let user = self.repo.find_by_email(email).await?;
         if let Some(user_id) = user.id {
-            let logs = self.rpc_repo.find_by_user_id(user_id).await?;
+            let logs = self.rpc_repo.find_by_user_id(user_id, 100).await?;
             Ok(logs)
         } else {
             Ok(vec![])
@@ -364,6 +422,7 @@ impl AuthService {
         let user = match user {
             OAuthAccountResolution::Login(existing) => existing,
             OAuthAccountResolution::Register { email, google_sub } => {
+                self.reject_reserved_email(&email)?;
                 let random_password = uuid::Uuid::new_v4().to_string();
                 let password_hash = bcrypt::hash(random_password.as_bytes(), bcrypt::DEFAULT_COST)
                     .map_err(|_| AppError::InternalError("Failed to hash password".into()))?;
@@ -460,6 +519,9 @@ mod oauth_tests {
             created_at: Utc::now(),
             github_account: None,
             notification_preferences: crate::model::user::NotificationPreferences::default(),
+            failed_login_attempts: 0,
+            locked_until: None,
+            is_admin: false,
         }
     }
 

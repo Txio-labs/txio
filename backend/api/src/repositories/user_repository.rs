@@ -100,6 +100,35 @@ impl UserRepository {
         Ok(user.clone())
     }
 
+    pub async fn update_login_attempts(
+        &self,
+        email: &str,
+        attempts: i32,
+        locked_until: Option<chrono::DateTime<chrono::Utc>>,
+    ) -> Result<(), AppError> {
+        let locked_until_bson =
+            locked_until.map(|dt| mongodb::bson::DateTime::from_millis(dt.timestamp_millis()));
+
+        let update = match locked_until_bson {
+            Some(ts) => doc! {
+                "$set": {
+                    "failed_login_attempts": attempts,
+                    "locked_until": ts,
+                }
+            },
+            None => doc! {
+                "$set": { "failed_login_attempts": attempts },
+                "$unset": { "locked_until": "" },
+            },
+        };
+
+        self.collection
+            .update_one(doc! { "email": email }, update, None)
+            .await
+            .map(|_| ())
+            .map_err(AppError::Database)
+    }
+
     pub async fn count_documents(&self) -> Result<u64, AppError> {
         let count = self.collection.count_documents(None, None).await?;
         Ok(count)
@@ -114,5 +143,12 @@ impl UserRepository {
             emails.push(user.email);
         }
         Ok(emails)
+    }
+
+    /// Sets or clears the durable `is_admin` flag (bootstrap / ops only).
+    pub async fn set_is_admin(&self, email: &str, is_admin: bool) -> Result<User, AppError> {
+        let mut user = self.find_by_email(email).await?;
+        user.is_admin = is_admin;
+        self.update(&user).await
     }
 }

@@ -79,6 +79,26 @@ const GLYPH_STYLES: Record<
     'hana-wallet': {
         ring: 'from-pink-400/70 to-rose-300/40',
         fill: 'from-pink-500 to-rose-400'
+    },
+    'phantom-solana': {
+        ring: 'from-purple-500/70 to-fuchsia-300/40',
+        fill: 'from-purple-500 to-fuchsia-400'
+    },
+    solflare: {
+        ring: 'from-orange-500/70 to-yellow-300/40',
+        fill: 'from-orange-500 to-yellow-400'
+    },
+    backpack: {
+        ring: 'from-red-500/70 to-orange-300/40',
+        fill: 'from-red-500 to-orange-400'
+    },
+    petra: {
+        ring: 'from-pink-500/70 to-purple-300/40',
+        fill: 'from-pink-500 to-purple-400'
+    },
+    martian: {
+        ring: 'from-blue-500/70 to-indigo-300/40',
+        fill: 'from-blue-500 to-indigo-400'
     }
 };
 
@@ -88,7 +108,9 @@ const FAMILY_MARKS: Record<
 > = {
     evm: 'Ξ',
     sui: 'S',
-    stellar: '✦'
+    stellar: '✦',
+    solana: '◎',
+    aptos: '∞'
 };
 
 export function WalletGlyph({

@@ -283,12 +283,7 @@ impl CollectionService {
             url.clone()
         } else {
             let network_enum = if let Some(ref net_str) = req.network {
-                match net_str.to_lowercase().as_str() {
-                    "mainnet" => crate::model::network::Network::Mainnet,
-                    "testnet" => crate::model::network::Network::Testnet,
-                    "devnet" => crate::model::network::Network::Devnet,
-                    _ => crate::model::network::Network::Mainnet,
-                }
+                Self::resolve_network_str(net_str)?
             } else {
                 let user = self.user_repo.find_by_id(&user_id).await?;
                 user.network

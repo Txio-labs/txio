@@ -47,7 +47,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@1.88.0
+        uses: dtolnay/rust-toolchain@39b0b3842c7e8bbf6904c0bfc3d9006fdd4dc4e0 # 1.88.0
         with:
           components: rustfmt, clippy
 
@@ -65,6 +65,18 @@ jobs:
 
       - name: cargo test
         run: cargo test --workspace
+
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build root Dockerfile
+        run: docker build -f Dockerfile .
+
+      - name: Build backend Dockerfile
+        run: docker build -f backend/Dockerfile .
 
   build:
     name: Build Apps
