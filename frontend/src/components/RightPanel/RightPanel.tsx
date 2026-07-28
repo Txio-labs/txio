@@ -55,6 +55,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   network,
   activityLogs,
   comments,
+  activeRequestId,
   onPostComment,
   onClose
 }) => {
@@ -168,7 +169,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         )}
 
         {/* --- ANALYSIS TAB --- */}
-        {activeTab === 'analysis' && <AnalysisTab />}
+        {activeTab === 'analysis' && <AnalysisTab activeRequestId={activeRequestId} />}
 
         {/* --- DISCUSS TAB --- */}
         {activeTab === 'discuss' && (
