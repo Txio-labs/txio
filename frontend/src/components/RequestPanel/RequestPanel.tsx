@@ -24,6 +24,8 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('builder');
 
+  const chain = request.type === RequestType.RPC ? request.rpcParams.chain : undefined;
+
   const handleTypeChange = (type: RequestType) => {
     onChange({ ...request, type });
   };
@@ -87,6 +89,7 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
         onTypeChange={handleTypeChange}
         onSend={onSend}
         onExecute={onExecute}
+        chain={chain}
       />
 
       <RequestTabs

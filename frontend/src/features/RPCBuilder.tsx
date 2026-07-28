@@ -8,6 +8,7 @@ import { RequestPanel } from '../components/RequestPanel/RequestPanel';
 import { RequestItem, RequestType, Network, AssertionResult } from '../types';
 import {
     executeSuiRpc,
+    executeChainRpc,
     looksLikeSuiNs,
     resolveSuiAddress,
     simulateMoveCall,
@@ -190,13 +191,13 @@ export const RPCBuilder: React.FC = () => {
         }
 
         const commandLine =
-            resolved.type === RequestType.TRANSACTION
-                ? `txio sui simulate ${resolved.moveParams.packageId}::${resolved.moveParams.module}::${resolved.moveParams.function}`
-                : `txio sui call --method ${resolved.rpcParams.method}${
-                      resolved.rpcParams.params?.length
-                          ? ` --params ${JSON.stringify(resolved.rpcParams.params)}`
-                          : ''
-                  }`;
+                resolved.type === RequestType.TRANSACTION
+                    ? `txio sui simulate ${resolved.moveParams.packageId}::${resolved.moveParams.module}::${resolved.moveParams.function}`
+                    : `txio ${resolved.rpcParams.chain ?? 'sui'} call --method ${resolved.rpcParams.method}${
+                          resolved.rpcParams.params?.length
+                              ? ` --params ${JSON.stringify(resolved.rpcParams.params)}`
+                              : ''
+                      }`;
 
         ensureTerminalOpen();
 
@@ -227,7 +228,8 @@ export const RPCBuilder: React.FC = () => {
                     );
             } else {
                 res =
-                    await executeSuiRpc(
+                    await executeChainRpc(
+                        resolved.rpcParams.chain ?? 'sui',
                         network,
                         resolved.rpcParams.method,
                         resolved.rpcParams.params

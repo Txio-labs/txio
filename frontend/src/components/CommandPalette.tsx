@@ -71,14 +71,16 @@ export const CommandPalette: React.FC = () => {
         flattenCollections(collections, items);
 
         // 3. Move Commands (Common RPCs, across all supported chains)
-        Object.values(COMMON_RPC_METHODS).flat().forEach(method => {
-            items.push({
-                id: `rpc-${method}`,
-                title: method,
-                subtitle: 'Create new RPC request',
-                icon: <Terminal size={14} className="text-emerald-500" />,
-                action: () => appStore.openTab('rpc', { name: method, type: RequestType.RPC, rpcParams: { method, params: [] } }),
-                keywords: [method, 'rpc', 'move']
+        Object.entries(COMMON_RPC_METHODS).forEach(([chain, methods]) => {
+            methods.forEach(method => {
+                items.push({
+                    id: `rpc-${method}`,
+                    title: method,
+                    subtitle: `Create new RPC request (${chain})`,
+                    icon: <Terminal size={14} className="text-emerald-500" />,
+                    action: () => appStore.openTab('rpc', { name: method, type: RequestType.RPC, rpcParams: { method, params: [], chain } }),
+                    keywords: [method, 'rpc', chain]
+                });
             });
         });
 

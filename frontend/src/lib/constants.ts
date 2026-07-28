@@ -11,6 +11,21 @@ export const NETWORKS: Record<Network, string> = {
   localnet: 'http://127.0.0.1:9000',
 };
 
+// Default public RPC endpoints for non-Sui chains, keyed by network.
+export const EVM_NETWORKS: Record<Network, string> = {
+  mainnet: 'https://eth.llamarpc.com',
+  testnet: 'https://rpc.sepolia.org',
+  devnet: 'https://rpc.sepolia.org',
+  localnet: 'http://127.0.0.1:8545',
+};
+
+export const STELLAR_NETWORKS: Record<Network, string> = {
+  mainnet: 'https://soroban-rpc.stellar.org',
+  testnet: 'https://soroban-rpc.testnet.stellar.org',
+  devnet: 'https://soroban-rpc.testnet.stellar.org',
+  localnet: 'http://127.0.0.1:8000',
+};
+
 // Chains the RPC Method Builder can target, in display order.
 export const RPC_CHAINS: ReadonlyArray<{ id: ChainId; label: string }> = [
   { id: 'sui', label: 'Sui' },

@@ -3,10 +3,12 @@ import { resolveRpcUrl } from '@/lib/appConfig';
 import { appStore } from '@/lib/store';
 import {
   Network,
+  ChainId,
   SuiRpcResponse,
   BuilderArg,
   RPCHealthMetric,
 } from '../types';
+import { EVM_NETWORKS, STELLAR_NETWORKS } from '@/lib/constants';
 
 const RPC_TIMEOUT_MS = 10000;
 const DEGRADED_RPC_LATENCY_MS = 1500;
@@ -44,6 +46,148 @@ export const getActiveSuiRpcUrl = (
     network,
     appStore.getSnapshot().settings
   );
+
+export const resolveChainRpcUrl = (
+  chain: ChainId,
+  network: Network
+): string => {
+  if (chain === 'sui') {
+    return getActiveSuiRpcUrl(network);
+  }
+
+  const map = chain === 'evm' ? EVM_NETWORKS : STELLAR_NETWORKS;
+  return map[network];
+};
+
+/** Generic JSON-RPC fetch used for all chains. */
+export const executeChainRpc = async (
+  chain: ChainId,
+  network: Network,
+  method: string,
+  params: any[]
+): Promise<{ result: any; duration: number; status: number }> => {
+  if (chain === 'sui') {
+    return executeSuiRpc(network, method, params);
+  }
+
+  const url = resolveChainRpcUrl(chain, network);
+  const startTime = performance.now();
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      RPC_TIMEOUT_MS
+    );
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method,
+        params,
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    const data = await response.json();
+    const duration = Math.round(
+      performance.now() - startTime
+    );
+
+    if (!response.ok) {
+      const message =
+        typeof data.error?.message === 'string' && data.error.message
+          ? data.error.message
+          : `RPC request failed with status ${response.status}.`;
+      throw new SuiRpcError(message, {
+        status: response.status,
+        endpoint: url,
+        duration,
+      });
+    }
+
+    if (data.error) {
+      const message =
+        typeof data.error.message === 'string' && data.error.message
+          ? data.error.message
+          : `${chain.toUpperCase()} RPC returned an error.`;
+      throw new SuiRpcError(message, {
+        status: response.status || 500,
+        endpoint: url,
+        duration,
+      });
+    }
+
+    return {
+      result: data.result,
+      duration,
+      status: response.status,
+    };
+  } catch (error: any) {
+    const duration = Math.round(
+      performance.now() - startTime
+    );
+
+    if (error instanceof SuiRpcError) {
+      throw error;
+    }
+
+    if (error?.name === 'AbortError') {
+      throw new SuiRpcError(
+        `RPC request timed out after ${RPC_TIMEOUT_MS / 1000}s.`,
+        { status: 504, endpoint: url, duration }
+      );
+    }
+
+    throw new SuiRpcError(
+      error instanceof Error && error.message.trim()
+        ? error.message
+        : `Unable to reach the configured ${chain.toUpperCase()} RPC endpoint.`,
+      { status: 0, endpoint: url, duration }
+    );
+  }
+};
+
+/** Chain-aware health check: pings a lightweight method per chain. */
+export const getChainRpcHealth = async (
+  chain: ChainId,
+  network: Network
+): Promise<RPCHealthMetric> => {
+  if (chain === 'sui') {
+    return getSuiRpcHealth(network);
+  }
+
+  const url = resolveChainRpcUrl(chain, network);
+  const method = chain === 'evm' ? 'eth_blockNumber' : 'getHealth';
+  const params: any[] = chain === 'evm' ? [] : [];
+
+  try {
+    const { result, duration } =
+      await executeChainRpc(chain, network, method, params);
+    return {
+      endpoint: url,
+      latency: [duration],
+      successRate: 1,
+      status: duration >= DEGRADED_RPC_LATENCY_MS ? 'degraded' : 'healthy',
+      blockHeight: typeof result === 'string' ? parseInt(result, 16) || 0 : Number(result) || 0,
+    };
+  } catch (error) {
+    const rpcError = error instanceof SuiRpcError ? error : null;
+    return {
+      endpoint: url,
+      latency: [rpcError?.duration ?? RPC_TIMEOUT_MS],
+      successRate: 0,
+      status: rpcError?.status === 504 ? 'degraded' : 'down',
+      blockHeight: 0,
+    };
+  }
+};
 
 export const executeSuiRpc = async (
   network: Network,
