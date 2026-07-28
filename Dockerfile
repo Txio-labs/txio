@@ -24,7 +24,7 @@ RUN useradd --system --uid 10001 txio
 WORKDIR /app
 
 # Install runtime dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates libssl3 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates libssl3 curl && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
 RUN useradd -m -u 10001 appuser
