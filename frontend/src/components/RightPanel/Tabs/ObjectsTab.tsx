@@ -24,18 +24,25 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
   const [selectedObject, setSelectedObject] = useState<any | null>(null);
   const [objectSearch, setObjectSearch] = useState('');
   const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   const handleObjectSearch = async () => {
     if (!objectSearch) return;
     setSearchLoading(true);
     setSelectedObject(null);
+    setSearchError(null);
     try {
       const res = await getObject(network, objectSearch);
       if (res.result && res.result.data) {
         setSelectedObject(res.result.data);
+      } else {
+        // RPC responded but returned no object data (e.g. deleted/invalid ID)
+        const rpcMessage = res.result?.error?.code || res.result?.error;
+        setSearchError(rpcMessage ? String(rpcMessage) : 'Object not found');
       }
-    } catch {
+    } catch (err) {
       setSelectedObject(null);
+      setSearchError(err instanceof Error ? err.message : 'Object not found');
     } finally {
       setSearchLoading(false);
     }
@@ -102,7 +109,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
             className="w-full bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-white focus:border-electric-violet outline-none transition-all placeholder:text-slate-600"
             placeholder="Search Object ID..."
             value={objectSearch}
-            onChange={(e) => setObjectSearch(e.target.value)}
+            onChange={(e) => { setObjectSearch(e.target.value); setSearchError(null); }}
             onKeyDown={(e) => e.key === 'Enter' && handleObjectSearch()}
           />
         </div>
@@ -110,6 +117,13 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
           <RefreshCw size={14} className={loadingObjects ? 'animate-spin' : ''} />
         </button>
       </div>
+
+      {searchError && (
+        // Inline feedback for a failed/empty object lookup, instead of failing silently
+        <div className="px-3 pt-2 -mb-1 text-[11px] text-red-500 dark:text-red-400">
+          {searchError}
+        </div>
+      )}
       
       <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
         {objects.map((obj, i) => {
