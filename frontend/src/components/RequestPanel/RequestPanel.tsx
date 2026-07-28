@@ -19,7 +19,8 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
   onExecute,
   activeAddress,
   envVars,
-  isReadOnly = false
+  isReadOnly = false,
+  testResults = []
 }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('builder');
 
@@ -34,9 +35,10 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
       
       case 'tests':
         return (
-          <TestsEditor 
+          <TestsEditor
             tests={request.tests || []}
             onChange={(tests) => onChange({ ...request, tests })}
+            results={testResults}
           />
         );
       
@@ -87,9 +89,14 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
         onExecute={onExecute}
       />
 
-      <RequestTabs 
+      <RequestTabs
         activeTab={activeTab}
         testsCount={request.tests?.length || 0}
+        testSummary={
+          testResults.length > 0
+            ? { passed: testResults.filter((r) => r.passed).length, total: testResults.length }
+            : undefined
+        }
         onTabChange={setActiveTab}
       />
 
