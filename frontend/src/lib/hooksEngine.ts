@@ -2,7 +2,7 @@ import { appStore } from './store';
 import { getObject } from '../services/suiService';
 import { Hook, EnvironmentVariable, Network } from '../types';
 
-const getByPath = (obj: any, path: string): any =>
+export const getByPath = (obj: any, path: string): any =>
   path
     .split('.')
     .map((k) => k.trim())

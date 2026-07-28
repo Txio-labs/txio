@@ -97,6 +97,18 @@ export interface Assertion {
   enabled: boolean;
 }
 
+// Result of evaluating a single Assertion against a request/response cycle.
+export interface AssertionResult {
+  id: string;
+  category: TestCategory;
+  target: string;
+  operator: TestOperator;
+  expected?: string;
+  actual: string;
+  passed: boolean;
+  message: string;
+}
+
 export interface Hook {
   id: string;
   type: 'pre' | 'post';

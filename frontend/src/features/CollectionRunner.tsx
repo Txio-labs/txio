@@ -2,8 +2,9 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { Play, Pause, RotateCcw, CheckCircle2, XCircle, Clock, AlertTriangle, FileText, ArrowRight, Square } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
-import { CollectionNode, RequestItem, RequestType } from '../types';
+import { AssertionResult, CollectionNode, RequestItem, RequestType } from '../types';
 import { executeSuiRpc, simulateMoveCall, SuiRpcError } from '../services/suiService';
+import { evaluateAssertions } from '@/lib/assertionsEngine';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
@@ -122,7 +123,7 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
             try {
                 if (resolved.type === RequestType.TRANSACTION) {
                     const { packageId, module, function: func, typeArguments, arguments: args } = resolved.moveParams;
-                    const { status, duration } = await simulateMoveCall(
+                    const { result, status, duration } = await simulateMoveCall(
                         network,
                         ZERO_ADDRESS,
                         packageId,
@@ -131,10 +132,17 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                         typeArguments,
                         args,
                     );
+                    const testResults = evaluateAssertions(req.tests, {
+                        requestType: resolved.type,
+                        httpStatus: status,
+                        duration,
+                        result,
+                        sender: ZERO_ADDRESS,
+                    });
                     setRunList((prev) =>
                         abortRef.current
                             ? prev
-                            : prev.map((r, i) => (i === idx ? { ...r, status: 'success' as const, duration, httpStatus: status } : r)),
+                            : prev.map((r, i) => (i === idx ? { ...r, status: 'success' as const, duration, httpStatus: status, testResults } : r)),
                     );
                 } else {
                     const { result, status, duration } = await executeSuiRpc(
@@ -142,11 +150,17 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                         resolved.rpcParams.method,
                         resolved.rpcParams.params,
                     );
+                    const testResults = evaluateAssertions(req.tests, {
+                        requestType: resolved.type,
+                        httpStatus: status,
+                        duration,
+                        result,
+                    });
                     setRunList((prev) =>
                         abortRef.current
                             ? prev
                             : prev.map((r, i) =>
-                                i === idx ? { ...r, status: 'success' as const, duration, httpStatus: status, response: result } : r,
+                                i === idx ? { ...r, status: 'success' as const, duration, httpStatus: status, response: result, testResults } : r,
                               ),
                     );
                 }
@@ -154,6 +168,12 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                 const duration = Math.round(performance.now() - startTime);
                 const rpcError = error instanceof SuiRpcError ? error : null;
                 const errorMessage = error instanceof Error && error.message.trim() ? error.message : 'Request failed';
+                const testResults = evaluateAssertions(req.tests, {
+                    requestType: resolved.type,
+                    httpStatus: rpcError?.status ?? 0,
+                    duration,
+                    error: errorMessage,
+                });
                 setRunList((prev) =>
                     abortRef.current
                         ? prev
@@ -165,6 +185,7 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                                       duration,
                                       httpStatus: rpcError?.status ?? 0,
                                       errorMessage,
+                                      testResults,
                                   }
                                 : r,
                           ),
@@ -184,7 +205,7 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
 
     const handleReset = () => {
         abortRef.current = true;
-        setRunList((prev) => prev.map((r) => ({ ...r, status: 'pending', duration: 0 })));
+        setRunList((prev) => prev.map((r) => ({ ...r, status: 'pending', duration: 0, testResults: undefined })));
         setProgress(0);
         setCurrentReqIndex(-1);
     };
@@ -256,6 +277,7 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                                 <th className="px-6 py-3">Request Name</th>
                                 <th className="px-6 py-3">Method</th>
                                 <th className="px-6 py-3">Status</th>
+                                <th className="px-6 py-3">Tests</th>
                                 <th className="px-6 py-3">Time</th>
                             </tr>
                         </thead>
@@ -282,6 +304,22 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                                             </span>
                                         ) : (
                                             <span className="text-slate-600 text-xs italic flex items-center gap-1"><Clock size={12}/> Pending</span>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        {req.testResults && req.testResults.length > 0 ? (
+                                            <span
+                                                className={`inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded border ${
+                                                    req.testResults.every((r: AssertionResult) => r.passed)
+                                                        ? 'text-emerald-400 bg-emerald-900/10 border-emerald-900/20'
+                                                        : 'text-red-400 bg-red-900/10 border-red-900/20'
+                                                }`}
+                                                title={req.testResults.map((r: AssertionResult) => r.message).join('\n')}
+                                            >
+                                                {req.testResults.filter((r: AssertionResult) => r.passed).length}/{req.testResults.length}
+                                            </span>
+                                        ) : (
+                                            <span className="text-slate-600 text-xs italic">—</span>
                                         )}
                                     </td>
                                     <td className="px-6 py-4 font-mono text-xs text-slate-400">

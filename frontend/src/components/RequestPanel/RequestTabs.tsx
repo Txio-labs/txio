@@ -5,12 +5,14 @@ import { ActiveTab } from './types';
 interface RequestTabsProps {
   activeTab: ActiveTab;
   testsCount: number;
+  testSummary?: { passed: number; total: number };
   onTabChange: (tab: ActiveTab) => void;
 }
 
 export const RequestTabs: React.FC<RequestTabsProps> = ({
   activeTab,
   testsCount,
+  testSummary,
   onTabChange
 }) => {
   const tabs: { id: ActiveTab; label: string; icon?: React.ReactNode }[] = [
@@ -37,9 +39,21 @@ export const RequestTabs: React.FC<RequestTabsProps> = ({
             {tab.icon}
             {tab.label}
             {tab.id === 'tests' && (
-              <span className="bg-white/10 text-slate-500 rounded px-1">
-                {testsCount}
-              </span>
+              testSummary ? (
+                <span
+                  className={`rounded px-1 ${
+                    testSummary.passed === testSummary.total
+                      ? 'bg-emerald-900/30 text-emerald-400'
+                      : 'bg-red-900/30 text-red-400'
+                  }`}
+                >
+                  {testSummary.passed}/{testSummary.total}
+                </span>
+              ) : (
+                <span className="bg-white/10 text-slate-500 rounded px-1">
+                  {testsCount}
+                </span>
+              )
             )}
           </button>
         ))}
