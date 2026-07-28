@@ -9,6 +9,7 @@ use serde_json::{Value, json};
 pub struct SorobanAdapter {
     client: Client,
     rpc_url: String,
+    network: Network,
 }
 
 impl SorobanAdapter {
@@ -17,11 +18,15 @@ impl SorobanAdapter {
         Self::with_rpc(None, Network::Mainnet)
     }
 
-    fn horizon_url(&self) -> &'static str {
-        if self.rpc_url.contains("mainnet") {
-            "https://horizon.stellar.org"
-        } else {
-            "https://horizon-testnet.stellar.org"
+    fn horizon_url(&self) -> Result<&'static str> {
+        match self.network {
+            Network::Mainnet => Ok("https://horizon.stellar.org"),
+            Network::Testnet => Ok("https://horizon-testnet.stellar.org"),
+            Network::Devnet | Network::Localnet => Err(anyhow!(
+                "Horizon API is not available for {:?} network; \
+                 balance, account, and history commands require mainnet or testnet",
+                self.network
+            )),
         }
     }
 
@@ -39,6 +44,7 @@ impl SorobanAdapter {
                 .build()
                 .unwrap_or_else(|_| Client::new()),
             rpc_url: url,
+            network,
         }
     }
 }
@@ -83,7 +89,7 @@ impl ChainAdapter for SorobanAdapter {
 
     async fn get_balance(&self, address: &str) -> Result<Value> {
         let address = validate_soroban_address(address)?;
-        let horizon = self.horizon_url();
+        let horizon = self.horizon_url()?;
         let url = build_url(horizon, &["accounts", &address])?;
         Ok(self.client.get(url).send().await?.json().await?)
     }
@@ -109,19 +115,95 @@ impl ChainAdapter for SorobanAdapter {
 
     async fn get_account(&self, address: &str) -> Result<Value> {
         let address = validate_soroban_address(address)?;
-        let horizon = self.horizon_url();
+        let horizon = self.horizon_url()?;
         let url = build_url(horizon, &["accounts", &address])?;
         Ok(self.client.get(url).send().await?.json().await?)
     }
 
     async fn get_history(&self, address: &str, limit: u32) -> Result<Value> {
         let address = validate_soroban_address(address)?;
-        let horizon = self.horizon_url();
+        let horizon = self.horizon_url()?;
         let url = build_url_with_query(
             horizon,
             &["accounts", &address, "transactions"],
             &[("limit", limit.to_string()), ("order", "desc".to_string())],
         )?;
         Ok(self.client.get(url).send().await?.json().await?)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn horizon_url_mainnet_returns_mainnet_horizon() {
+        let adapter = SorobanAdapter::with_rpc(None, Network::Mainnet);
+        assert_eq!(
+            adapter.horizon_url().unwrap(),
+            "https://horizon.stellar.org"
+        );
+    }
+
+    #[test]
+    fn horizon_url_mainnet_with_custom_rpc_still_returns_mainnet_horizon() {
+        let adapter = SorobanAdapter::with_rpc(
+            Some("https://my-node.example.com".to_string()),
+            Network::Mainnet,
+        );
+        assert_eq!(
+            adapter.horizon_url().unwrap(),
+            "https://horizon.stellar.org"
+        );
+    }
+
+    #[test]
+    fn horizon_url_testnet_returns_testnet_horizon() {
+        let adapter = SorobanAdapter::with_rpc(None, Network::Testnet);
+        assert_eq!(
+            adapter.horizon_url().unwrap(),
+            "https://horizon-testnet.stellar.org"
+        );
+    }
+
+    #[test]
+    fn horizon_url_devnet_returns_error() {
+        let adapter = SorobanAdapter::with_rpc(None, Network::Devnet);
+        let err = adapter.horizon_url().unwrap_err();
+        assert!(
+            err.to_string().contains("not available"),
+            "expected 'not available' error, got: {err}"
+        );
+    }
+
+    #[test]
+    fn horizon_url_localnet_returns_error() {
+        let adapter = SorobanAdapter::with_rpc(None, Network::Localnet);
+        let err = adapter.horizon_url().unwrap_err();
+        assert!(
+            err.to_string().contains("not available"),
+            "expected 'not available' error, got: {err}"
+        );
+    }
+
+    #[test]
+    fn with_rpc_stores_network() {
+        let adapter = SorobanAdapter::with_rpc(None, Network::Testnet);
+        assert_eq!(adapter.network, Network::Testnet);
+    }
+
+    #[test]
+    fn with_rpc_custom_url_uses_network_for_horizon() {
+        // The exact bug scenario: custom rpc_url that doesn't contain "mainnet"
+        // but user selected mainnet network — should still resolve to mainnet Horizon
+        let adapter = SorobanAdapter::with_rpc(
+            Some("https://custom-soroban-rpc.example.com".to_string()),
+            Network::Mainnet,
+        );
+        assert_eq!(
+            adapter.horizon_url().unwrap(),
+            "https://horizon.stellar.org"
+        );
+        assert_eq!(adapter.rpc_url, "https://custom-soroban-rpc.example.com");
     }
 }
