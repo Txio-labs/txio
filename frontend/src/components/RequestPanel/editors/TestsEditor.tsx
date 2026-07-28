@@ -183,7 +183,7 @@ export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange }
               </div>
             </div>
 
-            <button onClick={() => removeTest(idx)} className="mt-6 text-slate-600 hover:text-red-400 p-1 transition-colors">
+            <button onClick={() => removeTest(idx)} aria-label="Remove test" title="Remove test" className="mt-6 text-slate-600 hover:text-red-400 p-1 transition-colors">
               <X size={14}/>
             </button>
           </div>
