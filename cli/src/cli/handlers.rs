@@ -149,7 +149,7 @@ impl CommandHandler {
             Commands::Sui { command } => {
                 let adapter =
                     ChainFactory::get_adapter("sui", cli.rpc_url.clone(), cli.network.clone())?;
-                Self::handle_chain_command(adapter, command, cli.pretty).await?;
+                Self::handle_chain_command(adapter, command, cli.pretty, cli.verbose).await?;
             }
             Commands::Ethereum { command } => {
                 let adapter = ChainFactory::get_adapter(
@@ -157,22 +157,22 @@ impl CommandHandler {
                     cli.rpc_url.clone(),
                     cli.network.clone(),
                 )?;
-                Self::handle_chain_command(adapter, command, cli.pretty).await?;
+                Self::handle_chain_command(adapter, command, cli.pretty, cli.verbose).await?;
             }
             Commands::Solana { command } => {
                 let adapter =
                     ChainFactory::get_adapter("solana", cli.rpc_url.clone(), cli.network.clone())?;
-                Self::handle_chain_command(adapter, command, cli.pretty).await?;
+                Self::handle_chain_command(adapter, command, cli.pretty, cli.verbose).await?;
             }
             Commands::Aptos { command } => {
                 let adapter =
                     ChainFactory::get_adapter("aptos", cli.rpc_url.clone(), cli.network.clone())?;
-                Self::handle_chain_command(adapter, command, cli.pretty).await?;
+                Self::handle_chain_command(adapter, command, cli.pretty, cli.verbose).await?;
             }
             Commands::Soroban { command } => {
                 let adapter =
                     ChainFactory::get_adapter("soroban", cli.rpc_url.clone(), cli.network.clone())?;
-                Self::handle_chain_command(adapter, command, cli.pretty).await?;
+                Self::handle_chain_command(adapter, command, cli.pretty, cli.verbose).await?;
             }
             Commands::Db { action } => {
                 Self::handle_db_command(action).await?;
@@ -394,7 +394,18 @@ impl CommandHandler {
         adapter: Arc<dyn ChainAdapter>,
         command: ChainCommand,
         pretty: bool,
+        verbose: bool,
     ) -> Result<()> {
+        let start_time = std::time::Instant::now();
+
+        if verbose {
+            eprintln!(
+                "[verbose] target chain: {} | default RPC: {}",
+                adapter.name(),
+                adapter.default_rpc()
+            );
+        }
+
         match command {
             ChainCommand::Call { method, params } => {
                 let params_val: Value = if let Some(p) = params {
@@ -402,6 +413,10 @@ impl CommandHandler {
                 } else {
                     Value::Array(vec![])
                 };
+
+                if verbose {
+                    eprintln!("[verbose] method: {method} | params: {params_val}");
+                }
 
                 println!(
                     "{} Calling {} on {}...",
@@ -683,6 +698,11 @@ impl CommandHandler {
                 Self::print_value(&result, pretty)?;
             }
         }
+
+        if verbose {
+            eprintln!("[verbose] elapsed: {:.2?}", start_time.elapsed());
+        }
+
         Ok(())
     }
 
