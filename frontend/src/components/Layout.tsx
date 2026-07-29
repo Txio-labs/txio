@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { PanelLeft, PanelRight, Settings, ChevronDown, Globe, Loader2, Key, LayoutGrid, User, LogOut, MoreVertical, Trash2, Save, RotateCcw, Bookmark, Plus, Layers, Command, Sparkles, Search, X, CheckCircle, AlertCircle, Info, Server, Check, Terminal } from 'lucide-react';
+import { PanelLeft, PanelRight, Settings, ChevronDown, Globe, Loader2, Key, LayoutGrid, User, LogOut, MoreVertical, Trash2, Save, RotateCcw, Bookmark, Plus, Layers, Command, Sparkles, Search, X, Server, Check, Terminal } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { Tab } from './ui/Tabs';
 import { ALL_NETWORKS, TabItem, Network, RPCHealthMetric } from '../types';
@@ -64,7 +64,6 @@ export const Layout: React.FC<LayoutProps> = ({
         network,
         isSyncing,
         scanStep,
-        notifications,
         isTerminalOpen,
         pendingNetworkSwitch
     } = useAppStore();
@@ -126,19 +125,7 @@ export const Layout: React.FC<LayoutProps> = ({
             {/* Top Energy Line */}
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-slate-400 z-50 shadow-[0_0_15px_rgba(163,163,163,0.4)]"></div>
 
-            {/* Notification Toasts */}
-            <div className="fixed top-16 right-6 z-[120] flex flex-col gap-3 pointer-events-none">
-                {notifications.map(n => (
-                    <div key={n.id} className="animate-in slide-in-from-right-10 fade-in duration-300 pointer-events-auto">
-                        <div className="bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 px-4 py-3 rounded-lg shadow-2xl flex items-center gap-3 min-w-[300px]">
-                            {n.type === 'success' && <CheckCircle size={16} className="text-emerald-400" />}
-                            {n.type === 'error' && <AlertCircle size={16} className="text-red-400" />}
-                            {n.type === 'info' && <Info size={16} className="text-blue-400" />}
-                            <span className="text-xs font-bold">{n.message}</span>
-                        </div>
-                    </div>
-                ))}
-            </div>
+            {/* Notification toasts render globally via <ToastContainer /> in Providers */}
 
             {isSyncing && (
                 <div className="fixed inset-0 z-[110] bg-white/90 dark:bg-near-black/90 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in duration-300">

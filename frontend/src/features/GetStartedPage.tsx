@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { Github, Twitter } from '@/components/icons/BrandIcons';
 import { appStore, useAppStore } from '@/lib/store';
-import { API_BASE } from '@/services/api';
+import { ApiError, API_BASE, pingBackendAwake } from '@/services/api';
 import logoDark from '../assets/txio2.png';
 
 export const GetStartedPage: React.FC = () => {
@@ -34,7 +34,9 @@ export const GetStartedPage: React.FC = () => {
         } catch (error) {
             console.error(error);
             appStore.showToast(
-                "Signup didn't go through. Try again?",
+                error instanceof ApiError && error.status === 0
+                    ? error.message
+                    : "Signup didn't go through. Try again?",
                 'error'
             );
         } finally {
@@ -42,17 +44,38 @@ export const GetStartedPage: React.FC = () => {
         }
     };
 
-    const handleSocialLogin = (provider: string) => {
+    const handleSocialLogin = async (provider: string) => {
         setSocialLoading(provider);
         appStore.showToast(`Connecting to ${provider}...`, 'info');
-        
-        if (provider === 'Google') {
-            window.location.href = `${API_BASE}/auth/google/login`;
-            return;
-        }
 
-        if (provider === 'GitHub') {
-            window.location.href = `${API_BASE}/auth/github/login`;
+        // OAuth providers hand off via a full page navigation, which shows
+        // nothing but a blank tab while a cold backend wakes up. Ping it
+        // first so we can tell the user what's happening instead of
+        // silently redirecting into an apparent hang.
+        if (provider === 'Google' || provider === 'GitHub') {
+            const wakingUpTimer = setTimeout(() => {
+                appStore.showToast(
+                    'Server was idle and is waking up — this can take up to a minute...',
+                    'info'
+                );
+            }, 4000);
+
+            const awake = await pingBackendAwake();
+            clearTimeout(wakingUpTimer);
+
+            if (!awake) {
+                setSocialLoading(null);
+                appStore.showToast(
+                    "Couldn't reach the server. Please try again in a moment.",
+                    'error'
+                );
+                return;
+            }
+
+            window.location.href =
+                provider === 'Google'
+                    ? `${API_BASE}/auth/google/login`
+                    : `${API_BASE}/auth/github/login`;
             return;
         }
 

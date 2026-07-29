@@ -33,7 +33,45 @@ export const API_BASE = normalizeApiBase(
     process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_BASE
 );
 
+// /health is mounted at the backend's root, not under /api/v1.
+const API_ORIGIN = API_BASE.replace(/\/api\/v1$/, '');
+
+// OAuth logins hand off to the backend via a full page navigation
+// (window.location.href), which shows nothing but a blank tab while a
+// cold Render instance wakes up — indistinguishable from being broken.
+// Ping /health first (waking the instance in the process) so callers can
+// show a "waking up" message instead of a silent hang, and only then
+// perform the redirect.
+export async function pingBackendAwake(
+    timeoutMs = REQUEST_TIMEOUT_MS
+): Promise<boolean> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(
+        () => controller.abort(),
+        timeoutMs
+    );
+
+    try {
+        const response = await fetch(
+            `${API_ORIGIN}/health`,
+            { signal: controller.signal }
+        );
+        return response.ok;
+    } catch {
+        return false;
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
 const COMMAND_POLL_INTERVAL_MS = 500;
+
+// The backend runs on a Render free-tier instance that spins down after
+// inactivity and can take 50+ seconds to cold-start. Without a bound, a
+// hung request just sits there with no feedback, indistinguishable from a
+// dead backend. Give real headroom above the cold-start window before
+// giving up so genuine outages still fail in a reasonable time.
+const REQUEST_TIMEOUT_MS = 70_000;
 
 type MongoIdLike =
     | string
@@ -566,12 +604,32 @@ class ApiService {
 
         let response: Response;
 
+        const externalSignal = options.signal;
+        const timeoutController = new AbortController();
+        const timeoutId = setTimeout(
+            () => timeoutController.abort(),
+            REQUEST_TIMEOUT_MS
+        );
+
+        if (externalSignal) {
+            if (externalSignal.aborted) {
+                timeoutController.abort();
+            } else {
+                externalSignal.addEventListener(
+                    'abort',
+                    () => timeoutController.abort(),
+                    { once: true }
+                );
+            }
+        }
+
         try {
             response = await fetch(
                 `${API_BASE}${path}`,
                 {
                     ...options,
-                    headers
+                    headers,
+                    signal: timeoutController.signal
                 }
             );
         } catch (error) {
@@ -579,9 +637,16 @@ class ApiService {
                 error instanceof Error &&
                 error.name === 'AbortError'
             ) {
+                if (externalSignal?.aborted) {
+                    throw new ApiError(
+                        'Request cancelled.',
+                        499
+                    );
+                }
+
                 throw new ApiError(
-                    'Request cancelled.',
-                    499
+                    "The server took too long to respond. If it's been idle it may still be waking up (this can take up to a minute) — please try again.",
+                    0
                 );
             }
 
@@ -593,6 +658,8 @@ class ApiService {
                     : 'Unable to reach the backend. Check that the API server is running and FRONTEND_URL allows the frontend origin.';
 
             throw new ApiError(message, 0);
+        } finally {
+            clearTimeout(timeoutId);
         }
 
         if (!response.ok) {

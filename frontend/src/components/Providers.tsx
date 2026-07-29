@@ -10,6 +10,7 @@ import { WalletStoreBridge } from '@/components/wallet/WalletStoreBridge';
 import { wagmiConfig, WalletManagerProvider } from '@/wallet';
 import { RedirectManager } from "./RedirectManager";
 import { ThemeSync } from './ThemeSync';
+import { ToastContainer } from './ToastContainer';
 import { useAppStore } from '@/lib/store';
 import { resolveRpcUrl } from '@/lib/appConfig';
 import { ALL_NETWORKS } from '@/types';
@@ -47,6 +48,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
                             <ThemeSync />
                             <WalletStoreBridge />
                             <WalletModal />
+                            <ToastContainer />
                             <Suspense fallback={null}>
                                 <RedirectManager />
                             </Suspense>
