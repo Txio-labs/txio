@@ -8,7 +8,7 @@ import { TestsEditor } from './editors/TestsEditor';
 import { HooksEditor } from './editors/HooksEditor';
 import { RawEditor } from './editors/RawEditor';
 import { CodeSnippet } from './editors/CodeSnippet';
-import { RequestType } from '../../types';
+import { RequestType, ChainId } from '../../types';
 
 export const RequestPanel: React.FC<RequestPanelProps> = ({ 
   request, 
@@ -29,6 +29,15 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
   const handleTypeChange = (type: RequestType) => {
     onChange({ ...request, type });
   };
+
+  const handleChainChange =
+    request.type === RequestType.RPC
+      ? (nextChain: ChainId) =>
+          onChange({
+            ...request,
+            rpcParams: { ...request.rpcParams, chain: nextChain, method: '', params: [] }
+          })
+      : undefined;
 
   const renderContent = () => {
     switch (activeTab) {
@@ -90,6 +99,7 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
         onSend={onSend}
         onExecute={onExecute}
         chain={chain}
+        onChainChange={handleChainChange}
       />
 
       <RequestTabs

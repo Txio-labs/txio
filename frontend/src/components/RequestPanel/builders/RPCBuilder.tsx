@@ -4,14 +4,12 @@ import {
   ADDRESS_FIRST_PARAM_METHODS,
   COMMON_RPC_METHODS,
   DEFAULT_RPC_CHAIN,
-  RPC_CHAINS,
   RPC_METHOD_TEMPLATES,
 } from '@/lib/constants';
 import { useAppStore } from '@/lib/store';
 import { looksLikeSuiNs, resolveSuiAddress, SuiRpcError } from '@/services/suiService';
 import { ChainId } from '@/types';
 import { JsonEditor } from '../../ui/JsonEditor';
-import { Select } from '../../Select';
 
 interface RPCBuilderProps {
   request: any;
@@ -37,17 +35,13 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
   const methodsForChain = COMMON_RPC_METHODS[chain];
   const templatesForChain = RPC_METHOD_TEMPLATES[chain];
 
-  const setChain = useCallback(
-    (nextChain: ChainId) => {
-      onChange({
-        ...request,
-        rpcParams: { ...request.rpcParams, chain: nextChain, method: '', params: [] },
-      });
-      setRawJson(null);
-      setJsonError(null);
-    },
-    [onChange, request],
-  );
+  // Chain switching now lives in the request header bar (above this panel);
+  // reset the raw-JSON edit buffer whenever it changes, regardless of what
+  // triggered the change.
+  useEffect(() => {
+    setRawJson(null);
+    setJsonError(null);
+  }, [chain]);
 
   const displayJson =
     rawJson !== null
@@ -185,20 +179,6 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
         <div className="flex items-center gap-3 mb-6">
           <div className="w-1.5 h-6 bg-emerald-500 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.4)]"></div>
           <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-[0.2em]">RPC Method</h3>
-        </div>
-
-        {/* Chain selector — scopes the method suggestions and "Insert template" below. */}
-        <div className="mb-4">
-          <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-2">
-            Chain
-          </label>
-          <Select
-            value={chain}
-            onChange={(value) => setChain(value as ChainId)}
-            options={RPC_CHAINS.map((c) => ({ label: c.label, value: c.id }))}
-            fullWidth
-            variant="glass"
-          />
         </div>
 
         <div className="relative">

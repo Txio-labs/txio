@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Play, Zap, Loader2, Server, Terminal, Layers } from 'lucide-react';
 import { Select } from '../Select';
-import { RequestType, Network, ChainId, RPCHealthMetric } from '../../types';
-import { useAppStore } from '@/lib/store';
+import { RequestType, Network, ChainId, ALL_NETWORKS, RPCHealthMetric } from '../../types';
+import { appStore, useAppStore } from '@/lib/store';
+import { RPC_CHAINS } from '@/lib/constants';
 import { resolveChainRpcUrl, getChainRpcHealth } from '../../services/suiService';
 
 interface HeaderBarProps {
@@ -14,6 +15,7 @@ interface HeaderBarProps {
   onSend: () => void;
   onExecute?: () => void;
   chain?: ChainId;
+  onChainChange?: (chain: ChainId) => void;
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
@@ -24,7 +26,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onTypeChange,
   onSend,
   onExecute,
-  chain: chainProp
+  chain: chainProp,
+  onChainChange
 }) => {
   const { settings } = useAppStore();
   const [rpcHealth, setRpcHealth] = useState<RPCHealthMetric | null>(null);
@@ -64,12 +67,30 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
       </div>
       
       {/* Enhanced Endpoint Context */}
-      <div className="flex-1 flex items-center bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1.5 h-[38px] min-w-[200px] group focus-within:border-slate-300 dark:border-white/20 transition-colors">
-        <div className="flex items-center gap-2 mr-3 border-r border-slate-200 dark:border-white/10 pr-3">
-          <Server size={12} className="text-slate-500" />
-          <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase">{network}</span>
+      <div className="flex-1 flex items-center bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg pl-1.5 pr-3 py-1.5 h-[38px] min-w-[200px] gap-2 group focus-within:border-slate-300 dark:border-white/20 transition-colors">
+        <div className="w-28 shrink-0">
+          <Select
+            value={chain}
+            onChange={(value) => onChainChange?.(value as ChainId)}
+            options={RPC_CHAINS.map((c) => ({ label: c.label, value: c.id }))}
+            size="xs"
+            variant="ghost"
+            disabled={!onChainChange}
+            fullWidth
+          />
         </div>
-        <div className="flex-1 flex items-center gap-2 overflow-hidden">
+        <div className="w-24 shrink-0 border-l border-slate-200 dark:border-white/10 pl-2">
+          <Select
+            value={network}
+            onChange={(value) => appStore.requestNetworkSwitch(value as Network)}
+            options={ALL_NETWORKS.map((n) => ({ label: n.toUpperCase(), value: n }))}
+            size="xs"
+            variant="ghost"
+            fullWidth
+          />
+        </div>
+        <div className="flex-1 flex items-center gap-2 overflow-hidden border-l border-slate-200 dark:border-white/10 pl-2">
+          <Server size={12} className="text-slate-500 shrink-0" />
           <span className="text-xs font-mono text-slate-500 truncate" title={endpoint}>{endpoint}</span>
         </div>
         {rpcHealth && (
