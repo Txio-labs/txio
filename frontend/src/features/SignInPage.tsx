@@ -279,7 +279,11 @@ export const SignInPage: React.FC = () => {
                             router.push('/');
                         }
                     }}
-                    className="absolute top-8 left-8 flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-white transition-colors"
+                    className={`absolute top-8 left-8 flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors ${
+                        theme === 'dark'
+                            ? 'hover:text-white'
+                            : 'hover:text-slate-900'
+                    }`}
                 >
                     <ArrowLeft size={16} />
                     Back
@@ -704,7 +708,11 @@ export const SignInPage: React.FC = () => {
                                 appStore.setViewMode('signup');
                                 router.push('/signup');
                             }}
-                            className="text-sm font-medium text-slate-500 hover:text-white transition-colors"
+                            className={`text-sm font-medium text-slate-500 transition-colors ${
+                                theme === 'dark'
+                                    ? 'hover:text-white'
+                                    : 'hover:text-slate-900'
+                            }`}
                         >
                             Don&apos;t have an account?{' '}
                             <span className="text-electric-violet font-bold">

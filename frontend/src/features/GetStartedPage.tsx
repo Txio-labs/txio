@@ -146,7 +146,11 @@ export const GetStartedPage: React.FC = () => {
                         appStore.setViewMode('landing');
                         router.push('/');
                     }}
-                    className="absolute top-8 left-8 flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-white transition-colors"
+                    className={`absolute top-8 left-8 flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors ${
+                        theme === 'dark'
+                            ? 'hover:text-white'
+                            : 'hover:text-slate-900'
+                    }`}
                 >
                     <ArrowLeft size={16} /> Back
                 </button>
@@ -287,7 +291,11 @@ export const GetStartedPage: React.FC = () => {
                                 appStore.setViewMode('signin');
                                 router.push('/signin');
                             }}
-                            className="text-sm font-medium text-slate-500 hover:text-white transition-colors"
+                            className={`text-sm font-medium text-slate-500 transition-colors ${
+                                theme === 'dark'
+                                    ? 'hover:text-white'
+                                    : 'hover:text-slate-900'
+                            }`}
                         >
                             Already have an account? <span className="text-electric-violet font-bold">Sign In</span>
                         </button>
