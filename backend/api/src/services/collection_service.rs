@@ -1,4 +1,4 @@
-use crate::model::{collection::Collection, request::SavedRequest};
+use crate::model::{collection::Collection, network::Network, request::SavedRequest};
 use crate::repositories::{
     collection_repository::CollectionRepository, request_repository::RequestRepository,
     user_repository::UserRepository, workspace_repository::WorkspaceRepository,
@@ -62,7 +62,33 @@ impl CollectionService {
 
         Ok(())
     }
+    /// Parses a stored `SavedRequest.network` string (e.g. `"localnet"`) into
+    /// a [`Network`], surfacing an unknown value as a client error rather
+    /// than panicking or silently defaulting.
+    fn resolve_network_str(net_str: &str) -> Result<Network, AppError> {
+        net_str
+            .parse::<Network>()
+            .map_err(|e| AppError::BadRequest(format!("Invalid network: {e}")))
+    }
+
+    /// Returns `true` when `url_str` is exactly one of the hardcoded,
+    /// per-network default RPC URLs (see [`Network::sui_url`]). These values
+    /// are baked into the binary, not user-supplied, so allowing them here
+    /// does not expand what an attacker can reach through a request's
+    /// `rpc_url` field — in practice the only one the checks below would
+    /// otherwise reject is `Network::Localnet`'s `http://127.0.0.1:9000`,
+    /// since the other networks' defaults are already `https`.
+    fn is_canonical_network_default(url_str: &str) -> bool {
+        Network::ALL
+            .iter()
+            .any(|network| network.sui_url() == url_str)
+    }
+
     fn validate_url(url_str: &str) -> Result<(), AppError> {
+        if Self::is_canonical_network_default(url_str) {
+            return Ok(());
+        }
+
         // Parse URL
         let url = Url::parse(url_str)
             .map_err(|e| AppError::BadRequest(format!("Invalid RPC URL: {e}")))?;
@@ -420,6 +446,53 @@ mod tests {
     fn test_validate_url_blocked_link_local() {
         assert!(CollectionService::validate_url("https://169.254.169.254").is_err());
         assert!(CollectionService::validate_url("https://[fe80::1]").is_err());
+    }
+
+    #[test]
+    fn test_validate_url_allows_localnet_canonical_default() {
+        // Regression test for issue #358: Network::Localnet's own default RPC
+        // URL is `http://127.0.0.1:9000`, which the HTTPS-only/loopback
+        // checks would otherwise reject, making Localnet execution
+        // impossible even though it's a fully supported network.
+        assert!(CollectionService::validate_url(Network::Localnet.sui_url()).is_ok());
+    }
+
+    #[test]
+    fn test_validate_url_allows_every_canonical_network_default() {
+        for network in Network::ALL {
+            assert!(
+                CollectionService::validate_url(network.sui_url()).is_ok(),
+                "canonical default for {network} should be allowed: {}",
+                network.sui_url()
+            );
+        }
+    }
+
+    #[test]
+    fn test_validate_url_still_blocks_non_canonical_loopback_urls() {
+        // The exception is an exact match against the fixed per-network
+        // default URLs, not a blanket loopback allowance: a *different*
+        // loopback URL (e.g. a different port) must still be rejected.
+        assert!(CollectionService::validate_url("http://127.0.0.1:9001").is_err());
+        assert!(CollectionService::validate_url("http://127.0.0.1:9000/evil").is_err());
+        assert!(CollectionService::validate_url("https://127.0.0.1:9000").is_err());
+    }
+
+    #[test]
+    fn test_resolve_network_str_accepts_known_networks() {
+        assert_eq!(
+            CollectionService::resolve_network_str("localnet").unwrap(),
+            Network::Localnet
+        );
+        assert_eq!(
+            CollectionService::resolve_network_str("Mainnet").unwrap(),
+            Network::Mainnet
+        );
+    }
+
+    #[test]
+    fn test_resolve_network_str_rejects_unknown_network() {
+        assert!(CollectionService::resolve_network_str("supernet").is_err());
     }
 
     #[test]
