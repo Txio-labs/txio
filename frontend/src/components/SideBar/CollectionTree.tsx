@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Folder, Plus, ChevronRight, ChevronDown, Play } from 'lucide-react';
+import { Folder, Plus, ChevronRight, ChevronDown, Play, Trash2 } from 'lucide-react';
 import { CollectionNode } from '../../types';
 import { appStore } from '@/lib/store';
 
@@ -118,6 +118,22 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
                 >
                   <Plus size={10} />
                 </button>
+                {node.type === 'collection' && (
+                  <button
+                    onClick={(e) => {
+                      // Confirm before deleting, since this permanently
+                      // removes the collection and all of its requests.
+                      e.stopPropagation();
+                      if (window.confirm(`Delete collection "${node.name}"? This cannot be undone.`)) {
+                        appStore.deleteCollection(node.id);
+                      }
+                    }}
+                    className="p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded text-slate-500 hover:text-red-400 transition-colors"
+                    title="Delete Collection"
+                  >
+                    <Trash2 size={10} />
+                  </button>
+                )}
               </div>
             )}
           </button>

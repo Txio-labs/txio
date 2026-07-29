@@ -1490,6 +1490,26 @@ export const appStore = {
         }
     },
 
+    async deleteCollection(id: string) {
+        try {
+            await apiService.deleteCollection(id);
+
+            state = {
+                ...state,
+                collections: state.collections.filter(
+                    (c) => c.id !== id
+                )
+            };
+
+            emit();
+        } catch (error: any) {
+            appStore.showToast(
+                error.message,
+                'error'
+            );
+        }
+    },
+
     toggleCollectionExpand(nodeId: string) {
         const toggle = (
             nodes: CollectionNode[]
