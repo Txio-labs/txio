@@ -60,7 +60,7 @@ export const CommandPalette: React.FC = () => {
         items.push(
             { id: 'new-req', title: 'New Request', subtitle: 'Create a blank JSON-RPC or Move Call', icon: <Plus size={14} />, action: () => appStore.openTab('new_request'), keywords: ['new', 'create', 'request'] },
             { id: 'new-ptb', title: 'New PTB', subtitle: 'Programmable Transaction Block Builder', icon: <Layers size={14} />, action: () => appStore.openTab('ptb'), keywords: ['new', 'create', 'ptb', 'transaction'] },
-            { id: 'move-builder', title: 'Move Builder', subtitle: 'Write and deploy Move contracts visually', icon: <Code2 size={14} />, action: () => appStore.openTab('move'), keywords: ['move', 'contract', 'deploy', 'builder'] },
+            { id: 'contract-builder', title: 'Contract Builder', subtitle: 'Write and deploy contracts across Sui, EVM, and Stellar', icon: <Code2 size={14} />, action: () => appStore.openTab('move'), keywords: ['move', 'solidity', 'soroban', 'contract', 'deploy', 'builder', 'sui', 'evm', 'stellar'] },
             { id: 'playground', title: 'Playground', subtitle: 'Test SDK snippets against live state', icon: <Sparkles size={14} />, action: () => appStore.openTab('playground'), keywords: ['playground', 'sdk', 'snippet', 'test'] },
             { id: 'settings', title: 'Settings', icon: <Settings size={14} />, action: () => appStore.openTab('settings'), keywords: ['config', 'preferences'] },
             { id: 'profile', title: 'Profile', icon: <User size={14} />, action: () => appStore.openTab('profile'), keywords: ['account', 'user'] },

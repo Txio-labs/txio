@@ -20,7 +20,7 @@ import { ProfilePage } from "@/features/ProfilePage";
 import { SettingsPage } from "@/features/SettingsPage";
 import { AIChat } from "@/features/AIChat";
 import { CollectionRunner } from "@/features/CollectionRunner";
-import { MoveBuilder } from "@/features/MoveBuilder";
+import { ContractBuilder } from "@/features/ContractBuilder";
 import { Playground } from "@/features/Playground";
 import { WorkspaceOnboarding } from "@/features/WorkspaceOnboarding";
 import { DocsPage } from "@/features/DocsPage";
@@ -61,7 +61,7 @@ const WorkspaceContent: React.FC = () => {
         case 'runner':
             return <CollectionRunner collectionId={activeTab.data?.collectionId} />;
         case 'move':
-            return <MoveBuilder />;
+            return <ContractBuilder />;
         case 'playground':
             return <Playground />;
         case 'docs':

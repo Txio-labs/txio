@@ -151,7 +151,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
               ? 'text-electric-violet bg-electric-violet/[0.08]'
               : 'text-slate-500 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:bg-white/[0.04]'}
           `}
-          title="Move Builder"
+          title="Contract Builder"
         >
           <Code2 size={18} strokeWidth={1.75} className="group-hover:scale-110 transition-transform duration-300" />
         </button>
