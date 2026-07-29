@@ -94,12 +94,6 @@ export const GetStartedPage: React.FC = () => {
         }`}>
             {/* Left Wing */}
             <div className="hidden lg:flex flex-1 relative bg-near-black border-r border-white/5 p-16 flex-col justify-between overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-full opacity-30" style={{ 
-                    backgroundImage: 'linear-gradient(rgba(163,163,163, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(163,163,163, 0.05) 1px, transparent 1px)',
-                    backgroundSize: '50px 50px'
-                }}></div>
-                <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-electric-violet/10 blur-[120px] rounded-full"></div>
-                
                 <div className="relative z-10">
                     <button 
                         className="flex items-center gap-3 mb-16 cursor-pointer"

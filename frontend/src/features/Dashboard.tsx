@@ -95,33 +95,6 @@ export const Dashboard: React.FC = () => {
             variants={containerVariants}
             className="h-full overflow-y-auto bg-near-black p-6 md:p-10 custom-scrollbar relative overflow-hidden"
         >
-            {/* Background Architecture */}
-            <div className="absolute inset-0 pointer-events-none opacity-20">
-                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(163,163,163, 0.15) 1px, transparent 0)', backgroundSize: '40px 40px' }}></div>
-                <div className="absolute inset-0 bg-gradient-to-t from-near-black via-transparent to-transparent"></div>
-            </div>
-
-            {/* Floating Ambient Glows */}
-            <motion.div 
-                animate={{ 
-                    x: [0, 100, 0], 
-                    y: [0, -50, 0],
-                    scale: [1, 1.2, 1] 
-                }}
-                transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-                className="absolute top-[-10%] left-[10%] w-[500px] h-[500px] bg-electric-violet/10 blur-[150px] rounded-full pointer-events-none"
-            ></motion.div>
-            
-            <motion.div 
-                animate={{ 
-                    x: [0, -150, 0], 
-                    y: [0, 100, 0],
-                    scale: [1, 1.3, 1] 
-                }}
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                className="absolute bottom-[-20%] right-[5%] w-[600px] h-[600px] bg-soft-purple/5 blur-[180px] rounded-full pointer-events-none"
-            ></motion.div>
-
             {/* Hero Section */}
             <motion.div variants={itemVariants} className="mb-16 relative">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">

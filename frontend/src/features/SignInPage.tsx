@@ -193,17 +193,6 @@ export const SignInPage: React.FC = () => {
         >
             {/* Left Wing */}
             <div className="hidden lg:flex flex-1 relative bg-near-black border-r border-white/5 p-16 flex-col justify-between overflow-hidden">
-                <div
-                    className="absolute inset-0 opacity-20"
-                    style={{
-                        backgroundImage:
-                            'radial-gradient(circle at 2px 2px, #a3a3a3 1px, transparent 0)',
-                        backgroundSize: '30px 30px'
-                    }}
-                />
-
-                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-electric-violet/10 blur-[150px] rounded-full"></div>
-
                 <div className="relative z-10">
                     <button
                         className="flex items-center gap-3 mb-16 cursor-pointer"
