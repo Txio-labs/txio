@@ -445,7 +445,8 @@ const hydrateWorkspaceState = async (
             ? state.collections
             : [],
         isLoadingWorkspaces: false,
-        hasHydratedWorkspaces: true
+        hasHydratedWorkspaces: true,
+        workspacesLoadFailed: false
     };
 
     emit();
@@ -570,6 +571,12 @@ interface AppState {
     currentWorkspaceId: string;
     isLoadingWorkspaces: boolean;
     hasHydratedWorkspaces: boolean;
+    // True only when a workspaces fetch actually failed, as opposed to
+    // succeeding with zero workspaces. Lets the UI distinguish "this
+    // account genuinely has no workspaces yet" (show onboarding) from "we
+    // don't know because the request failed" (show a retry state instead
+    // of an onboarding flow that would create a duplicate workspace).
+    workspacesLoadFailed: boolean;
 
     isSidebarOpen: boolean;
     isInspectorOpen: boolean;
@@ -647,6 +654,8 @@ let state: AppState = {
     isLoadingWorkspaces: false,
 
     hasHydratedWorkspaces: false,
+
+    workspacesLoadFailed: false,
 
     isSidebarOpen: true,
 
@@ -1220,6 +1229,7 @@ export const appStore = {
                 collections: [],
                 isLoadingWorkspaces: false,
                 hasHydratedWorkspaces: true,
+                workspacesLoadFailed: false,
                 tabs: [],
                 activeTabId: null
             };
@@ -1230,7 +1240,8 @@ export const appStore = {
 
         state = {
             ...state,
-            isLoadingWorkspaces: true
+            isLoadingWorkspaces: true,
+            workspacesLoadFailed: false
         };
 
         emit();
@@ -1253,7 +1264,8 @@ export const appStore = {
                 tabs: [],
                 activeTabId: null,
                 isLoadingWorkspaces: false,
-                hasHydratedWorkspaces: true
+                hasHydratedWorkspaces: true,
+                workspacesLoadFailed: true
             };
 
             emit();
@@ -1745,6 +1757,7 @@ export const appStore = {
             activeTabId: null,
             isLoadingWorkspaces: false,
             hasHydratedWorkspaces: false,
+            workspacesLoadFailed: false,
             viewMode: 'landing'
         };
 
@@ -1891,7 +1904,8 @@ export const appStore = {
                     state = {
                         ...state,
                         isLoadingWorkspaces: false,
-                        hasHydratedWorkspaces: true
+                        hasHydratedWorkspaces: true,
+                        workspacesLoadFailed: true
                     };
 
                     emit();
@@ -1929,6 +1943,7 @@ export const appStore = {
                         activeTabId: null,
                         isLoadingWorkspaces: false,
                         hasHydratedWorkspaces: false,
+                        workspacesLoadFailed: false,
                         viewMode:
                             'landing'
                     };
@@ -1965,7 +1980,8 @@ export const appStore = {
                         state = {
                             ...state,
                             isLoadingWorkspaces: false,
-                            hasHydratedWorkspaces: true
+                            hasHydratedWorkspaces: true,
+                            workspacesLoadFailed: true
                         };
 
                         emit();
@@ -1974,7 +1990,8 @@ export const appStore = {
                     state = {
                         ...state,
                         isLoadingWorkspaces: false,
-                        hasHydratedWorkspaces: true
+                        hasHydratedWorkspaces: true,
+                        workspacesLoadFailed: false
                     };
 
                     emit();
@@ -1994,6 +2011,7 @@ export const appStore = {
                 activeTabId: null,
                 isLoadingWorkspaces: false,
                 hasHydratedWorkspaces: false,
+                workspacesLoadFailed: false,
                 viewMode: 'landing'
             };
 
@@ -2020,7 +2038,8 @@ export const appStore = {
                 tabs: [],
                 activeTabId: null,
                 isLoadingWorkspaces: false,
-                hasHydratedWorkspaces: false
+                hasHydratedWorkspaces: false,
+                workspacesLoadFailed: false
             };
 
             emit();

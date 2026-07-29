@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from "react";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Sidebar } from "@/components/SideBar/Sidebar";
 import { RightPanel } from "@/components/RightPanel/RightPanel";
@@ -89,6 +90,7 @@ export default function WorkspacePage() {
         workspaces,
         currentWorkspaceId,
         hasHydratedWorkspaces,
+        workspacesLoadFailed,
         collections,
         history,
         envVariables,
@@ -103,9 +105,19 @@ export default function WorkspacePage() {
 
     const currentWorkspace =
         workspaces.find((w) => w.id === currentWorkspaceId) || workspaces[0];
+    // Only route into onboarding when we've confirmed the account has zero
+    // workspaces. A failed/timed-out fetch also leaves workspaces empty, but
+    // routing that through onboarding would let the user "create" a
+    // workspace they may already have, every time the backend hiccups.
     const needsWorkspaceSetup =
         Boolean(user) &&
         hasHydratedWorkspaces &&
+        !workspacesLoadFailed &&
+        workspaces.length === 0;
+    const workspacesFailedToLoad =
+        Boolean(user) &&
+        hasHydratedWorkspaces &&
+        workspacesLoadFailed &&
         workspaces.length === 0;
     const isBootstrappingWorkspace =
         Boolean(user) &&
@@ -137,6 +149,28 @@ export default function WorkspacePage() {
                                 Restoring your txio environment, workspace list,
                                 and saved operational context.
                             </p>
+                        </div>
+                    </div>
+                ) : workspacesFailedToLoad ? (
+                    <div className="min-h-screen bg-near-black text-white flex items-center justify-center px-6">
+                        <div className="w-full max-w-md rounded-[2rem] border border-white/10 bg-white/[0.035] p-8 text-center shadow-[0_30px_80px_-55px_rgba(163,163,163,0.65)]">
+                            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-red-500/10 text-red-400">
+                                <AlertTriangle size={22} />
+                            </div>
+                            <h2 className="mt-5 text-2xl font-bold text-white">
+                                Couldn&apos;t load your workspaces
+                            </h2>
+                            <p className="mt-3 text-sm leading-7 text-slate-400">
+                                The server didn&apos;t respond in time. If it was
+                                idle, it may still be waking up.
+                            </p>
+                            <button
+                                onClick={() => appStore.fetchWorkspaces()}
+                                className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-electric-violet px-5 py-3 text-sm font-bold text-white transition-all hover:bg-soft-purple"
+                            >
+                                <RefreshCw size={15} />
+                                Try again
+                            </button>
                         </div>
                     </div>
                 ) : needsWorkspaceSetup ? (

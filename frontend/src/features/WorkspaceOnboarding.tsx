@@ -96,7 +96,7 @@ export const WorkspaceOnboarding: React.FC<
                 <div className="absolute -left-24 top-16 h-72 w-72 rounded-full bg-electric-violet/18 blur-[120px]" />
                 <div className="absolute bottom-0 right-0 h-[28rem] w-[28rem] rounded-full bg-soft-purple/14 blur-[140px]" />
 
-                <div className="relative mx-auto flex min-h-screen max-w-7xl flex-col gap-10 px-6 py-10 lg:flex-row lg:items-center lg:px-10">
+                <div className="relative mx-auto flex min-h-screen w-full max-w-[1800px] flex-col gap-10 px-6 py-10 lg:flex-row lg:items-center lg:gap-16 lg:px-16 xl:px-24">
                     <motion.div
                         initial={{
                             opacity: 0,
