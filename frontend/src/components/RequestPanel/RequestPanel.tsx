@@ -58,7 +58,7 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
       case 'builder':
       default:
         return (
-          <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-8">
+          <div className="p-4 md:p-6 w-full space-y-8">
             {request.type === RequestType.RPC ? (
               <RPCBuilder 
                 request={request}
