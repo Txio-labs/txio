@@ -1,5 +1,6 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Check } from 'lucide-react';
 
 export interface SelectOption {
@@ -20,11 +21,20 @@ interface SelectProps {
   disabled?: boolean;
 }
 
-export const Select: React.FC<SelectProps> = ({ 
-  value, 
-  options, 
-  onChange, 
-  className = '', 
+interface MenuPosition {
+  left: number;
+  width: number;
+  openUpward: boolean;
+  // Distance from the relevant viewport edge (top when opening downward,
+  // bottom when opening upward) to anchor the menu against.
+  anchor: number;
+}
+
+export const Select: React.FC<SelectProps> = ({
+  value,
+  options,
+  onChange,
+  className = '',
   placeholder,
   fullWidth = false,
   variant = 'default',
@@ -33,17 +43,21 @@ export const Select: React.FC<SelectProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [menuPosition, setMenuPosition] = useState<'bottom' | 'top'>('bottom');
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [menuPos, setMenuPos] = useState<MenuPosition | null>(null);
 
   const selectedOption = options.find(o => o.value === value);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const insideTrigger = containerRef.current?.contains(target);
+      const insideMenu = menuRef.current?.contains(target);
+      if (!insideTrigger && !insideMenu) {
         setIsOpen(false);
       }
     };
-    
+
     // Auto-close on scroll to prevent detached menus
     const handleScroll = () => {
         if (isOpen) setIsOpen(false);
@@ -51,25 +65,40 @@ export const Select: React.FC<SelectProps> = ({
 
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('scroll', handleScroll, true); // Capture phase
-    
+
     return () => {
         document.removeEventListener('mousedown', handleClickOutside);
         document.removeEventListener('scroll', handleScroll, true);
     };
   }, [isOpen]);
 
-  // Check available space on open
-  useEffect(() => {
-      if (isOpen && containerRef.current) {
+  // The menu is portaled to <body> so it can escape any ancestor's
+  // overflow:hidden/auto (a scrollable panel, a modal, etc.) instead of
+  // being clipped by it. Since it's no longer a CSS-positioned child of
+  // the trigger, its position has to be computed from the trigger's
+  // actual viewport rect instead.
+  useLayoutEffect(() => {
+      if (!isOpen || !containerRef.current) return;
+
+      const updatePosition = () => {
+          if (!containerRef.current) return;
           const rect = containerRef.current.getBoundingClientRect();
           const spaceBelow = window.innerHeight - rect.bottom;
-          if (spaceBelow < 200 && rect.top > 200) {
-              setMenuPosition('top');
-          } else {
-              setMenuPosition('bottom');
-          }
-      }
-  }, [isOpen]);
+          const openUpward = spaceBelow < 200 && rect.top > 200;
+          const width = fullWidth ? rect.width : Math.max(rect.width, 140);
+
+          setMenuPos({
+              left: fullWidth ? rect.left : rect.right - width,
+              width,
+              openUpward,
+              anchor: openUpward ? window.innerHeight - rect.top : rect.bottom
+          });
+      };
+
+      updatePosition();
+      window.addEventListener('resize', updatePosition);
+      return () => window.removeEventListener('resize', updatePosition);
+  }, [isOpen, fullWidth]);
 
   const sizeClasses = {
     xs: 'px-2 py-1 text-[10px] min-h-[24px]',
@@ -105,50 +134,63 @@ export const Select: React.FC<SelectProps> = ({
             {selectedOption?.label || placeholder || 'Select...'}
           </span>
         </div>
-        <ChevronDown 
-          size={size === 'xs' ? 12 : 14} 
-          className={`shrink-0 transition-transform duration-300 text-slate-500 ${isOpen ? 'rotate-180 text-electric-violet' : ''}`} 
+        <ChevronDown
+          size={size === 'xs' ? 12 : 14}
+          className={`shrink-0 transition-transform duration-300 text-slate-500 ${isOpen ? 'rotate-180 text-electric-violet' : ''}`}
         />
       </button>
 
-      {isOpen && (
-        <div 
-            className={`
-                absolute z-[100] w-full min-w-[140px] p-1 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top
-                ${menuPosition === 'bottom' ? 'top-full mt-1' : 'bottom-full mb-1'}
-                ${fullWidth ? '' : 'right-0'}
-            `}
-        >
-          <div className="max-h-60 overflow-y-auto custom-scrollbar space-y-0.5">
-            {options.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
-                className={`
-                  w-full flex items-center justify-between px-2.5 py-1.5 text-left rounded-lg transition-colors group
-                  ${size === 'xs' ? 'text-[10px]' : 'text-xs'}
-                  ${option.value === value
-                    ? 'bg-white/10 text-electric-violet font-bold'
-                    : 'text-slate-400 hover:bg-slate-100 dark:bg-white/5 hover:text-slate-700 dark:text-slate-200'
-                  }
-                `}
-              >
-                <div className="flex items-center gap-2 truncate">
-                   {option.icon}
-                   <span className="truncate">{option.label}</span>
-                </div>
-                {option.value === value && <Check size={12} className="text-electric-violet shrink-0" />}
-              </button>
-            ))}
+      {isOpen && menuPos && typeof document !== 'undefined' && createPortal(
+        <>
+          {/* Backdrop for mobile/safety to close on click outside if pure CSS */}
+          <button
+            className="fixed inset-0 z-[100] cursor-default"
+            onClick={() => setIsOpen(false)}
+            tabIndex={-1}
+            aria-hidden="true"
+          ></button>
+
+          <div
+            ref={menuRef}
+            style={{
+                position: 'fixed',
+                left: menuPos.left,
+                width: menuPos.width,
+                ...(menuPos.openUpward
+                    ? { bottom: menuPos.anchor + 4 }
+                    : { top: menuPos.anchor + 4 })
+            }}
+            className="z-[101] p-1 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top"
+          >
+            <div className="max-h-60 overflow-y-auto custom-scrollbar space-y-0.5">
+              {options.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => {
+                    onChange(option.value);
+                    setIsOpen(false);
+                  }}
+                  className={`
+                    w-full flex items-center justify-between px-2.5 py-1.5 text-left rounded-lg transition-colors group
+                    ${size === 'xs' ? 'text-[10px]' : 'text-xs'}
+                    ${option.value === value
+                      ? 'bg-white/10 text-electric-violet font-bold'
+                      : 'text-slate-400 hover:bg-slate-100 dark:bg-white/5 hover:text-slate-700 dark:text-slate-200'
+                    }
+                  `}
+                >
+                  <div className="flex items-center gap-2 truncate">
+                     {option.icon}
+                     <span className="truncate">{option.label}</span>
+                  </div>
+                  {option.value === value && <Check size={12} className="text-electric-violet shrink-0" />}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        </>,
+        document.body
       )}
-      
-      {/* Backdrop for mobile/safety to close on click outside if pure CSS */}
-      {isOpen && <button className="fixed inset-0 z-[10] cursor-default" onClick={() => setIsOpen(false)} tabIndex={-1} aria-hidden="true"></button>}
     </div>
   );
 };

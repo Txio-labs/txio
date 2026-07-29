@@ -68,7 +68,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
       
       {/* Enhanced Endpoint Context */}
       <div className="flex-1 flex items-center bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg pl-1.5 pr-3 py-1.5 h-[38px] min-w-[200px] gap-2 group focus-within:border-slate-300 dark:border-white/20 transition-colors">
-        <div className="w-28 shrink-0">
+        <div className="w-32 shrink-0">
           <Select
             value={chain}
             onChange={(value) => onChainChange?.(value as ChainId)}
@@ -79,7 +79,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             fullWidth
           />
         </div>
-        <div className="w-24 shrink-0 border-l border-slate-200 dark:border-white/10 pl-2">
+        <div className="w-28 shrink-0 border-l border-slate-200 dark:border-white/10 pl-2">
           <Select
             value={network}
             onChange={(value) => appStore.requestNetworkSwitch(value as Network)}
