@@ -137,7 +137,7 @@ export const Dashboard: React.FC = () => {
                         </motion.div>
                         <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tighter leading-tight">
                             Good to see <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-soft-purple/50">you again.</span>
+                            you again.
                         </h1>
                         <p className="text-slate-400 mt-6 max-w-xl text-base md:text-lg leading-relaxed font-medium">
                             Your workspace is right where you left it. Open a tab, run a request, build something good.
