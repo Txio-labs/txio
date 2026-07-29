@@ -6,23 +6,45 @@ import { useAppStore, appStore } from '@/lib/store';
 import { apiService } from '@/services/api';
 import { FeatureId } from '@/types';
 
-// Read and clear the short-lived OAuth token the backend hands off via a
-// URL fragment. A cookie can't be used here: the backend and frontend are
-// different sites (different eTLD+1), so a cookie the backend's redirect
-// response sets is scoped to the backend's own origin and is never visible
-// to document.cookie here. A fragment is never sent to any server (this
-// one included) and is stripped from Referer headers, so it's read once
-// on load and immediately stripped from the URL.
-function consumeOAuthFragmentToken(): string | null {
+// Read and clear the short-lived OAuth token the backend hands off. The
+// intended handoff is a URL fragment (`#token=...`): a cookie can't be used
+// here since the backend and frontend are different sites (different
+// eTLD+1), so a cookie the backend's redirect response sets is scoped to
+// the backend's own origin and never visible to document.cookie here — and
+// a fragment, unlike a query param, is never sent to any server (this one
+// included) and is stripped from Referer headers.
+//
+// The `?token=...` query-param branch below is a compatibility fallback:
+// older/currently-deployed backend builds hand the token off via the query
+// string instead of the fragment. It's read and stripped immediately either
+// way, but a query param does still reach this page's own server access
+// logs and Referer headers on the way in, so this path should be treated as
+// temporary — retire it once the backend is confirmed redeployed with the
+// fragment-based handoff.
+function consumeOAuthToken(): string | null {
     if (typeof window === 'undefined') return null;
+
     const hash = window.location.hash;
-    const match = hash.match(/(?:^#|&)token=([^&]+)/);
-    if (!match) return null;
-    const remainingHash = hash.replace(/(?:^#|&)token=[^&]+/, '').replace(/^#&/, '#');
+    const hashMatch = hash.match(/(?:^#|&)token=([^&]+)/);
+
+    if (hashMatch) {
+        const remainingHash = hash.replace(/(?:^#|&)token=[^&]+/, '').replace(/^#&/, '#');
+        const url = new URL(window.location.href);
+        url.hash = remainingHash === '#' ? '' : remainingHash;
+        window.history.replaceState({}, '', url.toString());
+        return decodeURIComponent(hashMatch[1]);
+    }
+
     const url = new URL(window.location.href);
-    url.hash = remainingHash === '#' ? '' : remainingHash;
-    window.history.replaceState({}, '', url.toString());
-    return decodeURIComponent(match[1]);
+    const queryToken = url.searchParams.get('token');
+
+    if (queryToken) {
+        url.searchParams.delete('token');
+        window.history.replaceState({}, '', url.toString());
+        return queryToken;
+    }
+
+    return null;
 }
 
 const workspaceViewModeToTab: Partial<
@@ -88,7 +110,7 @@ export function RedirectManager() {
 
     // Clean up URL if there are any query params left over
     useEffect(() => {
-        const token = consumeOAuthFragmentToken();
+        const token = consumeOAuthToken();
         if (!token) return;
 
         // OAuth callback: treat this as the source of truth and
