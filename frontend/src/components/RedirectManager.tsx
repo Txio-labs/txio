@@ -133,18 +133,29 @@ export function RedirectManager() {
     useEffect(() => {
         if (!initialized) return;
 
+        // Read live state rather than the viewMode/user captured in this
+        // effect's closure: the pathname -> viewMode sync effect above runs
+        // first within the same commit and may have already corrected
+        // appStore's viewMode to match pathname. Acting on the stale
+        // pre-correction closure value here would immediately redirect the
+        // user away from the page they're actually on, then the pathname
+        // change bounces back and the two effects fight forever.
+        const snapshot = appStore.getSnapshot();
+        const liveViewMode = snapshot.viewMode;
+        const liveUser = snapshot.user;
+
         // If authenticated, always stay on workspace.
-        if (user) {
+        if (liveUser) {
             const workspaceTab =
                 workspacePathToTab[pathname] ||
                 workspaceViewModeToTab[
-                    viewMode
+                    liveViewMode
                 ];
 
             if (workspaceTab) {
                 appStore.openTab(workspaceTab);
 
-                if (viewMode !== 'app') {
+                if (liveViewMode !== 'app') {
                     appStore.setViewMode('app');
                 }
             }
@@ -175,7 +186,7 @@ export function RedirectManager() {
             partners: '/partners'
         };
 
-        const targetPath = modeToPath[viewMode];
+        const targetPath = modeToPath[liveViewMode];
         if (targetPath && pathname !== targetPath) {
             router.replace(targetPath);
         }

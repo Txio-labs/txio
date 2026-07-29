@@ -10,7 +10,7 @@ import logoDark from '../assets/txio2.png';
 import gsap from 'gsap';
 
 export const OTPPage: React.FC = () => {
-    const { theme } = useAppStore();
+    const { theme, user } = useAppStore();
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [isLoading, setIsLoading] = useState(false);
     const [isVerified, setIsVerified] = useState(false);
@@ -98,7 +98,7 @@ export const OTPPage: React.FC = () => {
 
         setIsLoading(true);
         try {
-            const email = appStore.user?.email;
+            const email = user?.email;
             if (!email) {
                 appStore.showToast('Email not found in store.', 'error');
                 setIsLoading(false);

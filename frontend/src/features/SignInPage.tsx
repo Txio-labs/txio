@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import {
@@ -15,30 +15,12 @@ import { appStore, useAppStore } from '@/lib/store';
 import { API_BASE, apiService } from '@/services/api';
 import logoDark from '../assets/txio2.png';
 
-
-// Read and clear the short-lived OAuth token the backend hands off via a URL
-// fragment. A cookie can't be used: the backend and frontend are different
-// sites, so a cookie the backend's redirect response sets is never visible
-// to document.cookie on the frontend's origin.
-function consumeOAuthFragmentToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    const hash = window.location.hash;
-    const match = hash.match(/(?:^#|&)token=([^&]+)/);
-    if (!match) return null;
-    const remainingHash = hash.replace(/(?:^#|&)token=[^&]+/, '').replace(/^#&/, '#');
-    const url = new URL(window.location.href);
-    url.hash = remainingHash === '#' ? '' : remainingHash;
-    window.history.replaceState({}, '', url.toString());
-    return decodeURIComponent(match[1]);
-}
-
 export const SignInPage: React.FC = () => {
     const { theme } = useAppStore();
     const router = useRouter();
 
     const [isLoading, setIsLoading] = useState(false);
     const [socialLoading, setSocialLoading] = useState<string | null>(null);
-    const [authChecking, setAuthChecking] = useState(true);
     const [formData, setFormData] = useState({
         email: '',
         password: ''
@@ -50,111 +32,6 @@ export const SignInPage: React.FC = () => {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-    useEffect(() => {
-        const initializeAuth = async () => {
-            try {
-                // Read OAuth token from the URL fragment (backend appends it on
-                // OAuth callback redirect).
-                const fragmentToken = consumeOAuthFragmentToken();
-
-                // Read token from localStorage
-                const storedToken = localStorage.getItem('txio_token');
-
-                // Prefer the freshly-issued OAuth token over a stored one
-                const token = fragmentToken || storedToken;
-
-                // No token
-                if (!token) {
-                    setAuthChecking(false);
-                    return;
-                }
-
-                // Save token
-                localStorage.setItem('txio_token', token);
-
-                // Set token in API service
-                apiService.setToken(token);
-
-                // IMPORTANT:
-                // Switch app mode BEFORE profile request
-                // prevents redirect back to landing page
-                appStore.setViewMode('app');
-
-                try {
-                    const profilePromise =
-                        apiService.getProfile();
-                    const workspacesPromise =
-                        apiService.getWorkspaces();
-
-                    void workspacesPromise.catch(
-                        () => undefined
-                    );
-
-                    // Fetch authenticated user
-                    const user = await profilePromise;
-
-                    // Save user
-                    appStore.updateUser(user);
-
-                    try {
-                        const workspaces =
-                            await workspacesPromise;
-
-                        await appStore.fetchWorkspaces(
-                            undefined,
-                            workspaces
-                        );
-                    } catch (workspaceError) {
-                        console.error(
-                            'Workspace fetch failed:',
-                            workspaceError
-                        );
-                    }
-
-                    // Success toast only after OAuth redirect (token arrived via fragment)
-                    if (fragmentToken) {
-                        appStore.showToast(
-                            'Successfully signed in with Google',
-                            'success'
-                        );
-                    }
-
-                    router.replace('/workspace');
-                } catch (profileError) {
-                    console.error('Profile fetch failed:', profileError);
-
-                    // Invalid token/session cleanup
-                    localStorage.removeItem('txio_token');
-
-                    apiService.setToken(null);
-
-                    appStore.updateUser(null);
-
-                    appStore.setViewMode('landing');
-
-                    appStore.showToast(
-                        'Session expired. Please sign in again.',
-                        'error'
-                    );
-                }
-            } catch (error) {
-                console.error('Auth initialization failed:', error);
-
-                localStorage.removeItem('txio_token');
-
-                apiService.setToken(null);
-
-                appStore.updateUser(null);
-
-                appStore.setViewMode('landing');
-            } finally {
-                setAuthChecking(false);
-            }
-        };
-
-        initializeAuth();
-    }, [router]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -283,21 +160,6 @@ export const SignInPage: React.FC = () => {
         setForgotPasswordOtp(newOtp);
         otpInputRefs.current[Math.min(pastedData.length, 5)]?.focus();
     };
-
-    // Loading screen while checking auth
-    if (authChecking) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-near-black">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-10 h-10 border-2 border-white/20 border-t-electric-violet rounded-full animate-spin"></div>
-
-                    <p className="text-sm text-slate-400">
-                        Authenticating...
-                    </p>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div
