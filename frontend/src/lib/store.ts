@@ -550,6 +550,38 @@ const isAuthFailure = (
     );
 };
 
+// A rejected/expired token will fail every retry identically, so treat it
+// as a sign-out rather than a transient failure — otherwise "try again" UI
+// (e.g. the workspace page's retry button) just loops forever against a
+// token that will never become valid.
+const clearInvalidSession = () => {
+    apiService.setToken(null);
+
+    if (typeof window !== 'undefined') {
+        localStorage.removeItem('txio_token');
+        localStorage.removeItem('txio_viewMode');
+    }
+
+    clearStoredUser();
+    persistCurrentWorkspaceId('');
+
+    state = {
+        ...state,
+        user: null,
+        workspaces: [],
+        currentWorkspaceId: '',
+        collections: [],
+        tabs: [],
+        activeTabId: null,
+        isLoadingWorkspaces: false,
+        hasHydratedWorkspaces: false,
+        workspacesLoadFailed: false,
+        viewMode: 'landing'
+    };
+
+    emit();
+};
+
 // State
 interface AppState {
     activeTabId: string | null;
@@ -1256,6 +1288,11 @@ export const appStore = {
                 preferredWorkspaceId
             );
         } catch (error) {
+            if (isAuthFailure(error)) {
+                clearInvalidSession();
+                throw error;
+            }
+
             state = {
                 ...state,
                 workspaces: [],
@@ -1896,6 +1933,11 @@ export const appStore = {
                         workspaceError
                     );
 
+                    if (isAuthFailure(workspaceError)) {
+                        clearInvalidSession();
+                        return;
+                    }
+
                     // fetchWorkspaces() never ran, so it never got to flip
                     // hasHydratedWorkspaces. Without this, a failed/timed-out
                     // workspaces fetch leaves the workspace page stuck on its
@@ -1973,6 +2015,11 @@ export const appStore = {
                             'Failed to restore workspaces after profile fallback:',
                             workspaceError
                         );
+
+                        if (isAuthFailure(workspaceError)) {
+                            clearInvalidSession();
+                            return;
+                        }
 
                         // Same as above: fetchWorkspaces() never ran here
                         // either, so nothing else will ever clear the

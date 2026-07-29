@@ -165,7 +165,18 @@ export default function WorkspacePage() {
                                 idle, it may still be waking up.
                             </p>
                             <button
-                                onClick={() => appStore.fetchWorkspaces()}
+                                onClick={() => {
+                                    appStore
+                                        .fetchWorkspaces()
+                                        .catch(() => {
+                                            // Failure already lands in
+                                            // state (workspacesLoadFailed,
+                                            // or a session reset if the
+                                            // token was invalid) — nothing
+                                            // further to do with the
+                                            // rejection here.
+                                        });
+                                }}
                                 className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-electric-violet px-5 py-3 text-sm font-bold text-white transition-all hover:bg-soft-purple"
                             >
                                 <RefreshCw size={15} />
