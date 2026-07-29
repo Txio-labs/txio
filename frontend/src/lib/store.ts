@@ -1882,6 +1882,19 @@ export const appStore = {
                         'Failed to restore workspaces during refresh:',
                         workspaceError
                     );
+
+                    // fetchWorkspaces() never ran, so it never got to flip
+                    // hasHydratedWorkspaces. Without this, a failed/timed-out
+                    // workspaces fetch leaves the workspace page stuck on its
+                    // "Loading workspace state" screen forever, since that
+                    // screen's loading condition is keyed off this flag.
+                    state = {
+                        ...state,
+                        isLoadingWorkspaces: false,
+                        hasHydratedWorkspaces: true
+                    };
+
+                    emit();
                 }
             } catch (error) {
                 if (
@@ -1945,6 +1958,17 @@ export const appStore = {
                             'Failed to restore workspaces after profile fallback:',
                             workspaceError
                         );
+
+                        // Same as above: fetchWorkspaces() never ran here
+                        // either, so nothing else will ever clear the
+                        // workspace page's loading screen.
+                        state = {
+                            ...state,
+                            isLoadingWorkspaces: false,
+                            hasHydratedWorkspaces: true
+                        };
+
+                        emit();
                     }
                 } else {
                     state = {
