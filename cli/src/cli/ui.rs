@@ -1,6 +1,6 @@
-#![allow(dead_code)]
-
 use colored::*;
+
+#[allow(dead_code)]
 pub fn print_logo() {
     let logo = r#"
     _____ _                
