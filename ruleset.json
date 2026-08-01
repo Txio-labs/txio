@@ -37,10 +37,7 @@
         "required_status_checks": [
           { "context": "Lint Frontend" },
           { "context": "Test Frontend" },
-          { "context": "Rust Backend & CLI" },
-          { "context": "Build Apps (ubuntu-latest)" },
-          { "context": "Build Apps (windows-latest)" },
-          { "context": "Build Apps (macos-latest)" }
+          { "context": "Build" }
         ]
       }
     },

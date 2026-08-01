@@ -1,50 +1,18 @@
-# Build stage
-FROM rust:1.88.0-slim-bookworm AS builder
-
-# Install build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
+FROM node:20-slim as builder
 
 WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+RUN npm run build
 
-# Copy the full Rust workspace so Cargo can resolve all workspace members.
-# This avoids missing-path issues when workspace members have deeper path dependencies.
-COPY Cargo.toml Cargo.lock ./
-COPY backend ./backend
-COPY cli ./cli
-
-# Build both backend and cli from the workspace root.
-RUN cargo build --release --package txio-api --package txio
-
-# Runtime stage
-FROM debian:bookworm-slim
-
-# Add a non-root system user so the process never runs as root.
-RUN useradd --system --uid 10001 txio
-
-WORKDIR /app
-
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates libssl3 curl && rm -rf /var/lib/apt/lists/*
-
-# Copy backend binary
-COPY --from=builder /app/target/release/txio-api /app/api
-
-# Copy CLI binary to system PATH so TerminalService can find it
-COPY --from=builder /app/target/release/txio /usr/local/bin/txio
-
-# Create a dedicated non-root user and grant it access to runtime paths.
-# Using a numeric UID avoids relying on /etc/passwd inside the minimal image.
-RUN install -d -o 10001 -g 10001 /app/temp
-
-# Transfer ownership to the non-root user before switching to it.
-RUN chown -R txio:txio /app
-USER 10001:10001
-
-# Set environment variables
-ENV RUST_LOG=info
-ENV MONGO_URI=mongodb://mongodb:27017/txio
-
-EXPOSE 8000
-
-# The entrypoint is the backend API
-CMD ["./api"]
+FROM nginx:alpine
+COPY --from=builder /app/out /usr/share/nginx/html
+COPY --chmod=644 nginx.conf /etc/nginx/nginx.conf
+EXPOSE 80
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD wget -qO- http://127.0.0.1/ >/dev/null || exit 1
+USER nginx
+CMD ["nginx", "-g", "daemon off;"]
