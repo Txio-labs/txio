@@ -102,6 +102,13 @@ describe('CollectionTree filtered rendering', () => {
     expect(screen.queryByText('Transaction APIs')).not.toBeInTheDocument();
   });
 
+  it('does not nest buttons inside buttons', () => {
+    renderTree('');
+    for (const button of screen.getAllByRole('button')) {
+      expect(button.querySelector('button')).toBeNull();
+    }
+  });
+
   it('shows a clear empty state when nothing matches', () => {
     renderTree('missing-method');
 

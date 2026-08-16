@@ -9,6 +9,7 @@ import { Avatar } from './ui/Avatar';
 import { CommandPalette } from './CommandPalette';
 import { TerminalPanel } from './TerminalPanel';
 import { getSuiRpcHealth } from '../services/suiService';
+import { deriveSystemHealth } from '../lib/systemHealth';
 
 interface LayoutProps {
     sidebar: React.ReactNode;
@@ -147,6 +148,30 @@ export const Layout: React.FC<LayoutProps> = ({
         appStore.requestNetworkSwitch(newNetwork);
         setIsNetworkMenuOpen(false);
     };
+
+    const systemHealth =
+        deriveSystemHealth(
+            rpcHealth,
+            activityLogs
+        );
+    const systemHealthColor = {
+        healthy: {
+            button: 'hover:text-emerald-400',
+            dot: 'bg-emerald-500'
+        },
+        degraded: {
+            button: 'hover:text-amber-400',
+            dot: 'bg-amber-500'
+        },
+        error: {
+            button: 'hover:text-red-400',
+            dot: 'bg-red-500'
+        },
+        unknown: {
+            button: 'hover:text-slate-400',
+            dot: 'bg-slate-500'
+        }
+    }[systemHealth.status];
 
     return (
         <div className="flex flex-col h-screen bg-slate-50 dark:bg-near-black text-slate-700 dark:text-slate-200 overflow-hidden font-sans relative selection:bg-electric-violet/30">
@@ -316,10 +341,23 @@ export const Layout: React.FC<LayoutProps> = ({
                         <Settings size={10} /> v2.6.0-beta
                     </button>
                     <button 
+
                         onClick={() => appStore.showToast(systemStatusMessage, systemStatusToastType)}
                         className={`${systemStatusHoverClass} cursor-pointer transition-colors flex items-center gap-1`}
                     >
                         <div className={`w-1 h-1 ${systemStatusDotClass} rounded-full`}></div> {systemStatusLabel}
+
+                        onClick={() =>
+                            appStore.showToast(
+                                systemHealth.message,
+                                systemHealth.toastType
+                            )
+                        }
+                        className={`${systemHealthColor.button} cursor-pointer transition-colors flex items-center gap-1`}
+                    >
+                        <div className={`w-1 h-1 ${systemHealthColor.dot} rounded-full`}></div>
+                        {systemHealth.label}
+
                     </button>
                     <button
                         onClick={() =>
