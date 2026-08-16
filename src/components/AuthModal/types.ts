@@ -11,12 +11,3 @@ export interface AuthModalProps {
 }
 
 export type ProfileTab = 'general' | 'security' | 'api-keys' | 'notifications' | 'team';
-
-export interface ApiKey {
-  id: string;
-  name: string;
-  prefix: string;
-  created: number;
-  lastUsed: string;
-  status: 'active' | 'revoked';
-}
