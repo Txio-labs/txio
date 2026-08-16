@@ -1,30 +1,57 @@
-
-import React, { useState, useRef, useEffect } from 'react';
-import { PanelLeft, PanelRight, Settings, ChevronDown, Globe, Loader2, Key, LayoutGrid, User, LogOut, MoreVertical, Trash2, Save, RotateCcw, Bookmark, Plus, Layers, Command, Sparkles, Search, X, Server, Check, Terminal } from 'lucide-react';
-import { useAppStore, appStore } from '@/lib/store';
-import { Tab } from './ui/Tabs';
-import { ALL_NETWORKS, TabItem, Network, RPCHealthMetric } from '../types';
-import { NetworkSwitcherModal } from './NetworkSwitcherModal';
-import { Avatar } from './ui/Avatar';
-import { CommandPalette } from './CommandPalette';
-import { TerminalPanel } from './TerminalPanel';
-import { getSuiRpcHealth } from '../services/suiService';
-import { deriveSystemHealth } from '../lib/systemHealth';
+import React, { useState, useRef, useEffect } from "react";
+import {
+  PanelLeft,
+  PanelRight,
+  Settings,
+  ChevronDown,
+  Globe,
+  Loader2,
+  Key,
+  LayoutGrid,
+  User,
+  LogOut,
+  MoreVertical,
+  Trash2,
+  Save,
+  RotateCcw,
+  Bookmark,
+  Plus,
+  Layers,
+  Command,
+  Sparkles,
+  Search,
+  X,
+  Server,
+  Check,
+  Terminal,
+} from "lucide-react";
+import { useAppStore, appStore } from "@/lib/store";
+import { Tab } from "./ui/Tabs";
+import { ALL_NETWORKS, TabItem, Network, RPCHealthMetric } from "../types";
+import { NetworkSwitcherModal } from "./NetworkSwitcherModal";
+import { Avatar } from "./ui/Avatar";
+import { CommandPalette } from "./CommandPalette";
+import { TerminalPanel } from "./TerminalPanel";
+import { getSuiRpcHealth } from "../services/suiService";
+import { deriveSystemHealth } from "../lib/systemHealth";
 
 interface LayoutProps {
-    sidebar: React.ReactNode;
-    workspace: React.ReactNode;
-    inspector: React.ReactNode;
-    tabs?: TabItem[];
-    activeTabId?: string;
-    onSelectTab?: (id: string | null) => void;
-    onCloseTab?: (id: string) => void;
-    onRenameTab?: (id: string, title: string) => void;
-    onNewTab?: () => void;
+  sidebar: React.ReactNode;
+  workspace: React.ReactNode;
+  inspector: React.ReactNode;
+  tabs?: TabItem[];
+  activeTabId?: string;
+  onSelectTab?: (id: string | null) => void;
+  onCloseTab?: (id: string) => void;
+  onRenameTab?: (id: string, title: string) => void;
+  onNewTab?: () => void;
 }
 
 const TxioLogoSmall = () => (
-  <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-[0_0_5px_rgba(56,189,248,0.5)]">
+  <svg
+    viewBox="0 0 200 200"
+    className="w-full h-full drop-shadow-[0_0_5px_rgba(56,189,248,0.5)]"
+  >
     <defs>
       <linearGradient id="swirl1-small" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor="#67e8f9" />
@@ -40,342 +67,404 @@ const TxioLogoSmall = () => (
       </linearGradient>
     </defs>
     <g transform="translate(50, 20) scale(0.55)">
-        <path d="M100 0 C 100 0 60 50 40 90 C 20 130 40 160 60 170 C 50 150 40 110 100 0 Z" fill="url(#swirl1-small)" />
-        <path d="M100 10 C 100 10 50 70 30 120 C 20 150 40 180 80 190 C 60 170 50 120 100 10 Z" fill="url(#swirl2-small)" opacity="0.9" />
-        <path d="M100 25 C 100 25 70 80 60 130 C 50 170 90 200 140 180 C 110 180 90 120 100 25 Z" fill="url(#swirl3-small)" opacity="0.9" />
+      <path
+        d="M100 0 C 100 0 60 50 40 90 C 20 130 40 160 60 170 C 50 150 40 110 100 0 Z"
+        fill="url(#swirl1-small)"
+      />
+      <path
+        d="M100 10 C 100 10 50 70 30 120 C 20 150 40 180 80 190 C 60 170 50 120 100 10 Z"
+        fill="url(#swirl2-small)"
+        opacity="0.9"
+      />
+      <path
+        d="M100 25 C 100 25 70 80 60 130 C 50 170 90 200 140 180 C 110 180 90 120 100 25 Z"
+        fill="url(#swirl3-small)"
+        opacity="0.9"
+      />
     </g>
   </svg>
 );
 
-export const Layout: React.FC<LayoutProps> = ({ 
-    sidebar, 
-    workspace, 
-    inspector,
-    tabs = [],
-    activeTabId,
-    onSelectTab,
-    onCloseTab,
-    onRenameTab,
-    onNewTab
+export const Layout: React.FC<LayoutProps> = ({
+  sidebar,
+  workspace,
+  inspector,
+  tabs = [],
+  activeTabId,
+  onSelectTab,
+  onCloseTab,
+  onRenameTab,
+  onNewTab,
 }) => {
-    const {
-        isSidebarOpen,
-        isInspectorOpen,
-        user,
-        network,
-        isSyncing,
-        scanStep,
-        isTerminalOpen,
-        pendingNetworkSwitch,
-        activityLogs
-    } = useAppStore();
-    const [rpcHealth, setRpcHealth] =
-        useState<RPCHealthMetric | null>(
-            null
-        );
-    const [isNetworkMenuOpen, setIsNetworkMenuOpen] = useState(false);
-    const networkMenuRef = useRef<HTMLDivElement>(null);
+  const {
+    isSidebarOpen,
+    isInspectorOpen,
+    user,
+    network,
+    isSyncing,
+    scanStep,
+    isTerminalOpen,
+    pendingNetworkSwitch,
+    activityLogs,
+  } = useAppStore();
+  const [rpcHealth, setRpcHealth] = useState<RPCHealthMetric | null>(null);
+  const [isNetworkMenuOpen, setIsNetworkMenuOpen] = useState(false);
+  const networkMenuRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        let mounted = true;
-        const updateHealth = async () => {
-            const health =
-                await getSuiRpcHealth(network);
+  useEffect(() => {
+    let mounted = true;
+    const updateHealth = async () => {
+      const health = await getSuiRpcHealth(network);
 
-            if (mounted) {
-                setRpcHealth(health);
-            }
-        };
-        updateHealth();
-        const interval = setInterval(
-            updateHealth,
-            15000
-        );
-        return () => { mounted = false; clearInterval(interval); };
-    }, [network]);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (networkMenuRef.current && !networkMenuRef.current.contains(event.target as Node)) {
-                setIsNetworkMenuOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const recentActivityLogs = activityLogs.slice(0, 25);
-    const hasRecentErrors = recentActivityLogs.some((log) => log.type === 'error');
-    const systemStatus =
-        hasRecentErrors || rpcHealth?.status === 'down'
-            ? 'error'
-            : rpcHealth?.status === 'degraded'
-              ? 'degraded'
-              : 'optimal';
-    const systemStatusLabel =
-        systemStatus === 'error'
-            ? 'System Issues'
-            : systemStatus === 'degraded'
-              ? 'System Degraded'
-              : 'System Optimal';
-    const systemStatusDotClass =
-        systemStatus === 'error'
-            ? 'bg-red-500'
-            : systemStatus === 'degraded'
-              ? 'bg-amber-500'
-              : 'bg-emerald-500';
-    const systemStatusHoverClass =
-        systemStatus === 'error'
-            ? 'hover:text-red-400'
-            : systemStatus === 'degraded'
-              ? 'hover:text-amber-400'
-              : 'hover:text-emerald-400';
-    const systemStatusToastType =
-        systemStatus === 'error' ? 'error' : systemStatus === 'degraded' ? 'info' : 'success';
-    const systemStatusMessage = hasRecentErrors
-        ? 'Recent terminal activity includes errors. Check the terminal for details.'
-        : rpcHealth?.status === 'down'
-          ? 'RPC connectivity is down. Requests may fail.'
-          : rpcHealth?.status === 'degraded'
-            ? 'RPC connectivity is degraded. Some requests may be slow or fail.'
-            : 'System operational. No recent errors detected.';
-
-    const handleNetworkSwitch = (newNetwork: Network) => {
-        if (newNetwork === network) {
-            setIsNetworkMenuOpen(false);
-            return;
-        }
-        appStore.requestNetworkSwitch(newNetwork);
-        setIsNetworkMenuOpen(false);
+      if (mounted) {
+        setRpcHealth(health);
+      }
     };
+    updateHealth();
+    const interval = setInterval(updateHealth, 15000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [network]);
 
-    const systemHealth =
-        deriveSystemHealth(
-            rpcHealth,
-            activityLogs
-        );
-    const systemHealthColor = {
-        healthy: {
-            button: 'hover:text-emerald-400',
-            dot: 'bg-emerald-500'
-        },
-        degraded: {
-            button: 'hover:text-amber-400',
-            dot: 'bg-amber-500'
-        },
-        error: {
-            button: 'hover:text-red-400',
-            dot: 'bg-red-500'
-        },
-        unknown: {
-            button: 'hover:text-slate-400',
-            dot: 'bg-slate-500'
-        }
-    }[systemHealth.status];
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        networkMenuRef.current &&
+        !networkMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsNetworkMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-    return (
-        <div className="flex flex-col h-screen bg-slate-50 dark:bg-near-black text-slate-700 dark:text-slate-200 overflow-hidden font-sans relative selection:bg-electric-violet/30">
-            <CommandPalette />
-            <NetworkSwitcherModal
-                isOpen={pendingNetworkSwitch !== null}
-                onClose={() => appStore.cancelNetworkSwitch()}
-                onConfirm={() => appStore.confirmNetworkSwitch()}
-                from={network}
-                to={pendingNetworkSwitch || network}
+  const recentActivityLogs = activityLogs.slice(0, 25);
+  const hasRecentErrors = recentActivityLogs.some(
+    (log) => log.type === "error",
+  );
+  const systemStatus =
+    hasRecentErrors || rpcHealth?.status === "down"
+      ? "error"
+      : rpcHealth?.status === "degraded"
+        ? "degraded"
+        : "optimal";
+  const systemStatusLabel =
+    systemStatus === "error"
+      ? "System Issues"
+      : systemStatus === "degraded"
+        ? "System Degraded"
+        : "System Optimal";
+  const systemStatusDotClass =
+    systemStatus === "error"
+      ? "bg-red-500"
+      : systemStatus === "degraded"
+        ? "bg-amber-500"
+        : "bg-emerald-500";
+  const systemStatusHoverClass =
+    systemStatus === "error"
+      ? "hover:text-red-400"
+      : systemStatus === "degraded"
+        ? "hover:text-amber-400"
+        : "hover:text-emerald-400";
+  const systemStatusToastType =
+    systemStatus === "error"
+      ? "error"
+      : systemStatus === "degraded"
+        ? "info"
+        : "success";
+  const systemStatusMessage = hasRecentErrors
+    ? "Recent terminal activity includes errors. Check the terminal for details."
+    : rpcHealth?.status === "down"
+      ? "RPC connectivity is down. Requests may fail."
+      : rpcHealth?.status === "degraded"
+        ? "RPC connectivity is degraded. Some requests may be slow or fail."
+        : "System operational. No recent errors detected.";
+
+  const handleNetworkSwitch = (newNetwork: Network) => {
+    if (newNetwork === network) {
+      setIsNetworkMenuOpen(false);
+      return;
+    }
+    appStore.requestNetworkSwitch(newNetwork);
+    setIsNetworkMenuOpen(false);
+  };
+
+  const systemHealth = deriveSystemHealth(rpcHealth, activityLogs);
+  const systemHealthColor = {
+    healthy: {
+      button: "hover:text-emerald-400",
+      dot: "bg-emerald-500",
+    },
+    degraded: {
+      button: "hover:text-amber-400",
+      dot: "bg-amber-500",
+    },
+    error: {
+      button: "hover:text-red-400",
+      dot: "bg-red-500",
+    },
+    unknown: {
+      button: "hover:text-slate-400",
+      dot: "bg-slate-500",
+    },
+  }[systemHealth.status];
+
+  return (
+    <div className="flex flex-col h-screen bg-slate-50 dark:bg-near-black text-slate-700 dark:text-slate-200 overflow-hidden font-sans relative selection:bg-electric-violet/30">
+      <CommandPalette />
+      <NetworkSwitcherModal
+        isOpen={pendingNetworkSwitch !== null}
+        onClose={() => appStore.cancelNetworkSwitch()}
+        onConfirm={() => appStore.confirmNetworkSwitch()}
+        from={network}
+        to={pendingNetworkSwitch || network}
+      />
+
+      {/* Top Energy Line */}
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-slate-400 z-50 shadow-[0_0_15px_rgba(163,163,163,0.4)]"></div>
+
+      {/* Notification toasts render globally via <ToastContainer /> in Providers */}
+
+      {isSyncing && (
+        <div className="fixed inset-0 z-[110] bg-white/90 dark:bg-near-black/90 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in duration-300">
+          <div className="relative">
+            <Loader2
+              className="text-electric-violet animate-spin mb-4 drop-shadow-[0_0_10px_rgba(56,189,248,0.8)]"
+              size={48}
             />
-
-            {/* Top Energy Line */}
-            <div className="absolute top-0 left-0 right-0 h-[1px] bg-slate-400 z-50 shadow-[0_0_15px_rgba(163,163,163,0.4)]"></div>
-
-            {/* Notification toasts render globally via <ToastContainer /> in Providers */}
-
-            {isSyncing && (
-                <div className="fixed inset-0 z-[110] bg-white/90 dark:bg-near-black/90 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in duration-300">
-                    <div className="relative">
-                        <Loader2 className="text-electric-violet animate-spin mb-4 drop-shadow-[0_0_10px_rgba(56,189,248,0.8)]" size={48} />
-                        <div className="absolute inset-0 bg-electric-violet/20 blur-xl rounded-full animate-pulse"></div>
-                    </div>
-                    <p className="text-slate-900 dark:text-white text-sm font-mono tracking-wider font-bold">{scanStep || 'Syncing...'}</p>
-                </div>
-            )}
-
-            <header className="h-12 bg-slate-50 dark:bg-near-black border-b border-slate-200 dark:border-white/10 flex items-center justify-between px-3 shrink-0 z-20">
-                <div className="flex items-center gap-2">
-                    <button 
-                        className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-slate-100 group cursor-pointer"
-                        onClick={() => appStore.setActiveTab(null)}
-                    >
-                        <div className="w-5 h-5 rounded flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                            <TxioLogoSmall />
-                        </div>
-                        <span className="text-xs tracking-tight group-hover:text-sui-300 transition-colors">txio</span>
-                    </button>
-                    <div className="h-3 w-px bg-white/10 mx-1.5"></div>
-                    <button onClick={() => appStore.toggleSidebar()} className={`p-1.5 rounded hover:bg-slate-100 dark:hover:bg-white/10 transition-colors ${isSidebarOpen ? 'text-electric-violet' : 'text-slate-500'}`} title="Toggle sidebar">
-                        <PanelLeft size={14} />
-                    </button>
-                    <button 
-                        onClick={() => appStore.setCommandPalette(true)}
-                        className="flex items-center gap-1.5 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 hover:border-slate-300 dark:border-white/20 hover:bg-slate-100 dark:hover:bg-[#111] px-2 py-1 rounded-full text-xs text-slate-400 w-48 transition-all group shadow-inner"
-                        title="Search commands (Ctrl+K)"
-                    >
-                        <Search size={11} className="group-hover:text-electric-violet" />
-                        <span className="whitespace-nowrap">Search...</span>
-                        <div className="ml-auto hidden md:flex items-center gap-0.5">
-                            <span className="bg-slate-100 dark:bg-white/5 px-1 rounded text-[9px] text-slate-500 group-hover:text-slate-600 dark:text-slate-300">⌘</span>
-                            <span className="bg-slate-100 dark:bg-white/5 px-1 rounded text-[9px] text-slate-500 group-hover:text-slate-600 dark:text-slate-300">K</span>
-                        </div>
-                    </button>
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                    <div className="relative" ref={networkMenuRef}>
-                        <button 
-                            onClick={() => setIsNetworkMenuOpen(!isNetworkMenuOpen)}
-                            className={`flex items-center gap-1 px-2 py-1 rounded-full bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 text-xs hover:bg-slate-100 dark:hover:bg-[#111] transition-all hover:border-slate-300 dark:border-white/20 shadow-sm ${isNetworkMenuOpen ? 'border-slate-600 bg-slate-200 dark:bg-slate-800' : ''} w-24`}
-                            title="Network"
-                        >
-                            <div className={`w-1.5 h-1.5 rounded-full ${rpcHealth?.status === 'healthy' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' : rpcHealth?.status === 'degraded' ? 'bg-amber-500' : 'bg-red-500'} animate-pulse`}></div>
-                            <span className="text-slate-600 dark:text-slate-300 capitalize font-medium truncate max-w-[40px]">{network}</span>
-                            <ChevronDown size={10} className={`text-slate-500 transition-transform duration-200 shrink-0 ${isNetworkMenuOpen ? 'rotate-180' : ''}`}/>
-                        </button>
-
-                        {isNetworkMenuOpen && (
-                            <div className="absolute top-full right-0 mt-2 w-44 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
-                                <div className="p-1">
-                                    {ALL_NETWORKS.map((net) => (
-                                        <button
-                                            key={net}
-                                            onClick={() => handleNetworkSwitch(net)}
-                                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold capitalize transition-colors ${
-                                                network === net 
-                                                ? 'bg-white/10 text-slate-900 dark:text-white' 
-                                                : 'text-slate-400 hover:bg-slate-100 dark:bg-white/5 hover:text-slate-700 dark:text-slate-200'
-                                            }`}
-                                        >
-                                            <div className="flex items-center gap-1.5">
-                                                <div className={`w-1.5 h-1.5 rounded-full ${
-                                                    net === 'mainnet' ? 'bg-emerald-500' : 
-                                                    net === 'testnet' ? 'bg-amber-500' : 
-                                                    'bg-blue-500'
-                                                }`}></div>
-                                                {net}
-                                            </div>
-                                            {network === net && <Check size={12} className="text-electric-violet" />}
-                                        </button>
-                                    ))}
-                                </div>
-                                <div className="border-t border-slate-200 dark:border-white/10 p-1.5 bg-slate-100/60 dark:bg-near-black/20">
-                                    <div className="flex justify-between text-[8px] text-slate-500 font-mono">
-                                        <span>Latency</span>
-                                        <span className={rpcHealth?.status === 'healthy' ? 'text-emerald-500' : rpcHealth?.status === 'degraded' ? 'text-amber-500' : 'text-red-400'}>
-                                            {rpcHealth?.latency?.[0]
-                                                ? `${Math.round(rpcHealth.latency[0])}ms`
-                                                : '--'}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                    
-                    <button onClick={() => appStore.toggleInspector()} className={`p-1.5 rounded hover:bg-slate-100 dark:hover:bg-white/10 transition-colors ${isInspectorOpen ? 'text-electric-violet' : 'text-slate-500'}`} title="Toggle inspector">
-                        <PanelRight size={14} />
-                    </button>
-                    
-                    <button onClick={() => appStore.setAuthModal(true)} className="w-7 h-7 cursor-pointer hover:ring-2 ring-electric-violet/50 rounded-lg transition-all" title="Account">
-                        <Avatar size="sm" src={user?.avatarUrl} />
-                    </button>
-                </div>
-            </header>
-
-            <div className="flex-1 flex overflow-hidden">
-                {isSidebarOpen && (
-                    <aside className="w-64 flex flex-col shrink-0 z-10 bg-slate-50 dark:bg-near-black">
-                        {sidebar}
-                    </aside>
-                )}
-
-                <main className="flex-1 flex flex-col min-w-0 bg-slate-50 dark:bg-near-black relative">
-                    <div className="h-9 bg-slate-50 dark:bg-near-black border-b border-slate-200 dark:border-white/10 flex items-center overflow-x-auto no-scrollbar">
-                        {tabs.map(tab => (
-                            <Tab 
-                                key={tab.id}
-                                id={tab.id}
-                                title={tab.title}
-                                isActive={tab.id === activeTabId}
-                                onSelect={() => onSelectTab && onSelectTab(tab.id)}
-                                onClose={() => onCloseTab && onCloseTab(tab.id)}
-                                onRename={(newTitle) => onRenameTab && onRenameTab(tab.id, newTitle)}
-                                icon={tab.type === 'ptb' ? <Layers size={12}/> : tab.type === 'rpc' ? <Command size={12}/> : tab.type === 'ai_chat' ? <Sparkles size={12} className="text-electric-violet"/> : undefined}
-                            />
-                        ))}
-                        <button 
-                            onClick={onNewTab}
-                            className="p-2 text-slate-500 hover:text-electric-violet hover:bg-slate-100 dark:bg-white/5 transition-colors"
-                        >
-                            <Plus size={14} />
-                        </button>
-                    </div>
-                    
-                    <div className="flex-1 overflow-hidden relative">
-                        {workspace}
-                    </div>
-                </main>
-
-                {isInspectorOpen && (
-                    <aside className="w-80 bg-slate-50 dark:bg-near-black border-l border-slate-200 dark:border-white/10 flex flex-col shrink-0 z-10 shadow-2xl">
-                        {inspector}
-                    </aside>
-                )}
-            </div>
-
-            <TerminalPanel />
-            
-            <footer className="h-7 bg-slate-50 dark:bg-near-black border-t border-slate-200 dark:border-white/10 flex items-center justify-between px-3 text-[10px] text-slate-500 select-none z-20">
-                <div className="flex items-center gap-4">
-                    <button 
-                        onClick={() => appStore.openTab('settings')}
-                        className="flex items-center gap-1 hover:text-electric-violet cursor-pointer transition-colors"
-                    >
-                        <Settings size={10} /> v2.6.0-beta
-                    </button>
-                    <button 
-
-                        onClick={() => appStore.showToast(systemStatusMessage, systemStatusToastType)}
-                        className={`${systemStatusHoverClass} cursor-pointer transition-colors flex items-center gap-1`}
-                    >
-                        <div className={`w-1 h-1 ${systemStatusDotClass} rounded-full`}></div> {systemStatusLabel}
-
-                        onClick={() =>
-                            appStore.showToast(
-                                systemHealth.message,
-                                systemHealth.toastType
-                            )
-                        }
-                        className={`${systemHealthColor.button} cursor-pointer transition-colors flex items-center gap-1`}
-                    >
-                        <div className={`w-1 h-1 ${systemHealthColor.dot} rounded-full`}></div>
-                        {systemHealth.label}
-
-                    </button>
-                    <button
-                        onClick={() =>
-                            appStore.toggleTerminal()
-                        }
-                        className={`flex items-center gap-1 cursor-pointer transition-colors ${
-                            isTerminalOpen
-                                ? 'text-electric-violet'
-                                : 'hover:text-slate-600 dark:text-slate-300'
-                        }`}
-                    >
-                        <Terminal size={10} /> Terminal
-                    </button>
-                </div>
-                <div className="flex items-center gap-4">
-                     <span className="font-mono text-slate-600">GAS: <span className="text-amber-500">AUTO</span></span>
-                </div>
-            </footer>
+            <div className="absolute inset-0 bg-electric-violet/20 blur-xl rounded-full animate-pulse"></div>
+          </div>
+          <p className="text-slate-900 dark:text-white text-sm font-mono tracking-wider font-bold">
+            {scanStep || "Syncing..."}
+          </p>
         </div>
-    );
+      )}
+
+      <header className="h-12 bg-slate-50 dark:bg-near-black border-b border-slate-200 dark:border-white/10 flex items-center justify-between px-3 shrink-0 z-20">
+        <div className="flex items-center gap-2">
+          <button
+            className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-slate-100 group cursor-pointer"
+            onClick={() => appStore.setActiveTab(null)}
+          >
+            <div className="w-5 h-5 rounded flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+              <TxioLogoSmall />
+            </div>
+            <span className="text-xs tracking-tight group-hover:text-sui-300 transition-colors">
+              txio
+            </span>
+          </button>
+          <div className="h-3 w-px bg-white/10 mx-1.5"></div>
+          <button
+            onClick={() => appStore.toggleSidebar()}
+            className={`p-1.5 rounded hover:bg-slate-100 dark:hover:bg-white/10 transition-colors ${isSidebarOpen ? "text-electric-violet" : "text-slate-500"}`}
+            title="Toggle sidebar"
+          >
+            <PanelLeft size={14} />
+          </button>
+          <button
+            onClick={() => appStore.setCommandPalette(true)}
+            className="flex items-center gap-1.5 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 hover:border-slate-300 dark:border-white/20 hover:bg-slate-100 dark:hover:bg-[#111] px-2 py-1 rounded-full text-xs text-slate-400 w-48 transition-all group shadow-inner"
+            title="Search commands (Ctrl+K)"
+          >
+            <Search size={11} className="group-hover:text-electric-violet" />
+            <span className="whitespace-nowrap">Search...</span>
+            <div className="ml-auto hidden md:flex items-center gap-0.5">
+              <span className="bg-slate-100 dark:bg-white/5 px-1 rounded text-[9px] text-slate-500 group-hover:text-slate-600 dark:text-slate-300">
+                ⌘
+              </span>
+              <span className="bg-slate-100 dark:bg-white/5 px-1 rounded text-[9px] text-slate-500 group-hover:text-slate-600 dark:text-slate-300">
+                K
+              </span>
+            </div>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <div className="relative" ref={networkMenuRef}>
+            <button
+              onClick={() => setIsNetworkMenuOpen(!isNetworkMenuOpen)}
+              className={`flex items-center gap-1 px-2 py-1 rounded-full bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 text-xs hover:bg-slate-100 dark:hover:bg-[#111] transition-all hover:border-slate-300 dark:border-white/20 shadow-sm ${isNetworkMenuOpen ? "border-slate-600 bg-slate-200 dark:bg-slate-800" : ""} w-24`}
+              title="Network"
+            >
+              <div
+                className={`w-1.5 h-1.5 rounded-full ${rpcHealth?.status === "healthy" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" : rpcHealth?.status === "degraded" ? "bg-amber-500" : "bg-red-500"} animate-pulse`}
+              ></div>
+              <span className="text-slate-600 dark:text-slate-300 capitalize font-medium truncate max-w-[40px]">
+                {network}
+              </span>
+              <ChevronDown
+                size={10}
+                className={`text-slate-500 transition-transform duration-200 shrink-0 ${isNetworkMenuOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {isNetworkMenuOpen && (
+              <div className="absolute top-full right-0 mt-2 w-44 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
+                <div className="p-1">
+                  {ALL_NETWORKS.map((net) => (
+                    <button
+                      key={net}
+                      onClick={() => handleNetworkSwitch(net)}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold capitalize transition-colors ${
+                        network === net
+                          ? "bg-white/10 text-slate-900 dark:text-white"
+                          : "text-slate-400 hover:bg-slate-100 dark:bg-white/5 hover:text-slate-700 dark:text-slate-200"
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <div
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            net === "mainnet"
+                              ? "bg-emerald-500"
+                              : net === "testnet"
+                                ? "bg-amber-500"
+                                : "bg-blue-500"
+                          }`}
+                        ></div>
+                        {net}
+                      </div>
+                      {network === net && (
+                        <Check size={12} className="text-electric-violet" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <div className="border-t border-slate-200 dark:border-white/10 p-1.5 bg-slate-100/60 dark:bg-near-black/20">
+                  <div className="flex justify-between text-[8px] text-slate-500 font-mono">
+                    <span>Latency</span>
+                    <span
+                      className={
+                        rpcHealth?.status === "healthy"
+                          ? "text-emerald-500"
+                          : rpcHealth?.status === "degraded"
+                            ? "text-amber-500"
+                            : "text-red-400"
+                      }
+                    >
+                      {rpcHealth?.latency?.[0]
+                        ? `${Math.round(rpcHealth.latency[0])}ms`
+                        : "--"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => appStore.toggleInspector()}
+            className={`p-1.5 rounded hover:bg-slate-100 dark:hover:bg-white/10 transition-colors ${isInspectorOpen ? "text-electric-violet" : "text-slate-500"}`}
+            title="Toggle inspector"
+          >
+            <PanelRight size={14} />
+          </button>
+
+          <button
+            onClick={() => appStore.setAuthModal(true)}
+            className="w-7 h-7 cursor-pointer hover:ring-2 ring-electric-violet/50 rounded-lg transition-all"
+            title="Account"
+          >
+            <Avatar size="sm" src={user?.avatarUrl} />
+          </button>
+        </div>
+      </header>
+
+      <div className="flex-1 flex overflow-hidden">
+        {isSidebarOpen && (
+          <aside className="w-64 flex flex-col shrink-0 z-10 bg-slate-50 dark:bg-near-black">
+            {sidebar}
+          </aside>
+        )}
+
+        <main className="flex-1 flex flex-col min-w-0 bg-slate-50 dark:bg-near-black relative">
+          <div className="h-9 bg-slate-50 dark:bg-near-black border-b border-slate-200 dark:border-white/10 flex items-center overflow-x-auto no-scrollbar">
+            {tabs.map((tab) => (
+              <Tab
+                key={tab.id}
+                id={tab.id}
+                title={tab.title}
+                isActive={tab.id === activeTabId}
+                onSelect={() => onSelectTab && onSelectTab(tab.id)}
+                onClose={() => onCloseTab && onCloseTab(tab.id)}
+                onRename={(newTitle) =>
+                  onRenameTab && onRenameTab(tab.id, newTitle)
+                }
+                icon={
+                  tab.type === "ptb" ? (
+                    <Layers size={12} />
+                  ) : tab.type === "rpc" ? (
+                    <Command size={12} />
+                  ) : tab.type === "ai_chat" ? (
+                    <Sparkles size={12} className="text-electric-violet" />
+                  ) : undefined
+                }
+              />
+            ))}
+            <button
+              onClick={onNewTab}
+              className="p-2 text-slate-500 hover:text-electric-violet hover:bg-slate-100 dark:bg-white/5 transition-colors"
+            >
+              <Plus size={14} />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-hidden relative">{workspace}</div>
+        </main>
+
+        {isInspectorOpen && (
+          <aside className="w-80 bg-slate-50 dark:bg-near-black border-l border-slate-200 dark:border-white/10 flex flex-col shrink-0 z-10 shadow-2xl">
+            {inspector}
+          </aside>
+        )}
+      </div>
+
+      <TerminalPanel />
+
+      <footer className="h-7 bg-slate-50 dark:bg-near-black border-t border-slate-200 dark:border-white/10 flex items-center justify-between px-3 text-[10px] text-slate-500 select-none z-20">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => appStore.openTab("settings")}
+            className="flex items-center gap-1 hover:text-electric-violet cursor-pointer transition-colors"
+          >
+            <Settings size={10} /> v2.6.0-beta
+          </button>
+          <button
+            onClick={() => {
+              appStore.showToast(systemStatusMessage, systemStatusToastType);
+              appStore.showToast(systemHealth.message, systemHealth.toastType);
+            }}
+            className={`${systemStatusHoverClass} cursor-pointer transition-colors flex items-center gap-1`}
+          >
+            <div
+              className={`w-1 h-1 ${systemStatusDotClass} rounded-full`}
+            ></div>
+            {systemStatusLabel}
+
+            <div
+              className={`w-1 h-1 ${systemHealthColor.dot} rounded-full`}
+            ></div>
+            {systemHealth.label}
+          </button>
+          <button
+            onClick={() => appStore.toggleTerminal()}
+            className={`flex items-center gap-1 cursor-pointer transition-colors ${
+              isTerminalOpen
+                ? "text-electric-violet"
+                : "hover:text-slate-600 dark:text-slate-300"
+            }`}
+          >
+            <Terminal size={10} /> Terminal
+          </button>
+        </div>
+        <div className="flex items-center gap-4">
+          <span className="font-mono text-slate-600">
+            GAS: <span className="text-amber-500">AUTO</span>
+          </span>
+        </div>
+      </footer>
+    </div>
+  );
 };

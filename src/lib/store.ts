@@ -227,6 +227,51 @@ const clearStoredUser = () => {
     );
 };
 
+const getEnvVariablesStorageKey = (workspaceId: string) =>
+    `txio_env_${workspaceId}`;
+
+const readStoredEnvVariables = (
+    workspaceId: string
+): EnvironmentVariable[] => {
+    if (typeof window === 'undefined' || !workspaceId) return [];
+    try {
+        const raw = localStorage.getItem(
+            getEnvVariablesStorageKey(workspaceId)
+        );
+        if (!raw) return [];
+        return JSON.parse(raw);
+    } catch {
+        return [];
+    }
+};
+
+const persistEnvVariables = (
+    workspaceId: string,
+    vars: EnvironmentVariable[]
+) => {
+    if (typeof window === 'undefined' || !workspaceId) return;
+    try {
+        localStorage.setItem(
+            getEnvVariablesStorageKey(workspaceId),
+            JSON.stringify(vars)
+        );
+    } catch {
+        // Ignore storage errors
+    }
+};
+
+const clearAllStoredEnvVariables = () => {
+    if (typeof window === 'undefined') return;
+    try {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('txio_env_')) {
+                localStorage.removeItem(key);
+            }
+        }
+    } catch {}
+};
+
 const readStoredWorkspaceId = () => {
     if (typeof window === 'undefined') {
         return '';
@@ -441,6 +486,9 @@ const hydrateWorkspaceState = async (
         tabs: nextSession.tabs,
         activeTabId:
             nextSession.activeTabId,
+        envVariables: nextWorkspaceId
+            ? readStoredEnvVariables(nextWorkspaceId)
+            : [],
         collections: nextWorkspaceId
             ? state.collections
             : [],
@@ -563,6 +611,7 @@ const clearInvalidSession = () => {
     }
 
     clearStoredUser();
+    clearAllStoredEnvVariables();
     persistCurrentWorkspaceId('');
 
     state = {
@@ -573,6 +622,7 @@ const clearInvalidSession = () => {
         collections: [],
         tabs: [],
         activeTabId: null,
+        envVariables: [],
         isLoadingWorkspaces: false,
         hasHydratedWorkspaces: false,
         workspacesLoadFailed: false,
@@ -1347,6 +1397,8 @@ export const appStore = {
 
             activeTabId: nextSession.activeTabId,
 
+            envVariables: readStoredEnvVariables(ws.id),
+
             isSyncing: true,
 
             scanStep: `Loading ${ws.name}...`
@@ -1501,6 +1553,10 @@ export const appStore = {
             ...state,
             envVariables: vars
         };
+
+        if (state.currentWorkspaceId) {
+            persistEnvVariables(state.currentWorkspaceId, vars);
+        }
 
         emit();
     },
@@ -1782,6 +1838,7 @@ export const appStore = {
         }
 
         clearStoredUser();
+        clearAllStoredEnvVariables();
         persistCurrentWorkspaceId('');
 
         state = {
@@ -1792,6 +1849,7 @@ export const appStore = {
             collections: [],
             tabs: [],
             activeTabId: null,
+            envVariables: [],
             isLoadingWorkspaces: false,
             hasHydratedWorkspaces: false,
             workspacesLoadFailed: false,
@@ -1973,6 +2031,7 @@ export const appStore = {
                     );
 
                     clearStoredUser();
+                    clearAllStoredEnvVariables();
                     persistCurrentWorkspaceId('');
 
                     state = {
@@ -1983,6 +2042,7 @@ export const appStore = {
                         collections: [],
                         tabs: [],
                         activeTabId: null,
+                        envVariables: [],
                         isLoadingWorkspaces: false,
                         hasHydratedWorkspaces: false,
                         workspacesLoadFailed: false,
@@ -2046,6 +2106,7 @@ export const appStore = {
             }
         } else {
             clearStoredUser();
+            clearAllStoredEnvVariables();
             persistCurrentWorkspaceId('');
 
             state = {
@@ -2056,6 +2117,7 @@ export const appStore = {
                 collections: [],
                 tabs: [],
                 activeTabId: null,
+                envVariables: [],
                 isLoadingWorkspaces: false,
                 hasHydratedWorkspaces: false,
                 workspacesLoadFailed: false,
@@ -2074,6 +2136,7 @@ export const appStore = {
     ) {
         if (user === null) {
             clearStoredUser();
+            clearAllStoredEnvVariables();
             persistCurrentWorkspaceId('');
 
             state = {
@@ -2084,6 +2147,7 @@ export const appStore = {
                 collections: [],
                 tabs: [],
                 activeTabId: null,
+                envVariables: [],
                 isLoadingWorkspaces: false,
                 hasHydratedWorkspaces: false,
                 workspacesLoadFailed: false
