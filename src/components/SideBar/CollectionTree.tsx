@@ -74,15 +74,19 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
             />
           )}
           
-          <button 
+          <div
             className={`
-              group flex items-center gap-2 px-2 py-1.5 cursor-pointer rounded-lg transition-all duration-200 text-left w-full
+              group flex items-center gap-2 px-2 py-1.5 rounded-lg transition-all duration-200 text-left w-full
               ${node.type !== 'request' ? 'hover:bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-slate-700 dark:text-slate-200' : 
                 isActive ? 'bg-sui-900/20 text-sui-300 shadow-[inset_2px_0_0_0_#0ea5e9]' : 'hover:bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-slate-700 dark:text-slate-200'}
             `}
             style={{ paddingLeft: `${depth * 12 + 4}px` }}
-            onClick={() => node.type !== 'request' ? onToggleExpand(node.id) : onSelectCollectionRequest(node)}
           >
+            <button
+              type="button"
+              className="flex flex-1 min-w-0 items-center gap-2 cursor-pointer text-left bg-transparent border-0 p-0"
+              onClick={() => node.type !== 'request' ? onToggleExpand(node.id) : onSelectCollectionRequest(node)}
+            >
             <div className="shrink-0 flex items-center justify-center w-4 h-4">
               {node.type === 'collection' || node.type === 'folder' ? (
                 node.children && node.children.length > 0 ? (
@@ -99,11 +103,13 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
             <span className={`truncate flex-1 font-sans text-[11px] font-medium leading-none pt-0.5 ${isActive ? 'font-bold' : ''}`}>
               {node.name}
             </span>
+            </button>
 
             {(node.type === 'collection' || node.type === 'folder') && (
               <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1">
                 {node.type === 'collection' && (
                   <button
+                    type="button"
                     onClick={(e) => { e.stopPropagation(); appStore.openTab('runner', { collectionId: node.id }); }}
                     className="p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded text-slate-500 hover:text-green-400 transition-colors"
                     title="Run Collection"
@@ -111,7 +117,8 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
                     <Play size={10} />
                   </button>
                 )}
-                <button 
+                <button
+                  type="button"
                   onClick={(e) => { e.stopPropagation(); appStore.openTab('new_request', { collectionId: node.id }); }} 
                   className="p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded text-slate-500 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white transition-colors"
                   title="Add Request"
@@ -120,6 +127,7 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
                 </button>
                 {node.type === 'collection' && (
                   <button
+                    type="button"
                     onClick={(e) => {
                       // Confirm before deleting, since this permanently
                       // removes the collection and all of its requests.
@@ -136,7 +144,7 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
                 )}
               </div>
             )}
-          </button>
+          </div>
 
           {(isFiltering || node.isExpanded) && node.children && (
             <div className="relative animate-in slide-in-from-left-1 duration-200">
