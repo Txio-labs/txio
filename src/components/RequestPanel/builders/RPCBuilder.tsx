@@ -39,8 +39,10 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
   // reset the raw-JSON edit buffer whenever it changes, regardless of what
   // triggered the change.
   useEffect(() => {
-    setRawJson(null);
-    setJsonError(null);
+    queueMicrotask(() => {
+      setRawJson(null);
+      setJsonError(null);
+    });
   }, [chain]);
 
   const displayJson =
