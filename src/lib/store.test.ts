@@ -479,3 +479,48 @@ describe('appStore comments persistence', () => {
         expect(reloadedSnapshot.comments[requestId][0].content).toBe('Great API request structure!');
     });
 });
+
+describe('appStore env variables persistence', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        vi.resetAllMocks();
+    });
+
+    it('persists env variables to localStorage and restores them on load', async () => {
+        localStorage.setItem('txio_token', 'cached-token');
+        localStorage.setItem('txio_user', JSON.stringify(user));
+        localStorage.setItem('txio_current_workspace', 'workspace-1');
+
+        const { appStore, apiService } = await loadStore();
+        apiService.getProfile.mockResolvedValue(user);
+        apiService.getWorkspaces.mockResolvedValue([workspace]);
+        apiService.getCollections.mockResolvedValue([]);
+
+        await appStore.initialize();
+
+        const vars = [{ key: 'API_URL', value: 'https://api.example.com', enabled: true, network: 'all' as any }];
+        appStore.updateEnv(vars);
+
+        const snapshot = appStore.getSnapshot();
+        expect(snapshot.envVariables).toHaveLength(1);
+        expect(snapshot.envVariables[0].key).toBe('API_URL');
+
+        const storedRaw = localStorage.getItem('txio_env_workspace-1');
+        expect(storedRaw).not.toBeNull();
+        const storedVars = JSON.parse(storedRaw!);
+        expect(storedVars).toHaveLength(1);
+        expect(storedVars[0].value).toBe('https://api.example.com');
+
+        // Reload store and verify env variables are hydrated from localStorage
+        const reloaded = await loadStore();
+        reloaded.apiService.getProfile.mockResolvedValue(user);
+        reloaded.apiService.getWorkspaces.mockResolvedValue([workspace]);
+        reloaded.apiService.getCollections.mockResolvedValue([]);
+
+        await reloaded.appStore.initialize();
+        
+        const reloadedSnapshot = reloaded.appStore.getSnapshot();
+        expect(reloadedSnapshot.envVariables).toHaveLength(1);
+        expect(reloadedSnapshot.envVariables[0].key).toBe('API_URL');
+    });
+});
