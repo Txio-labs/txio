@@ -432,22 +432,17 @@ export const Layout: React.FC<LayoutProps> = ({
             <Settings size={10} /> v2.6.0-beta
           </button>
           <button
-            onClick={() =>
-              appStore.showToast(systemStatusMessage, systemStatusToastType)
-            }
+            onClick={() => {
+              appStore.showToast(systemStatusMessage, systemStatusToastType);
+              appStore.showToast(systemHealth.message, systemHealth.toastType);
+            }}
             className={`${systemStatusHoverClass} cursor-pointer transition-colors flex items-center gap-1`}
           >
             <div
               className={`w-1 h-1 ${systemStatusDotClass} rounded-full`}
-            ></div>{" "}
+            ></div>
             {systemStatusLabel}
-            onClick=
-            {() =>
-              appStore.showToast(systemHealth.message, systemHealth.toastType)
-            }
-            className=
-            {`${systemHealthColor.button} cursor-pointer transition-colors flex items-center gap-1`}
-            &gt;
+
             <div
               className={`w-1 h-1 ${systemHealthColor.dot} rounded-full`}
             ></div>
