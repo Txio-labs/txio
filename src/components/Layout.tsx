@@ -65,7 +65,8 @@ export const Layout: React.FC<LayoutProps> = ({
         isSyncing,
         scanStep,
         isTerminalOpen,
-        pendingNetworkSwitch
+        pendingNetworkSwitch,
+        activityLogs
     } = useAppStore();
     const [rpcHealth, setRpcHealth] =
         useState<RPCHealthMetric | null>(
@@ -101,6 +102,42 @@ export const Layout: React.FC<LayoutProps> = ({
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    const recentActivityLogs = activityLogs.slice(0, 25);
+    const hasRecentErrors = recentActivityLogs.some((log) => log.type === 'error');
+    const systemStatus =
+        hasRecentErrors || rpcHealth?.status === 'down'
+            ? 'error'
+            : rpcHealth?.status === 'degraded'
+              ? 'degraded'
+              : 'optimal';
+    const systemStatusLabel =
+        systemStatus === 'error'
+            ? 'System Issues'
+            : systemStatus === 'degraded'
+              ? 'System Degraded'
+              : 'System Optimal';
+    const systemStatusDotClass =
+        systemStatus === 'error'
+            ? 'bg-red-500'
+            : systemStatus === 'degraded'
+              ? 'bg-amber-500'
+              : 'bg-emerald-500';
+    const systemStatusHoverClass =
+        systemStatus === 'error'
+            ? 'hover:text-red-400'
+            : systemStatus === 'degraded'
+              ? 'hover:text-amber-400'
+              : 'hover:text-emerald-400';
+    const systemStatusToastType =
+        systemStatus === 'error' ? 'error' : systemStatus === 'degraded' ? 'info' : 'success';
+    const systemStatusMessage = hasRecentErrors
+        ? 'Recent terminal activity includes errors. Check the terminal for details.'
+        : rpcHealth?.status === 'down'
+          ? 'RPC connectivity is down. Requests may fail.'
+          : rpcHealth?.status === 'degraded'
+            ? 'RPC connectivity is degraded. Some requests may be slow or fail.'
+            : 'System operational. No recent errors detected.';
 
     const handleNetworkSwitch = (newNetwork: Network) => {
         if (newNetwork === network) {
@@ -279,10 +316,10 @@ export const Layout: React.FC<LayoutProps> = ({
                         <Settings size={10} /> v2.6.0-beta
                     </button>
                     <button 
-                        onClick={() => appStore.showToast('System operational. No errors.', 'success')}
-                        className="hover:text-emerald-400 cursor-pointer transition-colors flex items-center gap-1"
+                        onClick={() => appStore.showToast(systemStatusMessage, systemStatusToastType)}
+                        className={`${systemStatusHoverClass} cursor-pointer transition-colors flex items-center gap-1`}
                     >
-                        <div className="w-1 h-1 bg-emerald-500 rounded-full"></div> System Optimal
+                        <div className={`w-1 h-1 ${systemStatusDotClass} rounded-full`}></div> {systemStatusLabel}
                     </button>
                     <button
                         onClick={() =>
