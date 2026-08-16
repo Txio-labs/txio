@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import { AuthModalProps, ProfileTab, ApiKey } from './types';
+import { AuthModalProps, ProfileTab } from './types';
 import { LoginSignupForm } from './LoginSignupForm';
 import { ProfileSidebar } from './ProfileSidebar';
 import { GeneralTab } from './tabs/GeneralTab';
@@ -20,7 +20,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 }) => {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [activeTab, setActiveTab] = useState<ProfileTab>('general');
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const isProfileDrawer = Boolean(user);
 
   if (!isOpen) return null;
@@ -53,7 +52,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       case 'security':
         return <SecurityTab />;
       case 'api-keys':
-        return <ApiKeysTab apiKeys={apiKeys} onApiKeysChange={setApiKeys} />;
+        return <ApiKeysTab />;
       default:
         return null;
     }
