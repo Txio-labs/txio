@@ -439,13 +439,19 @@ describe('appStore auth and session state', () => {
     });
 });
 
-describe('appStore comments persistence', () => {
+describe('appStore comments persistence and user scoping', () => {
+    const user2 = {
+        id: 'user-2',
+        email: 'charles@example.com',
+        name: 'Charles Babbage'
+    };
+
     beforeEach(() => {
         localStorage.clear();
         vi.resetAllMocks();
     });
 
-    it('persists posted comments to localStorage and restores them on load', async () => {
+    it('persists posted comments to user-scoped storage key and hydrates them on load', async () => {
         localStorage.setItem('txio_token', 'cached-token');
         localStorage.setItem('txio_user', JSON.stringify(user));
 
@@ -466,16 +472,62 @@ describe('appStore comments persistence', () => {
             content: 'Great API request structure!'
         });
 
-        const storedRaw = localStorage.getItem('txio_comments');
-        expect(storedRaw).not.toBeNull();
-        const storedComments = JSON.parse(storedRaw!);
+        // Unscoped key must not exist; user-scoped key must be populated
+        expect(localStorage.getItem('txio_comments')).toBeNull();
+        const userStoredRaw = localStorage.getItem(`txio_comments:${user.id}`);
+        expect(userStoredRaw).not.toBeNull();
+        const storedComments = JSON.parse(userStoredRaw!);
         expect(storedComments[requestId]).toHaveLength(1);
         expect(storedComments[requestId][0].content).toBe('Great API request structure!');
 
-        // Reload store and verify comments are hydrated from localStorage
+        // Reload store for same user and verify comments are hydrated
         const reloaded = await loadStore();
+        reloaded.apiService.getProfile.mockResolvedValue(user);
+        reloaded.apiService.getWorkspaces.mockResolvedValue([]);
+        await reloaded.appStore.initialize();
         const reloadedSnapshot = reloaded.appStore.getSnapshot();
         expect(reloadedSnapshot.comments[requestId]).toHaveLength(1);
         expect(reloadedSnapshot.comments[requestId][0].content).toBe('Great API request structure!');
+    });
+
+    it('clears in-memory comments on logout and isolates comments across different accounts', async () => {
+        const { appStore, apiService } = await loadStore();
+        apiService.login.mockResolvedValue({
+            token: 'user1-token',
+            user
+        });
+        apiService.getWorkspaces.mockResolvedValue([]);
+        apiService.getCollections.mockResolvedValue([]);
+
+        // User 1 logs in and adds a comment
+        await appStore.login('ada@example.com', 'pass');
+        appStore.postComment('req-common', 'Secret comment from User 1');
+        expect(appStore.getSnapshot().comments['req-common']).toHaveLength(1);
+
+        // User 1 logs out: state comments must be empty
+        appStore.logout();
+        expect(appStore.getSnapshot().comments).toEqual({});
+
+        // User 2 logs in on the same browser
+        apiService.login.mockResolvedValue({
+            token: 'user2-token',
+            user: user2
+        });
+        await appStore.login('charles@example.com', 'pass');
+
+        // User 2 must not see User 1's comments
+        expect(appStore.getSnapshot().comments['req-common']).toBeUndefined();
+        expect(appStore.getSnapshot().comments).toEqual({});
+
+        // User 2 posts their own comment
+        appStore.postComment('req-common', 'User 2 comment');
+        expect(appStore.getSnapshot().comments['req-common']).toHaveLength(1);
+        expect(appStore.getSnapshot().comments['req-common'][0].content).toBe('User 2 comment');
+
+        // Storage contains separated entries for both users
+        const user1Storage = JSON.parse(localStorage.getItem(`txio_comments:${user.id}`) || '{}');
+        const user2Storage = JSON.parse(localStorage.getItem(`txio_comments:${user2.id}`) || '{}');
+        expect(user1Storage['req-common'][0].content).toBe('Secret comment from User 1');
+        expect(user2Storage['req-common'][0].content).toBe('User 2 comment');
     });
 });

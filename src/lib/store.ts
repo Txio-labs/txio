@@ -318,15 +318,38 @@ const persistNetwork = (
     );
 };
 
-const readStoredComments = (): Record<string, Comment[]> => {
+const getUserCommentsStorageKey = (
+    user?: Pick<UserProfile, 'id' | 'email'> | null
+) => {
+    if (!user) {
+        return null;
+    }
+
+    if (user.id) {
+        return `txio_comments:${user.id}`;
+    }
+
+    if (user.email) {
+        return `txio_comments:${user.email.toLowerCase()}`;
+    }
+
+    return null;
+};
+
+const readStoredComments = (
+    user?: Pick<UserProfile, 'id' | 'email'> | null
+): Record<string, Comment[]> => {
     if (typeof window === 'undefined') {
         return {};
     }
 
+    const key = getUserCommentsStorageKey(user);
+    if (!key) {
+        return {};
+    }
+
     try {
-        const raw = localStorage.getItem(
-            commentsStorageKey
-        );
+        const raw = localStorage.getItem(key);
 
         if (!raw) {
             return {};
@@ -351,15 +374,21 @@ const readStoredComments = (): Record<string, Comment[]> => {
 };
 
 const persistComments = (
+    user: Pick<UserProfile, 'id' | 'email'> | null | undefined,
     comments: Record<string, Comment[]>
 ) => {
     if (typeof window === 'undefined') {
         return;
     }
 
+    const key = getUserCommentsStorageKey(user);
+    if (!key) {
+        return;
+    }
+
     try {
         localStorage.setItem(
-            commentsStorageKey,
+            key,
             JSON.stringify(comments)
         );
     } catch {
@@ -573,6 +602,7 @@ const clearInvalidSession = () => {
         collections: [],
         tabs: [],
         activeTabId: null,
+        comments: {},
         isLoadingWorkspaces: false,
         hasHydratedWorkspaces: false,
         workspacesLoadFailed: false,
@@ -1686,6 +1716,7 @@ export const appStore = {
             state = {
                 ...state,
                 user: hydratedUser,
+                comments: readStoredComments(hydratedUser),
                 isAuthModalOpen: false,
                 viewMode: 'app'
             };
@@ -1745,6 +1776,7 @@ export const appStore = {
             state = {
                 ...state,
                 user: hydratedUser,
+                comments: readStoredComments(hydratedUser),
                 isAuthModalOpen: false,
                 viewMode: 'app'
             };
@@ -1792,6 +1824,7 @@ export const appStore = {
             collections: [],
             tabs: [],
             activeTabId: null,
+            comments: {},
             isLoadingWorkspaces: false,
             hasHydratedWorkspaces: false,
             workspacesLoadFailed: false,
@@ -1876,6 +1909,9 @@ export const appStore = {
                 user:
                     hydratedRestoredUser ||
                     state.user,
+                comments: readStoredComments(
+                    hydratedRestoredUser || state.user
+                ),
                 isLoadingWorkspaces: true,
                 viewMode: 'app'
             };
@@ -1910,6 +1946,7 @@ export const appStore = {
                 state = {
                     ...state,
                     user: hydratedUser,
+                    comments: readStoredComments(hydratedUser),
                     viewMode: 'app'
                 };
 
@@ -2084,6 +2121,7 @@ export const appStore = {
                 collections: [],
                 tabs: [],
                 activeTabId: null,
+                comments: {},
                 isLoadingWorkspaces: false,
                 hasHydratedWorkspaces: false,
                 workspacesLoadFailed: false
@@ -2106,7 +2144,8 @@ export const appStore = {
 
             state = {
                 ...state,
-                user: hydratedUser
+                user: hydratedUser,
+                comments: readStoredComments(hydratedUser)
             };
 
             persistStoredUser(
@@ -2205,7 +2244,7 @@ export const appStore = {
             comments: newComments
         };
 
-        persistComments(newComments);
+        persistComments(state.user, newComments);
         emit();
     },
 
