@@ -257,6 +257,21 @@ describe('appStore auth and session state', () => {
             JSON.stringify(user)
         );
         localStorage.setItem(
+            'txio_comments:user-1',
+            JSON.stringify({
+                'req-stale': [
+                    {
+                        id: 'cm-stale',
+                        userName: user.name,
+                        content: 'stale comment',
+                        timestamp: 1,
+                        userAvatarColor:
+                            'bg-electric-violet'
+                    }
+                ]
+            })
+        );
+        localStorage.setItem(
             'txio_viewMode',
             'app'
         );
@@ -306,7 +321,8 @@ describe('appStore auth and session state', () => {
             workspaces: [],
             currentWorkspaceId: '',
             isLoadingWorkspaces: false,
-            hasHydratedWorkspaces: false
+            hasHydratedWorkspaces: false,
+            comments: {}
         });
         expect(
             localStorage.getItem('txio_token')
@@ -322,6 +338,39 @@ describe('appStore auth and session state', () => {
                 'txio_current_workspace'
             )
         ).toBeNull();
+    });
+
+    it('clears comments when initializing without a stored token', async () => {
+        localStorage.setItem(
+            'txio_user',
+            JSON.stringify(user)
+        );
+        localStorage.setItem(
+            'txio_comments:user-1',
+            JSON.stringify({
+                'req-stale': [
+                    {
+                        id: 'cm-stale',
+                        userName: user.name,
+                        content: 'stale comment',
+                        timestamp: 1,
+                        userAvatarColor:
+                            'bg-electric-violet'
+                    }
+                ]
+            })
+        );
+
+        const { appStore } = await loadStore();
+
+        await appStore.initialize();
+
+        expect(
+            appStore.getSnapshot().user
+        ).toBeNull();
+        expect(
+            appStore.getSnapshot().comments
+        ).toEqual({});
     });
 
     it('starts profile and workspace loading in parallel during initialization', async () => {
@@ -541,6 +590,53 @@ describe('appStore comments persistence', () => {
                 'txio_comments:user-2'
             )
         ).toBeNull();
+    });
+
+    it('re-scopes comments when the identity changes via updateUser (OAuth switch)', async () => {
+        const { appStore, apiService } = await loadStore();
+        apiService.login.mockResolvedValue({
+            token: 'token-user-1',
+            user
+        });
+        apiService.getWorkspaces.mockResolvedValue(
+            []
+        );
+        apiService.getCollections.mockResolvedValue(
+            []
+        );
+
+        await appStore.login(
+            'ada@example.com',
+            'correct-horse'
+        );
+
+        const requestId = 'req-oauth';
+        appStore.postComment(
+            requestId,
+            'User-1 private comment'
+        );
+
+        const otherUser = {
+            id: 'user-2',
+            email: 'bob@example.com',
+            name: 'Bob'
+        };
+
+        appStore.updateUser(otherUser);
+
+        expect(
+            appStore.getSnapshot().user
+        ).toMatchObject(otherUser);
+        expect(
+            appStore.getSnapshot().comments
+        ).toEqual({});
+        expect(
+            JSON.parse(
+                localStorage.getItem(
+                    'txio_comments:user-1'
+                ) || '{}'
+            )[requestId]
+        ).toHaveLength(1);
     });
 });
 

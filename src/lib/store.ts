@@ -2003,6 +2003,9 @@ export const appStore = {
                 state = {
                     ...state,
                     user: hydratedUser,
+                    comments: readStoredComments(
+                        hydratedUser
+                    ),
                     viewMode: 'app'
                 };
 
@@ -2078,6 +2081,7 @@ export const appStore = {
                         tabs: [],
                         activeTabId: null,
                         envVariables: [],
+                        comments: {},
                         isLoadingWorkspaces: false,
                         hasHydratedWorkspaces: false,
                         workspacesLoadFailed: false,
@@ -2153,6 +2157,7 @@ export const appStore = {
                 tabs: [],
                 activeTabId: null,
                 envVariables: [],
+                comments: {},
                 isLoadingWorkspaces: false,
                 hasHydratedWorkspaces: false,
                 workspacesLoadFailed: false,
@@ -2183,6 +2188,7 @@ export const appStore = {
                 tabs: [],
                 activeTabId: null,
                 envVariables: [],
+                comments: {},
                 isLoadingWorkspaces: false,
                 hasHydratedWorkspaces: false,
                 workspacesLoadFailed: false
@@ -2205,7 +2211,10 @@ export const appStore = {
 
             state = {
                 ...state,
-                user: hydratedUser
+                user: hydratedUser,
+                comments: readStoredComments(
+                    hydratedUser
+                )
             };
 
             persistStoredUser(
