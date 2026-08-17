@@ -78,6 +78,11 @@ export const GeneralTab: React.FC<TabProps & { onLogout: () => void }> = ({ user
         setError(null);
     }
 
+    // Guard against empty API_BASE — log error if it's not configured properly
+    if (!API_BASE && process.env.NODE_ENV === 'production') {
+        console.error('[GeneralTab] API_BASE is not set — GitHub OAuth link will be broken');
+    }
+
     useEffect(() => {
         if (!saved) return;
         const t = window.setTimeout(() => setSaved(false), SAVED_FLASH_MS);
@@ -163,7 +168,7 @@ export const GeneralTab: React.FC<TabProps & { onLogout: () => void }> = ({ user
                                 {!user.githubAccount && (
                                     <button
                                         type="button"
-                                        onClick={() => window.location.href = `${process.env.NEXT_PUBLIC_API_BASE ?? ''}/auth/github/login`}
+                                        onClick={() => window.location.href = `${API_BASE}/auth/github/login`}
                                         className="ml-auto text-[11px] text-electric-violet hover:text-soft-purple font-medium transition-colors"
                                     >
                                         Connect →
