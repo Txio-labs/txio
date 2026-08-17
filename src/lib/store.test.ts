@@ -466,7 +466,7 @@ describe('appStore comments persistence', () => {
             content: 'Great API request structure!'
         });
 
-        const storedRaw = localStorage.getItem('txio_comments');
+        const storedRaw = localStorage.getItem('txio_comments:user-1');
         expect(storedRaw).not.toBeNull();
         const storedComments = JSON.parse(storedRaw!);
         expect(storedComments[requestId]).toHaveLength(1);
@@ -477,6 +477,70 @@ describe('appStore comments persistence', () => {
         const reloadedSnapshot = reloaded.appStore.getSnapshot();
         expect(reloadedSnapshot.comments[requestId]).toHaveLength(1);
         expect(reloadedSnapshot.comments[requestId][0].content).toBe('Great API request structure!');
+    });
+
+    it('isolates comments between user ids in the same browser session', async () => {
+        const { appStore, apiService } = await loadStore();
+        apiService.login.mockResolvedValue({
+            token: 'token-user-1',
+            user
+        });
+        apiService.getWorkspaces.mockResolvedValue([]);
+        apiService.getCollections.mockResolvedValue([]);
+
+        await appStore.login(
+            'ada@example.com',
+            'correct-horse'
+        );
+
+        const requestId = 'req-shared';
+        appStore.postComment(
+            requestId,
+            'Visible to user-1 only'
+        );
+
+        expect(
+            appStore.getSnapshot().comments[requestId]
+        ).toHaveLength(1);
+
+        appStore.logout();
+
+        expect(
+            appStore.getSnapshot().comments
+        ).toEqual({});
+
+        const otherUser = {
+            id: 'user-2',
+            email: 'bob@example.com',
+            name: 'Bob'
+        };
+
+        apiService.login.mockResolvedValue({
+            token: 'token-user-2',
+            user: otherUser
+        });
+
+        await appStore.login(
+            'bob@example.com',
+            'correct-horse'
+        );
+
+        expect(
+            appStore.getSnapshot().comments
+        ).toEqual({});
+
+        expect(
+            JSON.parse(
+                localStorage.getItem(
+                    'txio_comments:user-1'
+                ) || '{}'
+            )[requestId]
+        ).toHaveLength(1);
+        expect(
+            localStorage.getItem(
+                'txio_comments:user-2'
+            )
+        ).toBeNull();
     });
 });
 
