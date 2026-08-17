@@ -189,17 +189,8 @@ const restoreProvider = async (
                     return buildWallet(walletId, response.address);
                 }
             }
-            return null;
         }
-
-        // Fallback for connecting silently if possible, some wallets only expose connect
-        const response = await withTimeout(
-            provider.connect(),
-            `${name} restore`,
-            5000
-        );
-        const address = response.address;
-        return address ? buildWallet(walletId, address) : null;
+        return null;
     } catch {
         return null;
     }
