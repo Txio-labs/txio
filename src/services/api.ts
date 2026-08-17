@@ -926,8 +926,15 @@ class ApiService {
         return normalizeUserProfile(data.user);
     }
 
+    // Password rotation. The deployed backend resolves the account from
+    // `email` in the body (older contract), while the backend repo's current
+    // handler derives identity from the JWT claims and requires
+    // `current_password` instead. Send both so rotation works against the
+    // deployed instance today and survives the backend upgrade: each version
+    // ignores the field it doesn't know about.
     async updatePassword(
         email: string,
+        currentPassword: string,
         newPassword: string
     ): Promise<UserProfile> {
         const data =
@@ -937,6 +944,8 @@ class ApiService {
                     method: 'POST',
                     body: JSON.stringify({
                         email,
+                        current_password:
+                            currentPassword,
                         new_password:
                             newPassword
                     })
