@@ -261,6 +261,58 @@ describe('apiService', () => {
         ]);
     });
 
+    it('rotates the password with the email-based body the deployed backend expects', async () => {
+        fetchMock.mockResolvedValue(
+            jsonResponse({
+                user: {
+                    _id: { $oid: 'user-1' },
+                    email: 'ada@example.com',
+                    name: 'Ada Lovelace'
+                }
+            })
+        );
+
+        const result =
+            await apiService.updatePassword(
+                'ada@example.com',
+                'current-password-123',
+                'new-password-456'
+            );
+
+        const [url, options] =
+            fetchMock.mock.calls[0];
+        expect(url).toBe(
+            `${API_BASE}/auth/update-password`
+        );
+        // The deployed backend requires `email` in the body (older
+        // contract); the backend repo's current handler requires
+        // `current_password` instead. Send both so rotation works against
+        // the deployed instance today and survives the backend upgrade.
+        expect(options).toMatchObject({
+            method: 'POST',
+            body: JSON.stringify({
+                email: 'ada@example.com',
+                current_password:
+                    'current-password-123',
+                new_password:
+                    'new-password-456'
+            })
+        });
+        expect(result).toEqual({
+            id: 'user-1',
+            email: 'ada@example.com',
+            name: 'Ada Lovelace',
+            avatarUrl: undefined,
+            bannerUrl: undefined,
+            notificationPreferences: {
+                emailDigests: true,
+                emailSecurityAlerts: true,
+                inAppActivityAlerts: true,
+                inAppProductUpdates: false
+            }
+        });
+    });
+
     it('creates a recipe template with the given fields', async () => {
         fetchMock.mockResolvedValue(
             jsonResponse({

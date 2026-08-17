@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { appStore } from '../../../lib/store';
-import { apiClient } from '../../../lib/api';
+import { appStore, useAppStore } from '../../../lib/store';
 import { apiService } from '../../../services/api';
 import type { ActiveSession } from '../../../types';
 
@@ -90,6 +89,7 @@ function useActiveSessions(enabled: boolean) {
 }
 
 export const SecurityTab: React.FC = () => {
+  const { user } = useAppStore();
   const [isLoading, setIsLoading] = useState(false);
   const [isPasswordFormVisible, setIsPasswordFormVisible] = useState(false);
   const [isSessionReviewVisible, setIsSessionReviewVisible] = useState(false);
@@ -137,11 +137,11 @@ export const SecurityTab: React.FC = () => {
 
     setIsLoading(true);
     try {
-      await apiClient.post('/auth/update-password', {
-        current_password: formData.currentPassword,
-        new_password: formData.newPassword,
-        confirm_password: formData.confirmPassword,
-      });
+      await apiService.updatePassword(
+        user?.email || '',
+        formData.currentPassword,
+        formData.newPassword
+      );
 
       appStore.showToast('Password rotated successfully!', 'success');
       setFormData({
@@ -151,7 +151,10 @@ export const SecurityTab: React.FC = () => {
       });
       setIsPasswordFormVisible(false);
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Failed to rotate password';
+      const errorMessage =
+        error instanceof Error && error.message
+          ? error.message
+          : 'Failed to rotate password';
       appStore.showToast(errorMessage, 'error');
       setErrors({
         currentPassword: errorMessage,
