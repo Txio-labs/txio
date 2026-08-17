@@ -17,7 +17,6 @@ import {
 } from '../services/suiService';
 import { ADDRESS_FIRST_PARAM_METHODS } from '@/lib/constants';
 import { SignTransactionModal } from '../components/SignTransactionModal';
-import { NetworkSwitcherModal } from '../components/NetworkSwitcherModal';
 import { MainnetExecutionWarningModal } from '../components/MainnetExecutionWarningModal';
 import {
     ensureTerminalOpen,
@@ -95,10 +94,8 @@ export const RPCBuilder: React.FC = () => {
 
     const [isLoading, setIsLoading] = useState(false);
     const [isSignModalOpen, setIsSignModalOpen] = useState(false);
-    const [isNetworkSwitchOpen, setIsNetworkSwitchOpen] = useState(false);
     const [isMainnetWarningOpen, setIsMainnetWarningOpen] = useState(false);
     const [isExecuteMode, setIsExecuteMode] = useState(false);
-    const [pendingNetwork, setPendingNetwork] = useState<Network | null>(null);
     const [testResults, setTestResults] = useState<AssertionResult[]>([]);
 
     const request = activeTab?.data as RequestItem;
@@ -466,14 +463,6 @@ export const RPCBuilder: React.FC = () => {
                 wallet={currentWallet}
                 onRequestConnect={openModal}
                 request={request}
-            />
-
-            <NetworkSwitcherModal
-                isOpen={isNetworkSwitchOpen}
-                onClose={() => setIsNetworkSwitchOpen(false)}
-                onConfirm={executeRealTransaction}
-                from={network}
-                to={pendingNetwork || network}
             />
 
             <MainnetExecutionWarningModal
