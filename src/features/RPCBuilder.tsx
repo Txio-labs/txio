@@ -81,12 +81,10 @@ const resolveRequestVars = (
 };
 
 export const RPCBuilder: React.FC = () => {
-    const {
-        tabs,
-        activeTabId,
-        network,
-        envVariables,
-    } = useAppStore();
+    const tabs = useAppStore(s => s.tabs);
+    const activeTabId = useAppStore(s => s.activeTabId);
+    const network = useAppStore(s => s.network);
+    const envVariables = useAppStore(s => s.envVariables);
     const { currentWallet, openModal } = useWallet();
     const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
     const activeTab = tabs.find(t => t.id === activeTabId);

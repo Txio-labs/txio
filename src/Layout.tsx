@@ -34,7 +34,11 @@ export const Layout: React.FC<LayoutProps> = ({
     onRenameTab,
     onNewTab
 }) => {
-    const { isSidebarOpen, isInspectorOpen, user } = useAppStore();
+    const isSidebarOpen = useAppStore(s => s.isSidebarOpen);
+    const isInspectorOpen = useAppStore(s => s.isInspectorOpen);
+    const user = useAppStore(s => s.user);
+    const theme = useAppStore(s => s.theme);
+    const isTerminalOpen = useAppStore(s => s.isTerminalOpen);
     const { currentWallet } = useWallet();
 
     return (
@@ -44,7 +48,7 @@ export const Layout: React.FC<LayoutProps> = ({
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2 text-slate-100">
                         <div className="w-5 h-5 flex items-center justify-center transition-transform duration-300 hover:rotate-12">
-                            <img src={useAppStore().theme === 'dark' ? logoDark.src : logoLight.src} alt="txio" className="w-full h-full object-contain" />
+                            <img src={theme === 'dark' ? logoDark.src : logoLight.src} alt="txio" className="w-full h-full object-contain" />
                         </div>
                         <span className="text-sm tracking-tight font-semibold lowercase">txio</span>
                     </div>
@@ -166,7 +170,7 @@ export const Layout: React.FC<LayoutProps> = ({
                         type="button"
                         aria-label="Toggle terminal"
                         onClick={() => appStore.toggleTerminal()}
-                        className={`flex items-center gap-1.5 cursor-pointer transition-colors ${useAppStore().isTerminalOpen ? 'text-electric-violet' : 'hover:text-slate-300'}`}
+                        className={`flex items-center gap-1.5 cursor-pointer transition-colors ${isTerminalOpen ? 'text-electric-violet' : 'hover:text-slate-300'}`}
                     >
                         <Terminal size={11} /> Terminal
                     </button>

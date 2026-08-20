@@ -31,6 +31,8 @@ import {
     apiService
 } from '../services/api';
 
+import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/shim/with-selector';
+
 // Simple Event Emitter for State Updates
 type Listener = () => void;
 
@@ -661,7 +663,7 @@ const clearInvalidSession = () => {
 };
 
 // State
-interface AppState {
+export interface AppState {
     activeTabId: string | null;
     tabs: TabItem[];
 
@@ -2368,12 +2370,77 @@ export const appStore = {
     }
 };
 
-import { useSyncExternalStore } from 'react';
+/**
+ * Shallow equality: compares top-level fields of two values with Object.is.
+ * Used to bail out of re-renders when a selector returns a new object/array
+ * reference whose fields are all referentially unchanged.
+ *
+ * Caveat: selectors returning freshly-allocated containers (e.g.
+ * `s => ({ a: s.a })` or `s => s.tabs.filter(...)`) are compared shallowly,
+ * so derived arrays/objects will still trigger re-renders when any referenced
+ * field changes. For derived data, memoize the derived value inside the
+ * selector (or cache it in appStore state) so the reference is stable.
+ */
+export const shallowEqual = <T,>(
+    a: T,
+    b: T
+): boolean => {
+    if (Object.is(a, b)) {
+        return true;
+    }
 
-export const useAppStore = () => {
-    return useSyncExternalStore(
+    if (
+        typeof a !== 'object' ||
+        a === null ||
+        typeof b !== 'object' ||
+        b === null
+    ) {
+        return false;
+    }
+
+    const aKeys = Object.keys(a);
+    const bKeys = Object.keys(b);
+
+    if (aKeys.length !== bKeys.length) {
+        return false;
+    }
+
+    return aKeys.every(
+        (key) =>
+            Object.prototype.hasOwnProperty.call(
+                b,
+                key
+            ) &&
+            Object.is(
+                (a as Record<string, unknown>)[key],
+                (b as Record<string, unknown>)[key]
+            )
+    );
+};
+
+/**
+ * Subscribe to a slice of the global app store.
+ *
+ * `useAppStore()` (no argument) subscribes to the full state and re-renders
+ * on every store update — the historical behavior.
+ *
+ * `useAppStore(state => state.theme)` subscribes to only the selected slice
+ * and re-renders only when that slice changes (shallow-compared, so selectors
+ * returning fresh object references bail out when all fields are unchanged).
+ */
+export const useAppStore = <T = AppState,>(
+    selector?: (state: AppState) => T
+): T => {
+    const select =
+        selector ??
+        ((state: AppState) =>
+            state as unknown as T);
+
+    return useSyncExternalStoreWithSelector(
         appStore.subscribe,
         appStore.getSnapshot,
-        appStore.getSnapshot
+        appStore.getSnapshot,
+        select,
+        shallowEqual
     );
 };
