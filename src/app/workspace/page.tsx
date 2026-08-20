@@ -7,6 +7,7 @@ import { Sidebar } from "@/components/SideBar/Sidebar";
 import { RightPanel } from "@/components/RightPanel/RightPanel";
 import { AuthModal } from "@/components/AuthModal/AuthModal";
 import { EntranceAnimation } from "@/components/EntranceAnimation";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useAppStore, appStore } from "@/lib/store";
 import { RequestType, TeamMember } from "@/types";
 
@@ -105,6 +106,7 @@ export default function WorkspacePage() {
 
     const currentWorkspace =
         workspaces.find((w) => w.id === currentWorkspaceId) || workspaces[0];
+    const activeTab = tabs.find(t => t.id === activeTabId);
     // Only route into onboarding when we've confirmed the account has zero
     // workspaces. A failed/timed-out fetch also leaves workspaces empty, but
     // routing that through onboarding would let the user "create" a
@@ -233,7 +235,15 @@ export default function WorkspacePage() {
                             onCreateWorkspace={appStore.createWorkspace}
                         />
                     }
-                    workspace={<WorkspaceContent />}
+                    workspace={
+                        <ErrorBoundary
+                            key={activeTabId || 'dashboard'}
+                            contextLabel={activeTab?.title || 'workspace tab'}
+                            onReset={() => appStore.setActiveTab(null)}
+                        >
+                            <WorkspaceContent />
+                        </ErrorBoundary>
+                    }
                     inspector={
                         <RightPanel
                             network={network}
