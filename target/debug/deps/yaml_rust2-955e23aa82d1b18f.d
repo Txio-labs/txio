@@ -1,0 +1,11 @@
+/home/promotex/txio/target/debug/deps/yaml_rust2-955e23aa82d1b18f.d: /home/promotex/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yaml-rust2-0.11.0/src/lib.rs /home/promotex/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yaml-rust2-0.11.0/src/char_traits.rs /home/promotex/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yaml-rust2-0.11.0/src/debug.rs /home/promotex/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yaml-rust2-0.11.0/src/emitter.rs /home/promotex/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yaml-rust2-0.11.0/src/parser.rs /home/promotex/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yaml-rust2-0.11.0/src/scanner.rs /home/promotex/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yaml-rust2-0.11.0/src/yaml.rs
+
+/home/promotex/txio/target/debug/deps/libyaml_rust2-955e23aa82d1b18f.rmeta: /home/promotex/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yaml-rust2-0.11.0/src/lib.rs /home/promotex/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yaml-rust2-0.11.0/src/char_traits.rs /home/promotex/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yaml-rust2-0.11.0/src/debug.rs /home/promotex/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yaml-rust2-0.11.0/src/emitter.rs /home/promotex/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yaml-rust2-0.11.0/src/parser.rs /home/promotex/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yaml-rust2-0.11.0/src/scanner.rs /home/promotex/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yaml-rust2-0.11.0/src/yaml.rs
+
+/home/promotex/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yaml-rust2-0.11.0/src/lib.rs:
+/home/promotex/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yaml-rust2-0.11.0/src/char_traits.rs:
+/home/promotex/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yaml-rust2-0.11.0/src/debug.rs:
+/home/promotex/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yaml-rust2-0.11.0/src/emitter.rs:
+/home/promotex/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yaml-rust2-0.11.0/src/parser.rs:
+/home/promotex/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yaml-rust2-0.11.0/src/scanner.rs:
+/home/promotex/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yaml-rust2-0.11.0/src/yaml.rs:

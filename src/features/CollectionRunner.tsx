@@ -52,7 +52,10 @@ interface CollectionRunnerProps {
 }
 
 export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId }) => {
-    const { collections, currentWorkspaceId, network, envVariables } = useAppStore();
+    const collections = useAppStore(s => s.collections);
+    const currentWorkspaceId = useAppStore(s => s.currentWorkspaceId);
+    const network = useAppStore(s => s.network);
+    const envVariables = useAppStore(s => s.envVariables);
     const { currentWallet } = useWallet();
     const connectedAddress = currentWallet?.family === 'sui' ? currentWallet.address : null;
     const [isRunning, setIsRunning] = useState(false);
