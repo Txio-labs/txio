@@ -11,6 +11,7 @@ import { wagmiConfig, WalletManagerProvider } from '@/wallet';
 import { RedirectManager } from "./RedirectManager";
 import { ThemeSync } from './ThemeSync';
 import { ToastContainer } from './ToastContainer';
+import { ErrorBoundary } from './ErrorBoundary';
 import { useAppStore } from '@/lib/store';
 import { resolveRpcUrl } from '@/lib/appConfig';
 import { ALL_NETWORKS } from '@/types';
@@ -52,7 +53,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
                             <Suspense fallback={null}>
                                 <RedirectManager />
                             </Suspense>
-                            {children}
+                            <ErrorBoundary contextLabel="app">
+                                {children}
+                            </ErrorBoundary>
                         </WalletManagerProvider>
                     </WalletProvider>
                 </SuiClientProvider>
