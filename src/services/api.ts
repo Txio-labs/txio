@@ -547,32 +547,9 @@ const sleep = (ms: number) =>
     );
 
 class ApiService {
-    private token: string | null =
-        typeof window !==
-        'undefined'
-            ? localStorage.getItem(
-                  'txio_token'
-              )
-            : null;
-
-    setToken(token: string | null) {
-        this.token = token;
-
-        if (
-            typeof window !==
-            'undefined'
-        ) {
-            if (token) {
-                localStorage.setItem(
-                    'txio_token',
-                    token
-                );
-            } else {
-                localStorage.removeItem(
-                    'txio_token'
-                );
-            }
-        }
+    // JWT is managed via HttpOnly cookies by the backend.
+    setToken(_token: string | null) {
+        // No-op. Kept for backwards compatibility with existing UI flows.
     }
 
     private async request<T>(
@@ -582,13 +559,6 @@ class ApiService {
         const headers = new Headers(
             options.headers || {}
         );
-
-        if (this.token) {
-            headers.set(
-                'Authorization',
-                `Bearer ${this.token}`
-            );
-        }
 
         if (
             options.body &&
@@ -627,6 +597,7 @@ class ApiService {
             response = await fetch(
                 `${API_BASE}${path}`,
                 {
+                    credentials: 'include',
                     ...options,
                     headers,
                     signal: timeoutController.signal
