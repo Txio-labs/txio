@@ -6,6 +6,11 @@ import {
     vi
 } from 'vitest';
 
+import {
+    createElement,
+    Fragment
+} from 'react';
+
 vi.mock('../services/api', () => {
     class ApiError extends Error {
         status: number;
@@ -80,6 +85,7 @@ const loadStore = async () => {
 
     return {
         appStore: storeModule.appStore,
+        useAppStore: storeModule.useAppStore,
         apiService: vi.mocked(
             apiModule.apiService
         ),
@@ -682,5 +688,171 @@ describe('appStore env variables persistence', () => {
         const reloadedSnapshot = reloaded.appStore.getSnapshot();
         expect(reloadedSnapshot.envVariables).toHaveLength(1);
         expect(reloadedSnapshot.envVariables[0].key).toBe('API_URL');
+    });
+});
+
+describe('useAppStore selector behavior', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        vi.resetAllMocks();
+    });
+
+    it('returns the full state when called without a selector', async () => {
+        const { appStore, useAppStore } = await loadStore();
+        const { render, screen } = await import('@testing-library/react');
+
+        const BareProbe = () => {
+            const state = useAppStore();
+
+            return createElement(
+                'span',
+                { 'data-testid': 'full' },
+                state.viewMode
+            );
+        };
+
+        render(createElement(BareProbe));
+
+        expect(
+            screen.getByTestId('full').textContent
+        ).toBe(appStore.getSnapshot().viewMode);
+    });
+
+    it('returns only the selected slice of state', async () => {
+        const { appStore, useAppStore } = await loadStore();
+        const { render } = await import('@testing-library/react');
+
+        let selected: unknown = null;
+
+        const Probe = () => {
+            selected = useAppStore((s) => s.network);
+
+            return null;
+        };
+
+        render(createElement(Probe));
+
+        expect(selected).toBe(
+            appStore.getSnapshot().network
+        );
+    });
+
+    it('re-renders the un-scoped hook on any store update', async () => {
+        const { appStore, useAppStore } = await loadStore();
+        const { render, act } = await import('@testing-library/react');
+
+        let renders = 0;
+
+        const Probe = () => {
+            useAppStore();
+            renders++;
+
+            return null;
+        };
+
+        render(createElement(Probe));
+        const initialRenders = renders;
+
+        act(() => {
+            appStore.toggleTerminal();
+        });
+
+        expect(renders).toBe(initialRenders + 1);
+    });
+
+    it('skips re-renders for scoped selectors on unrelated store updates', async () => {
+        const { appStore, useAppStore } = await loadStore();
+        const { render, act } = await import('@testing-library/react');
+
+        let themeRenders = 0;
+        let terminalRenders = 0;
+
+        const ThemeProbe = () => {
+            useAppStore((s) => s.theme);
+            themeRenders++;
+
+            return null;
+        };
+
+        const TerminalProbe = () => {
+            useAppStore((s) => s.isTerminalOpen);
+            terminalRenders++;
+
+            return null;
+        };
+
+        render(
+            createElement(
+                Fragment,
+                null,
+                createElement(ThemeProbe),
+                createElement(TerminalProbe)
+            )
+        );
+
+        const initialThemeRenders = themeRenders;
+        const initialTerminalRenders = terminalRenders;
+
+        act(() => {
+            appStore.toggleTerminal();
+        });
+
+        expect(themeRenders).toBe(
+            initialThemeRenders
+        );
+        expect(terminalRenders).toBe(
+            initialTerminalRenders + 1
+        );
+
+        act(() => {
+            appStore.updateSettings({
+                theme: 'light'
+            });
+        });
+
+        expect(themeRenders).toBe(
+            initialThemeRenders + 1
+        );
+        expect(terminalRenders).toBe(
+            initialTerminalRenders + 1
+        );
+    });
+
+    it('keeps the previous selection reference when a shallow-equal slice is selected', async () => {
+        const { appStore, useAppStore } = await loadStore();
+        const { render, act } = await import('@testing-library/react');
+
+        let selection: {
+            network: string;
+            isTerminalOpen: boolean;
+        } | null = null;
+
+        const Probe = () => {
+            selection = useAppStore((s) => ({
+                network: s.network,
+                isTerminalOpen: s.isTerminalOpen
+            }));
+
+            return null;
+        };
+
+        render(createElement(Probe));
+        const first = selection;
+
+        act(() => {
+            appStore.toggleSidebar();
+        });
+
+        // Unrelated change: shallow-equal slice, same reference, no re-render.
+        expect(selection).toBe(first);
+
+        act(() => {
+            appStore.toggleTerminal();
+        });
+
+        expect(selection).not.toBe(first);
+        expect(selection?.isTerminalOpen).toBe(
+            !first?.isTerminalOpen
+        );
     });
 });

@@ -49,7 +49,8 @@ const Node: React.FC<NodeProps> = ({ node, onMouseDown }) => {
 };
 
 export const PTBBuilder: React.FC = () => {
-    const { network, envVariables } = useAppStore();
+    const network = useAppStore(s => s.network);
+    const envVariables = useAppStore(s => s.envVariables);
     const { currentWallet } = useWallet();
     const connectedAddress = currentWallet?.family === 'sui' ? currentWallet.address : null;
 
