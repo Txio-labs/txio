@@ -91,12 +91,9 @@ describe('apiService', () => {
                 }
             }
         });
-        expect(
-            localStorage.getItem('txio_token')
-        ).toBe('session-token');
     });
 
-    it('adds the bearer token to authenticated requests', async () => {
+    it('sets credentials to include for authenticated requests', async () => {
         apiService.setToken('session-token');
         fetchMock.mockResolvedValue(
             jsonResponse({
@@ -110,13 +107,21 @@ describe('apiService', () => {
 
         const [, options] =
             fetchMock.mock.calls[0];
-        const headers = new Headers(
-            options?.headers
-        );
 
-        expect(
-            headers.get('Authorization')
-        ).toBe('Bearer session-token');
+        expect(options?.credentials).toBe('include');
+    });
+
+    it('never interacts with localStorage for the token', async () => {
+        const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
+        const getItemSpy = vi.spyOn(Storage.prototype, 'getItem');
+        const removeItemSpy = vi.spyOn(Storage.prototype, 'removeItem');
+
+        apiService.setToken('test-token');
+        apiService.setToken(null);
+
+        expect(setItemSpy).not.toHaveBeenCalledWith('txio_token', expect.anything());
+        expect(getItemSpy).not.toHaveBeenCalledWith('txio_token');
+        expect(removeItemSpy).not.toHaveBeenCalledWith('txio_token');
     });
 
     it('converts JSON error responses into ApiError instances', async () => {

@@ -635,7 +635,6 @@ const clearInvalidSession = () => {
     apiService.setToken(null);
 
     if (typeof window !== 'undefined') {
-        localStorage.removeItem('txio_token');
         localStorage.removeItem('txio_viewMode');
     }
 
@@ -740,9 +739,7 @@ export interface AppState {
 
 // --- INITIAL STATE ---
 
-const hasToken =
-    typeof window !== 'undefined' &&
-    !!localStorage.getItem('txio_token');
+const hasToken = readStoredUser() !== null;
 const initialSettings =
     readStoredSettings();
 const initialNetwork =
@@ -1754,11 +1751,6 @@ export const appStore = {
                 typeof window !== 'undefined'
             ) {
                 localStorage.setItem(
-                    'txio_token',
-                    token
-                );
-
-                localStorage.setItem(
                     'txio_viewMode',
                     'app'
                 );
@@ -1816,11 +1808,6 @@ export const appStore = {
                 typeof window !== 'undefined'
             ) {
                 localStorage.setItem(
-                    'txio_token',
-                    token
-                );
-
-                localStorage.setItem(
                     'txio_viewMode',
                     'app'
                 );
@@ -1864,10 +1851,6 @@ export const appStore = {
         apiService.setToken(null);
 
         if (typeof window !== 'undefined') {
-            localStorage.removeItem(
-                'txio_token'
-            );
-
             localStorage.removeItem(
                 'txio_viewMode'
             );
@@ -1942,15 +1925,9 @@ export const appStore = {
         if (typeof window === 'undefined')
             return;
 
-        const token =
-            localStorage.getItem(
-                'txio_token'
-            );
+        const restoredUser = readStoredUser();
 
-        if (token) {
-            const restoredUser =
-                readStoredUser() ||
-                buildUserFromToken(token);
+        if (restoredUser) {
             const hydratedRestoredUser =
                 restoredUser
                     ? applyUserProfileOverrides(
@@ -1964,7 +1941,7 @@ export const appStore = {
                 );
             }
 
-            apiService.setToken(token);
+            apiService.setToken(null);
 
             state = {
                 ...state,
@@ -2060,10 +2037,6 @@ export const appStore = {
 
                     apiService.setToken(
                         null
-                    );
-
-                    localStorage.removeItem(
-                        'txio_token'
                     );
 
                     localStorage.removeItem(
