@@ -17,13 +17,9 @@ import { connectStellarWallet } from './stellar';
 describe('connectStellarWallet', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        // @ts-expect-error test double
         delete window.albedo;
-        // @ts-expect-error test double
         delete window.xBullSDK;
-        // @ts-expect-error test double
         delete window.rabet;
-        // @ts-expect-error test double
         delete window.hana;
     });
 
@@ -37,7 +33,6 @@ describe('connectStellarWallet', () => {
             .fn()
             .mockResolvedValue([{ publicKey: 'GXBULLPUBLICKEY' }]);
 
-        // @ts-expect-error test double
         window.xBullSDK = { connect, getPublicKeys };
 
         const wallet = await connectStellarWallet('xbull');
@@ -54,7 +49,6 @@ describe('connectStellarWallet', () => {
     });
 
     it('connects Albedo via window.albedo.publicKey', async () => {
-        // @ts-expect-error test double
         window.albedo = {
             publicKey: vi
                 .fn()
@@ -71,7 +65,6 @@ describe('connectStellarWallet', () => {
     });
 
     it('connects Rabet via window.rabet.connect', async () => {
-        // @ts-expect-error test double
         window.rabet = {
             connect: vi
                 .fn()
@@ -88,7 +81,6 @@ describe('connectStellarWallet', () => {
     });
 
     it('connects Hana via window.hana.getPublicKey', async () => {
-        // @ts-expect-error test double
         window.hana = {
             getPublicKey: vi
                 .fn()
@@ -123,7 +115,6 @@ describe('connectStellarWallet', () => {
     it('times out hanging wallet SDK calls', async () => {
         vi.useFakeTimers();
 
-        // @ts-expect-error test double
         window.xBullSDK = {
             connect: () => new Promise(() => undefined)
         };
