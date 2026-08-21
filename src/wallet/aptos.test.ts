@@ -74,7 +74,7 @@ describe('Aptos Wallet', () => {
                 address: '0xpetra_restored',
                 family: 'aptos'
             });
-            expect(window.aptos.connect).not.toHaveBeenCalled();
+            expect((window as any).aptos.connect).not.toHaveBeenCalled();
         });
 
         it('returns null if isConnected returns false', async () => {
@@ -87,7 +87,7 @@ describe('Aptos Wallet', () => {
 
             const wallet = await restoreAptosWallet('petra');
             expect(wallet).toBeNull();
-            expect(window.aptos.connect).not.toHaveBeenCalled();
+            expect((window as any).aptos.connect).not.toHaveBeenCalled();
         });
 
         it('returns null and NEVER calls connect() if silent check is unavailable', async () => {
