@@ -99,10 +99,10 @@ describe('appStore auth and session state', () => {
         vi.resetAllMocks();
     });
 
-    it('starts in app mode when a token is already stored', async () => {
+    it('starts in app mode when a user is already stored', async () => {
         localStorage.setItem(
-            'txio_token',
-            'cached-token'
+            'txio_user',
+            JSON.stringify(user)
         );
 
         const { appStore } = await loadStore();
@@ -149,9 +149,6 @@ describe('appStore auth and session state', () => {
             currentWorkspaceId: 'workspace-1',
             hasHydratedWorkspaces: true
         });
-        expect(
-            localStorage.getItem('txio_token')
-        ).toBe('session-token');
         expect(
             localStorage.getItem('txio_viewMode')
         ).toBe('app');
@@ -237,9 +234,7 @@ describe('appStore auth and session state', () => {
             activeTabId: null,
             hasHydratedWorkspaces: false
         });
-        expect(
-            localStorage.getItem('txio_token')
-        ).toBeNull();
+
         expect(
             localStorage.getItem('txio_user')
         ).toBeNull();
@@ -254,10 +249,6 @@ describe('appStore auth and session state', () => {
     });
 
     it('clears an invalid stored session during initialization', async () => {
-        localStorage.setItem(
-            'txio_token',
-            'expired-token'
-        );
         localStorage.setItem(
             'txio_user',
             JSON.stringify(user)
@@ -314,7 +305,7 @@ describe('appStore auth and session state', () => {
             apiService.setToken
         ).toHaveBeenNthCalledWith(
             1,
-            'expired-token'
+            null
         );
         expect(
             apiService.setToken
@@ -330,9 +321,7 @@ describe('appStore auth and session state', () => {
             hasHydratedWorkspaces: false,
             comments: {}
         });
-        expect(
-            localStorage.getItem('txio_token')
-        ).toBeNull();
+
         expect(
             localStorage.getItem('txio_user')
         ).toBeNull();
@@ -347,10 +336,7 @@ describe('appStore auth and session state', () => {
     });
 
     it('clears comments when initializing without a stored token', async () => {
-        localStorage.setItem(
-            'txio_user',
-            JSON.stringify(user)
-        );
+
         localStorage.setItem(
             'txio_comments:user-1',
             JSON.stringify({
@@ -380,10 +366,6 @@ describe('appStore auth and session state', () => {
     });
 
     it('starts profile and workspace loading in parallel during initialization', async () => {
-        localStorage.setItem(
-            'txio_token',
-            'cached-token'
-        );
         localStorage.setItem(
             'txio_user',
             JSON.stringify(user)
@@ -443,10 +425,6 @@ describe('appStore auth and session state', () => {
 
     it('keeps a cached user when profile refresh fails without an auth error', async () => {
         localStorage.setItem(
-            'txio_token',
-            'cached-token'
-        );
-        localStorage.setItem(
             'txio_user',
             JSON.stringify(user)
         );
@@ -468,7 +446,7 @@ describe('appStore auth and session state', () => {
         expect(
             apiService.setToken
         ).toHaveBeenLastCalledWith(
-            'cached-token'
+            null
         );
         expect(
             appStore.getSnapshot()
@@ -478,9 +456,6 @@ describe('appStore auth and session state', () => {
             isLoadingWorkspaces: false,
             hasHydratedWorkspaces: true
         });
-        expect(
-            localStorage.getItem('txio_token')
-        ).toBe('cached-token');
         expect(
             JSON.parse(
                 localStorage.getItem(
@@ -501,7 +476,6 @@ describe('appStore comments persistence', () => {
     });
 
     it('persists posted comments to localStorage and restores them on load', async () => {
-        localStorage.setItem('txio_token', 'cached-token');
         localStorage.setItem('txio_user', JSON.stringify(user));
 
         const { appStore, apiService } = await loadStore();
@@ -653,7 +627,6 @@ describe('appStore env variables persistence', () => {
     });
 
     it('persists env variables to localStorage and restores them on load', async () => {
-        localStorage.setItem('txio_token', 'cached-token');
         localStorage.setItem('txio_user', JSON.stringify(user));
         localStorage.setItem('txio_current_workspace', 'workspace-1');
 
