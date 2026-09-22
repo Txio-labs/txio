@@ -547,6 +547,29 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
     const { state: sessionsState, revokingId, retry: retrySessions, revoke: revokeSession } =
         useActiveSessions();
 
+    // After the GitHub "Connect" OAuth round trip, the backend redirects back
+    // here with #github_connected=1 (a fragment, not a query param, so it
+    // never reaches server logs). Refetch the profile so the newly linked
+    // account shows up without requiring a manual reload.
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        if (!window.location.hash.includes('github_connected=1')) return;
+
+        const remainingHash = window.location.hash.replace(/#?github_connected=1&?/, '');
+        const url = new URL(window.location.href);
+        url.hash = remainingHash && remainingHash !== '#' ? remainingHash : '';
+        window.history.replaceState({}, '', url.toString());
+
+        apiService.getProfile()
+            .then((refreshed) => {
+                appStore.updateUser(refreshed);
+                appStore.showToast('GitHub account connected', 'success');
+            })
+            .catch(() => {
+                appStore.showToast('Connected, but failed to refresh profile — reload to see it', 'error');
+            });
+    }, []);
+
     const timezone = useMemo(() => getBrowserTimezone(), []);
     const notificationPreferences = normalizeNotificationPreferences(
         user.notificationPreferences
@@ -739,7 +762,12 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
                                             {!user.githubAccount && (
                                                 <button
                                                     type="button"
-                                                    onClick={() => window.location.href = `${API_BASE}/auth/github/login`}
+                                                    onClick={() => {
+                                                        const linkToken = apiService.getToken();
+                                                        window.location.href = linkToken
+                                                            ? `${API_BASE}/auth/github/login?link_token=${encodeURIComponent(linkToken)}`
+                                                            : `${API_BASE}/auth/github/login`;
+                                                    }}
                                                     className="ml-auto text-[11px] text-electric-violet hover:opacity-80 font-medium transition-colors"
                                                 >
                                                     Connect →
