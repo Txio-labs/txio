@@ -62,7 +62,7 @@ export const Tab: React.FC<TabProps> = ({ title, isActive, onSelect, onClose, on
                 transition-colors select-none min-w-[120px] max-w-[220px] relative
                 ${isActive
                     ? 'bg-white dark:bg-dark-indigo-glow text-slate-900 dark:text-slate-100'
-                    : 'bg-slate-50 dark:bg-near-black text-slate-500 hover:bg-slate-100/70 dark:bg-white/[0.02] hover:text-slate-600 dark:text-slate-300'}
+                    : 'bg-slate-50 dark:bg-near-black text-slate-500 hover:bg-slate-100/70 dark:hover:bg-white/[0.02] hover:text-slate-600 dark:text-slate-300'}
             `}
             onClick={onSelect}
             onDoubleClick={handleDoubleClick}

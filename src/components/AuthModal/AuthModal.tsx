@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import { AuthModalProps, ProfileTab } from './types';
+import { AuthModalProps, ProfileTab, ApiKey } from './types';
 import { LoginSignupForm } from './LoginSignupForm';
 import { ProfileSidebar } from './ProfileSidebar';
 import { GeneralTab } from './tabs/GeneralTab';
@@ -20,6 +20,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 }) => {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [activeTab, setActiveTab] = useState<ProfileTab>('general');
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const isProfileDrawer = Boolean(user);
 
   if (!isOpen) return null;
@@ -52,7 +53,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       case 'security':
         return <SecurityTab />;
       case 'api-keys':
-        return <ApiKeysTab />;
+        return <ApiKeysTab apiKeys={apiKeys} onApiKeysChange={setApiKeys} />;
       default:
         return null;
     }
@@ -64,16 +65,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       role="button"
       tabIndex={-1}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClose(); }}
-      className={`fixed inset-0 z-50 bg-near-black/70 backdrop-blur-sm animate-in fade-in duration-200 font-sans ${
+      className={`fixed inset-0 z-50 bg-white/70 dark:bg-near-black/70 backdrop-blur-sm animate-in fade-in duration-200 font-sans ${
         isProfileDrawer
           ? 'flex justify-end items-stretch sm:items-center p-0 sm:p-6'
           : 'flex items-center justify-center p-4'
       }`}
     >
       <div 
-        className={`bg-dark-indigo-glow border border-white/10 shadow-2xl w-full overflow-hidden relative transition-all duration-300 flex flex-col ${
+        className={`bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 shadow-2xl w-full overflow-hidden relative transition-all duration-300 flex flex-col ${
           isProfileDrawer
-            ? 'h-full sm:h-auto sm:max-h-[85vh] max-w-full sm:max-w-[820px] md:max-w-[1080px] rounded-none sm:rounded-2xl border-y-0 sm:border-y sm:border-white/10 border-r-0 border-l-white/10 animate-in slide-in-from-right-8 duration-300'
+            ? 'h-full sm:h-auto sm:max-h-[85vh] max-w-full sm:max-w-[820px] md:max-w-[1080px] rounded-none sm:rounded-2xl border-y-0 sm:border-y sm:border-slate-200 dark:sm:border-white/10 border-r-0 border-l-slate-200 dark:border-l-white/10 animate-in slide-in-from-right-8 duration-300'
             : 'max-w-md h-auto rounded-xl'
         }`}
         onClick={(e) => e.stopPropagation()}
@@ -82,10 +83,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       >
         <button 
           onClick={onClose}
-          className={`absolute top-4 right-4 z-10 text-slate-500 hover:text-white transition-colors p-1 rounded-full hover:bg-white/5 ${
+          className={`absolute top-4 right-4 z-10 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors p-1 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 ${
             isProfileDrawer
-              ? 'bg-near-black/70'
-              : 'bg-dark-indigo-glow/50'
+              ? 'bg-white/70 dark:bg-near-black/70'
+              : 'bg-white/50 dark:bg-dark-indigo-glow/50'
           }`}
         >
           <X size={20} />
@@ -100,8 +101,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               onLogout={onLogout}
             />
             
-            <div className="relative min-w-0 flex-1 overflow-hidden bg-[linear-gradient(180deg,#070709_0%,#18181b_52%,#060608_100%)]">
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(163,163,163,0.14),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(163,163,163,0.1),transparent_30%)]" />
+            <div className="relative min-w-0 flex-1 overflow-hidden bg-slate-50 dark:bg-[linear-gradient(180deg,#070709_0%,#18181b_52%,#060608_100%)]">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(100,100,100,0.06),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(100,100,100,0.05),transparent_30%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(163,163,163,0.14),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(163,163,163,0.1),transparent_30%)]" />
               <div className="relative h-full min-h-0 overflow-y-auto p-5 md:p-8 custom-scrollbar">
                 {renderTabContent()}
               </div>

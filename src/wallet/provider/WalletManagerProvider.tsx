@@ -183,8 +183,8 @@ export function WalletManagerProvider({
         rabet: false,
         hana: false
     });
-    const [solanaAvailability, setSolanaAvailability] = useState({'phantom-solana': false, solflare: false, backpack: false});
-    const [aptosAvailability, setAptosAvailability] = useState({petra: false, martian: false});
+    const [solanaAvailability, setSolanaAvailability] = useState({'phantom-solana': false, solflare: false, backpack: false, glow: false, 'nightly-solana': false});
+    const [aptosAvailability, setAptosAvailability] = useState({petra: false, martian: false, pontem: false, 'rise-wallet': false, 'nightly-aptos': false});
 
     const restoreAttemptedRef =
         useRef(false);
@@ -266,10 +266,10 @@ export function WalletManagerProvider({
         }, []);
 
     const refreshSolanaAvailability = useCallback(() => {
-        detectSolanaWallets().then(setSolanaAvailability).catch(() => setSolanaAvailability({'phantom-solana': false, solflare: false, backpack: false}));
+        detectSolanaWallets().then(setSolanaAvailability).catch(() => setSolanaAvailability({'phantom-solana': false, solflare: false, backpack: false, glow: false, 'nightly-solana': false}));
     }, []);
     const refreshAptosAvailability = useCallback(() => {
-        detectAptosWallets().then(setAptosAvailability).catch(() => setAptosAvailability({petra: false, martian: false}));
+        detectAptosWallets().then(setAptosAvailability).catch(() => setAptosAvailability({petra: false, martian: false, pontem: false, 'rise-wallet': false, 'nightly-aptos': false}));
     }, []);
 
     useEffect(() => {
@@ -684,19 +684,48 @@ export function WalletManagerProvider({
             );
         });
 
-        void restoreStellarWallet(
-            snapshot.walletId
-        )
+        const restorePromise =
+            snapshot.family === 'solana'
+                ? restoreSolanaWallet(
+                      snapshot.walletId
+                  )
+                : snapshot.family === 'aptos'
+                    ? restoreAptosWallet(
+                          snapshot.walletId
+                      )
+                    : restoreStellarWallet(
+                          snapshot.walletId
+                      );
+
+        void restorePromise
             .then((wallet) => {
-                if (wallet) {
+                if (!wallet) {
+                    clearActiveWalletSnapshot();
+                    return;
+                }
+
+                setPreferredWalletId(
+                    wallet.id
+                );
+
+                if (
+                    snapshot.family ===
+                    'solana'
+                ) {
+                    setSolanaSession(
+                        wallet
+                    );
+                } else if (
+                    snapshot.family ===
+                    'aptos'
+                ) {
+                    setAptosSession(
+                        wallet
+                    );
+                } else {
                     setStellarSession(
                         wallet
                     );
-                    setPreferredWalletId(
-                        wallet.id
-                    );
-                } else {
-                    clearActiveWalletSnapshot();
                 }
             })
             .finally(() => {
@@ -1049,7 +1078,7 @@ export function WalletManagerProvider({
                                 'app.phantom'
                             )
                                 ? 'installed'
-                                : 'available';
+                                : 'not-installed';
                         break;
                     case 'trust-wallet':
                         availability =
@@ -1087,9 +1116,36 @@ export function WalletManagerProvider({
                                 ? 'installed'
                                 : 'not-installed';
                         break;
+                    case 'rabby':
+                        availability =
+                            injected.rabby
+                                ? 'installed'
+                                : 'not-installed';
+                        break;
+                    case 'zerion':
+                        availability =
+                            injected.zerion
+                                ? 'installed'
+                                : 'not-installed';
+                        break;
+                    case 'oneinch':
+                        availability =
+                            injected.oneinch
+                                ? 'installed'
+                                : 'not-installed';
+                        break;
+                    case 'frame':
+                        availability =
+                            injected.frame
+                                ? 'installed'
+                                : 'not-installed';
+                        break;
                     case 'sui-wallet':
                     case 'suiet':
                     case 'ethos':
+                    case 'nightly-sui':
+                    case 'okx-wallet-sui':
+                    case 'slush':
                         availability =
                             currentSuiIds.has(
                                 descriptor.id
@@ -1142,11 +1198,26 @@ export function WalletManagerProvider({
                     case 'backpack':
                         availability = solanaAvailability.backpack ? 'installed' : 'not-installed';
                         break;
+                    case 'glow':
+                        availability = solanaAvailability.glow ? 'installed' : 'not-installed';
+                        break;
+                    case 'nightly-solana':
+                        availability = solanaAvailability['nightly-solana'] ? 'installed' : 'not-installed';
+                        break;
                     case 'petra':
                         availability = aptosAvailability.petra ? 'installed' : 'not-installed';
                         break;
                     case 'martian':
                         availability = aptosAvailability.martian ? 'installed' : 'not-installed';
+                        break;
+                    case 'pontem':
+                        availability = aptosAvailability.pontem ? 'installed' : 'not-installed';
+                        break;
+                    case 'rise-wallet':
+                        availability = aptosAvailability['rise-wallet'] ? 'installed' : 'not-installed';
+                        break;
+                    case 'nightly-aptos':
+                        availability = aptosAvailability['nightly-aptos'] ? 'installed' : 'not-installed';
                         break;
                     default:
                         availability =

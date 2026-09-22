@@ -19,8 +19,8 @@ export const TeamTab: React.FC<TeamTabProps> = ({
 }) => {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-      <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(145deg,rgba(163,163,163,0.14)_0%,rgba(24,24,27,0.96)_42%,rgba(10,10,10,1)_100%)] p-6">
-        <div className="absolute -right-10 top-0 h-32 w-32 rounded-full bg-soft-purple/15 blur-3xl" />
+      <section className="relative overflow-hidden rounded-[2rem] border border-slate-200 dark:border-white/10 bg-[linear-gradient(145deg,rgba(100,100,100,0.06)_0%,rgba(248,250,252,0.9)_42%,rgba(255,255,255,1)_100%)] dark:bg-[linear-gradient(145deg,rgba(163,163,163,0.14)_0%,rgba(24,24,27,0.96)_42%,rgba(10,10,10,1)_100%)] p-6">
+        <div className="absolute -right-10 top-0 h-32 w-32 rounded-full bg-electric-violet/15 blur-3xl" />
 
         <div className="relative flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl">
@@ -29,11 +29,11 @@ export const TeamTab: React.FC<TeamTabProps> = ({
               Team Surface
             </div>
 
-            <h2 className="mt-4 text-3xl font-bold tracking-tight text-white">
+            <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
               Manage who gets inside the workspace.
             </h2>
 
-            <p className="mt-3 text-sm leading-relaxed text-slate-400">
+            <p className="mt-3 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
               Invite operators, assign roles, and keep shared access aligned
               with the same precision as the rest of the toolchain.
             </p>
@@ -43,7 +43,7 @@ export const TeamTab: React.FC<TeamTabProps> = ({
             onClick={() =>
               appStore.showToast('Invite flow not implemented yet', 'info')
             }
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-electric-violet px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white shadow-[0_18px_35px_-20px_rgba(163,163,163,0.8)] transition-colors hover:bg-soft-purple"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 dark:bg-white px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white dark:text-near-black shadow-[0_18px_35px_-20px_rgba(163,163,163,0.8)] transition-colors hover:opacity-90"
           >
             <Plus size={14} />
             Invite Member
@@ -53,15 +53,15 @@ export const TeamTab: React.FC<TeamTabProps> = ({
 
       {teamMembers.length === 0 ? (
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_320px]">
-          <div className="rounded-[1.75rem] border border-white/10 bg-[#18181b]/85 p-6">
-            <div className="rounded-[1.5rem] border border-dashed border-white/10 bg-white/[0.02] p-8 text-center">
+          <div className="rounded-[1.75rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b]/85 p-6">
+            <div className="rounded-[1.5rem] border border-dashed border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] p-8 text-center">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-electric-violet/10 text-electric-violet">
                 <Users size={28} />
               </div>
-              <h3 className="mt-5 text-xl font-bold text-white">
+              <h3 className="mt-5 text-xl font-bold text-slate-900 dark:text-white">
                 No team members yet
               </h3>
-              <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-400">
+              <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-500 dark:text-slate-400">
                 Start with a focused operator crew. Invite collaborators when
                 you are ready to share collections, requests, and execution
                 visibility.
@@ -70,16 +70,16 @@ export const TeamTab: React.FC<TeamTabProps> = ({
           </div>
 
           <div className="space-y-4">
-            <div className="rounded-[1.75rem] border border-white/10 bg-[#18181b]/85 p-5">
+            <div className="rounded-[1.75rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b]/85 p-5">
               <div className="flex items-start gap-3">
                 <div className="rounded-2xl bg-electric-violet/10 p-3 text-electric-violet">
                   <Shield size={18} />
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-white">
+                  <div className="text-sm font-semibold text-slate-900 dark:text-white">
                     Tight permission model
                   </div>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                  <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
                     Add editors only when they need access to shared requests or
                     execution flows.
                   </p>
@@ -87,16 +87,16 @@ export const TeamTab: React.FC<TeamTabProps> = ({
               </div>
             </div>
 
-            <div className="rounded-[1.75rem] border border-white/10 bg-[#18181b]/85 p-5">
+            <div className="rounded-[1.75rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b]/85 p-5">
               <div className="flex items-start gap-3">
-                <div className="rounded-2xl bg-soft-purple/10 p-3 text-soft-purple">
+                <div className="rounded-2xl bg-electric-violet/10 p-3 text-electric-violet">
                   <Sparkles size={18} />
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-white">
+                  <div className="text-sm font-semibold text-slate-900 dark:text-white">
                     Shared collection strategy
                   </div>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                  <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
                     Keep a clean split between personal experiments and team
                     operational requests.
                   </p>
@@ -110,7 +110,7 @@ export const TeamTab: React.FC<TeamTabProps> = ({
           {teamMembers.map((member) => (
             <div
               key={member.id}
-              className="rounded-[1.75rem] border border-white/10 bg-[#18181b]/85 p-5"
+              className="rounded-[1.75rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b]/85 p-5"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3 min-w-0">
@@ -120,7 +120,7 @@ export const TeamTab: React.FC<TeamTabProps> = ({
                     seed={member.email}
                   />
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold text-white">
+                    <div className="truncate text-sm font-semibold text-slate-900 dark:text-white">
                       {member.name}
                     </div>
                     <div className="truncate text-xs text-slate-500">
@@ -133,7 +133,7 @@ export const TeamTab: React.FC<TeamTabProps> = ({
                   onClick={() =>
                     appStore.showToast('Member actions not implemented', 'info')
                   }
-                  className="rounded-xl p-2 text-slate-500 transition-colors hover:bg-white/[0.05] hover:text-white"
+                  className="rounded-xl p-2 text-slate-500 transition-colors hover:bg-slate-100 dark:hover:bg-white/[0.05] hover:text-slate-900 dark:hover:text-white"
                 >
                   <MoreVertical size={16} />
                 </button>
@@ -146,7 +146,7 @@ export const TeamTab: React.FC<TeamTabProps> = ({
                       ? 'border-electric-violet/20 bg-electric-violet/10 text-electric-violet'
                       : member.role === 'Editor'
                         ? 'border-blue-500/20 bg-blue-500/10 text-blue-400'
-                        : 'border-white/10 bg-white/[0.04] text-slate-300'
+                        : 'border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-300'
                   }`}
                 >
                   {member.role}

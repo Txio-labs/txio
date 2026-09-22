@@ -3,14 +3,8 @@
 
 @layer base {
   :root {
-    --background: 205 100% 9%;
-    --foreground: 240 5% 91%;
-  }
-
-  :root {
     --surface-0: #0a0a0a;
     --surface-1: #18181b;
-    --surface-2: #0A3D63;
     --surface-hover: rgba(163,163,163, 0.05);
     --border-subtle: rgba(163,163,163, 0.06);
     --border-default: rgba(163,163,163, 0.09);
@@ -24,7 +18,7 @@
   body {
     background-color: #fafafa;
     color: #3f3f46;
-    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-family: var(--font-space-grotesk), var(--font-inter), sans-serif;
     overflow: hidden;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
@@ -37,7 +31,7 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: var(--font-space-grotesk), sans-serif;
     line-height: 1.2;
     letter-spacing: -0.02em;
     font-weight: 600;
@@ -57,10 +51,27 @@
   ::-webkit-scrollbar-thumb:hover {
     background: rgba(163,163,163, 0.20);
   }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-text-fill-color: #0f172a;
+    -webkit-box-shadow: 0 0 0px 1000px #ffffff inset;
+    box-shadow: 0 0 0px 1000px #ffffff inset;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  input:required,
+  input:invalid,
+  input:-moz-ui-invalid {
+    box-shadow: none;
+    outline: none;
+  }
 }
 
 .dot-grid {
-  background-image: radial-gradient(#0a3d63 1px, transparent 1px);
+  background-image: radial-gradient(rgba(163,163,163,0.12) 1px, transparent 1px);
 }
 
 /* Dark theme overrides for @mysten/dapp-kit wallet modal */

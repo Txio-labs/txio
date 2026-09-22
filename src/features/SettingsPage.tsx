@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Settings, Server, Layout, Shield, Monitor, Globe, ChevronRight } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
-import { NETWORKS } from '@/lib/constants';
+import { EVM_NETWORKS, NETWORKS, SOLANA_NETWORKS, STELLAR_NETWORKS } from '@/lib/constants';
 import { ALL_NETWORKS, Network } from '../types';
 
 type SettingsSection = 'general' | 'network' | 'appearance';
@@ -50,7 +50,7 @@ export const SettingsPage: React.FC = () => {
 
       {/* Content Area */}
       <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10">
-        <div className="max-w-3xl space-y-8">
+        <div className="max-w-5xl space-y-8">
             {activeSection === 'general' && (
                 <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
                     <div>
@@ -105,7 +105,7 @@ export const SettingsPage: React.FC = () => {
 
                         <div className="space-y-3">
                             <div>
-                                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-2">Sui</p>
+                                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">Sui</p>
                                 <div className="grid grid-cols-3 gap-3">
                                     {([
                                         { id: 'suiscan', label: 'Suiscan' },
@@ -118,8 +118,8 @@ export const SettingsPage: React.FC = () => {
                                             onClick={() => appStore.updateSettings({ explorer: exp.id })}
                                             className={`px-4 py-3 rounded-lg border text-xs font-bold transition-all ${
                                                 settings.explorer === exp.id
-                                                    ? 'bg-electric-violet/20 border-sui-500 text-electric-violet'
-                                                    : 'bg-slate-50 dark:bg-near-black border-slate-200 dark:border-white/10 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
+                                                    ? 'bg-electric-violet/20 border-electric-violet text-electric-violet'
+                                                    : 'bg-slate-50 dark:bg-near-black border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
                                             }`}
                                         >
                                             {exp.label}
@@ -129,7 +129,7 @@ export const SettingsPage: React.FC = () => {
                             </div>
 
                             <div>
-                                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-2">EVM</p>
+                                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">EVM</p>
                                 <div className="grid grid-cols-2 gap-3">
                                     {([
                                         { id: 'family', label: 'Chain-native', hint: 'Etherscan-family' },
@@ -141,8 +141,8 @@ export const SettingsPage: React.FC = () => {
                                             onClick={() => appStore.updateSettings({ evmExplorer: exp.id })}
                                             className={`px-4 py-3 rounded-lg border text-xs font-bold transition-all text-left ${
                                                 settings.evmExplorer === exp.id
-                                                    ? 'bg-electric-violet/20 border-sui-500 text-electric-violet'
-                                                    : 'bg-slate-50 dark:bg-near-black border-slate-200 dark:border-white/10 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
+                                                    ? 'bg-electric-violet/20 border-electric-violet text-electric-violet'
+                                                    : 'bg-slate-50 dark:bg-near-black border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
                                             }`}
                                         >
                                             <div>{exp.label}</div>
@@ -153,7 +153,7 @@ export const SettingsPage: React.FC = () => {
                             </div>
 
                             <div>
-                                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-2">Stellar</p>
+                                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">Stellar</p>
                                 <div className="grid grid-cols-2 gap-3">
                                     {([
                                         { id: 'stellarexpert', label: 'StellarExpert' },
@@ -165,8 +165,32 @@ export const SettingsPage: React.FC = () => {
                                             onClick={() => appStore.updateSettings({ stellarExplorer: exp.id })}
                                             className={`px-4 py-3 rounded-lg border text-xs font-bold transition-all ${
                                                 settings.stellarExplorer === exp.id
-                                                    ? 'bg-electric-violet/20 border-sui-500 text-electric-violet'
-                                                    : 'bg-slate-50 dark:bg-near-black border-slate-200 dark:border-white/10 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
+                                                    ? 'bg-electric-violet/20 border-electric-violet text-electric-violet'
+                                                    : 'bg-slate-50 dark:bg-near-black border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
+                                            }`}
+                                        >
+                                            {exp.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">Solana</p>
+                                <div className="grid grid-cols-3 gap-3">
+                                    {([
+                                        { id: 'solanaexplorer', label: 'Solana Explorer' },
+                                        { id: 'solscan', label: 'Solscan' },
+                                        { id: 'solanafm', label: 'SolanaFM' }
+                                    ] as const).map((exp) => (
+                                        <button
+                                            key={exp.id}
+                                            type="button"
+                                            onClick={() => appStore.updateSettings({ solanaExplorer: exp.id })}
+                                            className={`px-4 py-3 rounded-lg border text-xs font-bold transition-all ${
+                                                settings.solanaExplorer === exp.id
+                                                    ? 'bg-electric-violet/20 border-electric-violet text-electric-violet'
+                                                    : 'bg-slate-50 dark:bg-near-black border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
                                             }`}
                                         >
                                             {exp.label}
@@ -183,27 +207,37 @@ export const SettingsPage: React.FC = () => {
                 <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
                     <div>
                         <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Network & RPC</h2>
-                        <p className="text-slate-400 text-sm">Manage custom RPC endpoints for each environment.</p>
+                        <p className="text-slate-400 text-sm">Manage custom RPC endpoints for each environment, per chain.</p>
                     </div>
 
-                    <div className="bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 rounded-xl p-6 space-y-6">
-                         {ALL_NETWORKS.map((net) => (
-                             <div key={net} className="space-y-2">
-                                 <div className="flex justify-between">
-                                     <label className="text-xs font-bold text-slate-400 uppercase">{net}</label>
-                                     <span className="text-[10px] text-slate-600">Default: {NETWORKS[net]}</span>
-                                 </div>
-                                 <input 
-                                    className="w-full bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white font-mono placeholder:text-slate-700 focus:border-electric-violet outline-none"
-                                    placeholder={`Custom ${net} RPC URL`}
-                                    value={settings.customRpc[net as Network]}
-                                    onChange={(e) => appStore.updateSettings({ 
-                                        customRpc: { ...settings.customRpc, [net]: e.target.value } 
-                                    })}
-                                 />
-                             </div>
-                         ))}
-                    </div>
+                    {([
+                        { chainLabel: 'Sui', defaults: NETWORKS, settingsKey: 'customRpc' as const },
+                        { chainLabel: 'EVM', defaults: EVM_NETWORKS, settingsKey: 'evmCustomRpc' as const },
+                        { chainLabel: 'Stellar', defaults: STELLAR_NETWORKS, settingsKey: 'stellarCustomRpc' as const },
+                        { chainLabel: 'Solana', defaults: SOLANA_NETWORKS, settingsKey: 'solanaCustomRpc' as const }
+                    ]).map(({ chainLabel, defaults, settingsKey }) => (
+                        <div key={chainLabel} className="bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 rounded-xl p-6 space-y-6">
+                            <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">{chainLabel}</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                {ALL_NETWORKS.map((net) => (
+                                    <div key={net} className="space-y-2 min-w-0">
+                                        <div className="flex justify-between gap-2">
+                                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase shrink-0">{net}</label>
+                                            <span className="text-[10px] text-slate-500 dark:text-slate-600 truncate">Default: {defaults[net as Network]}</span>
+                                        </div>
+                                        <input
+                                            className="w-full bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white font-mono placeholder:text-slate-400 dark:placeholder:text-slate-700 focus:border-electric-violet outline-none"
+                                            placeholder={`Custom ${net} RPC URL`}
+                                            value={settings[settingsKey][net as Network]}
+                                            onChange={(e) => appStore.updateSettings({
+                                                [settingsKey]: { ...settings[settingsKey], [net]: e.target.value }
+                                            })}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
                 </div>
             )}
             
@@ -220,14 +254,14 @@ export const SettingsPage: React.FC = () => {
                              <div className="grid grid-cols-2 gap-4">
                                  <button 
                                     onClick={() => appStore.updateSettings({ theme: 'dark' })}
-                                    className={`p-4 rounded-xl border flex flex-col items-center gap-2 ${settings.theme === 'dark' ? 'bg-slate-200 dark:bg-slate-800 border-sui-500 ring-1 ring-electric-violet/50' : 'bg-slate-50 dark:bg-near-black border-slate-200 dark:border-white/10 opacity-50'}`}
+                                    className={`p-4 rounded-xl border flex flex-col items-center gap-2 ${settings.theme === 'dark' ? 'bg-slate-200 dark:bg-slate-800 border-electric-violet ring-1 ring-electric-violet/50' : 'bg-slate-50 dark:bg-near-black border-slate-200 dark:border-white/10 opacity-50'}`}
                                  >
                                      <div className="w-full h-20 bg-white dark:bg-dark-indigo-glow rounded-lg border border-slate-200 dark:border-white/10 mb-2"></div>
                                      <span className="text-xs font-bold text-slate-900 dark:text-white">Dark Mode</span>
                                  </button>
                                  <button 
                                     onClick={() => appStore.updateSettings({ theme: 'light' })}
-                                    className={`p-4 rounded-xl border flex flex-col items-center gap-2 ${settings.theme === 'light' ? 'bg-slate-100 border-sui-500 ring-1 ring-electric-violet/50' : 'bg-slate-50 dark:bg-near-black border-slate-200 dark:border-white/10 opacity-50'}`}
+                                    className={`p-4 rounded-xl border flex flex-col items-center gap-2 ${settings.theme === 'light' ? 'bg-slate-100 border-electric-violet ring-1 ring-electric-violet/50' : 'bg-slate-50 dark:bg-near-black border-slate-200 dark:border-white/10 opacity-50'}`}
                                  >
                                      <div className="w-full h-20 bg-white rounded-lg border border-slate-200 mb-2"></div>
                                      <span className="text-xs font-bold text-slate-400">Light Mode</span>

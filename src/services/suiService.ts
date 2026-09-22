@@ -1,6 +1,7 @@
 
-import { resolveRpcUrl } from '@/lib/appConfig';
+import { resolveChainCustomRpcUrl, resolveRpcUrl } from '@/lib/appConfig';
 import { appStore } from '@/lib/store';
+import { getEvmChain, STELLAR_HORIZON_URLS } from '@/lib/constants';
 import {
   Network,
   ChainId,
@@ -8,7 +9,6 @@ import {
   BuilderArg,
   RPCHealthMetric,
 } from '../types';
-import { EVM_NETWORKS, STELLAR_NETWORKS } from '@/lib/constants';
 
 const RPC_TIMEOUT_MS = 10000;
 const DEGRADED_RPC_LATENCY_MS = 1500;
@@ -49,14 +49,112 @@ export const getActiveSuiRpcUrl = (
 
 export const resolveChainRpcUrl = (
   chain: ChainId,
-  network: Network
+  network: Network,
+  evmChainId?: number
 ): string => {
-  if (chain === 'sui') {
-    return getActiveSuiRpcUrl(network);
+  if (chain !== 'sui' && chain !== 'evm' && chain !== 'stellar' && chain !== 'solana') {
+    throw new Error(`No RPC endpoint configuration exists for chain "${chain}" yet.`);
   }
 
-  const map = chain === 'evm' ? EVM_NETWORKS : STELLAR_NETWORKS;
-  return map[network];
+  // A specific EVM mainnet (e.g. Base, Arbitrum) overrides the generic
+  // network-tier EVM default — these are distinct chains, not
+  // mainnet/testnet variants of "the" EVM chain.
+  if (chain === 'evm' && evmChainId) {
+    return getEvmChain(evmChainId).rpcUrl;
+  }
+
+  return resolveChainCustomRpcUrl(chain, network, appStore.getSnapshot().settings);
+};
+
+/**
+ * Fetches a Stellar account's balances from Horizon (REST, not JSON-RPC).
+ * Returns the full account resource — including every asset balance, not
+ * just native XLM — so users can inspect trustlines the same way `eth_call`
+ * or `suix_getAllBalances` return a full structured result.
+ */
+const getStellarBalanceViaHorizon = async (
+  network: Network,
+  address: unknown
+): Promise<{ result: any; duration: number; status: number }> => {
+  const startTime = performance.now();
+  const horizonUrl = STELLAR_HORIZON_URLS[network];
+
+  if (!horizonUrl) {
+    throw new SuiRpcError(
+      `Horizon (balance lookups) has no public endpoint for the "${network}" network. Use mainnet or testnet.`,
+      { status: 0, endpoint: '', duration: 0 }
+    );
+  }
+
+  if (typeof address !== 'string' || !address.trim()) {
+    throw new SuiRpcError(
+      'getBalance requires a Stellar address as its first parameter.',
+      { status: 0, endpoint: horizonUrl, duration: 0 }
+    );
+  }
+
+  const url = `${horizonUrl}/accounts/${address.trim()}`;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), RPC_TIMEOUT_MS);
+    const response = await fetch(url, {
+      headers: { Accept: 'application/json' },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    const duration = Math.round(performance.now() - startTime);
+    const data = await response.json();
+
+    if (response.status === 404) {
+      // The account doesn't exist on-ledger yet — Stellar accounts only
+      // appear once they receive the minimum XLM reserve. This is a valid,
+      // successful lookup (the answer is "unfunded"), not a request
+      // failure — report status 200 so History/the response panel don't
+      // flag it as an error alongside genuinely failed requests.
+      return {
+        result: { account_id: address.trim(), balances: [], funded: false },
+        duration,
+        status: 200,
+      };
+    }
+
+    if (!response.ok) {
+      const message =
+        typeof data?.detail === 'string' && data.detail
+          ? data.detail
+          : `Horizon request failed with status ${response.status}.`;
+      throw new SuiRpcError(message, { status: response.status, endpoint: url, duration });
+    }
+
+    return {
+      result: { ...data, funded: true },
+      duration,
+      status: response.status,
+    };
+  } catch (error: any) {
+    const duration = Math.round(performance.now() - startTime);
+
+    if (error instanceof SuiRpcError) {
+      throw error;
+    }
+
+    if (error?.name === 'AbortError') {
+      throw new SuiRpcError(`Horizon request timed out after ${RPC_TIMEOUT_MS / 1000}s.`, {
+        status: 504,
+        endpoint: url,
+        duration,
+      });
+    }
+
+    throw new SuiRpcError(
+      error instanceof Error && error.message.trim()
+        ? error.message
+        : 'Unable to reach Horizon.',
+      { status: 0, endpoint: url, duration }
+    );
+  }
 };
 
 /** Generic JSON-RPC fetch used for all chains. */
@@ -64,14 +162,28 @@ export const executeChainRpc = async (
   chain: ChainId,
   network: Network,
   method: string,
-  params: any[]
+  params: any[],
+  evmChainId?: number
 ): Promise<{ result: any; duration: number; status: number }> => {
   if (chain === 'sui') {
     return executeSuiRpc(network, method, params);
   }
 
-  const url = resolveChainRpcUrl(chain, network);
+  // "getBalance" isn't a real Soroban RPC method — Soroban RPC has no way to
+  // read a plain account balance. Route it to Horizon's REST API instead,
+  // the same service the connected-wallet balance display already uses
+  // (see fetchStellarBalance in wallet/stellar.ts).
+  if (chain === 'stellar' && method === 'getBalance') {
+    return getStellarBalanceViaHorizon(network, params[0]);
+  }
+
+  const url = resolveChainRpcUrl(chain, network, evmChainId);
   const startTime = performance.now();
+
+  // Soroban RPC (Stellar) takes a single params OBJECT per call, not a
+  // positional array like Sui/EVM. Templates store that one object as the
+  // sole array element; unwrap it here before building the request body.
+  const requestParams = chain === 'stellar' ? (params[0] ?? {}) : params;
 
   try {
     const controller = new AbortController();
@@ -89,7 +201,7 @@ export const executeChainRpc = async (
         jsonrpc: '2.0',
         id: 1,
         method,
-        params,
+        params: requestParams,
       }),
       signal: controller.signal
     });
@@ -157,19 +269,20 @@ export const executeChainRpc = async (
 /** Chain-aware health check: pings a lightweight method per chain. */
 export const getChainRpcHealth = async (
   chain: ChainId,
-  network: Network
+  network: Network,
+  evmChainId?: number
 ): Promise<RPCHealthMetric> => {
   if (chain === 'sui') {
     return getSuiRpcHealth(network);
   }
 
-  const url = resolveChainRpcUrl(chain, network);
+  const url = resolveChainRpcUrl(chain, network, evmChainId);
   const method = chain === 'evm' ? 'eth_blockNumber' : 'getHealth';
   const params: any[] = chain === 'evm' ? [] : [];
 
   try {
     const { result, duration } =
-      await executeChainRpc(chain, network, method, params);
+      await executeChainRpc(chain, network, method, params, evmChainId);
     return {
       endpoint: url,
       latency: [duration],

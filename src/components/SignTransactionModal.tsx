@@ -53,16 +53,16 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-near-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-dark-indigo-glow border border-white/10 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="p-4 border-b border-white/5 flex justify-between items-center bg-near-black">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/70 dark:bg-near-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="p-4 border-b border-slate-200 dark:border-white/5 flex justify-between items-center bg-white dark:bg-near-black">
           <div>
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Shield size={18} className="text-electric-violet" /> Review Transaction
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">Review details before simulation or on-chain execution.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Review details before simulation or on-chain execution.</p>
           </div>
-          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -70,9 +70,9 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
         <div className="flex-1 overflow-y-auto">
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-6">
-                    <div className="bg-near-black border border-white/5 rounded-lg p-6 flex flex-col items-center justify-center text-center">
-                        <Wallet size={32} className={`mb-3 ${canSign ? 'text-emerald-400' : 'text-slate-600'}`} />
-                        <h3 className="text-sm font-bold text-white mb-1">
+                    <div className="bg-white dark:bg-near-black border border-slate-200 dark:border-white/5 rounded-lg p-6 flex flex-col items-center justify-center text-center">
+                        <Wallet size={32} className={`mb-3 ${canSign ? 'text-emerald-400' : 'text-slate-400 dark:text-slate-600'}`} />
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
                             {canSign ? 'Sui Wallet Ready' : wallet ? 'Wrong Wallet Family' : 'Wallet Recommended'}
                         </h3>
                         <p className="text-xs text-slate-500 mb-4">
@@ -84,7 +84,7 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
                         </p>
                         
                         {canSign ? (
-                             <div className="bg-emerald-900/20 text-emerald-400 text-xs px-3 py-1.5 rounded-full border border-emerald-900/40 font-mono">
+                             <div className="bg-emerald-100 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-900/40 font-mono">
                                  {shortenAddress(wallet.address, 10, 4)}
                              </div>
                         ) : (
@@ -94,11 +94,11 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
                         )}
                     </div>
 
-                    <div className="bg-amber-900/10 border border-amber-900/30 p-3 rounded-lg flex gap-2">
+                    <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 p-3 rounded-lg flex gap-2">
                          <AlertTriangle size={16} className="text-amber-500 shrink-0" />
                          <div>
-                             <h4 className="text-xs font-bold text-amber-500">Security Note</h4>
-                             <p className="text-[10px] text-amber-500/80 mt-1">
+                             <h4 className="text-xs font-bold text-amber-600 dark:text-amber-500">Security Note</h4>
+                             <p className="text-[10px] text-amber-600/80 dark:text-amber-500/80 mt-1">
                                  {onExecute
                                      ? 'Simulation runs a dev-inspect without signing. Sign & Execute will broadcast a real on-chain transaction using your wallet.'
                                      : 'This flow does not sign or broadcast on-chain. It runs a dev-inspect simulation and never handles private keys.'}
@@ -109,40 +109,40 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
 
                 <div className="space-y-4">
                      <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase mb-3 block">Transaction Summary</label>
-                        <div className="bg-near-black border border-white/5 rounded-lg overflow-hidden">
-                            <div className="p-3 border-b border-white/5 bg-dark-indigo-glow/50 flex items-center gap-2">
+                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-3 block">Transaction Summary</label>
+                        <div className="bg-white dark:bg-near-black border border-slate-200 dark:border-white/5 rounded-lg overflow-hidden">
+                            <div className="p-3 border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-dark-indigo-glow/50 flex items-center gap-2">
                                 <FileText size={14} className="text-sky-400"/>
-                                <span className="text-xs font-bold text-white">{request.txType || 'MoveCall'}</span>
+                                <span className="text-xs font-bold text-slate-900 dark:text-white">{request.txType || 'MoveCall'}</span>
                             </div>
                             <div className="p-3 space-y-2">
                                 <div className="flex justify-between text-xs gap-4">
                                     <span className="text-slate-500">Target</span>
-                                    <span className="text-slate-300 font-mono truncate max-w-[150px]">
+                                    <span className="text-slate-700 dark:text-slate-300 font-mono truncate max-w-[150px]">
                                         {request.txType === 'MoveCall' ? `${request.moveParams.packageId}::${request.moveParams.module}::${request.moveParams.function}` : 'Native Transfer'}
                                     </span>
                                 </div>
                                 <div className="flex justify-between text-xs">
                                     <span className="text-slate-500">Gas Budget</span>
-                                    <span className="text-slate-300 font-mono">{request.moveParams.gasBudget} MIST</span>
+                                    <span className="text-slate-700 dark:text-slate-300 font-mono">{request.moveParams.gasBudget} MIST</span>
                                 </div>
                             </div>
                         </div>
                      </div>
 
                      <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase mb-2 block">Objects Involved</label>
+                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2 block">Objects Involved</label>
                         <div className="space-y-1">
-                             <div className="flex items-center gap-2 text-xs text-slate-400 p-2 bg-near-black rounded border border-white/5">
+                             <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 p-2 bg-white dark:bg-near-black rounded border border-slate-200 dark:border-white/5">
                                  <Box size={12} className="text-blue-400"/>
                                  <span className="font-mono">{canSign ? shortenAddress(wallet!.address, 8, 4) : 'Signer wallet'}</span>
-                                 <span className="ml-auto text-[10px] bg-blue-900/30 text-blue-400 px-1.5 rounded">Mutated</span>
+                                 <span className="ml-auto text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-1.5 rounded">Mutated</span>
                              </div>
                              {request.moveParams.arguments.some(a => a.value.startsWith('0x')) && (
-                                 <div className="flex items-center gap-2 text-xs text-slate-400 p-2 bg-near-black rounded border border-white/5">
+                                 <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 p-2 bg-white dark:bg-near-black rounded border border-slate-200 dark:border-white/5">
                                      <Box size={12} className="text-slate-500"/>
                                      <span className="font-mono">Input Object</span>
-                                     <span className="ml-auto text-[10px] bg-slate-800 text-slate-500 px-1.5 rounded">Read</span>
+                                     <span className="ml-auto text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-500 px-1.5 rounded">Read</span>
                                  </div>
                              )}
                         </div>
@@ -151,8 +151,8 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
             </div>
         </div>
 
-        <div className="p-4 border-t border-white/5 bg-dark-indigo-glow flex justify-end gap-3">
-             <button onClick={onClose} className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white transition-colors">
+        <div className="p-4 border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-dark-indigo-glow flex justify-end gap-3">
+             <button onClick={onClose} className="px-4 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
                  Cancel
              </button>
              {onExecute ? (
@@ -160,13 +160,13 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
                      <button
                         onClick={handleConfirm}
                         disabled={!canSign}
-                        className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded flex items-center gap-2 transition-all"
+                        className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-slate-900 dark:text-white text-xs font-bold rounded flex items-center gap-2 transition-all"
                      >
                          Simulate
                      </button>
                      <button
                         onClick={canSign ? handleExecute : onRequestConnect}
-                        className="px-6 py-2 bg-electric-violet hover:bg-electric-violet disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded shadow-lg shadow-sui-900/20 flex items-center gap-2 transition-all"
+                        className="px-6 py-2 bg-slate-900 dark:bg-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white dark:text-near-black text-xs font-bold rounded shadow-lg flex items-center gap-2 transition-all"
                      >
                          {canSign ? 'Sign & Execute' : wallet ? 'Connect Sui Wallet' : 'Connect Wallet'} <ArrowRight size={14} />
                      </button>
@@ -174,7 +174,7 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
              ) : (
                  <button
                     onClick={canSign ? handleConfirm : onRequestConnect}
-                    className="px-6 py-2 bg-electric-violet hover:bg-electric-violet disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded shadow-lg shadow-sui-900/20 flex items-center gap-2 transition-all"
+                    className="px-6 py-2 bg-slate-900 dark:bg-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white dark:text-near-black text-xs font-bold rounded shadow-lg flex items-center gap-2 transition-all"
                  >
                      {canSign ? 'Run Simulation' : wallet ? 'Connect Sui Wallet' : 'Connect Wallet'} <ArrowRight size={14} />
                  </button>

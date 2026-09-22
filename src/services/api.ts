@@ -33,45 +33,7 @@ export const API_BASE = normalizeApiBase(
     process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_BASE
 );
 
-// /health is mounted at the backend's root, not under /api/v1.
-const API_ORIGIN = API_BASE.replace(/\/api\/v1$/, '');
-
-// OAuth logins hand off to the backend via a full page navigation
-// (window.location.href), which shows nothing but a blank tab while a
-// cold Render instance wakes up — indistinguishable from being broken.
-// Ping /health first (waking the instance in the process) so callers can
-// show a "waking up" message instead of a silent hang, and only then
-// perform the redirect.
-export async function pingBackendAwake(
-    timeoutMs = REQUEST_TIMEOUT_MS
-): Promise<boolean> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(
-        () => controller.abort(),
-        timeoutMs
-    );
-
-    try {
-        const response = await fetch(
-            `${API_ORIGIN}/health`,
-            { signal: controller.signal }
-        );
-        return response.ok;
-    } catch {
-        return false;
-    } finally {
-        clearTimeout(timeoutId);
-    }
-}
-
 const COMMAND_POLL_INTERVAL_MS = 500;
-
-// The backend runs on a Render free-tier instance that spins down after
-// inactivity and can take 50+ seconds to cold-start. Without a bound, a
-// hung request just sits there with no feedback, indistinguishable from a
-// dead backend. Give real headroom above the cold-start window before
-// giving up so genuine outages still fail in a reasonable time.
-const REQUEST_TIMEOUT_MS = 70_000;
 
 type MongoIdLike =
     | string
@@ -130,6 +92,8 @@ interface BackendUserProfile {
     notificationPreferences?: BackendNotificationPreferences | null;
     github_account?: BackendGitHubAccount | null;
     githubAccount?: BackendGitHubAccount | null;
+    google_linked?: boolean;
+    googleLinked?: boolean;
 }
 
 interface BackendAuthResponse {
@@ -143,6 +107,21 @@ interface BackendCollection {
     workspace_id?: MongoIdLike;
     name: string;
     description?: string | null;
+}
+
+interface BackendHistoryEntry {
+    id?: MongoIdLike;
+    _id?: MongoIdLike;
+    workspace_id?: MongoIdLike;
+    name: string;
+    request_type: string;
+    chain?: string | null;
+    network: string;
+    method?: string | null;
+    params?: unknown;
+    status: number;
+    duration_ms: number;
+    executed_at: string;
 }
 
 interface BackendWorkspace {
@@ -240,7 +219,7 @@ export class ApiError extends Error {
     }
 }
 
-const extractId = (value: MongoIdLike): string => {
+export const extractId = (value: MongoIdLike): string => {
     if (typeof value === 'string') {
         return value;
     }
@@ -307,7 +286,8 @@ const normalizeUserProfile = (
                         user.notification_preferences
                 )
             ),
-        githubAccount: user.githubAccount || user.github_account || undefined
+        githubAccount: user.githubAccount || user.github_account || undefined,
+        googleLinked: Boolean(user.googleLinked ?? user.google_linked)
     };
 };
 
@@ -329,7 +309,8 @@ const normalizeRpcParams = (
 };
 
 const normalizeSavedRequest = (
-    request: BackendSavedRequest
+    request: BackendSavedRequest,
+    collectionId?: string
 ): RequestItem => {
     const id =
         extractId(request.id ?? request._id) ||
@@ -359,7 +340,9 @@ const normalizeSavedRequest = (
             ? Date.parse(
                   request.last_executed_at
               ) || undefined
-            : undefined
+            : undefined,
+        collectionId,
+        lastResponse: request.last_response
     };
 };
 
@@ -397,7 +380,7 @@ const normalizeCollectionNode = (
         ),
         children: requests.map((request) => {
             const requestData =
-                normalizeSavedRequest(request);
+                normalizeSavedRequest(request, id);
 
             return {
                 id: requestData.id,
@@ -547,9 +530,36 @@ const sleep = (ms: number) =>
     );
 
 class ApiService {
-    // JWT is managed via HttpOnly cookies by the backend.
-    setToken(_token: string | null) {
-        // No-op. Kept for backwards compatibility with existing UI flows.
+    private token: string | null =
+        typeof window !==
+        'undefined'
+            ? localStorage.getItem(
+                  'txio_token'
+              )
+            : null;
+
+    setToken(token: string | null) {
+        this.token = token;
+
+        if (
+            typeof window !==
+            'undefined'
+        ) {
+            if (token) {
+                localStorage.setItem(
+                    'txio_token',
+                    token
+                );
+            } else {
+                localStorage.removeItem(
+                    'txio_token'
+                );
+            }
+        }
+    }
+
+    getToken(): string | null {
+        return this.token;
     }
 
     private async request<T>(
@@ -559,6 +569,13 @@ class ApiService {
         const headers = new Headers(
             options.headers || {}
         );
+
+        if (this.token) {
+            headers.set(
+                'Authorization',
+                `Bearer ${this.token}`
+            );
+        }
 
         if (
             options.body &&
@@ -574,33 +591,12 @@ class ApiService {
 
         let response: Response;
 
-        const externalSignal = options.signal;
-        const timeoutController = new AbortController();
-        const timeoutId = setTimeout(
-            () => timeoutController.abort(),
-            REQUEST_TIMEOUT_MS
-        );
-
-        if (externalSignal) {
-            if (externalSignal.aborted) {
-                timeoutController.abort();
-            } else {
-                externalSignal.addEventListener(
-                    'abort',
-                    () => timeoutController.abort(),
-                    { once: true }
-                );
-            }
-        }
-
         try {
             response = await fetch(
                 `${API_BASE}${path}`,
                 {
-                    credentials: 'include',
                     ...options,
-                    headers,
-                    signal: timeoutController.signal
+                    headers
                 }
             );
         } catch (error) {
@@ -608,16 +604,9 @@ class ApiService {
                 error instanceof Error &&
                 error.name === 'AbortError'
             ) {
-                if (externalSignal?.aborted) {
-                    throw new ApiError(
-                        'Request cancelled.',
-                        499
-                    );
-                }
-
                 throw new ApiError(
-                    "The server took too long to respond. If it's been idle it may still be waking up (this can take up to a minute) — please try again.",
-                    0
+                    'Request cancelled.',
+                    499
                 );
             }
 
@@ -629,8 +618,6 @@ class ApiService {
                     : 'Unable to reach the backend. Check that the API server is running and FRONTEND_URL allows the frontend origin.';
 
             throw new ApiError(message, 0);
-        } finally {
-            clearTimeout(timeoutId);
         }
 
         if (!response.ok) {
@@ -851,7 +838,6 @@ class ApiService {
     }
 
     async updateEmail(
-        oldEmail: string,
         newEmail: string
     ): Promise<UserProfile> {
         const data =
@@ -860,8 +846,6 @@ class ApiService {
                 {
                     method: 'POST',
                     body: JSON.stringify({
-                        old_email:
-                            oldEmail,
                         new_email:
                             newEmail
                     })
@@ -897,14 +881,7 @@ class ApiService {
         return normalizeUserProfile(data.user);
     }
 
-    // Password rotation. The deployed backend resolves the account from
-    // `email` in the body (older contract), while the backend repo's current
-    // handler derives identity from the JWT claims and requires
-    // `current_password` instead. Send both so rotation works against the
-    // deployed instance today and survives the backend upgrade: each version
-    // ignores the field it doesn't know about.
     async updatePassword(
-        email: string,
         currentPassword: string,
         newPassword: string
     ): Promise<UserProfile> {
@@ -914,7 +891,6 @@ class ApiService {
                 {
                     method: 'POST',
                     body: JSON.stringify({
-                        email,
                         current_password:
                             currentPassword,
                         new_password:
@@ -926,17 +902,12 @@ class ApiService {
         return normalizeUserProfile(data.user);
     }
 
-    async deleteUser(
-        email: string
-    ): Promise<UserProfile> {
+    async deleteUser(): Promise<UserProfile> {
         const data =
             await this.request<BackendWrappedUserResponse>(
                 '/auth/delete-user',
                 {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        email
-                    })
+                    method: 'POST'
                 }
             );
 
@@ -1146,7 +1117,7 @@ class ApiService {
             );
 
         const requestData =
-            normalizeSavedRequest(data);
+            normalizeSavedRequest(data, collectionId);
 
         return {
             id: requestData.id,
@@ -1154,6 +1125,36 @@ class ApiService {
             name: requestData.name,
             requestData
         };
+    }
+
+    async updateRequest(
+        collectionId: string,
+        requestId: string,
+        updates: {
+            name?: string;
+            method?: string;
+            params?: any;
+            network?: string | null;
+            lastResponse?: unknown | null;
+        }
+    ): Promise<RequestItem> {
+        const body: Record<string, unknown> = {};
+        if (updates.name !== undefined) body.name = updates.name;
+        if (updates.method !== undefined) body.method = updates.method;
+        if (updates.params !== undefined) body.params = updates.params;
+        if (updates.network !== undefined) body.network = updates.network;
+        if (updates.lastResponse !== undefined) body.last_response = updates.lastResponse;
+
+        const data =
+            await this.request<BackendSavedRequest>(
+                `/collections/${collectionId}/requests/${requestId}`,
+                {
+                    method: 'PUT',
+                    body: JSON.stringify(body)
+                }
+            );
+
+        return normalizeSavedRequest(data, collectionId);
     }
 
     async sendAiChat(
@@ -1356,6 +1357,47 @@ class ApiService {
                 return current;
             }
         }
+    }
+
+    async createHistoryEntry(entry: {
+        workspaceId?: string;
+        name: string;
+        requestType: string;
+        chain?: string;
+        network: string;
+        method?: string;
+        params?: unknown;
+        status: number;
+        durationMs: number;
+    }): Promise<BackendHistoryEntry> {
+        return this.request<BackendHistoryEntry>('/history', {
+            method: 'POST',
+            body: JSON.stringify({
+                workspace_id: entry.workspaceId,
+                name: entry.name,
+                request_type: entry.requestType,
+                chain: entry.chain,
+                network: entry.network,
+                method: entry.method,
+                params: entry.params,
+                status: entry.status,
+                duration_ms: entry.durationMs
+            })
+        });
+    }
+
+    async getHistory(workspaceId?: string): Promise<BackendHistoryEntry[]> {
+        const query = workspaceId ? `?workspace_id=${encodeURIComponent(workspaceId)}` : '';
+        return this.request<BackendHistoryEntry[]>(`/history${query}`);
+    }
+
+    async clearHistory(workspaceId?: string): Promise<void> {
+        const query = workspaceId ? `?workspace_id=${encodeURIComponent(workspaceId)}` : '';
+        await this.request<{ message: string }>(`/history${query}`, { method: 'DELETE' });
+    }
+
+    async deleteHistoryEntry(id: string): Promise<void> {
+        await this.request<{ message: string }>(`/history/${id}`, { method: 'DELETE' });
     }
 }
 

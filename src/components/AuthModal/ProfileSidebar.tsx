@@ -94,7 +94,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
             <div className="mt-auto pt-6 hidden md:block">
                 <button
                     onClick={onLogout}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-slate-400 hover:bg-rose-500/[0.08] hover:text-rose-300 transition-colors"
+                    className="group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-slate-400 hover:bg-rose-500/[0.08] hover:text-rose-300 transition-colors"
                 >
                     <LogOut size={15} className="text-slate-500 group-hover:text-rose-400" />
                     Sign out

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Terminal, X, Filter, Trash2, Command, Square, Copy, Check, Sparkles } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { apiService, CommandExecutionResponse } from '@/services/api';
+import { highlightJson, tryPrettyPrintJson } from '@/lib/jsonHighlight';
 
 const POLL_INTERVAL_MS = 500;
 
@@ -586,12 +587,23 @@ export const TerminalPanel: React.FC = () => {
                     >
                         {visibleLogs.map((log) => {
                             const isMultiline = log.action.includes('\n');
+                            let parsedJson: unknown;
+                            let isJson = false;
+                            if (isMultiline) {
+                                try {
+                                    parsedJson = JSON.parse(log.action);
+                                    isJson = typeof parsedJson === 'object' && parsedJson !== null;
+                                } catch {
+                                    isJson = false;
+                                }
+                            }
+                            const prettyAction = isJson ? tryPrettyPrintJson(log.action) : log.action;
                             const typeBadge = (
                                 <span className={`shrink-0 px-1.5 rounded-[2px] font-bold text-[9px] uppercase ${
                                     log.type === 'request' ? 'text-emerald-400 bg-emerald-400/5' :
                                     log.type === 'team' ? 'text-blue-400 bg-blue-400/5' :
                                     log.type === 'error' ? 'text-red-400 bg-red-400/5' :
-                                    'text-soft-purple bg-soft-purple/5'
+                                    'text-electric-violet bg-electric-violet/5'
                                 }`}>
                                     {log.type}
                                 </span>
@@ -630,7 +642,7 @@ export const TerminalPanel: React.FC = () => {
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        void copyToClipboard(log.action, log.id);
+                                                        void copyToClipboard(prettyAction, log.id);
                                                     }}
                                                     className="opacity-0 group-hover:opacity-100 p-1 rounded text-slate-500 hover:text-slate-200 hover:bg-white/[0.05] transition-all"
                                                     title="Copy output"
@@ -639,9 +651,16 @@ export const TerminalPanel: React.FC = () => {
                                                 </button>
                                             </div>
                                         </div>
-                                        <pre className="text-slate-800 dark:text-white/90 whitespace-pre-wrap break-words ml-4 border-l border-slate-200 dark:border-white/5 pl-3">
-                                            {log.action}
-                                        </pre>
+                                        {isJson ? (
+                                            <pre
+                                                className="text-slate-800 dark:text-white/90 whitespace-pre-wrap break-words ml-4 rounded-lg border border-slate-200 dark:border-white/5 bg-white dark:bg-white/[0.02] px-3 py-2.5 leading-relaxed"
+                                                dangerouslySetInnerHTML={{ __html: highlightJson(prettyAction) }}
+                                            />
+                                        ) : (
+                                            <pre className="text-slate-800 dark:text-white/90 whitespace-pre-wrap break-words ml-4 border-l border-slate-200 dark:border-white/5 pl-3">
+                                                {log.action}
+                                            </pre>
+                                        )}
                                     </motion.div>
                                 );
                             }
@@ -691,7 +710,7 @@ export const TerminalPanel: React.FC = () => {
                         {/* Prompt */}
                         <div className="flex items-center gap-2 pt-2">
                             <span className="text-electric-violet font-bold">➜</span>
-                            <span className="text-soft-purple font-bold">~</span>
+                            <span className="text-electric-violet font-bold">~</span>
                             <form onSubmit={handleCommand} className="flex-1">
                                 <input 
                                     ref={inputRef}

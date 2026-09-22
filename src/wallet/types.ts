@@ -35,9 +35,16 @@ export type WalletId =
     | 'rainbow'
     | 'okx-wallet'
     | 'brave-wallet'
+    | 'rabby'
+    | 'zerion'
+    | 'oneinch'
+    | 'frame'
     | 'sui-wallet'
     | 'suiet'
     | 'ethos'
+    | 'nightly-sui'
+    | 'okx-wallet-sui'
+    | 'slush'
     | 'lobstr'
     | 'freighter'
     | 'albedo'
@@ -47,8 +54,13 @@ export type WalletId =
     | 'phantom-solana'
     | 'solflare'
     | 'backpack'
+    | 'glow'
+    | 'nightly-solana'
     | 'petra'
-    | 'martian';
+    | 'martian'
+    | 'pontem'
+    | 'rise-wallet'
+    | 'nightly-aptos';
 
 export interface WalletDescriptor {
     id: WalletId;

@@ -41,7 +41,7 @@ export const MainnetExecutionWarningModal: React.FC<MainnetExecutionWarningModal
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                  <button onClick={onClose} className="px-4 py-3 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white text-xs font-bold rounded-xl transition-all">
+                  <button onClick={onClose} className="px-4 py-3 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 hover:text-slate-900 dark:text-white text-xs font-bold rounded-xl transition-all">
                       Cancel
                   </button>
                   <button onClick={onConfirm} className="px-4 py-3 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-red-900/20 flex items-center justify-center gap-2 transition-all active:scale-95">

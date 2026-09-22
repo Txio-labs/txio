@@ -1,21 +1,46 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    ShieldCheck, ArrowLeft, RefreshCw, CheckCircle2, 
+import { useRouter } from 'next/navigation';
+import {
+    ShieldCheck, ArrowLeft, RefreshCw, CheckCircle2,
     Smartphone, Mail, Lock, Sparkles
 } from 'lucide-react';
 import { appStore, useAppStore } from '@/lib/store';
 import { apiService } from '@/services/api';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import logoDark from '../assets/txio2.png';
 import gsap from 'gsap';
 
+const maskEmail = (email: string): string => {
+    const [local, domain] = email.split('@');
+    if (!local || !domain) return email;
+    const maskedLocal = local[0] + '*'.repeat(Math.max(local.length - 1, 1));
+    const domainParts = domain.split('.');
+    const maskedDomain = domainParts
+        .map((part, i) =>
+            i === domainParts.length - 1
+                ? part
+                : part[0] + '*'.repeat(Math.max(part.length - 1, 1))
+        )
+        .join('.');
+    return `${maskedLocal}@${maskedDomain}`;
+};
+
 export const OTPPage: React.FC = () => {
-    const { theme, user } = useAppStore();
+    const { theme, pendingSignup } = useAppStore();
+    const router = useRouter();
+    const isDark = theme === 'dark';
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [isLoading, setIsLoading] = useState(false);
     const [isVerified, setIsVerified] = useState(false);
     const [timer, setTimer] = useState(59);
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+    useEffect(() => {
+        if (!pendingSignup) {
+            router.replace('/signup');
+        }
+    }, [pendingSignup, router]);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -96,37 +121,39 @@ export const OTPPage: React.FC = () => {
             return;
         }
 
+        if (!pendingSignup) {
+            router.replace('/signup');
+            return;
+        }
+
         setIsLoading(true);
         try {
-            const email = user?.email;
-            if (!email) {
-                appStore.showToast('Email not found in store.', 'error');
-                setIsLoading(false);
-                return;
-            }
-            const response = await apiService.verifyOtp(email, code);
-            if (response) {
-                setIsVerified(true);
-                appStore.showToast('Authentication Successful!', 'success');
-                setTimeout(() => {
-                    appStore.setViewMode('landing');
-                }, 1500);
-            } else {
-                appStore.showToast('Invalid OTP', 'error');
-            }
+            await appStore.completeSignup(code);
+            setIsVerified(true);
+            appStore.showToast('Authentication Successful!', 'success');
+            setTimeout(() => {
+                router.replace('/workspace');
+            }, 1500);
         } catch (error) {
-            appStore.showToast('Failed to verify OTP', 'error');
+            const message = error instanceof Error ? error.message : 'Failed to verify OTP';
+            appStore.showToast(message, 'error');
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleResend = () => {
-        if (timer > 0) return;
-        setTimer(59);
-        setOtp(['', '', '', '', '', '']);
-        inputRefs.current[0]?.focus();
-        appStore.showToast('New code on the way.', 'info');
+    const handleResend = async () => {
+        if (timer > 0 || !pendingSignup) return;
+        try {
+            await apiService.requestOtp(pendingSignup.email);
+            setTimer(59);
+            setOtp(['', '', '', '', '', '']);
+            inputRefs.current[0]?.focus();
+            appStore.showToast('New code on the way.', 'info');
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to resend code';
+            appStore.showToast(message, 'error');
+        }
     };
 
     return (
@@ -136,24 +163,31 @@ export const OTPPage: React.FC = () => {
             {/* Ambient Background Elements */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-electric-violet/10 blur-[120px] rounded-full"></div>
-                <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-soft-purple/5 blur-[100px] rounded-full"></div>
-                <div className="absolute inset-0 opacity-[0.03]" style={{ 
-                    backgroundImage: 'radial-gradient(circle at 2px 2px, #fff 1px, transparent 0)',
+                <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-electric-violet/5 blur-[100px] rounded-full"></div>
+                <div className="absolute inset-0 opacity-[0.03]" style={{
+                    backgroundImage: `radial-gradient(circle at 2px 2px, ${isDark ? '#fff' : '#000'} 1px, transparent 0)`,
                     backgroundSize: '32px 32px'
                 }}></div>
             </div>
 
             <div className="flex-1 flex flex-col justify-center items-center p-6 relative z-10">
                 {/* Back Button */}
-                <button 
-                    onClick={() => appStore.setViewMode('auth')}
+                <button
+                    onClick={() => {
+                        appStore.setPendingSignup(null);
+                        router.push('/signup');
+                    }}
                     className={`absolute top-8 left-8 flex items-center gap-2 text-sm font-medium transition-colors ${
                         theme === 'dark' ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-900'
                     }`}
                 >
                     <ArrowLeft size={18} />
-                    Back to Sign In
+                    Back to Sign Up
                 </button>
+
+                <div className="absolute top-8 right-8">
+                    <ThemeToggle />
+                </div>
 
                 <motion.div 
                     initial={{ opacity: 0, y: 20 }}
@@ -182,13 +216,13 @@ export const OTPPage: React.FC = () => {
                             )}
                         </motion.div>
                         
-                        <h2 className="text-4xl font-bold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-400">
+                        <h2 className={`text-4xl font-bold tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                             Check your inbox.
                         </h2>
                         <p className={`text-base max-w-sm mx-auto leading-relaxed ${
                             theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
                         }`}>
-                            We sent a 6-digit code to <span className="text-white font-medium">v***@t***.io</span>. Drop it in below.
+                            We sent a 6-digit code to <span className={`font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{pendingSignup ? maskEmail(pendingSignup.email) : 'your email'}</span>. Drop it in below.
                         </p>
                     </div>
 
@@ -222,7 +256,7 @@ export const OTPPage: React.FC = () => {
                             <button 
                                 type="submit"
                                 disabled={isLoading || isVerified}
-                                className="w-full py-5 bg-electric-violet text-white rounded-2xl font-bold text-xl hover:bg-soft-purple transition-all shadow-[0_0_30px_rgba(163,163,163,0.3)] flex items-center justify-center gap-3 group disabled:opacity-50 relative overflow-hidden"
+                                className="w-full py-5 bg-slate-900 dark:bg-white text-white dark:text-near-black rounded-2xl font-bold text-xl hover:opacity-90 transition-all shadow-[0_0_30px_rgba(163,163,163,0.3)] flex items-center justify-center gap-3 group disabled:opacity-50 relative overflow-hidden"
                             >
                                 <AnimatePresence mode="wait">
                                     {isLoading ? (
@@ -267,8 +301,8 @@ export const OTPPage: React.FC = () => {
                                     onClick={handleResend}
                                     disabled={timer > 0 || isLoading}
                                     className={`flex items-center gap-2 text-sm font-bold transition-all px-6 py-2 rounded-full border ${
-                                        timer > 0 
-                                            ? 'text-slate-600 border-white/5 cursor-not-allowed' 
+                                        timer > 0
+                                            ? `text-slate-600 cursor-not-allowed ${isDark ? 'border-white/5' : 'border-slate-200'}`
                                             : 'text-electric-violet border-electric-violet/20 hover:bg-electric-violet/10'
                                     }`}
                                 >
@@ -280,7 +314,7 @@ export const OTPPage: React.FC = () => {
                     </form>
 
                     {/* Footer Info */}
-                    <div className="mt-12 flex justify-center gap-8 border-t border-white/5 pt-8">
+                    <div className={`mt-12 flex justify-center gap-8 pt-8 border-t ${isDark ? 'border-white/5' : 'border-slate-200'}`}>
                         <div className="flex items-center gap-2 text-slate-500 otp-footer-item">
                             <Smartphone size={16} />
                             <span className="text-[10px] font-bold uppercase tracking-widest">Mobile Push</span>
@@ -299,7 +333,7 @@ export const OTPPage: React.FC = () => {
                 <footer className={`mt-12 text-[10px] font-bold uppercase tracking-[0.5em] text-center ${
                     theme === 'dark' ? 'text-slate-700' : 'text-slate-400'
                 }`}>
-                    txio · sign-in flow
+                    txio · sign-up verification
                 </footer>
             </div>
         </div>

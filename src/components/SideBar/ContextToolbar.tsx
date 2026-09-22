@@ -66,7 +66,7 @@ export const ContextToolbar: React.FC<ContextToolbarProps> = ({
           <>
             <button 
               onClick={onToggleFilter}
-              className={`p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/[0.05] transition-all border hover:border-slate-200 dark:border-white/5 ${isFilterOpen ? 'text-electric-violet border-electric-violet/20 bg-electric-violet/10' : 'text-slate-500 hover:text-white border-transparent'}`}
+              className={`p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/[0.05] transition-all border hover:border-slate-200 dark:hover:border-white/5 ${isFilterOpen ? 'text-electric-violet border-electric-violet/20 bg-electric-violet/10' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white border-transparent'}`}
               title={isFilterOpen ? 'Close filter' : 'Filter'}
               aria-label={isFilterOpen ? 'Close collection filter' : 'Filter collections'}
               aria-expanded={isFilterOpen}
@@ -76,7 +76,7 @@ export const ContextToolbar: React.FC<ContextToolbarProps> = ({
             </button>
             <button 
               onClick={onAddCollection} 
-              className="p-2 text-slate-500 hover:text-electric-violet rounded-xl hover:bg-slate-100 dark:hover:bg-white/[0.05] transition-all border border-transparent hover:border-slate-200 dark:border-white/5" 
+              className="p-2 text-slate-500 hover:text-electric-violet rounded-xl hover:bg-slate-100 dark:hover:bg-white/[0.05] transition-all border border-transparent hover:border-slate-200 dark:hover:border-white/5" 
               title="New Collection"
             >
               <FolderPlus size={16}/>
@@ -86,7 +86,7 @@ export const ContextToolbar: React.FC<ContextToolbarProps> = ({
         {mode === 'env' && (
           <button 
             onClick={onAddEnvVar} 
-            className="p-2 text-slate-500 hover:text-electric-violet rounded-xl hover:bg-slate-100 dark:hover:bg-white/[0.05] transition-all border border-transparent hover:border-slate-200 dark:border-white/5" 
+            className="p-2 text-slate-500 hover:text-electric-violet rounded-xl hover:bg-slate-100 dark:hover:bg-white/[0.05] transition-all border border-transparent hover:border-slate-200 dark:hover:border-white/5" 
             title="Add Variable"
           >
             <Plus size={16}/>

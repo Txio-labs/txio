@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import {
@@ -7,13 +7,32 @@ import {
     ArrowRight,
     ArrowLeft,
     ShieldCheck,
-    Zap
+    Zap,
+    Eye,
+    EyeOff
 } from 'lucide-react';
 import { Github, Twitter } from '@/components/icons/BrandIcons';
 
 import { appStore, useAppStore } from '@/lib/store';
-import { ApiError, API_BASE, apiService, pingBackendAwake } from '@/services/api';
+import { API_BASE, apiService } from '@/services/api';
 import logoDark from '../assets/txio2.png';
+
+
+// Read and clear the short-lived OAuth token the backend hands off via a URL
+// fragment. A cookie can't be used: the backend and frontend are different
+// sites, so a cookie the backend's redirect response sets is never visible
+// to document.cookie on the frontend's origin.
+function consumeOAuthFragmentToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    const hash = window.location.hash;
+    const match = hash.match(/(?:^#|&)token=([^&]+)/);
+    if (!match) return null;
+    const remainingHash = hash.replace(/(?:^#|&)token=[^&]+/, '').replace(/^#&/, '#');
+    const url = new URL(window.location.href);
+    url.hash = remainingHash === '#' ? '' : remainingHash;
+    window.history.replaceState({}, '', url.toString());
+    return decodeURIComponent(match[1]);
+}
 
 export const SignInPage: React.FC = () => {
     const { theme } = useAppStore();
@@ -21,6 +40,7 @@ export const SignInPage: React.FC = () => {
 
     const [isLoading, setIsLoading] = useState(false);
     const [socialLoading, setSocialLoading] = useState<string | null>(null);
+    const [authChecking, setAuthChecking] = useState(true);
     const [formData, setFormData] = useState({
         email: '',
         password: ''
@@ -31,7 +51,115 @@ export const SignInPage: React.FC = () => {
     const [forgotPasswordOtp, setForgotPasswordOtp] = useState(['', '', '', '', '', '']);
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+    useEffect(() => {
+        const initializeAuth = async () => {
+            try {
+                // Read OAuth token from the URL fragment (backend appends it on
+                // OAuth callback redirect).
+                const fragmentToken = consumeOAuthFragmentToken();
+
+                // Read token from localStorage
+                const storedToken = localStorage.getItem('txio_token');
+
+                // Prefer the freshly-issued OAuth token over a stored one
+                const token = fragmentToken || storedToken;
+
+                // No token
+                if (!token) {
+                    setAuthChecking(false);
+                    return;
+                }
+
+                // Save token
+                localStorage.setItem('txio_token', token);
+
+                // Set token in API service
+                apiService.setToken(token);
+
+                // IMPORTANT:
+                // Switch app mode BEFORE profile request
+                // prevents redirect back to landing page
+                appStore.setViewMode('app');
+
+                try {
+                    const profilePromise =
+                        apiService.getProfile();
+                    const workspacesPromise =
+                        apiService.getWorkspaces();
+
+                    void workspacesPromise.catch(
+                        () => undefined
+                    );
+
+                    // Fetch authenticated user
+                    const user = await profilePromise;
+
+                    // Save user
+                    appStore.updateUser(user);
+
+                    try {
+                        const workspaces =
+                            await workspacesPromise;
+
+                        await appStore.fetchWorkspaces(
+                            undefined,
+                            workspaces
+                        );
+                    } catch (workspaceError) {
+                        console.error(
+                            'Workspace fetch failed:',
+                            workspaceError
+                        );
+                    }
+
+                    // Success toast only after OAuth redirect (token arrived via fragment)
+                    if (fragmentToken) {
+                        appStore.showToast(
+                            'Successfully signed in with Google',
+                            'success'
+                        );
+                    }
+
+                    router.replace('/workspace');
+                } catch (profileError) {
+                    console.error('Profile fetch failed:', profileError);
+
+                    // Invalid token/session cleanup
+                    localStorage.removeItem('txio_token');
+
+                    apiService.setToken(null);
+
+                    appStore.updateUser(null);
+
+                    appStore.setViewMode('landing');
+
+                    appStore.showToast(
+                        'Session expired. Please sign in again.',
+                        'error'
+                    );
+                }
+            } catch (error) {
+                console.error('Auth initialization failed:', error);
+
+                localStorage.removeItem('txio_token');
+
+                apiService.setToken(null);
+
+                appStore.updateUser(null);
+
+                appStore.setViewMode('landing');
+            } finally {
+                setAuthChecking(false);
+            }
+        };
+
+        initializeAuth();
+    }, [router]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -47,18 +175,14 @@ export const SignInPage: React.FC = () => {
         } catch (error) {
             console.error(error);
 
-            appStore.showToast(
-                error instanceof ApiError && error.status === 0
-                    ? error.message
-                    : 'Login failed. Please try again.',
-                'error'
-            );
+            const message = error instanceof Error ? error.message : 'Login failed. Please try again.';
+            appStore.showToast(message, 'error');
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleSocialLogin = async (provider: string) => {
+    const handleSocialLogin = (provider: string) => {
         setSocialLoading(provider);
 
         appStore.showToast(
@@ -66,34 +190,14 @@ export const SignInPage: React.FC = () => {
             'info'
         );
 
-        // OAuth providers hand off via a full page navigation, which shows
-        // nothing but a blank tab while a cold backend wakes up. Ping it
-        // first so we can tell the user what's happening instead of
-        // silently redirecting into an apparent hang.
-        if (provider === 'Google' || provider === 'GitHub') {
-            const wakingUpTimer = setTimeout(() => {
-                appStore.showToast(
-                    'Server was idle and is waking up — this can take up to a minute...',
-                    'info'
-                );
-            }, 4000);
+        // OAuth providers
+        if (provider === 'Google') {
+            window.location.href = `${API_BASE}/auth/google/login`;
+            return;
+        }
 
-            const awake = await pingBackendAwake();
-            clearTimeout(wakingUpTimer);
-
-            if (!awake) {
-                setSocialLoading(null);
-                appStore.showToast(
-                    "Couldn't reach the server. Please try again in a moment.",
-                    'error'
-                );
-                return;
-            }
-
-            window.location.href =
-                provider === 'Google'
-                    ? `${API_BASE}/auth/google/login`
-                    : `${API_BASE}/auth/github/login`;
+        if (provider === 'GitHub') {
+            window.location.href = `${API_BASE}/auth/github/login`;
             return;
         }
 
@@ -115,7 +219,8 @@ export const SignInPage: React.FC = () => {
             setForgotPasswordStep('otp');
         } catch (error) {
             console.error(error);
-            appStore.showToast('Failed to send verification code.', 'error');
+            const message = error instanceof Error ? error.message : 'Failed to send verification code.';
+            appStore.showToast(message, 'error');
         } finally {
             setIsLoading(false);
         }
@@ -148,7 +253,8 @@ export const SignInPage: React.FC = () => {
             setConfirmPassword('');
         } catch (error) {
             console.error(error);
-            appStore.showToast('Failed to reset password.', 'error');
+            const message = error instanceof Error ? error.message : 'Failed to reset password.';
+            appStore.showToast(message, 'error');
         } finally {
             setIsLoading(false);
         }
@@ -183,6 +289,21 @@ export const SignInPage: React.FC = () => {
         otpInputRefs.current[Math.min(pastedData.length, 5)]?.focus();
     };
 
+    // Loading screen while checking auth
+    if (authChecking) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-near-black">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-10 h-10 border-2 border-white/20 border-t-electric-violet rounded-full animate-spin"></div>
+
+                    <p className="text-sm text-slate-400">
+                        Authenticating...
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div
             className={`min-h-screen flex selection:bg-electric-violet/30 ${
@@ -193,6 +314,17 @@ export const SignInPage: React.FC = () => {
         >
             {/* Left Wing */}
             <div className="hidden lg:flex flex-1 relative bg-near-black border-r border-white/5 p-16 flex-col justify-between overflow-hidden">
+                <div
+                    className="absolute inset-0 opacity-20"
+                    style={{
+                        backgroundImage:
+                            'radial-gradient(circle at 2px 2px, #a3a3a3 1px, transparent 0)',
+                        backgroundSize: '30px 30px'
+                    }}
+                />
+
+                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-electric-violet/10 blur-[150px] rounded-full"></div>
+
                 <div className="relative z-10">
                     <button
                         className="flex items-center gap-3 mb-16 cursor-pointer"
@@ -242,7 +374,7 @@ export const SignInPage: React.FC = () => {
                     </div>
 
                     <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-soft-purple">
+                        <div className="flex items-center gap-2 text-electric-violet">
                             <Zap size={18} />
 
                             <span className="font-bold text-xs uppercase tracking-widest">
@@ -258,7 +390,7 @@ export const SignInPage: React.FC = () => {
             </div>
 
             {/* Right Wing */}
-            <div className="flex-1 flex flex-col justify-center items-center p-8 md:p-16 relative">
+            <div className="flex-1 flex flex-col justify-center items-center p-4 pt-20 sm:p-8 sm:pt-24 md:p-16 relative">
                 <button
                     onClick={() => {
                         if (forgotPasswordStep !== 'none') {
@@ -268,10 +400,8 @@ export const SignInPage: React.FC = () => {
                             router.push('/');
                         }
                     }}
-                    className={`absolute top-8 left-8 flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors ${
-                        theme === 'dark'
-                            ? 'hover:text-white'
-                            : 'hover:text-slate-900'
+                    className={`absolute top-6 left-4 sm:top-8 sm:left-8 flex items-center gap-2 text-sm font-medium transition-colors ${
+                        theme === 'dark' ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-900'
                     }`}
                 >
                     <ArrowLeft size={16} />
@@ -281,7 +411,7 @@ export const SignInPage: React.FC = () => {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={`w-full max-w-md p-10 rounded-[2.5rem] border shadow-2xl ${
+                    className={`w-full max-w-md p-6 sm:p-10 rounded-[2rem] sm:rounded-[2.5rem] border shadow-2xl ${
                         theme === 'dark'
                             ? 'bg-white/[0.04] border-white/20'
                             : 'bg-white border-slate-200'
@@ -289,15 +419,12 @@ export const SignInPage: React.FC = () => {
                 >
                     {forgotPasswordStep === 'none' && (
                         <>
-                            <div className="text-center mb-10">
-                                <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-electric-violet/10 mb-6">
-                                    <Lock
-                                        className="text-electric-violet"
-                                        size={32}
-                                    />
+                            <div className="text-center mb-8 sm:mb-10">
+                                <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-3xl bg-electric-violet/10 mb-4 sm:mb-6">
+                                    <img src={logoDark.src} alt="txio" className="h-7 w-auto sm:h-8" />
                                 </div>
 
-                                <h2 className="text-3xl font-bold tracking-tight mb-2">
+                                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
                                     Sign In
                                 </h2>
 
@@ -308,7 +435,7 @@ export const SignInPage: React.FC = () => {
 
                             <form
                                 onSubmit={handleLogin}
-                                className="space-y-5"
+                                className="space-y-4 sm:space-y-5"
                             >
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">
@@ -332,11 +459,7 @@ export const SignInPage: React.FC = () => {
                                                 }))
                                             }
                                             placeholder="name@company.com"
-                                            className={`w-full pl-12 pr-4 py-4 rounded-2xl border outline-none transition-all ${
-                                                theme === 'dark'
-                                                    ? 'bg-near-black border-white/5 focus:border-electric-violet/50'
-                                                    : 'bg-slate-50 border-slate-200'
-                                            }`}
+                                            className="w-full pl-12 pr-4 py-4 rounded-2xl border bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-400 transition-all"
                                         />
                                     </div>
                                 </div>
@@ -366,7 +489,7 @@ export const SignInPage: React.FC = () => {
                                         />
 
                                         <input
-                                            type="password"
+                                            type={showPassword ? 'text' : 'password'}
                                             required
                                             value={formData.password}
                                             onChange={(e) =>
@@ -376,18 +499,27 @@ export const SignInPage: React.FC = () => {
                                                 }))
                                             }
                                             placeholder="••••••••"
-                                            className={`w-full pl-12 pr-4 py-4 rounded-2xl border outline-none transition-all ${
-                                                theme === 'dark'
-                                                    ? 'bg-near-black border-white/5 focus:border-electric-violet/50'
-                                                    : 'bg-slate-50 border-slate-200'
-                                            }`}
+                                            className="w-full pl-12 pr-12 py-4 rounded-2xl border bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-400 transition-all"
                                         />
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword((current) => !current)}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
+                                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                        >
+                                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
                                     </div>
                                 </div>
 
                                 <button
-                                    disabled={isLoading}
-                                    className="w-full py-4 bg-electric-violet text-white rounded-2xl font-bold text-lg hover:bg-soft-purple transition-all flex items-center justify-center gap-2 group shadow-xl"
+                                    disabled={isLoading || !formData.email || !formData.password}
+                                    className={`w-full py-4 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-2 group shadow-xl ${
+                                        formData.email && formData.password
+                                            ? `${theme === 'dark' ? 'bg-white text-near-black' : 'bg-slate-900 text-white'} hover:opacity-90`
+                                            : `${theme === 'dark' ? 'bg-white/10 text-slate-500' : 'bg-slate-200 text-slate-400'} cursor-not-allowed`
+                                    }`}
                                 >
                                     {isLoading ? (
                                         <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -521,15 +653,15 @@ export const SignInPage: React.FC = () => {
 
                     {forgotPasswordStep === 'email' && (
                         <>
-                            <div className="text-center mb-10">
-                                <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-electric-violet/10 mb-6">
+                            <div className="text-center mb-8 sm:mb-10">
+                                <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-3xl bg-electric-violet/10 mb-4 sm:mb-6">
                                     <Mail
                                         className="text-electric-violet"
-                                        size={32}
+                                        size={28}
                                     />
                                 </div>
 
-                                <h2 className="text-3xl font-bold tracking-tight mb-2">
+                                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
                                     Forgot Password
                                 </h2>
 
@@ -556,18 +688,14 @@ export const SignInPage: React.FC = () => {
                                             value={forgotPasswordEmail}
                                             onChange={(e) => setForgotPasswordEmail(e.target.value)}
                                             placeholder="name@company.com"
-                                            className={`w-full pl-12 pr-4 py-4 rounded-2xl border outline-none transition-all ${
-                                                theme === 'dark'
-                                                    ? 'bg-near-black border-white/5 focus:border-electric-violet/50'
-                                                    : 'bg-slate-50 border-slate-200'
-                                            }`}
+                                            className="w-full pl-12 pr-4 py-4 rounded-2xl border bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-400 transition-all"
                                         />
                                     </div>
                                 </div>
 
                                 <button
                                     disabled={isLoading}
-                                    className="w-full py-4 bg-electric-violet text-white rounded-2xl font-bold text-lg hover:bg-soft-purple transition-all flex items-center justify-center gap-2 group shadow-xl"
+                                    className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-near-black rounded-2xl font-bold text-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 group shadow-xl"
                                 >
                                     {isLoading ? (
                                         <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -587,15 +715,15 @@ export const SignInPage: React.FC = () => {
 
                     {forgotPasswordStep === 'otp' && (
                         <>
-                            <div className="text-center mb-10">
-                                <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-electric-violet/10 mb-6">
+                            <div className="text-center mb-8 sm:mb-10">
+                                <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-3xl bg-electric-violet/10 mb-4 sm:mb-6">
                                     <ShieldCheck
                                         className="text-electric-violet"
-                                        size={32}
+                                        size={28}
                                     />
                                 </div>
 
-                                <h2 className="text-3xl font-bold tracking-tight mb-2">
+                                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
                                     Check your inbox
                                 </h2>
 
@@ -615,7 +743,7 @@ export const SignInPage: React.FC = () => {
                                                 value={digit}
                                                 onChange={(e) => handleOtpChange(index, e.target.value)}
                                                 onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                                                className={`w-full aspect-square text-center text-2xl font-bold rounded-xl border outline-none transition-all duration-300 ${
+                                                className={`w-full aspect-square text-center text-lg sm:text-2xl font-bold rounded-lg sm:rounded-xl border outline-none transition-all duration-300 ${
                                                     digit
                                                         ? 'border-electric-violet bg-electric-violet/5'
                                                         : theme === 'dark'
@@ -635,17 +763,25 @@ export const SignInPage: React.FC = () => {
                                         <div className="relative">
                                             <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                                             <input
-                                                type="password"
+                                                type={showNewPassword ? 'text' : 'password'}
                                                 required
                                                 value={newPassword}
                                                 onChange={(e) => setNewPassword(e.target.value)}
                                                 placeholder="••••••••"
-                                                className={`w-full pl-12 pr-4 py-4 rounded-2xl border outline-none transition-all ${
+                                                className={`w-full pl-12 pr-12 py-4 rounded-2xl border outline-none transition-all ${
                                                     theme === 'dark'
                                                         ? 'bg-near-black border-white/5 focus:border-electric-violet/50'
                                                         : 'bg-slate-50 border-slate-200'
                                                 }`}
                                             />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowNewPassword((current) => !current)}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
+                                                aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                                            >
+                                                {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                            </button>
                                         </div>
                                     </div>
 
@@ -656,24 +792,32 @@ export const SignInPage: React.FC = () => {
                                         <div className="relative">
                                             <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                                             <input
-                                                type="password"
+                                                type={showConfirmPassword ? 'text' : 'password'}
                                                 required
                                                 value={confirmPassword}
                                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                                 placeholder="••••••••"
-                                                className={`w-full pl-12 pr-4 py-4 rounded-2xl border outline-none transition-all ${
+                                                className={`w-full pl-12 pr-12 py-4 rounded-2xl border outline-none transition-all ${
                                                     theme === 'dark'
                                                         ? 'bg-near-black border-white/5 focus:border-electric-violet/50'
                                                         : 'bg-slate-50 border-slate-200'
                                                 }`}
                                             />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowConfirmPassword((current) => !current)}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
+                                                aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                                            >
+                                                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
 
                                 <button
                                     disabled={isLoading}
-                                    className="w-full py-4 bg-electric-violet text-white rounded-2xl font-bold text-lg hover:bg-soft-purple transition-all flex items-center justify-center gap-2 group shadow-xl"
+                                    className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-near-black rounded-2xl font-bold text-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 group shadow-xl"
                                 >
                                     {isLoading ? (
                                         <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -697,14 +841,12 @@ export const SignInPage: React.FC = () => {
                                 appStore.setViewMode('signup');
                                 router.push('/signup');
                             }}
-                            className={`text-sm font-medium text-slate-500 transition-colors ${
-                                theme === 'dark'
-                                    ? 'hover:text-white'
-                                    : 'hover:text-slate-900'
+                            className={`text-sm font-medium transition-colors ${
+                                theme === 'dark' ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-900'
                             }`}
                         >
                             Don&apos;t have an account?{' '}
-                            <span className="text-electric-violet font-bold">
+                            <span className={theme === 'dark' ? 'text-white font-bold' : 'text-slate-900 font-bold'}>
                                 Get Started
                             </span>
                         </button>

@@ -24,9 +24,9 @@ export const isNetwork = (
 
 // Chains the RPC Method Builder can target. Kept in sync with
 // `WalletChainFamily` (wallet/types.ts), which the wallet layer already uses.
-export type ChainId = 'sui' | 'evm' | 'stellar';
+export type ChainId = 'sui' | 'evm' | 'stellar' | 'solana';
 
-export type FeatureId = 'dashboard' | 'rpc' | 'ptb' | 'move' | 'playground' | 'history' | 'settings' | 'new_request' | 'new_collection' | 'profile' | 'ai_chat' | 'runner' | 'docs' | 'ecosystem' | 'features' | 'integrations' | 'infrastructure' | 'partners';
+export type FeatureId = 'dashboard' | 'rpc' | 'ptb' | 'move' | 'playground' | 'workspace_overview' | 'history' | 'settings' | 'new_request' | 'new_collection' | 'profile' | 'account' | 'ai_chat' | 'runner' | 'collections' | 'docs' | 'ecosystem' | 'features' | 'help' | 'integrations' | 'infrastructure' | 'partners';
 
 
 export interface TabItem {
@@ -62,19 +62,29 @@ export interface Environment {
 export type SuiExplorer = 'suiscan' | 'suiexplorer' | 'suivision';
 export type EvmExplorer = 'family' | 'blockscout';
 export type StellarExplorer = 'stellarexpert' | 'stellarchain';
+export type SolanaExplorer = 'solanaexplorer' | 'solscan' | 'solanafm';
 
 export interface AppSettings {
     theme: 'dark' | 'light';
     showLineNumbers: boolean;
     autoSave: boolean;
     telemetry: boolean;
+    /** Custom Sui RPC endpoint overrides, per network. */
     customRpc: Record<Network, string>;
+    /** Custom EVM RPC endpoint overrides, per network. */
+    evmCustomRpc: Record<Network, string>;
+    /** Custom Stellar/Soroban RPC endpoint overrides, per network. */
+    stellarCustomRpc: Record<Network, string>;
+    /** Custom Solana RPC endpoint overrides, per network. */
+    solanaCustomRpc: Record<Network, string>;
     /** Preferred Sui block explorer. */
     explorer: SuiExplorer;
     /** Preferred EVM explorer family: chain-native (Etherscan-family) or Blockscout. */
     evmExplorer: EvmExplorer;
     /** Preferred Stellar block explorer. */
     stellarExplorer: StellarExplorer;
+    /** Preferred Solana block explorer. */
+    solanaExplorer: SolanaExplorer;
 }
 
 export interface Notification {
@@ -158,6 +168,29 @@ export interface TransferParams {
   objectId?: string;
 }
 
+// A single account reference within a Solana instruction — mirrors
+// @solana/web3.js's AccountMeta shape (pubkey/isSigner/isWritable).
+export interface SolanaAccountMeta {
+  id: string;
+  pubkey: string;
+  isSigner: boolean;
+  isWritable: boolean;
+}
+
+// Params for a single-instruction Solana transaction, built and signed via
+// the connected wallet from the RPC Builder's Transaction mode. Kept
+// separate from MoveCallParams/RequestType.TRANSACTION (the Sui PTB path)
+// since Solana instructions have a completely different shape (program ID +
+// account list + raw instruction data, no modules/functions/type args).
+export interface SolanaTxParams {
+  programId: string;
+  accounts: SolanaAccountMeta[];
+  // Instruction data, encoded as the string the user typed — interpreted
+  // per `dataEncoding` at send time.
+  data: string;
+  dataEncoding: 'hex' | 'base64' | 'utf8';
+}
+
 export interface RequestItem {
   id: string;
   type: RequestType;
@@ -167,16 +200,34 @@ export interface RequestItem {
     method: string;
     params: any[];
     chain?: ChainId; // Defaults to 'sui' when absent (pre-multi-chain requests).
+    // Which EVM chain to target when chain === 'evm' (e.g. 1 for Ethereum,
+    // 8453 for Base). Defaults to Ethereum mainnet (1) when absent — all EVM
+    // chains speak the same eth_* JSON-RPC methods, so this is purely a
+    // "which network" selector, not a different execution path.
+    evmChainId?: number;
   };
   txType?: TransactionKind;
   moveParams: MoveCallParams;
   transferParams?: TransferParams;
+  // Present only for the RPC Builder's Solana "Transaction" mode — a
+  // single-instruction transaction to sign and send via the connected
+  // Solana wallet, independent of the Sui-specific PTB/RequestType.TRANSACTION
+  // path.
+  solanaTxParams?: SolanaTxParams;
   isLoading?: boolean;
   status?: number;
   timestamp?: number;
   localVars?: EnvironmentVariable[];
   tests?: Assertion[]; // Added
   hooks?: Hook[]; // Added
+  // Present once this request has been saved into a collection — lets the
+  // request builder know whether "Save to Collection" should create a new
+  // saved request or update the existing one, and which collection it's in.
+  collectionId?: string;
+  // The last response body persisted with this saved request (backend
+  // field `last_response`), shown when reopening a saved request that was
+  // previously run and saved. Purely a reference snapshot, not live data.
+  lastResponse?: unknown;
 }
 
 export interface HistoryItem extends RequestItem {
@@ -310,6 +361,7 @@ export interface UserProfile {
   bannerUrl?: string;
   notificationPreferences?: NotificationPreferences;
   githubAccount?: GitHubAccount;
+  googleLinked?: boolean;
 }
 
 export interface TeamMember {

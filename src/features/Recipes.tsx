@@ -69,22 +69,22 @@ export const Recipes: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-near-black p-6">
+        <div className="flex flex-col h-full bg-white dark:bg-near-black p-6">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-lg font-bold text-slate-200">Transaction Recipes</h1>
-                <button onClick={() => setIsWizardOpen(true)} className="text-xs bg-slate-800 text-slate-300 px-3 py-1.5 rounded hover:text-white flex items-center gap-1">
+                <h1 className="text-lg font-bold text-slate-900 dark:text-slate-200">Transaction Recipes</h1>
+                <button onClick={() => setIsWizardOpen(true)} className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded hover:text-slate-900 dark:hover:text-white flex items-center gap-1">
                     <Plus size={12} /> New Template
                 </button>
             </div>
 
-            <div className="border border-white/5 rounded bg-dark-indigo-glow overflow-hidden">
-                <div className="grid grid-cols-1 divide-y divide-slate-800">
+            <div className="border border-slate-200 dark:border-white/5 rounded bg-white dark:bg-dark-indigo-glow overflow-hidden">
+                <div className="grid grid-cols-1 divide-y divide-slate-200 dark:divide-slate-800">
                     {templates.map((recipe) => (
-                        <div key={recipe.id} className="p-3 flex items-center justify-between hover:bg-white/5/50 group">
+                        <div key={recipe.id} className="p-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-white/5 group">
                             <div className="flex items-center gap-3">
-                                <FileCode size={16} className="text-slate-500" />
+                                <FileCode size={16} className="text-slate-400 dark:text-slate-500" />
                                 <div>
-                                    <div className="text-sm font-medium text-slate-300">{recipe.title}</div>
+                                    <div className="text-sm font-medium text-slate-700 dark:text-slate-300">{recipe.title}</div>
                                     <div className="text-[10px] text-slate-500 font-mono">{recipe.type}</div>
                                 </div>
                             </div>
@@ -93,7 +93,7 @@ export const Recipes: React.FC = () => {
                                     appStore.openTab(recipeTypeToTabType(recipe.type), { name: recipe.title });
                                     appStore.showToast(`Opening "${recipe.title}" as a new tab`, 'info');
                                 }}
-                                className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2"
+                                className="px-3 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2"
                             >
                                 <Play size={10} /> Load
                             </button>

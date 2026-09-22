@@ -93,25 +93,57 @@ const CHAIN_CONTRACT_CONFIG: Record<ChainId, ChainContractConfig> = {
             '}',
         deployNetworkLabel: 'Testnet',
         formatTxHash: () => randomHex(64).toUpperCase()
+    },
+    solana: {
+        label: 'Solana',
+        fileExt: 'rs',
+        compilerLabel: 'Anchor',
+        compilerVersion: 'v0.30.1',
+        editionLabel: 'Rust Edition',
+        editions: ['2021', '2018'],
+        defaultContractName: 'AssetBridge',
+        defaultCode:
+            'use anchor_lang::prelude::*;\n\n' +
+            'declare_id!("11111111111111111111111111111111111111111");\n\n' +
+            '#[program]\n' +
+            'pub mod asset_bridge {\n' +
+            '    use super::*;\n\n' +
+            '    pub fn initialize_market(_ctx: Context<InitializeMarket>) -> Result<()> {\n' +
+            '        // Initialize the market configuration\n' +
+            '        Ok(())\n' +
+            '    }\n\n' +
+            '    pub fn mint_collection_token(_ctx: Context<MintCollectionToken>, amount: u64) -> Result<u64> {\n' +
+            '        Ok(amount)\n' +
+            '    }\n' +
+            '}\n\n' +
+            '#[derive(Accounts)]\n' +
+            'pub struct InitializeMarket {}\n\n' +
+            '#[derive(Accounts)]\n' +
+            'pub struct MintCollectionToken {}',
+        deployNetworkLabel: 'Devnet',
+        formatTxHash: () => randomHex(88)
     }
 };
 
 const DEFAULT_CONTRACT_NAMES: Record<ChainId, string> = {
     sui: CHAIN_CONTRACT_CONFIG.sui.defaultContractName,
     evm: CHAIN_CONTRACT_CONFIG.evm.defaultContractName,
-    stellar: CHAIN_CONTRACT_CONFIG.stellar.defaultContractName
+    stellar: CHAIN_CONTRACT_CONFIG.stellar.defaultContractName,
+    solana: CHAIN_CONTRACT_CONFIG.solana.defaultContractName
 };
 
 const DEFAULT_CODE_BY_CHAIN: Record<ChainId, string> = {
     sui: CHAIN_CONTRACT_CONFIG.sui.defaultCode,
     evm: CHAIN_CONTRACT_CONFIG.evm.defaultCode,
-    stellar: CHAIN_CONTRACT_CONFIG.stellar.defaultCode
+    stellar: CHAIN_CONTRACT_CONFIG.stellar.defaultCode,
+    solana: CHAIN_CONTRACT_CONFIG.solana.defaultCode
 };
 
 const DEFAULT_EDITION_BY_CHAIN: Record<ChainId, string> = {
     sui: CHAIN_CONTRACT_CONFIG.sui.editions[0],
     evm: CHAIN_CONTRACT_CONFIG.evm.editions[0],
-    stellar: CHAIN_CONTRACT_CONFIG.stellar.editions[0]
+    stellar: CHAIN_CONTRACT_CONFIG.stellar.editions[0],
+    solana: CHAIN_CONTRACT_CONFIG.solana.editions[0]
 };
 
 export const ContractBuilder: React.FC = () => {
