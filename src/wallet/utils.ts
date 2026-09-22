@@ -18,6 +18,11 @@ declare global {
             isRainbow?: boolean;
             isOKExWallet?: boolean;
             isBraveWallet?: boolean;
+            isRabby?: boolean;
+            isZerion?: boolean;
+            isOneInchIOSWallet?: boolean;
+            isOneInchAndroidWallet?: boolean;
+            isFrame?: boolean;
             providers?: Array<{
                 isMetaMask?: boolean;
                 isCoinbaseWallet?: boolean;
@@ -27,6 +32,11 @@ declare global {
                 isRainbow?: boolean;
                 isOKExWallet?: boolean;
                 isBraveWallet?: boolean;
+                isRabby?: boolean;
+                isZerion?: boolean;
+                isOneInchIOSWallet?: boolean;
+                isOneInchAndroidWallet?: boolean;
+                isFrame?: boolean;
             }>;
         };
         phantom?: {
@@ -42,6 +52,13 @@ declare global {
         xBullSDK?: unknown;
         rabet?: unknown;
         hana?: unknown;
+        glow?: unknown;
+        nightly?: {
+            solana?: unknown;
+            aptos?: unknown;
+        };
+        pontem?: unknown;
+        rise?: unknown;
     }
 }
 
@@ -105,6 +122,24 @@ export const matchSuiWalletId = (
         normalized === 'sui'
     ) {
         return 'sui-wallet';
+    }
+
+    if (
+        normalized.includes('nightly')
+    ) {
+        return 'nightly-sui';
+    }
+
+    if (
+        normalized.includes('okx')
+    ) {
+        return 'okx-wallet-sui';
+    }
+
+    if (
+        normalized.includes('slush')
+    ) {
+        return 'slush';
     }
 
     return null;
@@ -172,7 +207,11 @@ export const detectInjectedWallets =
                 trust: false,
                 rainbow: false,
                 okx: false,
-                brave: false
+                brave: false,
+                rabby: false,
+                zerion: false,
+                oneinch: false,
+                frame: false
             };
         }
 
@@ -220,6 +259,23 @@ export const detectInjectedWallets =
             brave: providers.some(
                 (provider) =>
                     provider?.isBraveWallet
+            ),
+            rabby: providers.some(
+                (provider) =>
+                    provider?.isRabby
+            ),
+            zerion: providers.some(
+                (provider) =>
+                    provider?.isZerion
+            ),
+            oneinch: providers.some(
+                (provider) =>
+                    provider?.isOneInchIOSWallet ||
+                    provider?.isOneInchAndroidWallet
+            ),
+            frame: providers.some(
+                (provider) =>
+                    provider?.isFrame
             )
         };
     };
@@ -259,13 +315,14 @@ const EVM_EXPLORERS = EVM_FAMILY_EXPLORERS;
 
 export type ExplorerPreferences = Pick<
     AppSettings,
-    'explorer' | 'evmExplorer' | 'stellarExplorer'
+    'explorer' | 'evmExplorer' | 'stellarExplorer' | 'solanaExplorer'
 >;
 
 const DEFAULT_EXPLORER_PREFS: ExplorerPreferences = {
     explorer: 'suiscan',
     evmExplorer: 'family',
-    stellarExplorer: 'stellarexpert'
+    stellarExplorer: 'stellarexpert',
+    solanaExplorer: 'solanaexplorer'
 };
 
 /**
@@ -317,7 +374,27 @@ export const getWalletExplorerUrl = (
         );
     }
 
-    // Stellar
+    if (wallet.family === 'solana') {
+        const isMainnet = wallet.chain.network === 'mainnet-beta';
+        const clusterQuery = isMainnet ? '' : `?cluster=${wallet.chain.network}`;
+
+        switch (prefs.solanaExplorer) {
+            case 'solscan':
+                return `https://solscan.io/account/${wallet.address}${isMainnet ? '' : `?cluster=${wallet.chain.network}`}`;
+            case 'solanafm':
+                return `https://solana.fm/address/${wallet.address}${isMainnet ? '' : `?cluster=${wallet.chain.network}`}`;
+            default:
+                return `https://explorer.solana.com/address/${wallet.address}${clusterQuery}`;
+        }
+    }
+
+    if (wallet.family !== 'stellar') {
+        // No explorer mapping exists for this wallet family yet (e.g. Aptos) —
+        // return null rather than silently building a wrong (Stellar-shaped)
+        // URL for an address format it doesn't belong to.
+        return null;
+    }
+
     const networkPath =
         wallet.chain.network === 'testnet' ? 'testnet' : 'public';
 

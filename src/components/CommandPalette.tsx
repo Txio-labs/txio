@@ -60,10 +60,10 @@ export const CommandPalette: React.FC = () => {
         items.push(
             { id: 'new-req', title: 'New Request', subtitle: 'Create a blank JSON-RPC or Move Call', icon: <Plus size={14} />, action: () => appStore.openTab('new_request'), keywords: ['new', 'create', 'request'] },
             { id: 'new-ptb', title: 'New PTB', subtitle: 'Programmable Transaction Block Builder', icon: <Layers size={14} />, action: () => appStore.openTab('ptb'), keywords: ['new', 'create', 'ptb', 'transaction'] },
-            { id: 'contract-builder', title: 'Contract Builder', subtitle: 'Write and deploy contracts across Sui, EVM, and Stellar', icon: <Code2 size={14} />, action: () => appStore.openTab('move'), keywords: ['move', 'solidity', 'soroban', 'contract', 'deploy', 'builder', 'sui', 'evm', 'stellar'] },
+            { id: 'move-builder', title: 'Move Builder', subtitle: 'Write and deploy Move contracts visually', icon: <Code2 size={14} />, action: () => appStore.openTab('move'), keywords: ['move', 'contract', 'deploy', 'builder'] },
             { id: 'playground', title: 'Playground', subtitle: 'Test SDK snippets against live state', icon: <Sparkles size={14} />, action: () => appStore.openTab('playground'), keywords: ['playground', 'sdk', 'snippet', 'test'] },
             { id: 'settings', title: 'Settings', icon: <Settings size={14} />, action: () => appStore.openTab('settings'), keywords: ['config', 'preferences'] },
-            { id: 'profile', title: 'Profile', icon: <User size={14} />, action: () => appStore.openTab('profile'), keywords: ['account', 'user'] },
+            { id: 'profile', title: 'Wallets', icon: <User size={14} />, action: () => appStore.openTab('profile'), keywords: ['account', 'user', 'wallet', 'wallets'] },
             { id: 'switch-net', title: 'Switch Network', subtitle: 'Toggle between Mainnet/Testnet', icon: <RotateCcw size={14} />, action: () => appStore.requestNetworkSwitch(appStore.getSnapshot().network === 'mainnet' ? 'testnet' : 'mainnet'), keywords: ['network', 'mainnet', 'testnet'] }
         );
 
@@ -186,7 +186,7 @@ export const CommandPalette: React.FC = () => {
                                     onClick={() => { cmd.action(); appStore.setCommandPalette(false); }}
                                     onMouseEnter={() => setSelectedIndex(idx)}
                                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
-                                        idx === selectedIndex ? 'bg-electric-violet text-white' : 'text-slate-400 hover:bg-slate-100 dark:bg-white/5'
+                                        idx === selectedIndex ? 'bg-slate-900 dark:bg-white text-white dark:text-near-black' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
                                     }`}
                                 >
                                     <div className={`p-1.5 rounded ${idx === selectedIndex ? 'bg-white/20 text-slate-900 dark:text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'}`}>

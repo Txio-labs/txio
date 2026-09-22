@@ -6,6 +6,7 @@ import { useWallet } from '@/wallet';
 import { AssertionResult, CollectionNode, RequestItem, RequestType } from '../types';
 import { executeSuiRpc, simulateMoveCall, SuiRpcError } from '../services/suiService';
 import { evaluateAssertions } from '@/lib/assertionsEngine';
+import { ensureTerminalOpen } from '@/lib/terminalLog';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
@@ -52,10 +53,7 @@ interface CollectionRunnerProps {
 }
 
 export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId }) => {
-    const collections = useAppStore(s => s.collections);
-    const currentWorkspaceId = useAppStore(s => s.currentWorkspaceId);
-    const network = useAppStore(s => s.network);
-    const envVariables = useAppStore(s => s.envVariables);
+    const { collections, currentWorkspaceId, network, envVariables } = useAppStore();
     const { currentWallet } = useWallet();
     const connectedAddress = currentWallet?.family === 'sui' ? currentWallet.address : null;
     const [isRunning, setIsRunning] = useState(false);
@@ -106,6 +104,7 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
     }
 
     const handleRun = async () => {
+        ensureTerminalOpen();
         abortRef.current = false;
         setIsRunning(true);
         setProgress(0);
@@ -224,15 +223,15 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
     const collectionName = targetCollection ? targetCollection.name : (workspaceCollections[0]?.name || "Collection");
 
     return (
-        <div className="h-full bg-near-black flex flex-col font-sans">
+        <div className="h-full bg-white dark:bg-near-black flex flex-col font-sans">
              {/* Header */}
-            <div className="border-b border-white/5 bg-dark-indigo-glow/50 p-6">
+            <div className="border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-dark-indigo-glow/50 p-6">
                 <div className="flex justify-between items-center mb-6">
                     <div>
-                        <h1 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
+                        <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
                              <Play size={20} className="text-electric-violet"/> Collection Runner
                         </h1>
-                        <p className="text-xs text-slate-400">Executing sequence: <span className="text-white font-bold">{collectionName}</span></p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Executing sequence: <span className="text-slate-900 dark:text-white font-bold">{collectionName}</span></p>
                     </div>
                     <div className="flex gap-3">
                         {isRunning && (
@@ -240,13 +239,13 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                                 <Square size={14}/> Stop
                             </button>
                         )}
-                        <button onClick={handleReset} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded flex items-center gap-2 transition-colors">
+                        <button onClick={handleReset} className="px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded flex items-center gap-2 transition-colors">
                             <RotateCcw size={14}/> Reset
                         </button>
                         <button 
                             onClick={handleRun}
                             disabled={isRunning || runList.length === 0}
-                            className={`px-6 py-2 bg-electric-violet hover:bg-electric-violet text-white text-xs font-bold rounded shadow-lg shadow-sui-900/20 flex items-center gap-2 transition-all ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`px-6 py-2 bg-slate-900 dark:bg-white hover:opacity-90 text-white dark:text-near-black text-xs font-bold rounded shadow-lg flex items-center gap-2 transition-all ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                             {isRunning ? <Pause size={14}/> : <Play size={14}/>} 
                             {isRunning ? 'Running...' : 'Run Collection'}
@@ -255,8 +254,8 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                 </div>
 
                 {/* Progress Bar */}
-                <div className="h-2 bg-slate-800 rounded-full overflow-hidden mb-2">
-                    <div 
+                <div className="h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mb-2">
+                    <div
                         className="h-full bg-electric-violet transition-all duration-300 ease-out relative"
                         style={{ width: `${progress}%` }}
                     >
@@ -276,9 +275,9 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
 
             {/* List */}
             <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-                <div className="border border-white/5 rounded-xl bg-dark-indigo-glow overflow-hidden shadow-xl">
+                <div className="border border-slate-200 dark:border-white/5 rounded-xl bg-slate-50 dark:bg-dark-indigo-glow overflow-hidden shadow-xl">
                     <table className="w-full text-left">
-                        <thead className="bg-near-black text-[10px] font-black uppercase text-slate-500 tracking-widest border-b border-white/5">
+                        <thead className="bg-slate-100 dark:bg-near-black text-[10px] font-black uppercase text-slate-500 tracking-widest border-b border-slate-200 dark:border-white/5">
                             <tr>
                                 <th className="px-6 py-3 w-12">#</th>
                                 <th className="px-6 py-3">Request Name</th>
@@ -288,11 +287,11 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                                 <th className="px-6 py-3">Time</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-800 text-sm">
+                        <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-sm">
                             {runList.map((req, i) => (
-                                <tr key={i} className={`transition-colors ${i === currentReqIndex ? 'bg-sui-900/10' : 'hover:bg-white/5'}`}>
-                                    <td className="px-6 py-4 text-slate-600 font-mono text-xs">{i + 1}</td>
-                                    <td className="px-6 py-4 font-bold text-slate-300 flex items-center gap-2">
+                                <tr key={i} className={`transition-colors ${i === currentReqIndex ? 'bg-electric-violet/10' : 'hover:bg-slate-100 dark:hover:bg-white/5'}`}>
+                                    <td className="px-6 py-4 text-slate-500 dark:text-slate-600 font-mono text-xs">{i + 1}</td>
+                                    <td className="px-6 py-4 font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                                         {req.name}
                                     </td>
                                     <td className="px-6 py-4 font-mono text-xs text-slate-500">{req.rpcParams?.method || req.txType || 'Transaction'}</td>
@@ -310,7 +309,7 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                                                 <Clock size={14} className="animate-spin"/> Running
                                             </span>
                                         ) : (
-                                            <span className="text-slate-600 text-xs italic flex items-center gap-1"><Clock size={12}/> Pending</span>
+                                            <span className="text-slate-500 dark:text-slate-600 text-xs italic flex items-center gap-1"><Clock size={12}/> Pending</span>
                                         )}
                                     </td>
                                     <td className="px-6 py-4">
@@ -326,10 +325,10 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                                                 {req.testResults.filter((r: AssertionResult) => r.passed).length}/{req.testResults.length}
                                             </span>
                                         ) : (
-                                            <span className="text-slate-600 text-xs italic">—</span>
+                                            <span className="text-slate-500 dark:text-slate-600 text-xs italic">—</span>
                                         )}
                                     </td>
-                                    <td className="px-6 py-4 font-mono text-xs text-slate-400">
+                                    <td className="px-6 py-4 font-mono text-xs text-slate-500 dark:text-slate-400">
                                         {req.duration > 0 ? `${req.duration}ms` : '-'}
                                     </td>
                                 </tr>

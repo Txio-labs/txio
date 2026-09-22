@@ -34,11 +34,7 @@ export const Layout: React.FC<LayoutProps> = ({
     onRenameTab,
     onNewTab
 }) => {
-    const isSidebarOpen = useAppStore(s => s.isSidebarOpen);
-    const isInspectorOpen = useAppStore(s => s.isInspectorOpen);
-    const user = useAppStore(s => s.user);
-    const theme = useAppStore(s => s.theme);
-    const isTerminalOpen = useAppStore(s => s.isTerminalOpen);
+    const { isSidebarOpen, isInspectorOpen, user } = useAppStore();
     const { currentWallet } = useWallet();
 
     return (
@@ -48,7 +44,7 @@ export const Layout: React.FC<LayoutProps> = ({
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2 text-slate-100">
                         <div className="w-5 h-5 flex items-center justify-center transition-transform duration-300 hover:rotate-12">
-                            <img src={theme === 'dark' ? logoDark.src : logoLight.src} alt="txio" className="w-full h-full object-contain" />
+                            <img src={useAppStore().theme === 'dark' ? logoDark.src : logoLight.src} alt="txio" className="w-full h-full object-contain" />
                         </div>
                         <span className="text-sm tracking-tight font-semibold lowercase">txio</span>
                     </div>
@@ -123,7 +119,7 @@ export const Layout: React.FC<LayoutProps> = ({
                                 onSelect={() => onSelectTab && onSelectTab(tab.id)}
                                 onClose={() => onCloseTab && onCloseTab(tab.id)}
                                 onRename={(newTitle) => onRenameTab && onRenameTab(tab.id, newTitle)}
-                                icon={tab.type === 'ptb' ? <Layers size={12}/> : tab.type === 'rpc' ? <Command size={12}/> : tab.type === 'ai_chat' ? <Sparkles size={12} className="text-soft-purple"/> : undefined}
+                                icon={tab.type === 'ptb' ? <Layers size={12}/> : tab.type === 'rpc' ? <Command size={12}/> : tab.type === 'ai_chat' ? <Sparkles size={12} className="text-electric-violet"/> : undefined}
                             />
                         ))}
                         <button
@@ -170,7 +166,7 @@ export const Layout: React.FC<LayoutProps> = ({
                         type="button"
                         aria-label="Toggle terminal"
                         onClick={() => appStore.toggleTerminal()}
-                        className={`flex items-center gap-1.5 cursor-pointer transition-colors ${isTerminalOpen ? 'text-electric-violet' : 'hover:text-slate-300'}`}
+                        className={`flex items-center gap-1.5 cursor-pointer transition-colors ${useAppStore().isTerminalOpen ? 'text-electric-violet' : 'hover:text-slate-300'}`}
                     >
                         <Terminal size={11} /> Terminal
                     </button>

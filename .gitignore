@@ -29,3 +29,10 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Test/lint artifacts
+test-results/
+playwright-report/
+.cache-synpress/
+.impeccable/
+lint_output.txt

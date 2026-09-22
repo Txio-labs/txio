@@ -56,7 +56,7 @@ export const DiscussTab: React.FC<DiscussTabProps> = ({
             value={commentInput}
             onChange={(e) => onCommentInputChange(e.target.value)}
           />
-          <button type="submit" disabled={!commentInput.trim()} className="absolute right-2 top-1.5 text-slate-500 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white disabled:opacity-50 transition-colors">
+          <button type="submit" disabled={!commentInput.trim()} className="absolute right-2 top-1.5 text-slate-500 hover:text-slate-900 dark:text-white disabled:opacity-50 transition-colors">
             <Send size={14} />
           </button>
         </form>

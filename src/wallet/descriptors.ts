@@ -162,6 +162,76 @@ export const WALLET_DESCRIPTORS: WalletDescriptor[] =
             iconSeed: 'brave-wallet'
         },
         {
+            id: 'rabby',
+            name: 'Rabby Wallet',
+            shortName: 'RW',
+            chainFamily: 'evm',
+            methods: ['injected'],
+            tags: [
+                'evm',
+                'multichain',
+                'security',
+                'browser'
+            ],
+            description:
+                'Multi-chain EVM wallet with pre-transaction security checks.',
+            installUrl:
+                'https://rabby.io/',
+            iconSeed: 'rabby'
+        },
+        {
+            id: 'zerion',
+            name: 'Zerion Wallet',
+            shortName: 'ZR',
+            chainFamily: 'evm',
+            methods: ['injected', 'deeplink'],
+            tags: [
+                'evm',
+                'portfolio',
+                'multichain',
+                'browser'
+            ],
+            description:
+                'Portfolio-tracking EVM wallet with injected provider support.',
+            installUrl:
+                'https://zerion.io/wallet',
+            iconSeed: 'zerion'
+        },
+        {
+            id: 'oneinch',
+            name: '1inch Wallet',
+            shortName: '1IN',
+            chainFamily: 'evm',
+            methods: ['injected', 'deeplink'],
+            tags: [
+                'evm',
+                'dex',
+                'mobile'
+            ],
+            description:
+                "1inch's mobile-first EVM wallet with DEX aggregation.",
+            installUrl:
+                'https://1inch.io/wallet/',
+            iconSeed: 'oneinch'
+        },
+        {
+            id: 'frame',
+            name: 'Frame',
+            shortName: 'FR',
+            chainFamily: 'evm',
+            methods: ['injected'],
+            tags: [
+                'evm',
+                'desktop',
+                'privacy'
+            ],
+            description:
+                'Desktop-native Ethereum wallet running as a system-level provider.',
+            installUrl:
+                'https://frame.sh/',
+            iconSeed: 'frame'
+        },
+        {
             id: 'sui-wallet',
             name: 'Sui Wallet',
             shortName: 'SW',
@@ -215,6 +285,60 @@ export const WALLET_DESCRIPTORS: WalletDescriptor[] =
             iconSeed: 'ethos'
         },
         {
+            id: 'nightly-sui',
+            name: 'Nightly',
+            shortName: 'NT',
+            chainFamily: 'sui',
+            methods: ['wallet-standard'],
+            tags: [
+                'sui',
+                'wallet-standard',
+                'multichain',
+                'browser'
+            ],
+            description:
+                'Multi-chain wallet with Sui support via the wallet standard.',
+            installUrl:
+                'https://nightly.app/download',
+            iconSeed: 'nightly'
+        },
+        {
+            id: 'okx-wallet-sui',
+            name: 'OKX Wallet',
+            shortName: 'OKX',
+            chainFamily: 'sui',
+            methods: ['wallet-standard'],
+            tags: [
+                'sui',
+                'wallet-standard',
+                'exchange',
+                'browser'
+            ],
+            description:
+                "OKX's Sui-chain wallet, connected via the wallet standard.",
+            installUrl:
+                'https://www.okx.com/web3',
+            iconSeed: 'okx-wallet'
+        },
+        {
+            id: 'slush',
+            name: 'Slush',
+            shortName: 'SL',
+            chainFamily: 'sui',
+            methods: ['wallet-standard'],
+            tags: [
+                'sui',
+                'wallet-standard',
+                'browser'
+            ],
+            description:
+                "Mysten Labs' Slush wallet for Sui, connected via the wallet standard.",
+            installUrl:
+                'https://slush.app/',
+            iconSeed: 'slush',
+            isFeatured: true
+        },
+        {
             id: 'lobstr',
             name: 'LOBSTR',
             shortName: 'LB',
@@ -255,7 +379,8 @@ export const WALLET_DESCRIPTORS: WalletDescriptor[] =
                 'Freighter-compatible Stellar wallet access with extension detection.',
             installUrl:
                 'https://www.freighter.app/',
-            iconSeed: 'freighter'
+            iconSeed: 'freighter',
+            isFeatured: true
         },
         {
             id: 'albedo',
@@ -380,6 +505,41 @@ export const WALLET_DESCRIPTORS: WalletDescriptor[] =
             iconSeed: 'backpack'
         },
         {
+            id: 'glow',
+            name: 'Glow',
+            shortName: 'GL',
+            chainFamily: 'solana',
+            methods: ['injected'],
+            tags: [
+                'solana',
+                'glow',
+                'browser'
+            ],
+            description:
+                'Glow wallet support for Solana.',
+            installUrl:
+                'https://glow.app/',
+            iconSeed: 'glow'
+        },
+        {
+            id: 'nightly-solana',
+            name: 'Nightly',
+            shortName: 'NT',
+            chainFamily: 'solana',
+            methods: ['injected'],
+            tags: [
+                'solana',
+                'nightly',
+                'multichain',
+                'browser'
+            ],
+            description:
+                'Multi-chain wallet with Solana support via injected provider.',
+            installUrl:
+                'https://nightly.app/download',
+            iconSeed: 'nightly'
+        },
+        {
             id: 'petra',
             name: 'Petra',
             shortName: 'PT',
@@ -412,6 +572,58 @@ export const WALLET_DESCRIPTORS: WalletDescriptor[] =
             installUrl:
                 'https://martianwallet.xyz/',
             iconSeed: 'martian'
+        },
+        {
+            id: 'pontem',
+            name: 'Pontem Wallet',
+            shortName: 'PM',
+            chainFamily: 'aptos',
+            methods: ['injected'],
+            tags: [
+                'aptos',
+                'pontem',
+                'browser'
+            ],
+            description:
+                'Pontem wallet support for Aptos.',
+            installUrl:
+                'https://pontem.network/pontem-wallet',
+            iconSeed: 'pontem'
+        },
+        {
+            id: 'rise-wallet',
+            name: 'Rise Wallet',
+            shortName: 'RS',
+            chainFamily: 'aptos',
+            methods: ['injected'],
+            tags: [
+                'aptos',
+                'rise',
+                'browser'
+            ],
+            description:
+                'Rise wallet support for Aptos.',
+            installUrl:
+                'https://risewallet.io/',
+            iconSeed: 'rise-wallet'
+        },
+        {
+            id: 'nightly-aptos',
+            name: 'Nightly',
+            shortName: 'NT',
+            chainFamily: 'aptos',
+            methods: ['injected'],
+            tags: [
+                'aptos',
+                'nightly',
+                'multichain',
+                'browser'
+            ],
+            description:
+                'Multi-chain wallet with Aptos support via injected provider.',
+            installUrl:
+                'https://nightly.app/download',
+            iconSeed: 'nightly'
         }
     ];
 

@@ -14,7 +14,7 @@ export const CodeSnippet: React.FC<CodeSnippetProps> = ({ request, network }) =>
   const generateSnippet = () => {
     if (request.type === RequestType.RPC) {
       const chain = request.rpcParams.chain ?? 'sui';
-      const endpoint = resolveChainRpcUrl(chain, network);
+      const endpoint = resolveChainRpcUrl(chain, network, request.rpcParams.evmChainId);
       return `curl -X POST ${endpoint} \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "jsonrpc": "2.0",\n    "id": 1,\n    "method": "${request.rpcParams.method}",\n    "params": ${JSON.stringify(request.rpcParams.params)}\n  }'`;
     }
     
@@ -36,7 +36,7 @@ export const CodeSnippet: React.FC<CodeSnippetProps> = ({ request, network }) =>
       <div className="flex justify-end mb-4">
         <button 
           onClick={handleCopySnippet}
-          className="h-[28px] px-3 bg-slate-100 dark:bg-white/5 text-slate-400 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2"
+          className="h-[28px] px-3 bg-slate-100 dark:bg-white/5 text-slate-400 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:text-white rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2"
         >
           {isCopied ? <Check size={12} /> : <Copy size={12} />}
           {isCopied ? 'Copied!' : 'Copy'}

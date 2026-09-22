@@ -3,22 +3,20 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import {
     CheckCircle2,
-    Clock3,
     ExternalLink,
-    Link2,
+    Loader2,
     Search,
-    Shield,
-    Smartphone,
-    Sparkles,
     X
 } from 'lucide-react';
 import React, {
     useDeferredValue,
-    useMemo
+    useMemo,
+    useState
 } from 'react';
 
 import {
     type WalletCatalogItem,
+    type WalletChainFamily,
     getFamilyLabel,
     useWallet
 } from '@/wallet';
@@ -26,13 +24,19 @@ import { shortenAddress } from '@/wallet';
 
 import { WalletGlyph } from './WalletGlyph';
 
-const FAMILY_ORDER = [
-    'evm',
-    'sui',
-    'solana',
-    'aptos',
-    'stellar'
-] as const;
+// Same chain-identity colors used across the dashboard mockups, terminal
+// previews, and the Wallets page, so the wallet picker reads as one language
+// with the rest of the app instead of a generic bolted-on Web3Modal.
+const CHAIN_FAMILY_ORDER: WalletChainFamily[] = ['sui', 'evm', 'solana', 'aptos', 'stellar'];
+const CHAIN_FAMILY_COLOR: Record<WalletChainFamily, string> = {
+    sui: '#6fbcf0',
+    evm: '#a5a8f7',
+    solana: '#14f195',
+    aptos: '#2ed3b7',
+    stellar: '#f5d060'
+};
+
+type CategoryId = 'popular' | WalletChainFamily;
 
 export function WalletModal() {
     const {
@@ -45,417 +49,212 @@ export function WalletModal() {
         modalQuery,
         pendingWalletId,
         setModalQuery,
-        status,
         wallets
     } = useWallet();
+
+    const [activeCategory, setActiveCategory] = useState<CategoryId>('popular');
 
     const deferredQuery =
         useDeferredValue(
             modalQuery.trim().toLowerCase()
         );
 
-    const walletGroups = useMemo(() => {
-        const filtered = wallets
-            .filter((wallet) => {
-                if (!deferredQuery) {
-                    return true;
-                }
+    const filtered = useMemo(() => {
+        if (!deferredQuery) return wallets;
 
-                return [
-                    wallet.name,
-                    wallet.description,
-                    wallet.chainFamily,
-                    ...wallet.tags
-                ]
-                    .join(' ')
-                    .toLowerCase()
-                    .includes(
-                        deferredQuery
-                    );
-            })
-            .sort((left, right) => {
-                const leftScore =
-                    Number(
-                        left.id ===
-                            currentWallet?.id
-                    ) *
-                        100 +
-                    Number(
-                        left.isRecent
-                    ) *
-                        10 +
-                    Number(
-                        left.isDetected
-                    ) *
-                        5 +
-                    Number(
-                        left.isFeatured
-                    );
-                const rightScore =
-                    Number(
-                        right.id ===
-                            currentWallet?.id
-                    ) *
-                        100 +
-                    Number(
-                        right.isRecent
-                    ) *
-                        10 +
-                    Number(
-                        right.isDetected
-                    ) *
-                        5 +
-                    Number(
-                        right.isFeatured
-                    );
-
-                return rightScore -
-                    leftScore ||
-                    left.name.localeCompare(
-                        right.name
-                    );
-            });
-
-        return FAMILY_ORDER.map(
-            (family) => ({
-                family,
-                wallets: filtered.filter(
-                    (wallet) =>
-                        wallet.chainFamily ===
-                        family
-                )
-            })
-        ).filter(
-            (group) =>
-                group.wallets.length > 0
+        return wallets.filter((wallet) =>
+            [
+                wallet.name,
+                wallet.description,
+                wallet.chainFamily,
+                ...wallet.tags
+            ]
+                .join(' ')
+                .toLowerCase()
+                .includes(deferredQuery)
         );
-    }, [
-        currentWallet?.id,
-        deferredQuery,
-        wallets
-    ]);
+    }, [deferredQuery, wallets]);
 
-    const recentWallets = useMemo(
-        () =>
-            wallets.filter(
-                (wallet) =>
-                    wallet.isRecent
-            ),
-        [wallets]
-    );
+    // Category rail: "Popular" (featured wallets across every chain) plus one
+    // entry per chain family this app actually supports — a developer opening
+    // this modal already knows which chain they're calling, so the chain is
+    // the useful axis to browse by once they're past the popular shortlist.
+    const categories = useMemo(() => {
+        const popularCount = wallets.filter((w) => w.isFeatured).length;
+        return [
+            { id: 'popular' as CategoryId, label: 'Popular', color: null, count: popularCount },
+            ...CHAIN_FAMILY_ORDER.map((family) => ({
+                id: family as CategoryId,
+                label: getFamilyLabel(family) ?? family,
+                color: CHAIN_FAMILY_COLOR[family],
+                count: wallets.filter((w) => w.chainFamily === family).length
+            }))
+        ];
+    }, [wallets]);
+
+    const categoryWallets = useMemo(() => {
+        const base = activeCategory === 'popular'
+            ? filtered.filter((w) => w.isFeatured)
+            : filtered.filter((w) => w.chainFamily === activeCategory);
+
+        return base.sort((a, b) => Number(b.isFeatured) - Number(a.isFeatured));
+    }, [filtered, activeCategory]);
+
+    const activeAccent = activeCategory === 'popular' ? '#a5a8f7' : CHAIN_FAMILY_COLOR[activeCategory as WalletChainFamily];
+    const activeCategoryLabel = categories.find((c) => c.id === activeCategory)?.label ?? '';
 
     return (
         <AnimatePresence>
             {isModalOpen ? (
                 <motion.div
-                    initial={{
-                        opacity: 0
-                    }}
-                    animate={{
-                        opacity: 1
-                    }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[80] bg-black/75 backdrop-blur-xl"
+                    className="fixed inset-0 z-[100] bg-white/70 dark:bg-near-black/60 backdrop-blur-md flex items-center justify-center p-4"
                     onClick={closeModal}
                     role="button"
                     tabIndex={-1}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') closeModal(); }}
                 >
                     <motion.div
-                        initial={{
-                            opacity: 0,
-                            y: 28,
-                            scale: 0.98
-                        }}
-                        animate={{
-                            opacity: 1,
-                            y: 0,
-                            scale: 1
-                        }}
-                        exit={{
-                            opacity: 0,
-                            y: 18,
-                            scale: 0.98
-                        }}
-                        transition={{
-                            type: 'spring',
-                            stiffness: 180,
-                            damping: 22
-                        }}
-                        onClick={(event) =>
-                            event.stopPropagation()
-                        }
+                        initial={{ opacity: 0, y: 16, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 12, scale: 0.98 }}
+                        transition={{ type: 'spring', stiffness: 220, damping: 24 }}
+                        onClick={(event) => event.stopPropagation()}
                         role="dialog"
                         aria-label="Connect wallet"
-                        className="mx-auto mt-6 flex max-h-[calc(100vh-3rem)] w-[min(980px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(163,163,163,0.16),transparent_38%),linear-gradient(180deg,rgba(17,17,19,0.98),rgba(6,6,8,0.98))] shadow-[0_40px_140px_rgba(0,0,0,0.55)]"
+                        className="w-[min(680px,calc(100vw-2rem))] h-[min(560px,calc(100vh-2rem))] flex flex-col overflow-hidden rounded-2xl border border-slate-200 dark:border-white/5 bg-white dark:bg-[#18181b] shadow-2xl"
                     >
-                        <div className="border-b border-white/10 px-5 py-4 sm:px-6">
-                            <div className="flex items-start justify-between gap-4">
-                                <div>
-                                    <div className="mb-2 flex items-center gap-2">
-                                        <span className="inline-flex items-center gap-1 rounded-full border border-electric-violet/20 bg-electric-violet/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-electric-violet">
-                                            <Sparkles size={12} />
-                                            Universal Connect
-                                        </span>
-                                        <span className="hidden rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400 sm:inline-flex">
-                                            Multi-chain ready
-                                        </span>
-                                    </div>
-                                    <h2 className="text-2xl font-semibold tracking-tight text-white">
-                                        Connect a wallet
-                                    </h2>
-                                    <p className="mt-1 text-sm text-slate-400">
-                                        One connection surface for EVM, Sui, Solana, Aptos, and Stellar flows.
-                                    </p>
-                                </div>
-                                <button
-                                    onClick={closeModal}
-                                    className="rounded-2xl border border-white/10 bg-white/[0.03] p-2 text-slate-400 transition-colors hover:border-white/20 hover:text-white"
-                                >
-                                    <X size={18} />
-                                </button>
+                        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 dark:border-white/10 shrink-0">
+                            <div>
+                                <h2 className="text-sm font-bold text-slate-900 dark:text-white">Connect Wallet</h2>
+                                <p className="text-[11px] text-slate-500">Choose a wallet to connect to your account.</p>
                             </div>
-
-                            <div className="mt-4 flex flex-col gap-3 md:flex-row">
-                                <label className="relative block flex-1">
-                                    <Search
-                                        size={16}
-                                        className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
-                                    />
-                                    <input
-                                        value={
-                                            modalQuery
-                                        }
-                                        onChange={(event) =>
-                                            setModalQuery(
-                                                event
-                                                    .target
-                                                    .value
-                                            )
-                                        }
-                                        placeholder="Search wallets, chains, or connection type"
-                                        className="h-12 w-full rounded-2xl border border-white/10 bg-black/25 pl-11 pr-4 text-sm text-white outline-none transition-all placeholder:text-slate-500 focus:border-electric-violet/40 focus:bg-black/35"
-                                    />
-                                </label>
-                                <div className="grid grid-cols-2 gap-3 md:w-[280px]">
-                                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-                                        <div className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">
-                                            Installed
-                                        </div>
-                                        <div className="mt-1 text-lg font-semibold text-white">
-                                            {
-                                                wallets.filter(
-                                                    (
-                                                        wallet
-                                                    ) =>
-                                                        wallet.availability ===
-                                                        'installed'
-                                                )
-                                                    .length
-                                            }
-                                        </div>
-                                    </div>
-                                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-                                        <div className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">
-                                            Recent
-                                        </div>
-                                        <div className="mt-1 text-lg font-semibold text-white">
-                                            {
-                                                recentWallets.length
-                                            }
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <button
+                                onClick={closeModal}
+                                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                            >
+                                <X size={16} />
+                            </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6">
-                            <div className="mb-5 grid gap-4 lg:grid-cols-[1.2fr,0.8fr]">
-                                <div className="rounded-[26px] border border-white/10 bg-white/[0.03] p-4">
-                                    <div className="flex items-center justify-between gap-3">
-                                        <div>
-                                            <div className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">
-                                                Session
-                                            </div>
-                                            <div className="mt-1 text-lg font-semibold text-white">
-                                                {currentWallet
-                                                    ? currentWallet.name
-                                                    : 'No wallet connected'}
-                                            </div>
-                                        </div>
-                                        <StatusBadge
-                                            status={
-                                                status
-                                            }
-                                        />
-                                    </div>
-                                    <div className="mt-4">
-                                        {currentWallet ? (
-                                            <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/25 p-4 sm:flex-row sm:items-center">
-                                                <WalletGlyph
-                                                    walletId={
-                                                        currentWallet.id
-                                                    }
-                                                    family={
-                                                        currentWallet.family
-                                                    }
-                                                    shortName={currentWallet.name
-                                                        .slice(
-                                                            0,
-                                                            2
-                                                        )
-                                                        .toUpperCase()}
-                                                />
-                                                <div className="min-w-0 flex-1">
-                                                    <div className="text-sm font-semibold text-white">
-                                                        {
-                                                            currentWallet.name
-                                                        }
-                                                    </div>
-                                                    <div className="mt-1 text-xs text-slate-400">
-                                                        {shortenAddress(
-                                                            currentWallet.address,
-                                                            8,
-                                                            6
-                                                        )}
-                                                    </div>
-                                                    <div className="mt-2 inline-flex rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-slate-300">
-                                                        {getFamilyLabel(
-                                                            currentWallet.family
-                                                        )}{' '}
-                                                        •{' '}
-                                                        {
-                                                            currentWallet.chain.name
-                                                        }
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    onClick={() =>
-                                                        void disconnect()
-                                                    }
-                                                    className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] text-red-300 transition-colors hover:bg-red-500/15"
-                                                >
-                                                    Disconnect
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 p-4 text-sm text-slate-400">
-                                                Installed wallets are detected automatically, recent choices are remembered, and reconnect state is restored when possible.
-                                            </div>
-                                        )}
-                                    </div>
+                        {currentWallet && (
+                            <div
+                                className="mx-4 mt-3 flex items-center gap-3 rounded-xl border p-3 shrink-0"
+                                style={{
+                                    borderColor: `${CHAIN_FAMILY_COLOR[currentWallet.family]}33`,
+                                    backgroundColor: `${CHAIN_FAMILY_COLOR[currentWallet.family]}0f`
+                                }}
+                            >
+                                <WalletGlyph
+                                    walletId={currentWallet.id}
+                                    family={currentWallet.family}
+                                    shortName={currentWallet.name.slice(0, 2).toUpperCase()}
+                                    size="sm"
+                                />
+                                <div className="min-w-0 flex-1">
+                                    <div className="text-xs font-bold text-slate-900 dark:text-white truncate">{currentWallet.name}</div>
+                                    <div className="text-[11px] font-mono text-slate-500 truncate">{shortenAddress(currentWallet.address, 6, 4)}</div>
                                 </div>
+                                <button
+                                    onClick={() => void disconnect()}
+                                    className="shrink-0 text-[11px] font-bold text-red-500 hover:opacity-80 transition-colors"
+                                >
+                                    Disconnect
+                                </button>
+                            </div>
+                        )}
 
-                                <div className="grid gap-4">
-                                    <InfoPill
-                                        icon={
-                                            <Shield size={16} />
-                                        }
-                                        title="Safer session handling"
-                                        body="Provider checks, stale session cleanup, and explicit disconnect flows are built in."
-                                    />
-                                    <InfoPill
-                                        icon={
-                                            <Link2 size={16} />
-                                        }
-                                        title="QR and deep links"
-                                        body="WalletConnect, MetaMask, and Coinbase stay ready for mobile and desktop handoff."
-                                    />
+                        {error ? (
+                            <div className="mx-4 mt-3 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-[11px] text-red-500 shrink-0">
+                                {error.message}
+                            </div>
+                        ) : null}
+
+                        <div className="flex-1 flex min-h-0 mt-3">
+                            {/* Category rail */}
+                            <div className="w-44 shrink-0 border-r border-slate-200 dark:border-white/10 flex flex-col">
+                                <div className="px-3 pb-2">
+                                    <label className="relative block">
+                                        <Search size={12} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            value={modalQuery}
+                                            onChange={(event) => setModalQuery(event.target.value)}
+                                            placeholder="Search wallets..."
+                                            className="h-8 w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] pl-7 pr-2 text-[11px] text-slate-900 dark:text-white outline-none transition-colors placeholder:text-slate-400 focus:border-electric-violet/50"
+                                        />
+                                    </label>
+                                </div>
+                                <div className="flex-1 overflow-y-auto custom-scrollbar px-2 pb-2 space-y-0.5">
+                                    {categories.map((cat) => {
+                                        const isActive = cat.id === activeCategory;
+                                        return (
+                                            <button
+                                                key={cat.id}
+                                                onClick={() => setActiveCategory(cat.id)}
+                                                className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-colors ${
+                                                    isActive
+                                                        ? 'bg-electric-violet/10 text-slate-900 dark:text-white font-bold'
+                                                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.04]'
+                                                }`}
+                                            >
+                                                {cat.color ? (
+                                                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+                                                ) : (
+                                                    <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-electric-violet" />
+                                                )}
+                                                <span className="truncate flex-1 text-left">{cat.label}</span>
+                                                <span className="text-[10px] text-slate-400 shrink-0">{cat.count}</span>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
 
-                            {error ? (
-                                <div className="mb-5 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-                                    {error.message}
+                            {/* Category detail */}
+                            <div className="flex-1 min-w-0 flex flex-col">
+                                <div className="px-4 pb-2 shrink-0">
+                                    <label className="relative block">
+                                        <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            value={modalQuery}
+                                            onChange={(event) => setModalQuery(event.target.value)}
+                                            placeholder={`Search ${activeCategoryLabel.toLowerCase()} wallets...`}
+                                            className="h-9 w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] pl-9 pr-3 text-xs text-slate-900 dark:text-white outline-none transition-colors placeholder:text-slate-400 focus:border-electric-violet/50"
+                                        />
+                                    </label>
                                 </div>
-                            ) : null}
 
-                            {recentWallets.length > 0 ? (
-                                <section className="mb-6">
-                                    <div className="mb-3 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
-                                        <Clock3 size={13} />
-                                        Recent wallets
-                                    </div>
-                                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                                        {recentWallets.map(
-                                            (
-                                                wallet
-                                            ) => (
-                                                <WalletCard
-                                                    key={`recent-${wallet.id}`}
-                                                    wallet={
-                                                        wallet
-                                                    }
-                                                    currentWalletId={
-                                                        currentWallet?.id
-                                                    }
-                                                    pendingWalletId={
-                                                        pendingWalletId
-                                                    }
-                                                    onConnect={() =>
-                                                        void connect(
-                                                            wallet.id
-                                                        ).catch(
-                                                            () =>
-                                                                undefined
-                                                        )
-                                                    }
-                                                />
-                                            )
-                                        )}
-                                    </div>
-                                </section>
-                            ) : null}
+                                <div className="flex items-center justify-between px-4 mb-1 shrink-0">
+                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                                        {activeCategory === 'popular' ? 'Recommended' : `${activeCategoryLabel} Wallets`}
+                                    </span>
+                                    {categoryWallets.length > 4 && (
+                                        <button className="text-[11px] font-bold text-electric-violet hover:opacity-80 transition-colors">
+                                            View all
+                                        </button>
+                                    )}
+                                </div>
 
-                            <div className="space-y-6">
-                                {walletGroups.map(
-                                    (
-                                        group
-                                    ) => (
-                                        <section
-                                            key={
-                                                group.family
-                                            }
-                                        >
-                                            <div className="mb-3 text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
-                                                {getFamilyLabel(
-                                                    group.family
-                                                )}{' '}
-                                                wallets
-                                            </div>
-                                            <div className="grid gap-3 lg:grid-cols-2">
-                                                {group.wallets.map(
-                                                    (
-                                                        wallet
-                                                    ) => (
-                                                        <WalletCard
-                                                            key={
-                                                                wallet.id
-                                                            }
-                                                            wallet={
-                                                                wallet
-                                                            }
-                                                            currentWalletId={
-                                                                currentWallet?.id
-                                                            }
-                                                            pendingWalletId={
-                                                                pendingWalletId
-                                                            }
-                                                            onConnect={() =>
-                                                                void connect(
-                                                                    wallet.id
-                                                                ).catch(
-                                                                    () =>
-                                                                        undefined
-                                                                )
-                                                            }
-                                                        />
-                                                    )
-                                                )}
-                                            </div>
-                                        </section>
-                                    )
-                                )}
+                                <div className="flex-1 overflow-y-auto custom-scrollbar px-4 pb-4 space-y-1">
+                                    {categoryWallets.map((wallet) => (
+                                        <WalletRow
+                                            key={wallet.id}
+                                            wallet={wallet}
+                                            isCurrent={currentWallet?.id === wallet.id}
+                                            isPending={pendingWalletId === wallet.id}
+                                            accentColor={activeCategory === 'popular' ? CHAIN_FAMILY_COLOR[wallet.chainFamily] : activeAccent}
+                                            onConnect={() => void connect(wallet.id).catch(() => undefined)}
+                                        />
+                                    ))}
+
+                                    {categoryWallets.length === 0 && (
+                                        <div className="py-10 text-center text-xs text-slate-500">
+                                            {deferredQuery ? `No wallets match "${modalQuery}".` : 'No wallets in this category yet.'}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </motion.div>
@@ -465,221 +264,67 @@ export function WalletModal() {
     );
 }
 
-function WalletCard({
+function WalletRow({
     wallet,
-    currentWalletId,
-    pendingWalletId,
+    isCurrent,
+    isPending,
+    accentColor,
     onConnect
 }: {
     wallet: WalletCatalogItem;
-    currentWalletId?: string;
-    pendingWalletId: string | null;
+    isCurrent: boolean;
+    isPending: boolean;
+    accentColor: string;
     onConnect: () => void;
 }) {
-    const isCurrent =
-        currentWalletId === wallet.id;
-    const isPending =
-        pendingWalletId === wallet.id;
-    const actionLabel =
-        wallet.availability ===
-        'coming-soon'
-            ? 'Prepared'
-            : wallet.isReady
-              ? isCurrent
-                    ? 'Connected'
-                    : isPending
-                      ? 'Connecting...'
-                      : 'Connect'
-              : 'Install';
+    const isInstalled = wallet.availability === 'installed';
+    const isComingSoon = wallet.availability === 'coming-soon';
 
     return (
-        <motion.div
-            layout
-            whileHover={{
-                y: -2
-            }}
-            className={`group rounded-[24px] border p-4 transition-all ${
-                isCurrent
-                    ? 'border-electric-violet/30 bg-electric-violet/10 shadow-[0_24px_70px_rgba(163,163,163,0.18)]'
-                    : 'border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05]'
-            }`}
-        >
-            <div className="flex items-start gap-4">
-                <WalletGlyph
-                    walletId={wallet.id}
-                    family={
-                        wallet.chainFamily
-                    }
-                    shortName={
-                        wallet.shortName
-                    }
-                />
-                <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <div className="text-base font-semibold text-white">
-                            {wallet.name}
-                        </div>
-                        {wallet.badge ? (
-                            <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-300">
-                                {wallet.badge}
-                            </span>
-                        ) : null}
-                        {wallet.isRecent ? (
-                            <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-300">
-                                Recent
-                            </span>
-                        ) : null}
-                        {wallet.isDetected ? (
-                            <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">
-                                Installed
-                            </span>
-                        ) : null}
-                    </div>
-                    <p className="mt-2 text-sm leading-6 text-slate-400">
-                        {wallet.helperText}
-                    </p>
-
-                    <div className="mt-3 flex flex-wrap gap-2">
-                        {wallet.methods.includes(
-                            'walletconnect'
-                        ) ? (
-                            <InlineBadge
-                                icon={
-                                    <Link2 size={12} />
-                                }
-                                label="QR ready"
-                            />
-                        ) : null}
-                        {wallet.methods.includes(
-                            'deeplink'
-                        ) ? (
-                            <InlineBadge
-                                icon={
-                                    <Smartphone size={12} />
-                                }
-                                label="Mobile deep link"
-                            />
-                        ) : null}
-                        {wallet.availability ===
-                        'installed' ? (
-                            <InlineBadge
-                                icon={
-                                    <CheckCircle2 size={12} />
-                                }
-                                label="Detected"
-                            />
-                        ) : null}
-                    </div>
+        <div className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors">
+            <WalletGlyph
+                walletId={wallet.id}
+                family={wallet.chainFamily}
+                shortName={wallet.shortName}
+                size="sm"
+            />
+            <div className="min-w-0 flex-1">
+                <div className="text-xs font-bold text-slate-900 dark:text-white truncate">{wallet.name}</div>
+                <div className="text-[11px] text-slate-500 truncate">
+                    {getFamilyLabel(wallet.chainFamily) ?? wallet.chainFamily} · {wallet.description}
                 </div>
             </div>
 
-            <div className="mt-4 flex items-center justify-between gap-3">
-                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">
-                    {wallet.chainFamily}
-                </div>
-                <div className="flex items-center gap-2">
-                    {!wallet.isReady &&
-                    wallet.installUrl ? (
-                        <a
-                            href={
-                                wallet.installUrl
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 rounded-full border border-white/10 px-3 py-2 text-[11px] font-semibold text-slate-300 transition-colors hover:border-white/20 hover:text-white"
-                        >
-                            Install
-                            <ExternalLink
-                                size={12}
-                            />
-                        </a>
-                    ) : null}
-                    <button
-                        onClick={onConnect}
-                        disabled={
-                            isPending ||
-                            wallet.availability ===
-                                'coming-soon' ||
-                            isCurrent
-                        }
-                        className={`rounded-full px-4 py-2 text-[11px] font-black uppercase tracking-[0.22em] transition-all ${
-                            isCurrent
-                                ? 'bg-white/10 text-white'
-                                : wallet.isReady &&
-                                    wallet.availability !==
-                                        'coming-soon'
-                                  ? 'bg-gradient-to-r from-electric-violet to-soft-purple text-white shadow-[0_12px_30px_rgba(163,163,163,0.25)] hover:scale-[1.02]'
-                                  : 'border border-white/10 bg-white/[0.03] text-slate-400'
-                        }`}
-                    >
-                        {actionLabel}
-                    </button>
-                </div>
-            </div>
-        </motion.div>
-    );
-}
-
-function InlineBadge({
-    icon,
-    label
-}: {
-    icon: React.ReactNode;
-    label: string;
-}) {
-    return (
-        <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-black/20 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-300">
-            {icon}
-            {label}
-        </span>
-    );
-}
-
-function StatusBadge({
-    status
-}: {
-    status: string;
-}) {
-    const tone =
-        status === 'connected'
-            ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300'
-            : status === 'connecting'
-              ? 'border-amber-400/20 bg-amber-400/10 text-amber-300'
-              : status ===
-                      'rejected' ||
-                  status === 'error'
-                ? 'border-red-400/20 bg-red-400/10 text-red-300'
-                : 'border-white/10 bg-white/[0.04] text-slate-300';
-
-    return (
-        <span
-            className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em] ${tone}`}
-        >
-            {status.replace('-', ' ')}
-        </span>
-    );
-}
-
-function InfoPill({
-    icon,
-    title,
-    body
-}: {
-    icon: React.ReactNode;
-    title: string;
-    body: string;
-}) {
-    return (
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
-            <div className="mb-3 inline-flex rounded-2xl border border-white/10 bg-black/20 p-2 text-electric-violet">
-                {icon}
-            </div>
-            <div className="text-sm font-semibold text-white">
-                {title}
-            </div>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-                {body}
-            </p>
+            {isCurrent ? (
+                <span className="shrink-0 text-[10px] font-bold" style={{ color: accentColor }}>Connected</span>
+            ) : isInstalled ? (
+                <button
+                    onClick={onConnect}
+                    disabled={isPending || isComingSoon}
+                    title="Installed — click to connect"
+                    className="shrink-0 flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-2.5 py-1 text-[10px] font-bold hover:bg-emerald-500/15 transition-colors disabled:opacity-50"
+                >
+                    {isPending ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle2 size={11} />}
+                    {isPending ? 'Connecting' : 'Connect'}
+                </button>
+            ) : !wallet.isReady && wallet.installUrl ? (
+                <a
+                    href={wallet.installUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="shrink-0 flex items-center gap-1 rounded-full border border-slate-200 dark:border-white/10 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:text-slate-300 hover:border-slate-400 dark:hover:border-white/30 hover:text-slate-900 dark:hover:text-white transition-colors"
+                >
+                    Install <ExternalLink size={10} />
+                </a>
+            ) : (
+                <button
+                    onClick={onConnect}
+                    disabled={isComingSoon}
+                    className="shrink-0 rounded-full border border-slate-200 dark:border-white/10 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:text-slate-300 hover:border-slate-400 dark:hover:border-white/30 hover:text-slate-900 dark:hover:text-white transition-colors disabled:opacity-50"
+                >
+                    {isComingSoon ? 'Soon' : 'Connect'}
+                </button>
+            )}
         </div>
     );
 }

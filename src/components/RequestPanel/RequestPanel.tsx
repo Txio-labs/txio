@@ -8,42 +8,39 @@ import { TestsEditor } from './editors/TestsEditor';
 import { HooksEditor } from './editors/HooksEditor';
 import { RawEditor } from './editors/RawEditor';
 import { CodeSnippet } from './editors/CodeSnippet';
-import { RequestType, ChainId } from '../../types';
+import { HeadersEditor } from './editors/HeadersEditor';
+import { AuthEditor } from './editors/AuthEditor';
+import { AdvancedEditor } from './editors/AdvancedEditor';
+import { TransactionNotice } from './editors/TransactionNotice';
+import { RequestType } from '../../types';
 
-export const RequestPanel: React.FC<RequestPanelProps> = ({ 
-  request, 
+export const RequestPanel: React.FC<RequestPanelProps> = ({
+  request,
   network,
   isLoading,
-  onChange, 
+  onChange,
   onSend,
   onExecute,
   activeAddress,
   envVars,
   isReadOnly = false,
-  testResults = []
+  testResults = [],
+  outcome = null
 }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('builder');
 
   const chain = request.type === RequestType.RPC ? request.rpcParams.chain : undefined;
+  const evmChainId = request.type === RequestType.RPC ? request.rpcParams.evmChainId : undefined;
 
   const handleTypeChange = (type: RequestType) => {
     onChange({ ...request, type });
   };
 
-  const handleChainChange =
-    request.type === RequestType.RPC
-      ? (nextChain: ChainId) =>
-          onChange({
-            ...request,
-            rpcParams: { ...request.rpcParams, chain: nextChain, method: '', params: [] }
-          })
-      : undefined;
-
-  const renderContent = () => {
+  const renderLeft = () => {
     switch (activeTab) {
       case 'code':
         return <CodeSnippet request={request} network={network} />;
-      
+
       case 'tests':
         return (
           <TestsEditor
@@ -52,7 +49,7 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
             results={testResults}
           />
         );
-      
+
       case 'hooks':
         return (
           <HooksEditor
@@ -60,21 +57,46 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
             onChange={(hooks) => onChange({ ...request, hooks })}
           />
         );
-      
+
+      case 'headers':
+        return <HeadersEditor />;
+
+      case 'auth':
+        return <AuthEditor />;
+
+      case 'advanced':
+        return <AdvancedEditor chain={chain} />;
+
+      case 'transaction':
+        return request.type === RequestType.TRANSACTION ? (
+          <div className="p-4 md:p-6 space-y-8">
+            <TransactionBuilder
+              request={request}
+              activeAddress={activeAddress}
+              envVars={envVars}
+              network={network}
+              isReadOnly={isReadOnly}
+              onChange={onChange}
+            />
+          </div>
+        ) : (
+          <TransactionNotice />
+        );
+
       case 'raw':
         return <RawEditor request={request} onChange={onChange} />;
-      
+
       case 'builder':
       default:
         return (
-          <div className="p-4 md:p-6 w-full space-y-8">
+          <div className="p-4 md:p-6 space-y-8">
             {request.type === RequestType.RPC ? (
-              <RPCBuilder 
+              <RPCBuilder
                 request={request}
                 onChange={onChange}
               />
             ) : (
-              <TransactionBuilder 
+              <TransactionBuilder
                 request={request}
                 activeAddress={activeAddress}
                 envVars={envVars}
@@ -90,7 +112,7 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-slate-50 dark:bg-near-black relative font-sans">
-      <HeaderBar 
+      <HeaderBar
         requestType={request.type}
         network={network}
         isLoading={isLoading}
@@ -99,11 +121,15 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
         onSend={onSend}
         onExecute={onExecute}
         chain={chain}
-        onChainChange={handleChainChange}
+        evmChainId={evmChainId}
+        request={request}
+        outcome={outcome}
+        onChange={onChange}
       />
 
       <RequestTabs
         activeTab={activeTab}
+        requestType={request.type}
         testsCount={request.tests?.length || 0}
         testSummary={
           testResults.length > 0
@@ -114,7 +140,7 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
       />
 
       <div className="flex-1 overflow-auto bg-white dark:bg-dark-indigo-glow custom-scrollbar">
-        {renderContent()}
+        {renderLeft()}
       </div>
     </div>
   );

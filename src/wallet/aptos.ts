@@ -145,6 +145,30 @@ const getMartianProvider = (): AptosProviderApi | undefined => {
     return undefined;
 };
 
+const getPontemProvider = (): AptosProviderApi | undefined => {
+    const w = getBrowserWindow() as any;
+    if (w?.pontem) {
+        return w.pontem;
+    }
+    return undefined;
+};
+
+const getRiseProvider = (): AptosProviderApi | undefined => {
+    const w = getBrowserWindow() as any;
+    if (w?.rise) {
+        return w.rise;
+    }
+    return undefined;
+};
+
+const getNightlyAptosProvider = (): AptosProviderApi | undefined => {
+    const w = getBrowserWindow() as any;
+    if (w?.nightly?.aptos) {
+        return w.nightly.aptos;
+    }
+    return undefined;
+};
+
 const connectProvider = async (
     provider: AptosProviderApi | undefined,
     walletId: WalletId,
@@ -189,8 +213,17 @@ const restoreProvider = async (
                     return buildWallet(walletId, response.address);
                 }
             }
+            return null;
         }
-        return null;
+
+        // Fallback for connecting silently if possible, some wallets only expose connect
+        const response = await withTimeout(
+            provider.connect(),
+            `${name} restore`,
+            5000
+        );
+        const address = response.address;
+        return address ? buildWallet(walletId, address) : null;
     } catch {
         return null;
     }
@@ -199,7 +232,10 @@ const restoreProvider = async (
 export const detectAptosWallets = async () => {
     return {
         petra: Boolean(getPetraProvider()),
-        martian: Boolean(getMartianProvider())
+        martian: Boolean(getMartianProvider()),
+        pontem: Boolean(getPontemProvider()),
+        'rise-wallet': Boolean(getRiseProvider()),
+        'nightly-aptos': Boolean(getNightlyAptosProvider())
     };
 };
 
@@ -211,6 +247,12 @@ export const connectAptosWallet = async (
             return connectProvider(getPetraProvider(), walletId, 'Petra');
         case 'martian':
             return connectProvider(getMartianProvider(), walletId, 'Martian');
+        case 'pontem':
+            return connectProvider(getPontemProvider(), walletId, 'Pontem');
+        case 'rise-wallet':
+            return connectProvider(getRiseProvider(), walletId, 'Rise Wallet');
+        case 'nightly-aptos':
+            return connectProvider(getNightlyAptosProvider(), walletId, 'Nightly');
         default:
             throw new Error(`Aptos wallet "${walletId}" is not supported.`);
     }
@@ -224,6 +266,12 @@ export const restoreAptosWallet = async (
             return restoreProvider(getPetraProvider(), walletId, 'Petra');
         case 'martian':
             return restoreProvider(getMartianProvider(), walletId, 'Martian');
+        case 'pontem':
+            return restoreProvider(getPontemProvider(), walletId, 'Pontem');
+        case 'rise-wallet':
+            return restoreProvider(getRiseProvider(), walletId, 'Rise Wallet');
+        case 'nightly-aptos':
+            return restoreProvider(getNightlyAptosProvider(), walletId, 'Nightly');
         default:
             return null;
     }
@@ -240,8 +288,17 @@ export const disconnectAptosWallet = async (
         case 'martian':
             provider = getMartianProvider();
             break;
+        case 'pontem':
+            provider = getPontemProvider();
+            break;
+        case 'rise-wallet':
+            provider = getRiseProvider();
+            break;
+        case 'nightly-aptos':
+            provider = getNightlyAptosProvider();
+            break;
     }
-    
+
     if (provider && provider.disconnect) {
         try {
             await provider.disconnect();

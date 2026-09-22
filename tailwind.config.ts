@@ -26,7 +26,6 @@ export default {
       colors: {
         'near-black': '#0a0a0a',
         'electric-violet': '#a3a3a3',
-        'soft-purple': '#a3a3a3',
         'dark-indigo-glow': '#18181b',
         slate: {
           50: '#fafafa',

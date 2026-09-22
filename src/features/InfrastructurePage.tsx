@@ -1,8 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Cpu, Zap, Shield, Database, Layout, Server, Activity } from 'lucide-react';
+import { ArrowLeft, Cpu, Zap, Shield, Database, Layout, Server, Activity, Boxes, Command, KeyRound, History } from 'lucide-react';
 import { appStore, useAppStore } from '@/lib/store';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import gsap from 'gsap';
 
 interface InfrastructurePageProps {
@@ -86,10 +87,37 @@ export const InfrastructurePage: React.FC<
     }, [embedded]);
 
     const tiers = [
-        { name: 'Edge nodes', desc: 'A distributed mesh of fullnodes close to wherever you are. Less hop, less wait.', icon: <Activity size={24} />, color: 'emerald' },
-        { name: 'Compute grid', desc: 'Parallel execution for the big simulations — burn-down tests, complex PTBs, you name it.', icon: <Cpu size={24} />, color: 'electric-violet' },
-        { name: 'Vault layer', desc: 'HSM-backed key storage (FIPS 140-2 Level 3). For when "in a .env file" isn\'t cutting it.', icon: <Shield size={24} />, color: 'sky' },
-        { name: 'Storage fabric', desc: 'Decentralized data availability for state you actually need to keep around.', icon: <Database size={24} />, color: 'amber' }
+        { name: 'Edge nodes', desc: 'A distributed mesh of fullnodes close to wherever you are. Less hop, less wait.', icon: <Activity size={24} />, color: 'text-emerald-400' },
+        { name: 'Compute grid', desc: 'Parallel execution for the big simulations — burn-down tests, complex PTBs, you name it.', icon: <Cpu size={24} />, color: 'text-violet-400' },
+        { name: 'Vault layer', desc: 'HSM-backed key storage (FIPS 140-2 Level 3). For when "in a .env file" isn\'t cutting it.', icon: <Shield size={24} />, color: 'text-sky-400' },
+        { name: 'Storage fabric', desc: 'Decentralized data availability for state you actually need to keep around.', icon: <Database size={24} />, color: 'text-amber-400' }
+    ];
+
+    const capabilities = [
+        {
+            name: 'One client, five chains',
+            desc: 'Sui, Ethereum, Solana, Aptos, and Soroban/Stellar behind a single interface. No swapping tools when a call moves from EVM to Move.',
+            icon: <Boxes size={22} />,
+            color: 'text-emerald-400'
+        },
+        {
+            name: 'Native chain semantics',
+            desc: 'Real RPC method and transaction understanding per chain — including full PTB (Programmable Transaction Block) construction for Sui — not a generic HTTP passthrough.',
+            icon: <Command size={22} />,
+            color: 'text-violet-400'
+        },
+        {
+            name: 'Wallet signing, built in',
+            desc: 'Construct a call, sign it with a connected wallet, run it, inspect the result — without leaving the workspace or exporting to a separate signer.',
+            icon: <KeyRound size={22} />,
+            color: 'text-sky-400'
+        },
+        {
+            name: 'Collections, environments, history',
+            desc: 'Save and organize RPC calls into collections, switch environments per network, and pull up execution history without re-building a request from scratch.',
+            icon: <History size={22} />,
+            color: 'text-amber-400'
+        }
     ];
 
     return (
@@ -114,22 +142,25 @@ export const InfrastructurePage: React.FC<
                         <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
                         <span>Ecosystem</span>
                     </button>
-                    <div className="h-6 w-px bg-slate-200 dark:bg-white/10"></div>
+                    <div className={`h-6 w-px ${theme === 'dark' ? 'bg-white/10' : 'bg-slate-200'}`}></div>
                     <div className="flex items-center gap-3">
                         <span className="font-black tracking-tighter text-lg">Infrastructure</span>
                     </div>
                 </div>
 
-                <button 
-                    onClick={() =>
-                        navigateTo('app')
-                    }
-                    className="px-6 py-2.5 bg-electric-violet text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-soft-purple transition-all shadow-[0_10px_20px_-5px_rgba(163,163,163,0.4)] active:scale-95"
-                >
-                    {embedded
-                        ? 'New Request'
-                        : 'Launch'}
-                </button>
+                <div className="flex items-center gap-3">
+                    <ThemeToggle />
+                    <button
+                        onClick={() =>
+                            navigateTo('app')
+                        }
+                        className="px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-near-black rounded-xl font-black text-[10px] uppercase tracking-widest hover:opacity-90 transition-all shadow-[0_10px_20px_-5px_rgba(163,163,163,0.4)] active:scale-95"
+                    >
+                        {embedded
+                            ? 'New Request'
+                            : 'Launch'}
+                    </button>
+                </div>
             </nav>
 
             <section className={`relative ${embedded ? 'pt-28' : 'pt-48'} pb-32 px-6 md:px-12`}>
@@ -142,7 +173,7 @@ export const InfrastructurePage: React.FC<
                         >
                             <h1 className="text-6xl md:text-8xl font-black tracking-tight leading-[0.9]">
                                 Fast where <br />
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-electric-violet">it counts.</span>
+                                <span className="text-emerald-400">it counts.</span>
                             </h1>
                             <p className="text-xl text-slate-400 leading-relaxed">
                                 Sub-millisecond reads, key material that never leaves the HSM, and uptime you can actually run a business on. The backbone, not the bottleneck.
@@ -162,7 +193,7 @@ export const InfrastructurePage: React.FC<
                                             theme === 'dark' ? 'bg-[#18181b]/80 border-white/5' : 'bg-white border-slate-200 shadow-xl'
                                         }`}
                                     >
-                                        <div className={`mb-6 text-emerald-400`}>{tier.icon}</div>
+                                        <div className={`mb-6 ${tier.color}`}>{tier.icon}</div>
                                         <h3 className="text-xl font-black mb-2">{tier.name}</h3>
                                         <p className="text-xs text-slate-500 font-bold leading-relaxed">{tier.desc}</p>
                                     </motion.div>
@@ -183,7 +214,7 @@ export const InfrastructurePage: React.FC<
                             ].map((stat, i) => (
                                 <div key={i} className="space-y-4 stat-item">
                                     <div className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-500">{stat.label}</div>
-                                    <div className="text-5xl font-black text-white">{stat.value}</div>
+                                    <div className={`text-5xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{stat.value}</div>
                                     <div className="text-xs font-bold text-electric-violet">{stat.sub}</div>
                                 </div>
                             ))}

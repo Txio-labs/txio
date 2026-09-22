@@ -72,7 +72,7 @@ export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange, 
         </div>
         <button 
           onClick={addTest}
-          className="text-xs font-bold flex items-center gap-1.5 bg-electric-violet hover:bg-electric-violet text-white px-3 py-1.5 rounded transition-colors"
+          className="text-xs font-bold flex items-center gap-1.5 bg-slate-900 dark:bg-white hover:opacity-90 text-white dark:text-near-black px-3 py-1.5 rounded transition-colors"
         >
           <Plus size={12} strokeWidth={3}/> Add Test
         </button>
@@ -94,13 +94,13 @@ export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange, 
         {tests.map((test, idx) => {
           const result = resultsById.get(test.id);
           return (
-          <div key={test.id} className="group flex items-start gap-3 p-3 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 rounded-lg hover:border-slate-300 dark:border-white/20 transition-all">
+          <div key={test.id} className="group flex items-start gap-3 p-3 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 rounded-lg hover:border-slate-300 dark:hover:border-white/20 transition-all">
             <div className="pt-2">
               <input
                 type="checkbox"
                 checked={test.enabled}
                 onChange={() => updateTest(idx, { enabled: !test.enabled })}
-                className="accent-sui-500 cursor-pointer"
+                className="accent-electric-violet cursor-pointer"
               />
             </div>
 
@@ -222,7 +222,7 @@ export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange, 
             <p className="text-xs text-slate-600 mt-1 max-w-sm mx-auto">
               Add tests to verify transaction status, gas usage, events, or specific data fields in the response.
             </p>
-            <button onClick={addTest} className="mt-4 text-xs font-bold text-electric-violet hover:text-sui-300">
+            <button onClick={addTest} className="mt-4 text-xs font-bold text-electric-violet hover:opacity-80">
               + Create your first test
             </button>
           </div>

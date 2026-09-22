@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { appStore, useAppStore } from '../../../lib/store';
+import { AlertCircle } from 'lucide-react';
+import { appStore } from '../../../lib/store';
+import { apiClient } from '../../../lib/api';
 import { apiService } from '../../../services/api';
 import type { ActiveSession } from '../../../types';
 
@@ -88,8 +90,36 @@ function useActiveSessions(enabled: boolean) {
   return { state, revokingId, retry: load, revoke };
 }
 
+interface FieldProps {
+  label: string;
+  htmlFor?: string;
+  error?: string;
+  children: React.ReactNode;
+}
+
+const Field: React.FC<FieldProps> = ({ label, htmlFor, error, children }) => (
+  <div className="space-y-1.5">
+    <label htmlFor={htmlFor} className="block text-xs font-medium text-slate-400">{label}</label>
+    {children}
+    {error && (
+      <p className="flex items-center gap-1.5 text-[11px] text-rose-400">
+        <AlertCircle size={11} /> {error}
+      </p>
+    )}
+  </div>
+);
+
+const inputBase =
+  'w-full bg-white dark:bg-near-black border rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-200 outline-none transition-colors';
+const editableInput = `${inputBase} border-slate-200 dark:border-white/[0.08] placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-electric-violet/60`;
+const errorInput = `${inputBase} border-rose-500/40 focus:border-rose-500/60`;
+
+const primaryButton =
+  'px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-lg bg-slate-900 dark:bg-white text-white dark:text-near-black hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors';
+const secondaryButton =
+  'px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.05] disabled:opacity-50 disabled:cursor-not-allowed transition-colors';
+
 export const SecurityTab: React.FC = () => {
-  const { user } = useAppStore();
   const [isLoading, setIsLoading] = useState(false);
   const [isPasswordFormVisible, setIsPasswordFormVisible] = useState(false);
   const [isSessionReviewVisible, setIsSessionReviewVisible] = useState(false);
@@ -137,11 +167,11 @@ export const SecurityTab: React.FC = () => {
 
     setIsLoading(true);
     try {
-      await apiService.updatePassword(
-        user?.email || '',
-        formData.currentPassword,
-        formData.newPassword
-      );
+      await apiClient.post('/auth/update-password', {
+        current_password: formData.currentPassword,
+        new_password: formData.newPassword,
+        confirm_password: formData.confirmPassword,
+      });
 
       appStore.showToast('Password rotated successfully!', 'success');
       setFormData({
@@ -151,10 +181,7 @@ export const SecurityTab: React.FC = () => {
       });
       setIsPasswordFormVisible(false);
     } catch (error: any) {
-      const errorMessage =
-        error instanceof Error && error.message
-          ? error.message
-          : 'Failed to rotate password';
+      const errorMessage = error.response?.data?.message || 'Failed to rotate password';
       appStore.showToast(errorMessage, 'error');
       setErrors({
         currentPassword: errorMessage,
@@ -175,14 +202,14 @@ export const SecurityTab: React.FC = () => {
 
   const renderSessionsPanel = () => {
     if (sessionsState.status === 'loading' || sessionsState.status === 'idle') {
-      return <p className="session-status">Loading sessions…</p>;
+      return <p className="text-xs text-slate-500">Loading sessions…</p>;
     }
 
     if (sessionsState.status === 'error') {
       return (
-        <div className="session-status-block">
-          <p className="error-message">{sessionsState.message}</p>
-          <button type="button" className="btn btn-secondary" onClick={retrySessions}>
+        <div className="flex flex-col items-start gap-3">
+          <p className="text-xs text-rose-400">{sessionsState.message}</p>
+          <button type="button" className={secondaryButton} onClick={retrySessions}>
             Try again
           </button>
         </div>
@@ -190,45 +217,43 @@ export const SecurityTab: React.FC = () => {
     }
 
     if (sessionsState.data.length === 0) {
-      return <p className="session-status">No active sessions found.</p>;
+      return <p className="text-xs text-slate-500">No active sessions found.</p>;
     }
 
     return (
-      <ul className="session-list">
+      <ul className="rounded-lg border border-slate-200 dark:border-white/[0.08] divide-y divide-slate-200 dark:divide-white/[0.06] overflow-hidden">
         {sessionsState.data.map((session) => {
           const isRevoking = revokingId === session.id;
           return (
-            <li key={session.id} className="session-row">
-              <div className="session-info">
-                <div className="session-device">
+            <li key={session.id} className="flex items-center justify-between gap-3 px-4 py-3 bg-white dark:bg-near-black">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-200">
                   <span
-                    className={`session-dot ${session.is_current ? 'current' : ''}`}
+                    className={`h-2 w-2 rounded-full shrink-0 ${session.is_current ? 'bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.15)]' : 'bg-slate-500'}`}
                     aria-hidden="true"
                   />
-                  <span>
-                    {session.device_label}
-                    {session.is_current ? (
-                      <span className="session-current-badge"> Current</span>
-                    ) : null}
-                  </span>
+                  <span className="truncate">{session.device_label}</span>
+                  {session.is_current && (
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Current</span>
+                  )}
                 </div>
-                <div className="session-meta">
+                <div className="mt-1 text-xs text-slate-500 truncate">
                   {session.ip_address !== 'unknown' ? session.ip_address : 'IP unavailable'}
                   {' · '}
                   {formatSessionDate(session.last_active_at)}
                 </div>
               </div>
-              {!session.is_current ? (
+              {!session.is_current && (
                 <button
                   type="button"
-                  className="btn btn-secondary btn-sm"
                   onClick={() => revokeSession(session.id)}
                   disabled={isRevoking}
                   aria-label={`Revoke session for ${session.device_label}`}
+                  className="shrink-0 px-3 py-1.5 text-xs font-bold uppercase tracking-widest rounded-lg border border-rose-500/20 bg-rose-500/10 text-rose-300 hover:bg-rose-500/15 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {isRevoking ? 'Revoking…' : 'Revoke'}
                 </button>
-              ) : null}
+              )}
             </li>
           );
         })}
@@ -237,347 +262,119 @@ export const SecurityTab: React.FC = () => {
   };
 
   return (
-    <div className="security-tab">
+    <div className="space-y-5 animate-in fade-in slide-in-from-right-2 duration-200">
       {/* Password Rotation Card */}
-      <div className="security-card">
-        <div className="security-card-header">
-          <h3>Password Rotation</h3>
-          <p className="security-card-description">
+      <section className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-dark-indigo-glow overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-200 dark:border-white/[0.06]">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Password Rotation</h3>
+          <p className="text-xs text-slate-500 mt-0.5">
             Keep credential lifetime short and rotate keys before your environment becomes sticky.
           </p>
         </div>
 
-        {!isPasswordFormVisible ? (
-          <button
-            onClick={() => setIsPasswordFormVisible(true)}
-            className="btn btn-primary"
-          >
-            Rotate Password
-          </button>
-        ) : (
-          <form onSubmit={handlePasswordRotation} className="password-form">
-            <div className="form-group">
-              <label htmlFor="currentPassword">Current Password</label>
-              <input
-                id="currentPassword"
-                type="password"
-                value={formData.currentPassword}
-                onChange={handleInputChange('currentPassword')}
-                className={`form-input ${errors.currentPassword ? 'error' : ''}`}
-                placeholder="Enter your current password"
-                disabled={isLoading}
-              />
-              {errors.currentPassword && (
-                <span className="error-message">{errors.currentPassword}</span>
-              )}
-            </div>
+        <div className="p-5">
+          {!isPasswordFormVisible ? (
+            <button onClick={() => setIsPasswordFormVisible(true)} className={primaryButton}>
+              Rotate Password
+            </button>
+          ) : (
+            <form onSubmit={handlePasswordRotation} className="space-y-4 max-w-md">
+              <Field label="Current Password" htmlFor="currentPassword" error={errors.currentPassword}>
+                <input
+                  id="currentPassword"
+                  type="password"
+                  value={formData.currentPassword}
+                  onChange={handleInputChange('currentPassword')}
+                  className={errors.currentPassword ? errorInput : editableInput}
+                  placeholder="Enter your current password"
+                  disabled={isLoading}
+                />
+              </Field>
 
-            <div className="form-group">
-              <label htmlFor="newPassword">New Password</label>
-              <input
-                id="newPassword"
-                type="password"
-                value={formData.newPassword}
-                onChange={handleInputChange('newPassword')}
-                className={`form-input ${errors.newPassword ? 'error' : ''}`}
-                placeholder="Enter your new password (min 8 characters)"
-                disabled={isLoading}
-              />
-              {errors.newPassword && (
-                <span className="error-message">{errors.newPassword}</span>
-              )}
-            </div>
+              <Field label="New Password" htmlFor="newPassword" error={errors.newPassword}>
+                <input
+                  id="newPassword"
+                  type="password"
+                  value={formData.newPassword}
+                  onChange={handleInputChange('newPassword')}
+                  className={errors.newPassword ? errorInput : editableInput}
+                  placeholder="Enter your new password (min 8 characters)"
+                  disabled={isLoading}
+                />
+              </Field>
 
-            <div className="form-group">
-              <label htmlFor="confirmPassword">Confirm New Password</label>
-              <input
-                id="confirmPassword"
-                type="password"
-                value={formData.confirmPassword}
-                onChange={handleInputChange('confirmPassword')}
-                className={`form-input ${errors.confirmPassword ? 'error' : ''}`}
-                placeholder="Confirm your new password"
-                disabled={isLoading}
-              />
-              {errors.confirmPassword && (
-                <span className="error-message">{errors.confirmPassword}</span>
-              )}
-            </div>
+              <Field label="Confirm New Password" htmlFor="confirmPassword" error={errors.confirmPassword}>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange('confirmPassword')}
+                  className={errors.confirmPassword ? errorInput : editableInput}
+                  placeholder="Confirm your new password"
+                  disabled={isLoading}
+                />
+              </Field>
 
-            <div className="form-actions">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsPasswordFormVisible(false);
-                  setFormData({
-                    currentPassword: '',
-                    newPassword: '',
-                    confirmPassword: '',
-                  });
-                  setErrors({});
-                }}
-                className="btn btn-secondary"
-                disabled={isLoading}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={isLoading}
-              >
-                {isLoading ? 'Updating...' : 'Update Password'}
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
+              <div className="flex gap-3 justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPasswordFormVisible(false);
+                    setFormData({
+                      currentPassword: '',
+                      newPassword: '',
+                      confirmPassword: '',
+                    });
+                    setErrors({});
+                  }}
+                  className={secondaryButton}
+                  disabled={isLoading}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className={primaryButton} disabled={isLoading}>
+                  {isLoading ? 'Updating...' : 'Update Password'}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </section>
 
       {/* Session Review Card */}
-      <div className="security-card">
-        <div className="security-card-header">
-          <h3>Session review</h3>
-          <p className="security-card-description">
+      <section className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-dark-indigo-glow overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-200 dark:border-white/[0.06]">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Session review</h3>
+          <p className="text-xs text-slate-500 mt-0.5">
             Audit active surfaces and revoke stale sessions when operators or devices change.
           </p>
         </div>
 
-        {!isSessionReviewVisible ? (
-          <button
-            type="button"
-            onClick={() => setIsSessionReviewVisible(true)}
-            className="btn btn-primary"
-          >
-            Review Sessions
-          </button>
-        ) : (
-          <div className="session-review-panel">
-            {renderSessionsPanel()}
-            <div className="form-actions">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setIsSessionReviewVisible(false)}
-              >
-                Close
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={retrySessions}
-                disabled={sessionsState.status === 'loading'}
-              >
-                Refresh
-              </button>
+        <div className="p-5">
+          {!isSessionReviewVisible ? (
+            <button type="button" onClick={() => setIsSessionReviewVisible(true)} className={primaryButton}>
+              Review Sessions
+            </button>
+          ) : (
+            <div className="space-y-4">
+              {renderSessionsPanel()}
+              <div className="flex gap-3 justify-end">
+                <button type="button" className={secondaryButton} onClick={() => setIsSessionReviewVisible(false)}>
+                  Close
+                </button>
+                <button
+                  type="button"
+                  className={primaryButton}
+                  onClick={retrySessions}
+                  disabled={sessionsState.status === 'loading'}
+                >
+                  Refresh
+                </button>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-
-      <style>{`
-        .security-tab {
-          padding: 20px;
-        }
-
-        .security-card {
-          background: var(--bg-card, #fff);
-          border-radius: 8px;
-          padding: 24px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-          margin-bottom: 20px;
-        }
-
-        .security-card-header {
-          margin-bottom: 16px;
-        }
-
-        .security-card-header h3 {
-          margin: 0 0 8px 0;
-          font-size: 18px;
-          font-weight: 600;
-        }
-
-        .security-card-description {
-          margin: 0;
-          color: var(--text-secondary, #666);
-          font-size: 14px;
-        }
-
-        .password-form {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        .form-group {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-
-        .form-group label {
-          font-size: 14px;
-          font-weight: 500;
-          color: var(--text-primary, #333);
-        }
-
-        .form-input {
-          padding: 10px 12px;
-          border: 1px solid var(--border-color, #ddd);
-          border-radius: 4px;
-          font-size: 14px;
-          transition: border-color 0.2s;
-        }
-
-        .form-input:focus {
-          outline: none;
-          border-color: var(--primary-color, #0066cc);
-          box-shadow: 0 0 0 2px rgba(0,102,204,0.1);
-        }
-
-        .form-input.error {
-          border-color: var(--error-color, #dc3545);
-        }
-
-        .form-input:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .error-message {
-          color: var(--error-color, #dc3545);
-          font-size: 12px;
-          margin-top: 4px;
-        }
-
-        .form-actions {
-          display: flex;
-          gap: 12px;
-          justify-content: flex-end;
-          margin-top: 8px;
-        }
-
-        .btn {
-          padding: 10px 20px;
-          border: none;
-          border-radius: 4px;
-          font-size: 14px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .btn-primary {
-          background: var(--primary-color, #0066cc);
-          color: white;
-        }
-
-        .btn-primary:hover:not(:disabled) {
-          background: var(--primary-hover, #0052a3);
-        }
-
-        .btn-secondary {
-          background: var(--bg-secondary, #f0f0f0);
-          color: var(--text-primary, #333);
-        }
-
-        .btn-secondary:hover:not(:disabled) {
-          background: var(--bg-hover, #e0e0e0);
-        }
-
-        .btn-sm {
-          padding: 6px 12px;
-          font-size: 12px;
-        }
-
-        .session-review-panel {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-
-        .session-status {
-          margin: 0;
-          color: var(--text-secondary, #666);
-          font-size: 14px;
-        }
-
-        .session-status-block {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          align-items: flex-start;
-        }
-
-        .session-list {
-          list-style: none;
-          margin: 0;
-          padding: 0;
-          border: 1px solid var(--border-color, #ddd);
-          border-radius: 6px;
-          overflow: hidden;
-        }
-
-        .session-row {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          padding: 12px 14px;
-          border-bottom: 1px solid var(--border-color, #eee);
-        }
-
-        .session-row:last-child {
-          border-bottom: none;
-        }
-
-        .session-info {
-          min-width: 0;
-          flex: 1;
-        }
-
-        .session-device {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 14px;
-          font-weight: 500;
-          color: var(--text-primary, #333);
-        }
-
-        .session-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: #9ca3af;
-          flex-shrink: 0;
-        }
-
-        .session-dot.current {
-          background: #10b981;
-          box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
-        }
-
-        .session-current-badge {
-          margin-left: 6px;
-          font-size: 11px;
-          font-weight: 600;
-          color: #059669;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-        }
-
-        .session-meta {
-          margin-top: 4px;
-          font-size: 12px;
-          color: var(--text-secondary, #666);
-        }
-      `}</style>
+          )}
+        </div>
+      </section>
     </div>
   );
 };

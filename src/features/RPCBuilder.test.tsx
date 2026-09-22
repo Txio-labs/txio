@@ -35,8 +35,7 @@ const { mockAppStore, mockWallet } = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/store', () => ({
-  useAppStore: (selector?: (state: any) => any) =>
-    selector ? selector(mockAppStore) : mockAppStore,
+  useAppStore: () => mockAppStore,
   appStore: mockAppStore
 }));
 

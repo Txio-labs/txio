@@ -169,10 +169,10 @@ export const RawEditor: React.FC<RawEditorProps> = ({
               <button 
                 key={idx}
                 onClick={() => applyTemplate(t)}
-                className="w-full text-left p-3 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/5 hover:border-slate-200 dark:border-white/10 transition-all group active:scale-95"
+                className="w-full text-left p-3 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10 transition-all group active:scale-95"
               >
                 <div className="flex justify-between items-center mb-1">
-                  <div className="text-xs font-bold text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:hover:text-slate-900 dark:text-white truncate">{t.label}</div>
+                  <div className="text-xs font-bold text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:text-white truncate">{t.label}</div>
                   <ChevronRight size={12} className="text-slate-600 group-hover:text-slate-400 opacity-0 group-hover:opacity-100 transition-all -ml-2 group-hover:ml-0" />
                 </div>
                 <div className="text-[10px] text-slate-500 font-mono truncate opacity-60 group-hover:opacity-100 transition-opacity">

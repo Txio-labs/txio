@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useAppStore } from '@/lib/store';
+import { highlightJson } from '@/lib/jsonHighlight';
 import {
     AlignLeft,
     AlertCircle,
@@ -390,56 +391,6 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
         setError(null);
     };
 
-    const escapeHtml = (text: string) =>
-        text
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-
-    const highlightJSON = (code: string) => {
-        if (!code) return '';
-
-        const tokenRegex = /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?|[\[\]\{\},])/g;
-        let lastIndex = 0;
-        const parts: string[] = [];
-        let match: RegExpExecArray | null;
-
-        while ((match = tokenRegex.exec(code)) !== null) {
-            if (lastIndex < match.index) {
-                parts.push(escapeHtml(code.slice(lastIndex, match.index)));
-            }
-
-            const token = match[0];
-            let cls = 'text-sky-300';
-
-            if (/^"/.test(token)) {
-                if (/:$/.test(token)) {
-                    cls = 'text-sky-300';
-                } else {
-                    cls = 'text-emerald-300';
-                }
-            } else if (/true|false/.test(token)) {
-                cls = 'text-amber-300';
-            } else if (/null/.test(token)) {
-                cls = 'text-slate-500 italic';
-            } else if (/^-?\d/.test(token)) {
-                cls = 'text-orange-300';
-            } else if (/[[\]\{\},]/.test(token)) {
-                cls = 'text-slate-500';
-            }
-
-            parts.push(`<span class="${cls}">${escapeHtml(token)}</span>`);
-            lastIndex = tokenRegex.lastIndex;
-        }
-
-        if (lastIndex < code.length) {
-            parts.push(escapeHtml(code.slice(lastIndex)));
-        }
-
-        return parts.join('');
-    };
 
     const lines = value.split('\n');
     const lineCount = lines.length;
@@ -520,22 +471,22 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
     }
 
     return (
-        <div className="flex flex-col h-full bg-[#18181b] rounded-xl border border-white/10 overflow-hidden shadow-[0_24px_60px_-40px_rgba(0,0,0,0.85)] focus-within:border-electric-violet/30 transition-colors">
-            <div className="flex items-center justify-between px-3 py-2 bg-[#18181b] border-b border-white/5">
+        <div className="flex flex-col h-full bg-slate-50 dark:bg-[#18181b] rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-[0_24px_60px_-40px_rgba(0,0,0,0.15)] dark:shadow-[0_24px_60px_-40px_rgba(0,0,0,0.85)] focus-within:border-electric-violet/30 transition-colors">
+            <div className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-[#18181b] border-b border-slate-200 dark:border-white/5">
                 <div className="flex items-center gap-1.5">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.18em] mr-2">
                         JSON
                     </span>
                     <button
                         onClick={handleFormat}
-                        className="px-2 py-1 hover:bg-white/5 text-slate-400 hover:text-electric-violet rounded text-[10px] font-bold flex items-center gap-1.5 transition-colors"
+                        className="px-2 py-1 hover:bg-slate-200 dark:hover:bg-white/5 text-slate-500 dark:text-slate-400 hover:text-electric-violet rounded text-[10px] font-bold flex items-center gap-1.5 transition-colors"
                         title="Format (⌘⇧F)"
                     >
                         <AlignLeft size={11} /> Format
                     </button>
                     <button
                         onClick={handleMinify}
-                        className="px-2 py-1 hover:bg-white/5 text-slate-400 hover:text-electric-violet rounded text-[10px] font-bold flex items-center gap-1.5 transition-colors"
+                        className="px-2 py-1 hover:bg-slate-200 dark:hover:bg-white/5 text-slate-500 dark:text-slate-400 hover:text-electric-violet rounded text-[10px] font-bold flex items-center gap-1.5 transition-colors"
                         title="Minify"
                     >
                         <Minimize2 size={11} /> Minify
@@ -547,7 +498,7 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
                         className={`px-2 py-1 rounded text-[10px] font-bold flex items-center gap-1.5 transition-colors ${
                             searchOpen
                                 ? 'bg-electric-violet/15 text-electric-violet'
-                                : 'hover:bg-white/5 text-slate-400 hover:text-white'
+                                : 'hover:bg-slate-200 dark:hover:bg-white/5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                         title="Find (⌘F)"
                     >
@@ -557,13 +508,13 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
                 <div className="flex items-center gap-1">
                     <button
                         onClick={handleCopy}
-                        className="p-1.5 hover:bg-white/5 text-slate-400 hover:text-white rounded transition-colors"
+                        className="p-1.5 hover:bg-slate-200 dark:hover:bg-white/5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded transition-colors"
                         title="Copy"
                     >
                         {copied ? (
                             <Check
                                 size={12}
-                                className="text-emerald-400"
+                                className="text-emerald-500 dark:text-emerald-400"
                             />
                         ) : (
                             <Copy size={12} />
@@ -571,7 +522,7 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
                     </button>
                     <button
                         onClick={handleClear}
-                        className="p-1.5 hover:bg-white/5 text-slate-400 hover:text-red-400 rounded transition-colors"
+                        className="p-1.5 hover:bg-slate-200 dark:hover:bg-white/5 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 rounded transition-colors"
                         title="Clear"
                     >
                         <Trash2 size={12} />
@@ -580,7 +531,7 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
             </div>
 
             {searchOpen && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-[#18181b] border-b border-white/5">
+                <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-[#18181b] border-b border-slate-200 dark:border-white/5">
                     <Search
                         size={12}
                         className="text-slate-500 shrink-0"
@@ -605,7 +556,7 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
                         }}
                         placeholder="Find in JSON..."
                         autoFocus
-                        className="flex-1 bg-transparent outline-none text-[11px] font-mono text-white placeholder:text-slate-600"
+                        className="flex-1 bg-transparent outline-none text-[11px] font-mono text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600"
                     />
                     <span className="text-[10px] text-slate-500 font-mono shrink-0">
                         {searchMatches.length > 0
@@ -618,7 +569,7 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
                         onClick={() =>
                             setSearchOpen(false)
                         }
-                        className="p-1 hover:bg-white/5 text-slate-500 hover:text-white rounded transition-colors"
+                        className="p-1 hover:bg-slate-200 dark:hover:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded transition-colors"
                     >
                         <X size={11} />
                     </button>
@@ -629,10 +580,10 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
                 {showLineNumbers && (
                 <div
                     ref={lineGutterRef}
-                    className="shrink-0 w-12 bg-[#0a0a0a] border-r border-white/5 overflow-hidden select-none pointer-events-none"
+                    className="shrink-0 w-12 bg-slate-100 dark:bg-[#0a0a0a] border-r border-slate-200 dark:border-white/5 overflow-hidden select-none pointer-events-none"
                     data-testid="json-editor-line-gutter"
                 >
-                    <div className="py-4 pr-3 text-right font-mono text-[10px] leading-relaxed text-slate-700">
+                    <div className="py-4 pr-3 text-right font-mono text-[10px] leading-relaxed text-slate-400 dark:text-slate-700">
                         {Array.from(
                             { length: lineCount },
                             (_, i) => i + 1
@@ -645,10 +596,10 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
                                     key={n}
                                     className={`flex items-center justify-end gap-1 px-1 ${
                                         isErrorLine
-                                            ? 'text-red-400'
+                                            ? 'text-red-500 dark:text-red-400'
                                             : isActive
-                                              ? 'text-slate-300'
-                                              : 'text-slate-700'
+                                              ? 'text-slate-700 dark:text-slate-300'
+                                              : 'text-slate-400 dark:text-slate-700'
                                     }`}
                                 >
                                     {isErrorLine && (
@@ -665,7 +616,7 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
                 )}
 
                 <div
-                    className="relative flex-1 overflow-auto custom-scrollbar bg-[#18181b]"
+                    className="relative flex-1 overflow-auto custom-scrollbar bg-slate-50 dark:bg-[#18181b]"
                     onScroll={handleScroll}
                 >
                     <pre
@@ -673,7 +624,7 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
                         className="absolute top-0 left-0 min-w-full p-4 font-mono text-[12px] leading-relaxed pointer-events-none whitespace-pre"
                         dangerouslySetInnerHTML={{
                             __html:
-                                highlightJSON(value) +
+                                highlightJson(value) +
                                 '<br/>'
                         }}
                     />
@@ -698,8 +649,8 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
                 </div>
             </div>
 
-            <div className="flex items-center justify-between px-3 py-1.5 bg-[#0a0a0a] border-t border-white/5 text-[10px] font-mono">
-                <div className="flex items-center gap-3 text-slate-600">
+            <div className="flex items-center justify-between px-3 py-1.5 bg-slate-100 dark:bg-[#0a0a0a] border-t border-slate-200 dark:border-white/5 text-[10px] font-mono">
+                <div className="flex items-center gap-3 text-slate-500 dark:text-slate-600">
                     <span className="flex items-center gap-1">
                         <CornerDownLeft size={9} />
                         Ln {caret.line}, Col {caret.column}
@@ -712,16 +663,16 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
                 </div>
                 <div className="flex items-center gap-2">
                     {!hasContent ? (
-                        <span className="text-slate-700">
+                        <span className="text-slate-400 dark:text-slate-700">
                             empty
                         </span>
                     ) : parseValid ? (
-                        <span className="flex items-center gap-1 text-emerald-400/80">
+                        <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400/80">
                             <Check size={10} /> valid JSON
                         </span>
                     ) : error ? (
                         <span
-                            className="flex items-center gap-1 text-red-400 cursor-help truncate max-w-md"
+                            className="flex items-center gap-1 text-red-500 dark:text-red-400 cursor-help truncate max-w-md"
                             title={error.message}
                         >
                             <AlertCircle size={10} />
@@ -730,7 +681,7 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
                                 : 'invalid JSON'}
                         </span>
                     ) : (
-                        <span className="text-amber-400/80 flex items-center gap-1">
+                        <span className="text-amber-600 dark:text-amber-400/80 flex items-center gap-1">
                             <AlertCircle size={10} />
                             unsaved
                         </span>
@@ -739,7 +690,7 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
             </div>
 
             {error && (
-                <div className="bg-red-950/30 border-t border-red-500/20 px-3 py-1.5 text-[10px] font-mono text-red-300/90 flex items-center gap-2">
+                <div className="bg-red-50 dark:bg-red-950/30 border-t border-red-200 dark:border-red-500/20 px-3 py-1.5 text-[10px] font-mono text-red-600 dark:text-red-300/90 flex items-center gap-2">
                     <AlertCircle size={10} className="shrink-0" />
                     <span className="truncate">
                         {error.message}

@@ -7,6 +7,7 @@ import {
     BarChart3, MousePointer2, Share2, Rocket
 } from 'lucide-react';
 import { appStore, useAppStore } from '@/lib/store';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import logoDark from '../assets/txio2.png';
 import logoLight from '../assets/txio3.png';
 
@@ -18,7 +19,8 @@ export const FeaturesPage: React.FC<
     FeaturesPageProps
 > = ({ embedded = false }) => {
     const { theme } = useAppStore();
-    const logo = theme === 'dark' ? logoDark : logoLight;
+    const isDark = theme === 'dark';
+    const logo = isDark ? logoDark : logoLight;
     const router = useRouter();
 
     const navigateTo = (
@@ -105,11 +107,11 @@ export const FeaturesPage: React.FC<
 
     return (
         <div className={`${embedded ? 'h-full overflow-y-auto custom-scrollbar' : 'min-h-screen'} font-sans selection:bg-electric-violet/30 overflow-x-hidden ${
-            theme === 'dark' ? 'bg-[#0a0a0a] text-white' : 'bg-slate-50 text-slate-900'
+            isDark ? 'bg-[#0a0a0a] text-white' : 'bg-slate-50 text-slate-900'
         }`}>
             {/* Nav */}
             <nav className={`${embedded ? 'sticky top-0' : 'fixed top-0 left-0 right-0'} h-20 border-b z-50 px-6 md:px-12 flex items-center justify-between backdrop-blur-xl ${
-                theme === 'dark' ? 'bg-black/50 border-white/5' : 'bg-white/50 border-slate-200'
+                isDark ? 'bg-black/50 border-white/5' : 'bg-white/50 border-slate-200'
             }`}>
                 <div className="flex items-center gap-8">
                     <button className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('landing')}>
@@ -122,10 +124,11 @@ export const FeaturesPage: React.FC<
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <button 
+                <div className="flex items-center gap-3">
+                    <ThemeToggle />
+                    <button
                         onClick={() => navigateTo('app')}
-                        className="px-6 py-2.5 bg-electric-violet text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-soft-purple transition-all shadow-xl active:scale-95"
+                        className="px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-near-black rounded-xl font-black text-[10px] uppercase tracking-widest hover:opacity-90 transition-all shadow-xl active:scale-95"
                     >
                         {embedded ? 'New Request' : 'Get Started'}
                     </button>
@@ -135,7 +138,7 @@ export const FeaturesPage: React.FC<
             {/* Hero */}
             <section className={`relative ${embedded ? 'pt-28' : 'pt-48'} pb-32 px-6 overflow-hidden`}>
                 <div className="absolute top-1/4 -left-20 w-[600px] h-[600px] bg-electric-violet/10 blur-[120px] rounded-full" />
-                <div className="absolute bottom-1/4 -right-20 w-[600px] h-[600px] bg-soft-purple/10 blur-[120px] rounded-full" />
+                <div className="absolute bottom-1/4 -right-20 w-[600px] h-[600px] bg-electric-violet/10 blur-[120px] rounded-full" />
 
                 <div className="max-w-7xl mx-auto text-center relative z-10 space-y-12">
                     <motion.div
@@ -143,14 +146,14 @@ export const FeaturesPage: React.FC<
                         animate={{ opacity: 1, y: 0 }}
                         className="space-y-6"
                     >
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.03] border border-white/10 backdrop-blur-md">
+                        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-md ${isDark ? 'bg-white/[0.03] border border-white/10' : 'bg-slate-900/[0.03] border border-slate-200'}`}>
                             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-electric-violet">Built for shipping</span>
-                            <div className="w-1 h-1 rounded-full bg-slate-700" />
+                            <div className="w-1 h-1 rounded-full bg-slate-500" />
                             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">v2.4.0</span>
                         </div>
-                        <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.85] text-white">
+                        <h1 className={`text-6xl md:text-8xl font-black tracking-tighter leading-[0.85] ${isDark ? 'text-white' : 'text-slate-900'}`}>
                             Tools that <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet via-soft-purple to-sky-400 italic">don&apos;t get in the way.</span>
+                            <span className="text-electric-violet italic">don&apos;t get in the way.</span>
                         </h1>
                         <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
                             One workspace for protocol engineers, DevOps, and the infra folks who keep it all running.
@@ -168,9 +171,9 @@ export const FeaturesPage: React.FC<
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.1 }}
-                            className="p-1 rounded-[3rem] bg-gradient-to-br from-white/10 to-transparent hover:from-electric-violet/20 transition-all group"
+                            className={`p-1 rounded-[3rem] bg-gradient-to-br to-transparent hover:from-electric-violet/20 transition-all group ${isDark ? 'from-white/10' : 'from-slate-900/10'}`}
                         >
-                            <div className="p-10 rounded-[2.8rem] bg-[#18181b] h-full flex flex-col space-y-8">
+                            <div className={`p-10 rounded-[2.8rem] h-full flex flex-col space-y-8 ${isDark ? 'bg-[#18181b]' : 'bg-white border border-slate-200'}`}>
                                 <div className={`w-16 h-16 rounded-2xl ${f.bg} flex items-center justify-center ${f.color} shadow-2xl`}>
                                     <f.icon size={32} />
                                 </div>
@@ -178,7 +181,7 @@ export const FeaturesPage: React.FC<
                                     <h3 className="text-2xl font-black tracking-tight">{f.title}</h3>
                                     <p className="text-slate-500 text-sm leading-relaxed">{f.desc}</p>
                                 </div>
-                                <div className="pt-6 border-t border-white/5 flex items-center justify-between group-hover:text-white transition-colors">
+                                <div className={`pt-6 flex items-center justify-between transition-colors ${isDark ? 'border-t border-white/5 group-hover:text-white' : 'border-t border-slate-200 group-hover:text-slate-900'}`}>
                                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 group-hover:text-slate-400 transition-colors">Learn More</span>
                                     <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                                 </div>
@@ -189,7 +192,7 @@ export const FeaturesPage: React.FC<
             </section>
 
             {/* Features Grid */}
-            <section className="py-32 px-6 bg-[#0a0a0a]">
+            <section className={`py-32 px-6 ${isDark ? 'bg-[#0a0a0a]' : 'bg-white'}`}>
                 <div className="max-w-7xl mx-auto space-y-20">
                     <div className="text-center space-y-4">
                         <h2 className="text-4xl md:text-6xl font-black tracking-tighter">Everything in one place.</h2>
@@ -198,14 +201,14 @@ export const FeaturesPage: React.FC<
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-16">
                         {gridFeatures.map((f, i) => (
-                            <motion.div 
+                            <motion.div
                                 key={f.title}
                                 initial={{ opacity: 0 }}
                                 whileInView={{ opacity: 1 }}
                                 transition={{ delay: i * 0.05 }}
                                 className="flex gap-6 items-start"
                             >
-                                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-electric-violet">
+                                <div className={`p-3 rounded-xl text-electric-violet ${isDark ? 'bg-white/[0.03] border border-white/5' : 'bg-slate-100 border border-slate-200'}`}>
                                     <f.icon size={20} />
                                 </div>
                                 <div className="space-y-2">
@@ -234,7 +237,7 @@ export const FeaturesPage: React.FC<
                                     <div className="p-1 rounded-full bg-emerald-500/20 text-emerald-400 group-hover:scale-110 transition-transform">
                                         <CheckCircle2 size={16} />
                                     </div>
-                                    <span className="text-slate-400 font-medium group-hover:text-white transition-colors">{t}</span>
+                                    <span className={`font-medium transition-colors ${isDark ? 'text-slate-400 group-hover:text-white' : 'text-slate-600 group-hover:text-slate-900'}`}>{t}</span>
                                 </div>
                             ))}
                         </div>
@@ -242,20 +245,22 @@ export const FeaturesPage: React.FC<
 
                     <div className="relative">
                         <div className="absolute inset-0 bg-electric-violet/20 blur-[100px] rounded-full animate-pulse" />
-                        <div className="relative p-10 rounded-[4rem] bg-[#18181b] border border-white/10 shadow-2xl overflow-hidden">
+                        <div className={`relative p-10 rounded-[4rem] border shadow-2xl overflow-hidden ${
+                            isDark ? 'bg-[#18181b] border-white/10' : 'bg-white border-slate-200'
+                        }`}>
                             <div className="space-y-6">
-                                <div className="flex items-center gap-2 border-b border-white/5 pb-4">
+                                <div className={`flex items-center gap-2 border-b pb-4 ${isDark ? 'border-white/5' : 'border-slate-200'}`}>
                                     <div className="w-3 h-3 rounded-full bg-red-500" />
                                     <div className="w-3 h-3 rounded-full bg-amber-500" />
                                     <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 ml-2">Terminal Execution</span>
+                                    <span className={`text-[10px] font-black uppercase tracking-widest ml-2 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Terminal Execution</span>
                                 </div>
                                 <div className="font-mono text-sm space-y-2">
-                                    <div className="text-slate-500"># Validating Sui transaction block...</div>
-                                    <div className="text-emerald-400">SUCCESS: Transaction verified at checkpoint 29081</div>
-                                    <div className="text-white">Gas Used: 0.021 SUI</div>
-                                    <div className="mt-4 text-slate-500"># Inspecting objects...</div>
-                                    <div className="text-sky-400">Object: 0x8a92... Type: 0x2::coin::Coin&lt;0x2::sui::SUI&gt;</div>
+                                    <div className={isDark ? 'text-slate-500' : 'text-slate-400'}># Validating Sui transaction block...</div>
+                                    <div className="text-emerald-500">SUCCESS: Transaction verified at checkpoint 29081</div>
+                                    <div className={isDark ? 'text-white' : 'text-slate-900'}>Gas Used: 0.021 SUI</div>
+                                    <div className={`mt-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}># Inspecting objects...</div>
+                                    <div className="text-sky-500">Object: 0x8a92... Type: 0x2::coin::Coin&lt;0x2::sui::SUI&gt;</div>
                                 </div>
                             </div>
                         </div>
@@ -264,20 +269,20 @@ export const FeaturesPage: React.FC<
             </section>
 
             {/* Footer */}
-            <footer className="py-32 px-6 border-t border-white/5 text-center space-y-12">
+            <footer className={`py-32 px-6 text-center space-y-12 ${isDark ? 'border-t border-white/5' : 'border-t border-slate-200'}`}>
                 <div className="max-w-4xl mx-auto space-y-6">
-                    <img src={logoDark.src} alt="txio" className="h-10 w-auto mx-auto" />
+                    <img src={logo.src} alt="txio" className="h-10 w-auto mx-auto" />
                     <h3 className="text-3xl font-black tracking-tighter">Ready to ship?</h3>
                     <div className="flex justify-center gap-4">
-                        <button onClick={() => navigateTo('app')} className="px-10 py-4 bg-electric-violet text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-soft-purple transition-all shadow-2xl active:scale-95">
+                        <button onClick={() => navigateTo('app')} className="px-10 py-4 bg-slate-900 dark:bg-white text-white dark:text-near-black rounded-2xl font-black text-xs uppercase tracking-widest hover:opacity-90 transition-all shadow-2xl active:scale-95">
                             {embedded ? 'New Request' : 'Get Started Free'}
                         </button>
-                        <button onClick={() => navigateTo('docs')} className="px-10 py-4 bg-white/5 border border-white/10 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all">
+                        <button onClick={() => navigateTo('docs')} className={`px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${isDark ? 'bg-white/5 border border-white/10 hover:bg-white/10' : 'bg-slate-100 border border-slate-200 hover:bg-slate-200'}`}>
                             Documentation
                         </button>
                     </div>
                 </div>
-                <div className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-700">
+                <div className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-500">
                     © 2026 txio labs • all rights reserved
                 </div>
             </footer>
