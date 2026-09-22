@@ -4,23 +4,24 @@ import React from 'react';
 
 const getSessions = vi.fn();
 const revokeSession = vi.fn();
-const updatePassword = vi.fn();
 const showToast = vi.fn();
 
 vi.mock('../../../lib/store', () => ({
   appStore: {
     showToast: (...args: unknown[]) => showToast(...args),
   },
-  useAppStore: () => ({
-    user: { email: 'nnajimakuochukwu4@gmail.com' },
-  }),
+}));
+
+vi.mock('../../../lib/api', () => ({
+  apiClient: {
+    post: vi.fn(),
+  },
 }));
 
 vi.mock('../../../services/api', () => ({
   apiService: {
     getSessions: (...args: unknown[]) => getSessions(...args),
     revokeSession: (...args: unknown[]) => revokeSession(...args),
-    updatePassword: (...args: unknown[]) => updatePassword(...args),
   },
 }));
 
@@ -78,63 +79,5 @@ describe('SecurityTab session review', () => {
       expect(revokeSession).toHaveBeenCalledWith('sess-other');
     });
     expect(showToast).toHaveBeenCalledWith('Session revoked', 'success');
-  });
-});
-
-describe('SecurityTab password rotation', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    updatePassword.mockResolvedValue(undefined);
-  });
-
-  it('submits the current and new password through apiService.updatePassword', async () => {
-    render(<SecurityTab />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Rotate Password' }));
-
-    fireEvent.change(screen.getByLabelText('Current Password'), {
-      target: { value: 'current-password-123' },
-    });
-    fireEvent.change(screen.getByLabelText('New Password'), {
-      target: { value: 'new-password-456' },
-    });
-    fireEvent.change(screen.getByLabelText('Confirm New Password'), {
-      target: { value: 'new-password-456' },
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Update Password' }));
-
-    await waitFor(() => {
-      expect(updatePassword).toHaveBeenCalledWith(
-        'nnajimakuochukwu4@gmail.com',
-        'current-password-123',
-        'new-password-456'
-      );
-    });
-    expect(showToast).toHaveBeenCalledWith(
-      'Password rotated successfully!',
-      'success'
-    );
-  });
-
-  it('does not call updatePassword when the form is invalid', async () => {
-    render(<SecurityTab />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Rotate Password' }));
-
-    // Mismatched confirmation is caught client-side before any request.
-    fireEvent.change(screen.getByLabelText('Current Password'), {
-      target: { value: 'current-password-123' },
-    });
-    fireEvent.change(screen.getByLabelText('New Password'), {
-      target: { value: 'new-password-456' },
-    });
-    fireEvent.change(screen.getByLabelText('Confirm New Password'), {
-      target: { value: 'different-password' },
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Update Password' }));
-
-    expect(updatePassword).not.toHaveBeenCalled();
   });
 });

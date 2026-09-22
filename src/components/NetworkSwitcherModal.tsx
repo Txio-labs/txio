@@ -30,11 +30,35 @@ export const NetworkSwitcherModal: React.FC<NetworkSwitcherModalProps> = ({
       }
   };
 
+  // Border/text only, transparent at rest — the target node is a dashed
+  // placeholder until getNetworkHoverBg tints it on hover.
+  const getNetworkOutline = (n: Network) => {
+      switch(n) {
+          case 'mainnet': return 'text-emerald-400 border-emerald-400/20';
+          case 'testnet': return 'text-amber-400 border-amber-400/20';
+          case 'devnet': return 'text-blue-400 border-blue-400/20';
+          case 'localnet': return 'text-fuchsia-400 border-fuchsia-400/20';
+          default: return 'text-slate-400 border-slate-400/20';
+      }
+  };
+
+  // Written out as literal strings (not derived from getNetworkColor) so Tailwind's
+  // build can statically see and generate these hover utilities.
+  const getNetworkHoverBg = (n: Network) => {
+      switch(n) {
+          case 'mainnet': return 'hover:bg-emerald-400/10';
+          case 'testnet': return 'hover:bg-amber-400/10';
+          case 'devnet': return 'hover:bg-blue-400/10';
+          case 'localnet': return 'hover:bg-fuchsia-400/10';
+          default: return 'hover:bg-slate-400/10';
+      }
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-white/70 dark:bg-near-black/60 backdrop-blur-md animate-in fade-in duration-200">
       <div className="bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/5 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative group">
           {/* Background Gradients */}
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-sui-500 to-transparent opacity-50"></div>
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-electric-violet to-transparent opacity-50"></div>
           <div className="absolute -top-20 -right-20 w-40 h-40 bg-electric-violet/10 blur-3xl rounded-full pointer-events-none"></div>
           <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-sky-500/10 blur-3xl rounded-full pointer-events-none"></div>
 
@@ -62,7 +86,7 @@ export const NetworkSwitcherModal: React.FC<NetworkSwitcherModalProps> = ({
                   {/* Connection Line Animation */}
                   <div className="flex-1 flex flex-col items-center justify-center relative -top-3 px-2">
                        <div className="relative w-full h-px bg-slate-200 dark:bg-slate-800">
-                           <div className="absolute top-1/2 left-0 -translate-y-1/2 w-full h-0.5 bg-gradient-to-r from-transparent via-sui-500 to-transparent opacity-50 animate-pulse"></div>
+                           <div className="absolute top-1/2 left-0 -translate-y-1/2 w-full h-0.5 bg-gradient-to-r from-transparent via-electric-violet to-transparent opacity-50 animate-pulse"></div>
                        </div>
                        <div className="mt-2 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 px-2 py-1 rounded text-[9px] text-slate-500 font-mono flex items-center gap-1">
                            Connecting <span className="animate-pulse">...</span>
@@ -71,7 +95,7 @@ export const NetworkSwitcherModal: React.FC<NetworkSwitcherModalProps> = ({
 
                   {/* To Node */}
                   <div className="flex flex-col items-center gap-3 w-24">
-                      <div className={`w-14 h-14 rounded-2xl border-2 border-dashed flex items-center justify-center ${getNetworkColor(to).replace('bg-', 'hover:bg-')}`}>
+                      <div className={`w-14 h-14 rounded-2xl border-2 border-dashed flex items-center justify-center transition-colors ${getNetworkOutline(to)} ${getNetworkHoverBg(to)}`}>
                            <Activity size={24} className={to === 'mainnet' ? 'text-emerald-400' : to === 'testnet' ? 'text-amber-400' : to === 'devnet' ? 'text-blue-400' : 'text-fuchsia-400'} />
                       </div>
                       <div className="text-center">
@@ -92,10 +116,10 @@ export const NetworkSwitcherModal: React.FC<NetworkSwitcherModalProps> = ({
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                  <button onClick={onClose} className="px-4 py-3 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white text-xs font-bold rounded-xl transition-all">
+                  <button onClick={onClose} className="px-4 py-3 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 hover:text-slate-900 dark:text-white text-xs font-bold rounded-xl transition-all">
                       Cancel Request
                   </button>
-                  <button onClick={onConfirm} className="px-4 py-3 bg-electric-violet hover:bg-electric-violet text-white text-xs font-bold rounded-xl shadow-lg shadow-sui-900/20 flex items-center justify-center gap-2 transition-all active:scale-95">
+                  <button onClick={onConfirm} className="px-4 py-3 bg-slate-900 dark:bg-white hover:opacity-90 text-white dark:text-near-black text-xs font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95">
                       Confirm Switch <ArrowRight size={14} />
                   </button>
               </div>

@@ -5,8 +5,7 @@ import {
     Key,
     CreditCard,
     Bell,
-    Award,
-    Zap,
+    FolderKanban,
     Activity,
     Camera,
     Image as ImageIcon,
@@ -303,16 +302,16 @@ const StatCard: React.FC<StatCardProps> = ({ icon, label, value, sub, accent = f
         className={`relative rounded-xl border p-4 transition-colors ${
             accent
                 ? 'bg-electric-violet/[0.06] border-electric-violet/20 hover:border-electric-violet/30'
-                : 'bg-dark-indigo-glow border-white/[0.08] hover:border-white/[0.12]'
+                : 'bg-slate-50 dark:bg-dark-indigo-glow border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.12]'
         }`}
     >
         <div className="flex items-center justify-between mb-3">
-            <div className={`p-1.5 rounded-lg ${accent ? 'bg-electric-violet/[0.12] text-electric-violet' : 'bg-white/[0.04] text-slate-400'}`}>
+            <div className={`p-1.5 rounded-lg ${accent ? 'bg-electric-violet/[0.12] text-electric-violet' : 'bg-slate-900/[0.04] dark:bg-white/[0.04] text-slate-500 dark:text-slate-400'}`}>
                 {icon}
             </div>
             <span className="text-[11px] text-slate-500">{label}</span>
         </div>
-        <div className="text-xl font-semibold text-white tracking-tight">{value}</div>
+        <div className="text-xl font-semibold text-slate-900 dark:text-white tracking-tight">{value}</div>
         <div className="text-xs text-slate-500 mt-0.5">{sub}</div>
     </div>
 );
@@ -326,7 +325,7 @@ interface SectionProps {
 const Section: React.FC<SectionProps> = ({ title, description, children }) => (
     <section>
         <div className="mb-3">
-            <h2 className="text-sm font-semibold text-slate-200 tracking-tight">{title}</h2>
+            <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200 tracking-tight">{title}</h2>
             {description && <p className="text-xs text-slate-500 mt-0.5">{description}</p>}
         </div>
         {children}
@@ -354,9 +353,9 @@ const PreferenceToggle: React.FC<PreferenceToggleProps> = ({
     checked,
     onChange,
 }) => (
-    <label className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-white/[0.03] transition-colors">
+    <label className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors">
         <span className="min-w-0 flex-1">
-            <span className="block text-sm font-medium text-slate-200">{title}</span>
+            <span className="block text-sm font-medium text-slate-800 dark:text-slate-200">{title}</span>
             <span className="block text-xs text-slate-500 mt-0.5 leading-relaxed">{description}</span>
         </span>
         <input
@@ -365,13 +364,13 @@ const PreferenceToggle: React.FC<PreferenceToggleProps> = ({
             checked={checked}
             onChange={(event) => onChange(event.target.checked)}
         />
-        <span className="relative h-6 w-11 shrink-0 rounded-full bg-slate-700 transition-colors peer-checked:bg-electric-violet/80 after:absolute after:left-1 after:top-1 after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-5" />
+        <span className="relative h-6 w-11 shrink-0 rounded-full bg-slate-300 dark:bg-slate-700 transition-colors peer-checked:bg-electric-violet/80 after:absolute after:left-1 after:top-1 after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-5" />
     </label>
 );
 
 const Field: React.FC<FieldProps> = ({ label, children, hint, error, htmlFor }) => (
     <div className="space-y-1.5">
-        <label htmlFor={htmlFor} className="block text-xs font-medium text-slate-400">
+        <label htmlFor={htmlFor} className="block text-xs font-medium text-slate-500 dark:text-slate-400">
             {label}
         </label>
         {children}
@@ -387,7 +386,7 @@ const Field: React.FC<FieldProps> = ({ label, children, hint, error, htmlFor }) 
 );
 
 const baseInputClass =
-    'w-full bg-near-black border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-slate-200 placeholder:text-slate-600 outline-none transition-colors';
+    'w-full bg-white dark:bg-near-black border border-slate-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 outline-none transition-colors';
 const editableInputClass = `${baseInputClass} focus:border-electric-violet/60 focus:bg-white/[0.02]`;
 const readonlyInputClass = `${baseInputClass} text-slate-500 cursor-not-allowed select-text`;
 const errorInputClass = `${baseInputClass} border-rose-500/40 focus:border-rose-500/60`;
@@ -413,7 +412,7 @@ const ActiveSessionsSection: React.FC<ActiveSessionsSectionProps> = ({
 }) => {
     if (status === 'loading') {
         return (
-            <div className="bg-dark-indigo-glow border border-white/[0.08] rounded-xl flex items-center justify-center gap-2 py-8 text-slate-500 text-sm">
+            <div className="bg-slate-50 dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/[0.08] rounded-xl flex items-center justify-center gap-2 py-8 text-slate-500 text-sm">
                 <Loader2 size={15} className="animate-spin" />
                 Loading sessions…
             </div>
@@ -422,14 +421,14 @@ const ActiveSessionsSection: React.FC<ActiveSessionsSectionProps> = ({
 
     if (status === 'error') {
         return (
-            <div className="bg-dark-indigo-glow border border-white/[0.08] rounded-xl px-5 py-5">
+            <div className="bg-slate-50 dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/[0.08] rounded-xl px-5 py-5">
                 <p className="flex items-center gap-1.5 text-xs text-rose-400 mb-3">
                     <AlertCircle size={13} />
                     {errorMessage ?? 'Could not load sessions.'}
                 </p>
                 <button
                     onClick={onRetry}
-                    className="text-[11px] font-medium text-electric-violet hover:text-soft-purple transition-colors"
+                    className="text-[11px] font-medium text-electric-violet hover:opacity-80 transition-colors"
                 >
                     Try again
                 </button>
@@ -439,15 +438,15 @@ const ActiveSessionsSection: React.FC<ActiveSessionsSectionProps> = ({
 
     if (status === 'ready' && sessions.length === 0) {
         return (
-            <div className="bg-dark-indigo-glow border border-white/[0.08] rounded-xl flex items-center justify-center py-8 text-slate-500 text-sm">
+            <div className="bg-slate-50 dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/[0.08] rounded-xl flex items-center justify-center py-8 text-slate-500 text-sm">
                 No active sessions found.
             </div>
         );
     }
 
     return (
-        <div className="bg-dark-indigo-glow border border-white/[0.08] rounded-xl overflow-hidden">
-            <div className="divide-y divide-white/[0.06]">
+        <div className="bg-slate-50 dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/[0.08] rounded-xl overflow-hidden">
+            <div className="divide-y divide-slate-200 dark:divide-white/[0.06]">
                 {sessions.map((s) => {
                     const isRevoking = revokingId === s.id;
                     return (
@@ -457,7 +456,7 @@ const ActiveSessionsSection: React.FC<ActiveSessionsSectionProps> = ({
                                 className={`h-2 w-2 rounded-full shrink-0 ${
                                     s.is_current
                                         ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]'
-                                        : 'bg-slate-600'
+                                        : 'bg-slate-400 dark:bg-slate-600'
                                 }`}
                             />
 
@@ -469,7 +468,7 @@ const ActiveSessionsSection: React.FC<ActiveSessionsSectionProps> = ({
 
                             {/* Info */}
                             <div className="min-w-0 flex-1">
-                                <div className="text-slate-200 truncate">
+                                <div className="text-slate-800 dark:text-slate-200 truncate">
                                     {s.device_label}
                                     {s.is_current && (
                                         <span className="ml-2 text-[10px] font-medium text-emerald-400 uppercase tracking-wide">
@@ -492,7 +491,7 @@ const ActiveSessionsSection: React.FC<ActiveSessionsSectionProps> = ({
                                 <button
                                     onClick={() => onRevoke(s.id)}
                                     disabled={isRevoking}
-                                    className="shrink-0 p-1.5 rounded-md text-slate-600 hover:text-rose-400 hover:bg-rose-500/[0.08] disabled:opacity-40 transition-colors"
+                                    className="shrink-0 p-1.5 rounded-md text-slate-400 dark:text-slate-600 hover:text-rose-400 hover:bg-rose-500/[0.08] disabled:opacity-40 transition-colors"
                                     title="Revoke session"
                                     aria-label={`Revoke session for ${s.device_label}`}
                                 >
@@ -514,21 +513,22 @@ const ActiveSessionsSection: React.FC<ActiveSessionsSectionProps> = ({
 // ─── Container ──────────────────────────────────────────────────────────────
 
 export const ProfilePage: React.FC = () => {
-    const { user, history } = useAppStore();
+    const { user, history, collections } = useAppStore();
 
     if (!user) {
-        return <div className="p-10 text-slate-500">Please log in.</div>;
+        return <div className="p-10 bg-white dark:bg-near-black text-slate-500">Please log in.</div>;
     }
 
-    return <ProfilePageContent user={user} historyCount={history.length} />;
+    return <ProfilePageContent user={user} historyCount={history.length} collectionCount={collections.length} />;
 };
 
 interface ProfilePageContentProps {
     user: UserProfile;
     historyCount: number;
+    collectionCount: number;
 }
 
-const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCount }) => {
+const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCount, collectionCount }) => {
     const { values, errors, isDirty, setField, validate } = useProfileForm(user);
     const save = useSaveStatus();
     const {
@@ -605,26 +605,26 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
     const saveButtonClass = (() => {
         if (save.status === 'saved') return 'bg-emerald-500/[0.15] text-emerald-300 border border-emerald-500/30';
         if (save.status === 'error') return 'bg-rose-500/[0.15] text-rose-300 border border-rose-500/30 hover:bg-rose-500/20';
-        return 'bg-electric-violet hover:bg-electric-violet/90 text-white shadow-[0_0_20px_-8px_rgba(163,163,163,0.6)]';
+        return 'bg-slate-900 dark:bg-white hover:opacity-90 text-white dark:text-near-black shadow-[0_0_20px_-8px_rgba(163,163,163,0.6)]';
     })();
 
     const isSaveDisabled = save.status === 'saving' || (!isDirty && save.status !== 'error');
 
     return (
-        <div className="h-full bg-near-black overflow-y-auto custom-scrollbar">
-            <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-8 space-y-6">
+        <div className="h-full bg-white dark:bg-near-black overflow-y-auto custom-scrollbar">
+            <div className="w-full px-4 md:px-8 py-6 md:py-8 space-y-6">
 
                 {/* Top row: identity + stats */}
                 <div className="grid grid-cols-1 lg:grid-cols-6 gap-3">
                     {/* Identity card */}
-                    <div className="lg:col-span-2 relative overflow-hidden rounded-xl border border-white/[0.08] bg-dark-indigo-glow">
+                    <div className="lg:col-span-2 relative overflow-hidden rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-dark-indigo-glow">
                         {user.bannerUrl ? (
                             <>
                                 <div
                                     className="absolute inset-0 opacity-20"
                                     style={{ backgroundImage: `url(${user.bannerUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-b from-near-black/40 via-near-black/60 to-near-black/85" />
+                                <div className="absolute inset-0 bg-gradient-to-b from-white/40 dark:from-near-black/40 via-white/60 dark:via-near-black/60 to-white/85 dark:to-near-black/85" />
                             </>
                         ) : (
                             <>
@@ -635,7 +635,7 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
 
                         <div className="relative p-5 flex items-center gap-4">
                             <div className="relative group/avatar shrink-0">
-                                <div className="p-0.5 bg-near-black rounded-2xl ring-1 ring-white/[0.08]">
+                                <div className="p-0.5 bg-white dark:bg-near-black rounded-2xl ring-1 ring-slate-200 dark:ring-white/[0.08]">
                                     <Avatar size="xl" type="user" className="rounded-xl" src={user.avatarUrl} seed={user.email} />
                                 </div>
                                 <input
@@ -648,7 +648,7 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
                                 <button
                                     onClick={avatarTrigger}
                                     disabled={avatarIsUploading}
-                                    className="absolute inset-0.5 flex items-center justify-center bg-near-black/70 backdrop-blur-sm text-white opacity-0 group-hover/avatar:opacity-100 focus-visible:opacity-100 disabled:opacity-60 rounded-xl transition-opacity"
+                                    className="absolute inset-0.5 flex items-center justify-center bg-white/70 dark:bg-near-black/70 backdrop-blur-sm text-slate-900 dark:text-white opacity-0 group-hover/avatar:opacity-100 focus-visible:opacity-100 disabled:opacity-60 rounded-xl transition-opacity"
                                     aria-label={avatarIsUploading ? 'Uploading avatar' : 'Change avatar'}
                                 >
                                     <Camera size={18} />
@@ -656,8 +656,8 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
                             </div>
 
                             <div className="min-w-0 flex-1">
-                                <h1 className="text-base md:text-lg font-semibold text-white tracking-tight truncate">{user.name}</h1>
-                                <p className="text-xs text-slate-400 truncate mt-0.5">{user.email}</p>
+                                <h1 className="text-base md:text-lg font-semibold text-slate-900 dark:text-white tracking-tight truncate">{user.name}</h1>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">{user.email}</p>
                                 <p className="text-[11px] font-mono text-slate-500 truncate mt-0.5">ID {user.id}</p>
                             </div>
                         </div>
@@ -673,7 +673,7 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
                         <button
                             onClick={bannerTrigger}
                             disabled={bannerIsUploading}
-                            className="absolute top-2 right-2 p-1.5 rounded-md text-slate-500 hover:text-slate-200 hover:bg-white/[0.06] disabled:opacity-40 transition-colors"
+                            className="absolute top-2 right-2 p-1.5 rounded-md text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-900/[0.06] dark:hover:bg-white/[0.06] disabled:opacity-40 transition-colors"
                             title={bannerIsUploading ? 'Uploading…' : 'Customize background'}
                             aria-label="Customize background"
                         >
@@ -683,10 +683,20 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
 
                     {/* Stats */}
                     <div className="lg:col-span-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <StatCard icon={<Zap className="w-4 h-4" />} label="Plan" value="Pro" sub="Unlimited" accent />
-                        <StatCard icon={<Activity className="w-4 h-4" />} label="Activity" value={String(historyCount)} sub="Calls this session" />
-                        <StatCard icon={<Award className="w-4 h-4" />} label="Reputation" value="Lvl 42" sub="Sui builder" />
-                        <StatCard icon={<Shield className="w-4 h-4" />} label="Security" value="Strong" sub="2FA enabled" />
+                        <StatCard icon={<Activity className="w-4 h-4" />} label="Activity" value={String(historyCount)} sub="Calls this session" accent />
+                        <StatCard icon={<FolderKanban className="w-4 h-4" />} label="Collections" value={String(collectionCount)} sub="In this workspace" />
+                        <StatCard
+                            icon={<Laptop className="w-4 h-4" />}
+                            label="Sessions"
+                            value={sessionsState.status === 'ready' ? String(sessionsState.data.length) : '—'}
+                            sub="Active sign-ins"
+                        />
+                        <StatCard
+                            icon={<Github size={16} />}
+                            label="GitHub"
+                            value={user.githubAccount ? 'Linked' : 'Not linked'}
+                            sub={user.githubAccount ? `@${user.githubAccount.login}` : 'Connect below'}
+                        />
                     </div>
                 </div>
 
@@ -696,7 +706,7 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
                     <div className="lg:col-span-2 space-y-6">
                         <Section title="Profile information" description="Update how you appear across txio.">
                             <form
-                                className="bg-dark-indigo-glow border border-white/[0.08] rounded-xl overflow-hidden"
+                                className="bg-slate-50 dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/[0.08] rounded-xl overflow-hidden"
                                 onSubmit={(e) => { e.preventDefault(); void handleSave(); }}
                             >
                                 <div className="p-5 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -722,15 +732,15 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
                                     </Field>
                                     <Field label="GitHub" hint="Link your GitHub to publish recipes and sync gists.">
                                         <div className={`${readonlyInputClass} flex items-center gap-2`}>
-                                            <Github size={14} className={user.githubAccount ? "text-slate-200 shrink-0" : "text-slate-400 shrink-0"} />
-                                            <span className={user.githubAccount ? "truncate text-slate-200" : "truncate text-slate-500"}>
+                                            <Github size={14} className={user.githubAccount ? "text-slate-800 dark:text-slate-200 shrink-0" : "text-slate-400 shrink-0"} />
+                                            <span className={user.githubAccount ? "truncate text-slate-800 dark:text-slate-200" : "truncate text-slate-500"}>
                                                 {user.githubAccount ? `@${user.githubAccount.login}` : "Not connected"}
                                             </span>
                                             {!user.githubAccount && (
                                                 <button
                                                     type="button"
                                                     onClick={() => window.location.href = `${API_BASE}/auth/github/login`}
-                                                    className="ml-auto text-[11px] text-electric-violet hover:text-soft-purple font-medium transition-colors"
+                                                    className="ml-auto text-[11px] text-electric-violet hover:opacity-80 font-medium transition-colors"
                                                 >
                                                     Connect →
                                                 </button>
@@ -768,7 +778,7 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
                                 </div>
 
                                 {/* Form footer */}
-                                <div className="flex items-center justify-between gap-4 px-5 md:px-6 py-3 border-t border-white/[0.06] bg-white/[0.015]">
+                                <div className="flex items-center justify-between gap-4 px-5 md:px-6 py-3 border-t border-slate-200 dark:border-white/[0.06] bg-slate-900/[0.015] dark:bg-white/[0.015]">
                                     <p className="text-[11px] text-slate-500">
                                         {save.error
                                             ? <span className="text-rose-400 inline-flex items-center gap-1.5"><AlertCircle size={11} /> {save.error}</span>
@@ -791,7 +801,7 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
 
 
                         <Section title="Notification preferences" description="Choose the updates txio sends by email and in-app alerts.">
-                            <div className="bg-dark-indigo-glow border border-white/[0.08] rounded-xl overflow-hidden divide-y divide-white/[0.06]">
+                            <div className="bg-slate-50 dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/[0.08] rounded-xl overflow-hidden divide-y divide-slate-200 dark:divide-white/[0.06]">
                                 <PreferenceToggle
                                     title="Weekly email digest"
                                     description="Receive a summary of request activity, usage, and workspace changes."
@@ -840,23 +850,23 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
 
                     {/* Side column */}
                     <div className="space-y-6">
-                        <Section title="Account">
-                            <div className="bg-dark-indigo-glow border border-white/[0.08] rounded-xl p-1.5 space-y-0.5">
+        <Section title="Account">
+                            <div className="bg-slate-50 dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/[0.08] rounded-xl p-1.5 space-y-0.5">
                                 {ACCOUNT_LINKS.map(({ id, icon: Icon, label, toast }) => (
                                     <button
                                         key={id}
                                         onClick={() => appStore.showToast(toast, 'info')}
-                                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-300 hover:bg-white/[0.04] hover:text-white group transition-colors"
+                                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-900/[0.04] dark:hover:bg-white/[0.04] hover:text-slate-900 dark:hover:text-white group transition-colors"
                                     >
                                         <Icon size={15} className="text-slate-500 group-hover:text-electric-violet transition-colors" />
                                         <span className="flex-1 text-left">{label}</span>
-                                        <ChevronRight size={14} className="text-slate-600 group-hover:text-slate-400 transition-colors" />
+                                        <ChevronRight size={14} className="text-slate-400 dark:text-slate-600 group-hover:text-slate-600 dark:group-hover:text-slate-400 transition-colors" />
                                     </button>
                                 ))}
                             </div>
                         </Section>
 
-                        <div className="relative rounded-xl border border-electric-violet/20 bg-gradient-to-br from-electric-violet/[0.08] via-near-black to-near-black p-5 overflow-hidden">
+                        <div className="relative rounded-xl border border-electric-violet/20 bg-gradient-to-br from-electric-violet/[0.08] via-white dark:via-near-black to-white dark:to-near-black p-5 overflow-hidden">
                             <div className="absolute -top-12 -right-12 w-32 h-32 bg-electric-violet/20 blur-3xl rounded-full pointer-events-none" />
                             <div className="relative">
                                 <div className="flex items-center gap-2 mb-2">
@@ -865,13 +875,13 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
                                     </div>
                                     <span className="text-[11px] font-semibold text-electric-violet uppercase tracking-wider">Team</span>
                                 </div>
-                                <h3 className="text-white font-semibold tracking-tight mb-1.5">Upgrade to Team</h3>
-                                <p className="text-xs text-slate-400 leading-relaxed mb-4">
+                                <h3 className="text-slate-900 dark:text-white font-semibold tracking-tight mb-1.5">Upgrade to Team</h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-4">
                                     Share collections, sync environments, and collaborate with your team in real time.
                                 </p>
                                 <button
                                     onClick={() => appStore.showToast('Upgrade txio not implemented', 'info')}
-                                    className="w-full py-2 bg-white hover:bg-slate-100 text-near-black font-semibold text-xs rounded-lg transition-colors"
+                                    className="w-full py-2 bg-slate-900 dark:bg-white hover:bg-slate-700 dark:hover:bg-slate-100 text-white dark:text-near-black font-semibold text-xs rounded-lg transition-colors"
                                 >
                                     View plans
                                 </button>

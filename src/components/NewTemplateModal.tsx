@@ -45,8 +45,8 @@ export const NewTemplateModal: React.FC<NewTemplateModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-white/70 dark:bg-near-black/60 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-[#0c0c0e] border border-slate-200 dark:border-white/5 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden relative">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-sui-500 to-transparent opacity-50" />
+      <div className="bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/5 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden relative">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-electric-violet to-transparent opacity-50" />
 
         <div className="p-6 relative z-10">
           <div className="flex items-start justify-between mb-4">
@@ -63,7 +63,7 @@ export const NewTemplateModal: React.FC<NewTemplateModalProps> = ({
             </div>
             <button
               onClick={handleClose}
-              className="text-slate-500 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white transition-colors"
+              className="text-slate-500 hover:text-slate-900 dark:text-white transition-colors"
               aria-label="Close"
             >
               <X size={18} />
@@ -78,7 +78,7 @@ export const NewTemplateModal: React.FC<NewTemplateModalProps> = ({
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Batch Coin Transfer"
             autoFocus
-            className="w-full bg-black/40 border border-slate-200 dark:border-white/5 rounded-lg p-2.5 text-xs text-slate-700 dark:text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-electric-violet/50"
+            className="w-full bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/5 rounded-lg p-2.5 text-xs text-slate-700 dark:text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-electric-violet/50"
           />
 
           <label className="block text-[10px] font-bold uppercase text-slate-500 mt-4 mb-1">
@@ -92,7 +92,7 @@ export const NewTemplateModal: React.FC<NewTemplateModalProps> = ({
                 className={`px-3 py-2 text-xs rounded-lg border transition-colors ${
                   type === t
                     ? 'bg-electric-violet/20 border-electric-violet/50 text-white'
-                    : 'bg-black/20 border-white/5 text-slate-400 hover:text-white'
+                    : 'bg-near-black border-white/5 text-slate-400 hover:text-white'
                 }`}
               >
                 {t}
@@ -108,20 +108,20 @@ export const NewTemplateModal: React.FC<NewTemplateModalProps> = ({
             onChange={(e) => setDescription(e.target.value)}
             placeholder="What does this template do?"
             rows={3}
-            className="w-full bg-black/40 border border-slate-200 dark:border-white/5 rounded-lg p-2.5 text-xs text-slate-700 dark:text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-electric-violet/50 resize-none"
+            className="w-full bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/5 rounded-lg p-2.5 text-xs text-slate-700 dark:text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-electric-violet/50 resize-none"
           />
 
           <div className="grid grid-cols-2 gap-3 mt-6">
             <button
               onClick={handleClose}
-              className="px-4 py-3 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white text-xs font-bold rounded-xl transition-all"
+              className="px-4 py-3 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 hover:text-slate-900 dark:text-white text-xs font-bold rounded-xl transition-all"
             >
               Cancel
             </button>
             <button
               onClick={handleCreate}
               disabled={!title.trim() || isSubmitting}
-              className="px-4 py-3 bg-electric-violet hover:bg-electric-violet disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl shadow-lg shadow-sui-900/20 transition-all active:scale-95"
+              className="px-4 py-3 bg-slate-900 dark:bg-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white dark:text-near-black text-xs font-bold rounded-xl shadow-lg transition-all active:scale-95"
             >
               {isSubmitting ? 'Creating…' : 'Create Template'}
             </button>

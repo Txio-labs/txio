@@ -35,7 +35,7 @@ const HookList: React.FC<{
         </h3>
         <button
           onClick={onAdd}
-          className="flex items-center gap-1 text-xs text-electric-violet hover:text-slate-900 dark:hover:text-slate-900 dark:text-white"
+          className="flex items-center gap-1 text-xs text-electric-violet hover:text-slate-900 dark:text-white"
         >
           <Plus size={12} /> Add
         </button>
@@ -50,14 +50,14 @@ const HookList: React.FC<{
           {rows.map((hook) => (
             <div
               key={hook.id}
-              className="group flex items-start gap-3 p-3 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 rounded-lg hover:border-slate-300 dark:border-white/20 transition-all"
+              className="group flex items-start gap-3 p-3 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 rounded-lg hover:border-slate-300 dark:hover:border-white/20 transition-all"
             >
               <div className="pt-2">
                 <input
                   type="checkbox"
                   checked={hook.enabled}
                   onChange={() => onUpdate(hook.id, { enabled: !hook.enabled })}
-                  className="accent-sui-500 cursor-pointer"
+                  className="accent-electric-violet cursor-pointer"
                 />
               </div>
 

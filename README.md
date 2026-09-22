@@ -1,39 +1,6 @@
-# txio
+# txio Frontend
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
-
-**The txio web app.** An API client and visual transaction builder for Sui — Postman's familiar shape, with Web3 wired in. Move calls, PTBs, name resolution, all of it.
-
-This repo is the dashboard only. The rest of txio lives in sibling repos under
-[Txio-labs](https://github.com/Txio-labs): [`txio-cli`](https://github.com/Txio-labs/txio-cli)
-(terminal client), [`txio-backend`](https://github.com/Txio-labs/txio-backend) (API),
-[`txio-desktop`](https://github.com/Txio-labs/txio-desktop) (Electron wrapper), and
-[`txio-telegram-bot`](https://github.com/Txio-labs/txio-telegram-bot).
-
----
-
-## Prerequisites
-
-- Node.js v20+
-- A running [`txio-backend`](https://github.com/Txio-labs/txio-backend) instance (or point `NEXT_PUBLIC_API_URL` at one)
-
-## Quick start
-
-```bash
-git clone https://github.com/Txio-labs/txio.git
-cd txio
-npm install
-cp .env.example .env.local   # set NEXT_PUBLIC_API_URL
-npm run dev
-```
-
-## Contributing
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md).
-
-## License
-
-MIT — see [LICENSE](./LICENSE).
+The web app. An API client and visual transaction builder for Sui — Postman's familiar shape, with Web3 wired in. Move calls, PTBs, name resolution, all of it.
 
 ---
 

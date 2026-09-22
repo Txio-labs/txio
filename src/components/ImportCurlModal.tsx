@@ -37,8 +37,8 @@ export const ImportCurlModal: React.FC<ImportCurlModalProps> = ({ isOpen, onClos
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-white/70 dark:bg-near-black/60 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-[#0c0c0e] border border-slate-200 dark:border-white/5 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden relative">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-sui-500 to-transparent opacity-50" />
+      <div className="bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/5 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden relative">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-electric-violet to-transparent opacity-50" />
 
         <div className="p-6 relative z-10">
           <div className="flex items-start justify-between mb-4">
@@ -55,7 +55,7 @@ export const ImportCurlModal: React.FC<ImportCurlModalProps> = ({ isOpen, onClos
             </div>
             <button
               onClick={handleClose}
-              className="text-slate-500 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white transition-colors"
+              className="text-slate-500 hover:text-slate-900 dark:text-white transition-colors"
               aria-label="Close"
             >
               <X size={18} />
@@ -71,7 +71,7 @@ export const ImportCurlModal: React.FC<ImportCurlModalProps> = ({ isOpen, onClos
             placeholder={PLACEHOLDER}
             rows={8}
             autoFocus
-            className="w-full bg-black/40 border border-slate-200 dark:border-white/5 rounded-lg p-3 text-xs font-mono text-slate-700 dark:text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-electric-violet/50 resize-none"
+            className="w-full bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/5 rounded-lg p-3 text-xs font-mono text-slate-700 dark:text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-electric-violet/50 resize-none"
           />
 
           {error && (
@@ -84,14 +84,14 @@ export const ImportCurlModal: React.FC<ImportCurlModalProps> = ({ isOpen, onClos
           <div className="grid grid-cols-2 gap-3 mt-6">
             <button
               onClick={handleClose}
-              className="px-4 py-3 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white text-xs font-bold rounded-xl transition-all"
+              className="px-4 py-3 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 hover:text-slate-900 dark:text-white text-xs font-bold rounded-xl transition-all"
             >
               Cancel
             </button>
             <button
               onClick={handleImport}
               disabled={!curlText.trim()}
-              className="px-4 py-3 bg-electric-violet hover:bg-electric-violet disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl shadow-lg shadow-sui-900/20 transition-all active:scale-95"
+              className="px-4 py-3 bg-slate-900 dark:bg-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white dark:text-near-black text-xs font-bold rounded-xl shadow-lg transition-all active:scale-95"
             >
               Import
             </button>

@@ -32,10 +32,10 @@ export const LoginSignupForm: React.FC<LoginSignupFormProps> = ({
   return (
     <div className="p-8">
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-white mb-2">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
           {mode === 'login' ? 'Welcome Back' : 'Create Account'}
         </h2>
-        <p className="text-slate-400 text-sm">
+        <p className="text-slate-500 dark:text-slate-400 text-sm">
           {mode === 'login' 
             ? 'Enter your credentials to access your workspace' 
             : 'Join txio for free'}
@@ -52,8 +52,8 @@ export const LoginSignupForm: React.FC<LoginSignupFormProps> = ({
                 id="fullName"
                 type="text" 
                 required 
-                className="w-full bg-near-black border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-sm text-white focus:border-electric-violet focus:ring-1 focus:ring-electric-violet/50 outline-none transition-all" 
-                placeholder="John Doe" 
+                className="w-full bg-white dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-sm text-slate-900 dark:text-white focus:border-electric-violet focus:ring-1 focus:ring-electric-violet/50 outline-none transition-all"
+                placeholder="John Doe"
                 value={formData.name} 
                 onChange={e => setFormData({...formData, name: e.target.value})} 
               />
@@ -69,8 +69,8 @@ export const LoginSignupForm: React.FC<LoginSignupFormProps> = ({
               id="email"
               type="email" 
               required 
-              className="w-full bg-near-black border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-sm text-white focus:border-electric-violet focus:ring-1 focus:ring-electric-violet/50 outline-none transition-all" 
-              placeholder="name@example.com" 
+              className="w-full bg-white dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-sm text-slate-900 dark:text-white focus:border-electric-violet focus:ring-1 focus:ring-electric-violet/50 outline-none transition-all"
+              placeholder="name@example.com"
               value={formData.email} 
               onChange={e => setFormData({...formData, email: e.target.value})} 
             />
@@ -85,8 +85,8 @@ export const LoginSignupForm: React.FC<LoginSignupFormProps> = ({
               id="password"
               type="password" 
               required 
-              className="w-full bg-near-black border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-sm text-white focus:border-electric-violet focus:ring-1 focus:ring-electric-violet/50 outline-none transition-all" 
-              placeholder="••••••••" 
+              className="w-full bg-white dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-sm text-slate-900 dark:text-white focus:border-electric-violet focus:ring-1 focus:ring-electric-violet/50 outline-none transition-all"
+              placeholder="••••••••"
               value={formData.password} 
               onChange={e => setFormData({...formData, password: e.target.value})} 
             />
@@ -96,7 +96,7 @@ export const LoginSignupForm: React.FC<LoginSignupFormProps> = ({
         <button 
           type="submit"
           disabled={isSubmitting}
-          className="w-full bg-electric-violet hover:bg-electric-violet text-white font-bold py-2.5 rounded-lg transition-all shadow-lg shadow-sui-900/50 mt-6 flex items-center justify-center gap-2 disabled:opacity-60"
+          className="w-full bg-slate-900 dark:bg-white hover:opacity-90 text-white dark:text-near-black font-bold py-2.5 rounded-lg transition-all shadow-lg mt-6 flex items-center justify-center gap-2 disabled:opacity-60"
         >
           {isSubmitting
             ? 'Please wait...'
@@ -107,10 +107,10 @@ export const LoginSignupForm: React.FC<LoginSignupFormProps> = ({
         </button>
       </form>
       
-      <div className="mt-6 pt-6 border-t border-white/5 text-center">
-        <button 
-          onClick={() => onModeChange(mode === 'login' ? 'signup' : 'login')} 
-          className="text-sm text-slate-400 hover:text-white transition-colors"
+      <div className="mt-6 pt-6 border-t border-slate-200 dark:border-white/5 text-center">
+        <button
+          onClick={() => onModeChange(mode === 'login' ? 'signup' : 'login')}
+          className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
         >
           {mode === 'login' ? "Don't have an account? " : "Already have an account? "}
           <span className="text-electric-violet font-bold hover:underline">
