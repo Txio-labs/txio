@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import {
-    Mail, Lock, User, ArrowRight, Sparkles, ArrowLeft, Rocket, Globe, Zap
+    Mail, Lock, User, ArrowRight, ArrowLeft, Rocket, Globe, Zap
 } from 'lucide-react';
 import { Github, Twitter } from '@/components/icons/BrandIcons';
 import { appStore, useAppStore } from '@/lib/store';
-import { ApiError, API_BASE, pingBackendAwake } from '@/services/api';
+import { API_BASE, apiService } from '@/services/api';
 import logoDark from '../assets/txio2.png';
 
 export const GetStartedPage: React.FC = () => {
@@ -25,57 +25,33 @@ export const GetStartedPage: React.FC = () => {
         setIsLoading(true);
 
         try {
-            await appStore.signup(
-                formData.name,
-                formData.email,
-                formData.password
-            );
-            router.replace('/workspace');
+            await apiService.requestOtp(formData.email);
+            appStore.setPendingSignup({
+                name: formData.name,
+                email: formData.email,
+                password: formData.password
+            });
+            router.push('/otp');
         } catch (error) {
             console.error(error);
-            appStore.showToast(
-                error instanceof ApiError && error.status === 0
-                    ? error.message
-                    : "Signup didn't go through. Try again?",
-                'error'
-            );
+            const message = error instanceof Error ? error.message : "Signup didn't go through. Try again?";
+            appStore.showToast(message, 'error');
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleSocialLogin = async (provider: string) => {
+    const handleSocialLogin = (provider: string) => {
         setSocialLoading(provider);
         appStore.showToast(`Connecting to ${provider}...`, 'info');
+        
+        if (provider === 'Google') {
+            window.location.href = `${API_BASE}/auth/google/login`;
+            return;
+        }
 
-        // OAuth providers hand off via a full page navigation, which shows
-        // nothing but a blank tab while a cold backend wakes up. Ping it
-        // first so we can tell the user what's happening instead of
-        // silently redirecting into an apparent hang.
-        if (provider === 'Google' || provider === 'GitHub') {
-            const wakingUpTimer = setTimeout(() => {
-                appStore.showToast(
-                    'Server was idle and is waking up — this can take up to a minute...',
-                    'info'
-                );
-            }, 4000);
-
-            const awake = await pingBackendAwake();
-            clearTimeout(wakingUpTimer);
-
-            if (!awake) {
-                setSocialLoading(null);
-                appStore.showToast(
-                    "Couldn't reach the server. Please try again in a moment.",
-                    'error'
-                );
-                return;
-            }
-
-            window.location.href =
-                provider === 'Google'
-                    ? `${API_BASE}/auth/google/login`
-                    : `${API_BASE}/auth/github/login`;
+        if (provider === 'GitHub') {
+            window.location.href = `${API_BASE}/auth/github/login`;
             return;
         }
 
@@ -94,6 +70,12 @@ export const GetStartedPage: React.FC = () => {
         }`}>
             {/* Left Wing */}
             <div className="hidden lg:flex flex-1 relative bg-near-black border-r border-white/5 p-16 flex-col justify-between overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-full opacity-30" style={{ 
+                    backgroundImage: 'linear-gradient(rgba(163,163,163, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(163,163,163, 0.05) 1px, transparent 1px)',
+                    backgroundSize: '50px 50px'
+                }}></div>
+                <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-electric-violet/10 blur-[120px] rounded-full"></div>
+                
                 <div className="relative z-10">
                     <button 
                         className="flex items-center gap-3 mb-16 cursor-pointer"
@@ -123,7 +105,7 @@ export const GetStartedPage: React.FC = () => {
                         <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Deploy</div>
                     </div>
                     <div className="space-y-2 text-center">
-                        <div className="w-10 h-10 mx-auto rounded-xl bg-white/5 flex items-center justify-center text-soft-purple"><Globe size={20}/></div>
+                        <div className="w-10 h-10 mx-auto rounded-xl bg-white/5 flex items-center justify-center text-electric-violet"><Globe size={20}/></div>
                         <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Connect</div>
                     </div>
                     <div className="space-y-2 text-center">
@@ -140,11 +122,7 @@ export const GetStartedPage: React.FC = () => {
                         appStore.setViewMode('landing');
                         router.push('/');
                     }}
-                    className={`absolute top-8 left-8 flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors ${
-                        theme === 'dark'
-                            ? 'hover:text-white'
-                            : 'hover:text-slate-900'
-                    }`}
+                    className="absolute top-8 left-8 flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-white transition-colors"
                 >
                     <ArrowLeft size={16} /> Back
                 </button>
@@ -158,7 +136,7 @@ export const GetStartedPage: React.FC = () => {
                 >
                     <div className="text-center mb-10">
                         <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-electric-violet/10 mb-6">
-                            <Sparkles className="text-electric-violet" size={32} />
+                            <img src={logoDark.src} alt="txio" className="h-8 w-auto" />
                         </div>
                         <h2 className="text-3xl font-bold tracking-tight mb-2">Let&apos;s get you set up</h2>
                         <p className="text-sm text-slate-500">Takes about thirty seconds.</p>
@@ -233,7 +211,7 @@ export const GetStartedPage: React.FC = () => {
 
                         <button 
                             disabled={isLoading}
-                            className="w-full mt-4 py-4 bg-electric-violet text-white rounded-2xl font-bold text-lg hover:bg-soft-purple transition-all flex items-center justify-center gap-2 group shadow-xl"
+                            className="w-full mt-4 py-4 bg-slate-900 dark:bg-white text-white dark:text-near-black rounded-2xl font-bold text-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 group shadow-xl"
                         >
                             {isLoading ? <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <>Create Account <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform"/></>}
                         </button>
@@ -285,11 +263,7 @@ export const GetStartedPage: React.FC = () => {
                                 appStore.setViewMode('signin');
                                 router.push('/signin');
                             }}
-                            className={`text-sm font-medium text-slate-500 transition-colors ${
-                                theme === 'dark'
-                                    ? 'hover:text-white'
-                                    : 'hover:text-slate-900'
-                            }`}
+                            className="text-sm font-medium text-slate-500 hover:text-white transition-colors"
                         >
                             Already have an account? <span className="text-electric-violet font-bold">Sign In</span>
                         </button>

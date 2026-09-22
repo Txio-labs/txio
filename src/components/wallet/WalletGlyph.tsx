@@ -44,9 +44,25 @@ const GLYPH_STYLES: Record<
         ring: 'from-orange-500/70 to-red-400/40',
         fill: 'from-orange-500 to-red-500'
     },
+    rabby: {
+        ring: 'from-blue-500/70 to-sky-300/40',
+        fill: 'from-blue-600 to-sky-400'
+    },
+    zerion: {
+        ring: 'from-blue-500/70 to-fuchsia-300/40',
+        fill: 'from-blue-600 to-fuchsia-500'
+    },
+    oneinch: {
+        ring: 'from-red-500/70 to-rose-300/40',
+        fill: 'from-red-600 to-rose-400'
+    },
+    frame: {
+        ring: 'from-slate-500/70 to-zinc-300/40',
+        fill: 'from-slate-700 to-zinc-500'
+    },
     'sui-wallet': {
-        ring: 'from-electric-violet/80 to-soft-purple/40',
-        fill: 'from-electric-violet to-soft-purple'
+        ring: 'from-electric-violet/80 to-electric-violet/40',
+        fill: 'from-electric-violet to-slate-700'
     },
     suiet: {
         ring: 'from-cyan-400/70 to-electric-violet/40',
@@ -55,6 +71,18 @@ const GLYPH_STYLES: Record<
     ethos: {
         ring: 'from-emerald-400/70 to-cyan-300/40',
         fill: 'from-emerald-400 to-cyan-300'
+    },
+    'nightly-sui': {
+        ring: 'from-indigo-600/70 to-slate-400/40',
+        fill: 'from-indigo-700 to-slate-500'
+    },
+    'okx-wallet-sui': {
+        ring: 'from-zinc-500/70 to-slate-300/40',
+        fill: 'from-zinc-700 to-slate-400'
+    },
+    slush: {
+        ring: 'from-sky-400/70 to-blue-300/40',
+        fill: 'from-sky-500 to-blue-400'
     },
     lobstr: {
         ring: 'from-rose-400/70 to-orange-300/40',
@@ -92,6 +120,14 @@ const GLYPH_STYLES: Record<
         ring: 'from-red-500/70 to-orange-300/40',
         fill: 'from-red-500 to-orange-400'
     },
+    glow: {
+        ring: 'from-amber-400/70 to-yellow-300/40',
+        fill: 'from-amber-500 to-yellow-400'
+    },
+    'nightly-solana': {
+        ring: 'from-indigo-600/70 to-slate-400/40',
+        fill: 'from-indigo-700 to-slate-500'
+    },
     petra: {
         ring: 'from-pink-500/70 to-purple-300/40',
         fill: 'from-pink-500 to-purple-400'
@@ -99,6 +135,18 @@ const GLYPH_STYLES: Record<
     martian: {
         ring: 'from-blue-500/70 to-indigo-300/40',
         fill: 'from-blue-500 to-indigo-400'
+    },
+    pontem: {
+        ring: 'from-emerald-500/70 to-teal-300/40',
+        fill: 'from-emerald-600 to-teal-400'
+    },
+    'rise-wallet': {
+        ring: 'from-orange-500/70 to-amber-300/40',
+        fill: 'from-orange-600 to-amber-400'
+    },
+    'nightly-aptos': {
+        ring: 'from-indigo-600/70 to-slate-400/40',
+        fill: 'from-indigo-700 to-slate-500'
     }
 };
 

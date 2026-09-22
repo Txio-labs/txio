@@ -1,5 +1,5 @@
-import { AppSettings, Network, NotificationPreferences } from '../types';
-import { NETWORKS } from './constants';
+import { AppSettings, ChainId, Network, NotificationPreferences } from '../types';
+import { EVM_NETWORKS, NETWORKS, SOLANA_NETWORKS, STELLAR_NETWORKS } from './constants';
 
 export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
     emailDigests: true,
@@ -8,20 +8,26 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
     inAppProductUpdates: false
 };
 
+const EMPTY_CUSTOM_RPC: Record<Network, string> = {
+    mainnet: '',
+    testnet: '',
+    devnet: '',
+    localnet: ''
+};
+
 export const DEFAULT_APP_SETTINGS: AppSettings = {
-    theme: 'dark',
+    theme: 'light',
     showLineNumbers: true,
     autoSave: true,
     telemetry: true,
-    customRpc: {
-        mainnet: '',
-        testnet: '',
-        devnet: '',
-        localnet: ''
-    },
+    customRpc: { ...EMPTY_CUSTOM_RPC },
+    evmCustomRpc: { ...EMPTY_CUSTOM_RPC },
+    stellarCustomRpc: { ...EMPTY_CUSTOM_RPC },
+    solanaCustomRpc: { ...EMPTY_CUSTOM_RPC },
     explorer: 'suiscan',
     evmExplorer: 'family',
-    stellarExplorer: 'stellarexpert'
+    stellarExplorer: 'stellarexpert',
+    solanaExplorer: 'solanaexplorer'
 };
 
 export const normalizeNotificationPreferences = (
@@ -40,6 +46,18 @@ export const normalizeAppSettings = (
         customRpc: {
             ...DEFAULT_APP_SETTINGS.customRpc,
             ...(settings?.customRpc || {})
+        },
+        evmCustomRpc: {
+            ...DEFAULT_APP_SETTINGS.evmCustomRpc,
+            ...(settings?.evmCustomRpc || {})
+        },
+        stellarCustomRpc: {
+            ...DEFAULT_APP_SETTINGS.stellarCustomRpc,
+            ...(settings?.stellarCustomRpc || {})
+        },
+        solanaCustomRpc: {
+            ...DEFAULT_APP_SETTINGS.solanaCustomRpc,
+            ...(settings?.solanaCustomRpc || {})
         }
     };
 
@@ -49,6 +67,9 @@ export const normalizeAppSettings = (
     }
     if (!settings?.stellarExplorer) {
         merged.stellarExplorer = DEFAULT_APP_SETTINGS.stellarExplorer;
+    }
+    if (!settings?.solanaExplorer) {
+        merged.solanaExplorer = DEFAULT_APP_SETTINGS.solanaExplorer;
     }
 
     return merged;
@@ -62,6 +83,35 @@ export const resolveRpcUrl = (
         settings.customRpc[network]?.trim();
 
     return customUrl || NETWORKS[network];
+};
+
+/**
+ * Chain-aware RPC URL resolution, honoring per-chain custom overrides where
+ * they exist. Aptos has no default/override RPC infrastructure yet (it's a
+ * REST API, not JSON-RPC, so it needs a different request-building path) —
+ * it's intentionally left out here.
+ */
+export const resolveChainCustomRpcUrl = (
+    chain: Extract<ChainId, 'sui' | 'evm' | 'stellar' | 'solana'>,
+    network: Network,
+    settings: Pick<AppSettings, 'customRpc' | 'evmCustomRpc' | 'stellarCustomRpc' | 'solanaCustomRpc'> = DEFAULT_APP_SETTINGS
+) => {
+    if (chain === 'sui') {
+        return resolveRpcUrl(network, settings);
+    }
+
+    if (chain === 'evm') {
+        const customUrl = settings.evmCustomRpc[network]?.trim();
+        return customUrl || EVM_NETWORKS[network];
+    }
+
+    if (chain === 'solana') {
+        const customUrl = settings.solanaCustomRpc[network]?.trim();
+        return customUrl || SOLANA_NETWORKS[network];
+    }
+
+    const customUrl = settings.stellarCustomRpc[network]?.trim();
+    return customUrl || STELLAR_NETWORKS[network];
 };
 
 const getSuiExplorerHost = (

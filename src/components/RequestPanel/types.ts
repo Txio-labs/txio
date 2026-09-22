@@ -1,4 +1,5 @@
 import { RequestItem, RequestType, Network, RPCHealthMetric, EnvironmentVariable, AssertionResult } from '../../types';
+import { RequestOutcome } from './response/types';
 
 export interface RequestPanelProps {
   request: RequestItem;
@@ -11,6 +12,7 @@ export interface RequestPanelProps {
   envVars: EnvironmentVariable[];
   isReadOnly?: boolean;
   testResults?: AssertionResult[];
+  outcome?: RequestOutcome | null;
 }
 
 export interface BuilderTabProps {
@@ -22,4 +24,13 @@ export interface BuilderTabProps {
   onChange: (updatedReq: RequestItem) => void;
 }
 
-export type ActiveTab = 'builder' | 'raw' | 'tests' | 'hooks' | 'code';
+export type ActiveTab =
+  | 'builder'
+  | 'headers'
+  | 'auth'
+  | 'raw'
+  | 'transaction'
+  | 'advanced'
+  | 'tests'
+  | 'hooks'
+  | 'code';

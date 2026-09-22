@@ -52,7 +52,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center opacity-50">
         <Box size={24} className="mb-2 text-slate-600"/>
-        <p className="text-xs text-slate-500">Connect a Sui wallet to inspect owned objects</p>
+        <p className="text-xs text-slate-500">Connect a wallet to inspect owned objects</p>
       </div>
     );
   }
@@ -75,7 +75,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
     return (
       <div className="flex-1 flex flex-col animate-in slide-in-from-right-4 duration-200">
         <div className="shrink-0 flex items-center gap-2 p-3 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-near-black/50">
-          <button onClick={() => setSelectedObject(null)} className="p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded text-slate-400 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white transition-colors">
+          <button onClick={() => setSelectedObject(null)} className="p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded text-slate-400 hover:text-slate-900 dark:text-white transition-colors">
             <ChevronLeft size={16} />
           </button>
           <span className="text-xs font-bold text-slate-900 dark:text-white">Object Details</span>
@@ -113,7 +113,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
             onKeyDown={(e) => e.key === 'Enter' && handleObjectSearch()}
           />
         </div>
-        <button onClick={onRefreshObjects} className="p-1.5 bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white hover:border-slate-300 dark:border-white/20 transition-colors">
+        <button onClick={onRefreshObjects} className="p-1.5 bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg text-slate-400 hover:text-slate-900 dark:text-white hover:border-slate-300 dark:hover:border-white/20 transition-colors">
           <RefreshCw size={14} className={loadingObjects ? 'animate-spin' : ''} />
         </button>
       </div>
@@ -125,25 +125,35 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
         </div>
       )}
       
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-2.5 space-y-1.5">
         {objects.map((obj, i) => {
           const type = obj.data?.type || '';
           const isCoin = type.includes('::coin::Coin');
           const shortType = type.split('::').pop().split('<')[0];
-          
+          const objectId: string = obj.data?.objectId || '';
+          const shortId = objectId.length > 14
+            ? `${objectId.slice(0, 8)}…${objectId.slice(-6)}`
+            : objectId;
+
           return (
-            <button key={i} onClick={() => setSelectedObject(obj)} className="group flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-100 dark:bg-white/5 border border-transparent hover:border-slate-200 dark:border-white/10 cursor-pointer transition-all w-full text-left">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${
-                isCoin ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' : 'bg-blue-500/10 border-blue-500/20 text-blue-500'
+            <button
+              key={i}
+              onClick={() => setSelectedObject(obj)}
+              className="group flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-white/[0.02] hover:bg-slate-50 dark:hover:bg-white/[0.06] border border-slate-200 dark:border-white/[0.06] hover:border-slate-300 dark:hover:border-white/20 shadow-sm hover:shadow-md cursor-pointer transition-all duration-150 w-full text-left"
+            >
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border ${
+                isCoin
+                  ? 'bg-amber-500/10 border-amber-500/25 text-amber-500'
+                  : 'bg-electric-violet/10 border-electric-violet/25 text-electric-violet'
               }`}>
-                {isCoin ? <Coins size={14} /> : <Box size={14} />}
+                {isCoin ? <Coins size={16} /> : <Box size={16} />}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-center mb-0.5">
-                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300 truncate">{shortType || 'Object'}</span>
-                  <span className="text-9px font-mono text-slate-600">v{obj.data?.version}</span>
+                <div className="flex justify-between items-center gap-2 mb-1">
+                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">{shortType || 'Object'}</span>
+                  <span className="shrink-0 text-[9px] font-mono font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/5 px-1.5 py-0.5 rounded">v{obj.data?.version}</span>
                 </div>
-                <div className="text-[10px] font-mono text-slate-600 truncate opacity-60 group-hover:opacity-100">{obj.data?.objectId}</div>
+                <div className="text-[10px] font-mono text-slate-500 dark:text-slate-500 truncate group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors" title={objectId}>{shortId}</div>
               </div>
             </button>
           );

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Folder, History, Box, Settings, LayoutGrid, Database, Activity, ShieldCheck, Code2, Sparkles } from 'lucide-react';
+import { Settings, LayoutGrid, Database, Activity, Code2, Sparkles } from 'lucide-react';
 import { appStore, useAppStore } from '@/lib/store';
 import logoDark from '../../assets/txio2.png';
 import logoLight from '../../assets/txio3.png';
@@ -64,7 +64,7 @@ const NavItem: React.FC<NavItemProps> = ({
         relative p-2 rounded-xl transition-colors duration-200
         ${isActive
           ? 'text-electric-violet bg-electric-violet/[0.08]'
-          : 'text-slate-500 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:bg-white/[0.04]'}
+          : 'text-slate-500 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.04]'}
       `}>
         <Icon size={18} strokeWidth={isActive ? 2 : 1.75} className="relative z-10" />
       </div>
@@ -149,9 +149,9 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
             relative p-2 transition-colors duration-200 rounded-xl group mb-1
             ${activeTabType === 'move'
               ? 'text-electric-violet bg-electric-violet/[0.08]'
-              : 'text-slate-500 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:bg-white/[0.04]'}
+              : 'text-slate-500 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.04]'}
           `}
-          title="Contract Builder"
+          title="Move Builder"
         >
           <Code2 size={18} strokeWidth={1.75} className="group-hover:scale-110 transition-transform duration-300" />
         </button>
@@ -164,7 +164,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
             relative p-2 transition-colors duration-200 rounded-xl group mb-1
             ${activeTabType === 'playground'
               ? 'text-electric-violet bg-electric-violet/[0.08]'
-              : 'text-slate-500 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:bg-white/[0.04]'}
+              : 'text-slate-500 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.04]'}
           `}
           title="Playground"
         >
@@ -179,7 +179,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
             relative p-2 transition-colors duration-200 rounded-xl group
             ${activeTabType === 'settings'
               ? 'text-electric-violet bg-electric-violet/[0.08]'
-              : 'text-slate-500 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:bg-white/[0.04]'}
+              : 'text-slate-500 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.04]'}
           `}
           title="Settings"
         >

@@ -1,5 +1,4 @@
 import {
-    getAddress as getFreighterAddress,
     isConnected as isFreighterConnected,
     requestAccess
 } from '@stellar/freighter-api';
@@ -515,14 +514,24 @@ const restoreFreighter =
         const installed = await isFreighterConnected();
         if (!installed.isConnected) return null;
 
-        const address = await getFreighterAddress();
-        if (address.error || !address.address) {
+        // getAddress() only succeeds if this origin was already granted
+        // access *in a way Freighter still recognizes* — after a page
+        // reload it can return an error even though the extension is
+        // installed and was previously authorized, incorrectly reading as
+        // "not connected" and dropping the session on every refresh.
+        // requestAccess() is the same call connectFreighter() uses to
+        // establish the session in the first place: Freighter resolves it
+        // immediately with no prompt when the origin is already
+        // authorized, and only shows a popup when it truly isn't — so it's
+        // safe to call silently here too.
+        const access = await requestAccess();
+        if (access.error || !access.address) {
             return null;
         }
 
         return buildWallet(
             'freighter',
-            address.address
+            access.address
         );
     };
 
@@ -724,6 +733,19 @@ export const fetchStellarBalance =
                     }
                 }
             );
+
+        if (response.status === 404) {
+            // Stellar accounts don't exist on-ledger until they receive the
+            // minimum XLM reserve — a freshly created/connected wallet with
+            // no incoming payment yet will always 404 here. That's a normal
+            // "not funded" state, not an RPC/Horizon failure.
+            return {
+                symbol: 'XLM',
+                formatted: 'Account not funded',
+                value: '0',
+                decimals: 7
+            };
+        }
 
         if (!response.ok) {
             throw new Error(

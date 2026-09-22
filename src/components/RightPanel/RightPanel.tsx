@@ -1,8 +1,10 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { Wallet, Box, X, BrainCircuit, MessageSquare } from 'lucide-react';
+import { useResizablePanelWidth } from './useResizablePanelWidth';
 import { Network, ActivityLog, Comment } from '../../types';
 import { getOwnedObjects } from '../../services/suiService';
 import { useWallet } from '@/wallet';
+import { useAppStore } from '@/lib/store';
 import {
   WalletTab,
   ObjectsTab,
@@ -39,7 +41,7 @@ const TabButton = ({
     className={`flex-1 flex flex-col items-center justify-center py-2 gap-1 transition-colors relative ${
       isActive
       ? 'text-electric-violet'
-      : 'text-slate-500 hover:text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:bg-white/[0.03]'
+      : 'text-slate-500 hover:text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.03]'
     }`}
     title={label}
   >
@@ -63,7 +65,18 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   const [objects, setObjects] = useState<any[]>([]);
   const [loadingObjects, setLoadingObjects] = useState(false);
   const [commentInput, setCommentInput] = useState('');
-  
+
+  const { tabs, history } = useAppStore();
+  const activeRequestTab = useMemo(
+    () => tabs.find((t) => t.id === activeRequestId),
+    [tabs, activeRequestId]
+  );
+  const activeRequest = activeRequestTab?.data;
+  const lastRunHistoryEntry = useMemo(
+    () => history.slice().reverse().find((h) => h.id === activeRequestId) ?? null,
+    [history, activeRequestId]
+  );
+
   const { currentWallet } = useWallet();
   const connectedAddress = currentWallet?.family === 'sui' ? currentWallet.address : null;
 
@@ -114,8 +127,28 @@ export const RightPanel: React.FC<RightPanelProps> = ({
     }
   };
 
+  const { width, startDragging, resetWidth } = useResizablePanelWidth({
+    storageKey: 'txio.inspectorPanelWidth',
+    defaultWidth: 320,
+    minWidth: 280,
+    maxWidth: 640,
+  });
+
   return (
-    <div className="w-80 bg-slate-50 dark:bg-near-black border-l border-slate-200 dark:border-white/[0.06] flex flex-col h-full font-sans relative z-30">
+    <div
+      style={{ width }}
+      className="shrink-0 bg-slate-50 dark:bg-near-black border-l border-slate-200 dark:border-white/[0.06] flex flex-col h-full font-sans relative z-30"
+    >
+      {/* Drag handle: resizes the panel; double-click resets to default width */}
+      <div
+        onPointerDown={startDragging}
+        onDoubleClick={resetWidth}
+        className="absolute -left-1 top-0 bottom-0 w-2 cursor-col-resize group z-40"
+        title="Drag to resize · double-click to reset"
+      >
+        <div className="mx-auto w-px h-full bg-transparent group-hover:bg-electric-violet/50 group-active:bg-electric-violet transition-colors" />
+      </div>
+
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-slate-200 dark:border-white/[0.06] bg-white dark:bg-dark-indigo-glow">
         <div className="flex items-center gap-2">
@@ -169,7 +202,9 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         )}
 
         {/* --- ANALYSIS TAB --- */}
-        {activeTab === 'analysis' && <AnalysisTab activeRequestId={activeRequestId} />}
+        {activeTab === 'analysis' && (
+          <AnalysisTab request={activeRequest} lastRun={lastRunHistoryEntry} />
+        )}
 
         {/* --- DISCUSS TAB --- */}
         {activeTab === 'discuss' && (

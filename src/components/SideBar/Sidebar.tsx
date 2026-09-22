@@ -56,8 +56,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const handleAddCollection = () => {
-    // This will be handled by the CollectionTree component's internal state
-    // For now, we can trigger the creation txio
     onCreateCollection('New Collection');
   };
 
@@ -94,16 +92,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onCreateWorkspace={onCreateWorkspace}
         />
 
-        {/* Context Toolbar */}
-        <ContextToolbar 
-          mode={mode}
-          onAddCollection={handleAddCollection}
-          onAddEnvVar={handleAddEnvVar}
-          filterQuery={collectionFilter}
-          isFilterOpen={isCollectionFilterOpen}
-          onFilterQueryChange={setCollectionFilter}
-          onToggleFilter={handleToggleCollectionFilter}
-        />
+        {/* Context Toolbar (Explorer section removed for collections mode) */}
+        {mode !== 'collections' && (
+          <ContextToolbar
+            mode={mode}
+            onAddCollection={handleAddCollection}
+            onAddEnvVar={handleAddEnvVar}
+            filterQuery={collectionFilter}
+            isFilterOpen={isCollectionFilterOpen}
+            onFilterQueryChange={setCollectionFilter}
+            onToggleFilter={handleToggleCollectionFilter}
+          />
+        )}
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col min-h-0 bg-slate-50 dark:bg-near-black relative">

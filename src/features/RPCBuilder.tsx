@@ -5,18 +5,22 @@ import { useAppStore, appStore } from '@/lib/store';
 import { useWallet } from '@/wallet';
 import { useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 import { RequestPanel } from '../components/RequestPanel/RequestPanel';
+import { RequestOutcome } from '../components/RequestPanel/response/types';
 import { RequestItem, RequestType, Network, AssertionResult } from '../types';
 import {
     executeSuiRpc,
     executeChainRpc,
     looksLikeSuiNs,
+    resolveChainRpcUrl,
     resolveSuiAddress,
     simulateMoveCall,
     signAndExecuteMoveCall,
     SuiRpcError,
 } from '../services/suiService';
+import { sendSolanaTransaction } from '@/wallet';
 import { ADDRESS_FIRST_PARAM_METHODS } from '@/lib/constants';
 import { SignTransactionModal } from '../components/SignTransactionModal';
+import { NetworkSwitcherModal } from '../components/NetworkSwitcherModal';
 import { MainnetExecutionWarningModal } from '../components/MainnetExecutionWarningModal';
 import {
     ensureTerminalOpen,
@@ -81,10 +85,12 @@ const resolveRequestVars = (
 };
 
 export const RPCBuilder: React.FC = () => {
-    const tabs = useAppStore(s => s.tabs);
-    const activeTabId = useAppStore(s => s.activeTabId);
-    const network = useAppStore(s => s.network);
-    const envVariables = useAppStore(s => s.envVariables);
+    const {
+        tabs,
+        activeTabId,
+        network,
+        envVariables,
+    } = useAppStore();
     const { currentWallet, openModal } = useWallet();
     const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
     const activeTab = tabs.find(t => t.id === activeTabId);
@@ -92,15 +98,19 @@ export const RPCBuilder: React.FC = () => {
 
     const [isLoading, setIsLoading] = useState(false);
     const [isSignModalOpen, setIsSignModalOpen] = useState(false);
+    const [isNetworkSwitchOpen, setIsNetworkSwitchOpen] = useState(false);
     const [isMainnetWarningOpen, setIsMainnetWarningOpen] = useState(false);
     const [isExecuteMode, setIsExecuteMode] = useState(false);
+    const [pendingNetwork, setPendingNetwork] = useState<Network | null>(null);
     const [testResults, setTestResults] = useState<AssertionResult[]>([]);
+    const [outcome, setOutcome] = useState<RequestOutcome | null>(null);
 
     const request = activeTab?.data as RequestItem;
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setTestResults([]);
+        setOutcome(null);
     }, [activeTabId]);
 
     useEffect(() => {
@@ -221,13 +231,35 @@ export const RPCBuilder: React.FC = () => {
                         typeArguments,
                         args
                     );
+            } else if (
+                resolved.rpcParams.chain === 'solana' &&
+                resolved.solanaTxParams
+            ) {
+                if (!currentWallet || currentWallet.family !== 'solana') {
+                    throw new Error('Connect a Solana wallet to sign this transaction.');
+                }
+
+                const startTime = performance.now();
+                const rpcUrl = resolveChainRpcUrl('solana', network);
+                const { signature } = await sendSolanaTransaction({
+                    walletId: currentWallet.id,
+                    rpcUrl,
+                    programId: resolved.solanaTxParams.programId,
+                    accounts: resolved.solanaTxParams.accounts,
+                    data: resolved.solanaTxParams.data,
+                    dataEncoding: resolved.solanaTxParams.dataEncoding
+                });
+                const duration = Math.round(performance.now() - startTime);
+
+                res = { result: { signature }, duration, status: 200 };
             } else {
                 res =
                     await executeChainRpc(
                         resolved.rpcParams.chain ?? 'sui',
                         network,
                         resolved.rpcParams.method,
-                        resolved.rpcParams.params
+                        resolved.rpcParams.params,
+                        resolved.rpcParams.evmChainId
                     );
             }
 
@@ -248,6 +280,8 @@ export const RPCBuilder: React.FC = () => {
                         ? 'executed'
                         : 'simulated'
             });
+
+            setOutcome({ status, duration, timestamp: Date.now(), result });
 
             const results = evaluateAssertions(request.tests, {
                 requestType: resolved.type,
@@ -281,6 +315,13 @@ export const RPCBuilder: React.FC = () => {
                 error: message,
                 status: rpcError?.status ?? 500,
                 duration: rpcError?.duration
+            });
+
+            setOutcome({
+                status: rpcError?.status ?? 500,
+                duration: rpcError?.duration ?? 0,
+                timestamp: Date.now(),
+                error: message
             });
 
             const results = evaluateAssertions(request.tests, {
@@ -383,6 +424,8 @@ export const RPCBuilder: React.FC = () => {
                 isExecution: true
             });
 
+            setOutcome({ status, duration, timestamp: Date.now(), result });
+
             const results = evaluateAssertions(request.tests, {
                 requestType: resolved.type,
                 httpStatus: status,
@@ -417,6 +460,13 @@ export const RPCBuilder: React.FC = () => {
                 duration: rpcError?.duration
             });
 
+            setOutcome({
+                status: rpcError?.status ?? 500,
+                duration: rpcError?.duration ?? 0,
+                timestamp: Date.now(),
+                error: message
+            });
+
             const results = evaluateAssertions(request.tests, {
                 requestType: resolved.type,
                 httpStatus: rpcError?.status ?? 500,
@@ -437,7 +487,7 @@ export const RPCBuilder: React.FC = () => {
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col h-full overflow-hidden bg-near-black"
+            className="flex flex-col h-full overflow-hidden bg-white dark:bg-near-black"
         >
             <div className="flex-1 flex flex-col min-h-0">
                 <RequestPanel
@@ -450,6 +500,7 @@ export const RPCBuilder: React.FC = () => {
                     activeAddress={connectedAddress}
                     envVars={envVariables}
                     testResults={testResults}
+                    outcome={outcome}
                 />
             </div>
 
@@ -461,6 +512,14 @@ export const RPCBuilder: React.FC = () => {
                 wallet={currentWallet}
                 onRequestConnect={openModal}
                 request={request}
+            />
+
+            <NetworkSwitcherModal
+                isOpen={isNetworkSwitchOpen}
+                onClose={() => setIsNetworkSwitchOpen(false)}
+                onConfirm={executeRealTransaction}
+                from={network}
+                to={pendingNetwork || network}
             />
 
             <MainnetExecutionWarningModal

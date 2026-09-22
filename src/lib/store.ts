@@ -13,7 +13,8 @@ import {
     isNetwork,
     Network,
     AppSettings,
-    Notification
+    Notification,
+    ChainId
 } from '../types';
 
 import { DEFAULT_MOVE_CALL } from './constants';
@@ -28,10 +29,9 @@ import {
 } from './telemetry';
 import {
     ApiError,
-    apiService
+    apiService,
+    extractId
 } from '../services/api';
-
-import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/shim/with-selector';
 
 // Simple Event Emitter for State Updates
 type Listener = () => void;
@@ -56,6 +56,8 @@ const settingsStorageKey =
     'txio_settings';
 const networkStorageKey =
     'txio_network';
+const commentsStorageKey =
+    'txio_comments';
 
 const emit = () => {
     listeners.forEach((l) => l());
@@ -227,51 +229,6 @@ const clearStoredUser = () => {
     );
 };
 
-const getEnvVariablesStorageKey = (workspaceId: string) =>
-    `txio_env_${workspaceId}`;
-
-const readStoredEnvVariables = (
-    workspaceId: string
-): EnvironmentVariable[] => {
-    if (typeof window === 'undefined' || !workspaceId) return [];
-    try {
-        const raw = localStorage.getItem(
-            getEnvVariablesStorageKey(workspaceId)
-        );
-        if (!raw) return [];
-        return JSON.parse(raw);
-    } catch {
-        return [];
-    }
-};
-
-const persistEnvVariables = (
-    workspaceId: string,
-    vars: EnvironmentVariable[]
-) => {
-    if (typeof window === 'undefined' || !workspaceId) return;
-    try {
-        localStorage.setItem(
-            getEnvVariablesStorageKey(workspaceId),
-            JSON.stringify(vars)
-        );
-    } catch {
-        // Ignore storage errors
-    }
-};
-
-const clearAllStoredEnvVariables = () => {
-    if (typeof window === 'undefined') return;
-    try {
-        for (let i = localStorage.length - 1; i >= 0; i--) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith('txio_env_')) {
-                localStorage.removeItem(key);
-            }
-        }
-    } catch {}
-};
-
 const readStoredWorkspaceId = () => {
     if (typeof window === 'undefined') {
         return '';
@@ -363,37 +320,15 @@ const persistNetwork = (
     );
 };
 
-const getUserCommentsStorageKey = (
-    user: Pick<UserProfile, 'id' | 'email'>
-): string | null => {
-    if (user.id) {
-        return `txio_comments:${user.id}`;
-    }
-
-    if (user.email) {
-        return `txio_comments:${user.email.toLowerCase()}`;
-    }
-
-    return null;
-};
-
-const readStoredComments = (
-    user: Pick<UserProfile, 'id' | 'email'> | null
-): Record<string, Comment[]> => {
+const readStoredComments = (): Record<string, Comment[]> => {
     if (typeof window === 'undefined') {
         return {};
     }
 
-    const key = user
-        ? getUserCommentsStorageKey(user)
-        : null;
-
-    if (!key) {
-        return {};
-    }
-
     try {
-        const raw = localStorage.getItem(key);
+        const raw = localStorage.getItem(
+            commentsStorageKey
+        );
 
         if (!raw) {
             return {};
@@ -418,22 +353,15 @@ const readStoredComments = (
 };
 
 const persistComments = (
-    user: Pick<UserProfile, 'id' | 'email'>,
     comments: Record<string, Comment[]>
 ) => {
     if (typeof window === 'undefined') {
         return;
     }
 
-    const key = getUserCommentsStorageKey(user);
-
-    if (!key) {
-        return;
-    }
-
     try {
         localStorage.setItem(
-            key,
+            commentsStorageKey,
             JSON.stringify(comments)
         );
     } catch {
@@ -515,27 +443,29 @@ const hydrateWorkspaceState = async (
         tabs: nextSession.tabs,
         activeTabId:
             nextSession.activeTabId,
-        envVariables: nextWorkspaceId
-            ? readStoredEnvVariables(nextWorkspaceId)
-            : [],
         collections: nextWorkspaceId
             ? state.collections
             : [],
         isLoadingWorkspaces: false,
-        hasHydratedWorkspaces: true,
-        workspacesLoadFailed: false
+        hasHydratedWorkspaces: true
     };
 
     emit();
 
     if (nextWorkspaceId) {
-        await appStore.fetchCollections(
-            nextWorkspaceId
-        );
+        await Promise.all([
+            appStore.fetchCollections(
+                nextWorkspaceId
+            ),
+            appStore.fetchHistory(
+                nextWorkspaceId
+            )
+        ]);
     } else {
         state = {
             ...state,
-            collections: []
+            collections: [],
+            history: []
         };
 
         emit();
@@ -627,42 +557,8 @@ const isAuthFailure = (
     );
 };
 
-// A rejected/expired token will fail every retry identically, so treat it
-// as a sign-out rather than a transient failure — otherwise "try again" UI
-// (e.g. the workspace page's retry button) just loops forever against a
-// token that will never become valid.
-const clearInvalidSession = () => {
-    apiService.setToken(null);
-
-    if (typeof window !== 'undefined') {
-        localStorage.removeItem('txio_viewMode');
-    }
-
-    clearStoredUser();
-    clearAllStoredEnvVariables();
-    persistCurrentWorkspaceId('');
-
-    state = {
-        ...state,
-        user: null,
-        workspaces: [],
-        currentWorkspaceId: '',
-        collections: [],
-        tabs: [],
-        activeTabId: null,
-        envVariables: [],
-        comments: {},
-        isLoadingWorkspaces: false,
-        hasHydratedWorkspaces: false,
-        workspacesLoadFailed: false,
-        viewMode: 'landing'
-    };
-
-    emit();
-};
-
 // State
-export interface AppState {
+interface AppState {
     activeTabId: string | null;
     tabs: TabItem[];
 
@@ -682,12 +578,6 @@ export interface AppState {
     currentWorkspaceId: string;
     isLoadingWorkspaces: boolean;
     hasHydratedWorkspaces: boolean;
-    // True only when a workspaces fetch actually failed, as opposed to
-    // succeeding with zero workspaces. Lets the UI distinguish "this
-    // account genuinely has no workspaces yet" (show onboarding) from "we
-    // don't know because the request failed" (show a retry state instead
-    // of an onboarding flow that would create a duplicate workspace).
-    workspacesLoadFailed: boolean;
 
     isSidebarOpen: boolean;
     isInspectorOpen: boolean;
@@ -724,7 +614,6 @@ export interface AppState {
         | 'landing'
         | 'app'
         | 'docs'
-        | 'auth'
         | 'ecosystem'
         | 'signin'
         | 'signup'
@@ -735,11 +624,19 @@ export interface AppState {
         | 'partners';
 
     pendingAiPrompt: string | null;
+
+    pendingSignup: {
+        name: string;
+        email: string;
+        password: string;
+    } | null;
 }
 
 // --- INITIAL STATE ---
 
-const hasToken = readStoredUser() !== null;
+const hasToken =
+    typeof window !== 'undefined' &&
+    !!localStorage.getItem('txio_token');
 const initialSettings =
     readStoredSettings();
 const initialNetwork =
@@ -763,8 +660,6 @@ let state: AppState = {
     isLoadingWorkspaces: false,
 
     hasHydratedWorkspaces: false,
-
-    workspacesLoadFailed: false,
 
     isSidebarOpen: true,
 
@@ -796,9 +691,7 @@ let state: AppState = {
 
     activityLogs: [],
 
-    comments: readStoredComments(
-        readStoredUser()
-    ),
+    comments: readStoredComments(),
 
     settings: initialSettings,
 
@@ -810,7 +703,9 @@ let state: AppState = {
     // restore app mode if token exists
     viewMode: hasToken ? 'app' : 'landing',
 
-    pendingAiPrompt: null
+    pendingAiPrompt: null,
+
+    pendingSignup: null
 };
 
 // Sync telemetry gate with persisted settings on boot.
@@ -945,8 +840,20 @@ export const appStore = {
                     title = 'New PTB';
                     break;
 
+                case 'move':
+                    title = 'Move Builder';
+                    break;
+
+                case 'playground':
+                    title = 'Playground';
+                    break;
+
                 case 'profile':
-                    title = 'My Profile';
+                    title = 'Wallets';
+                    break;
+
+                case 'account':
+                    title = 'Profile';
                     break;
 
                 case 'ai_chat':
@@ -969,6 +876,18 @@ export const appStore = {
                     title = 'Runner';
                     break;
 
+                case 'collections':
+                    title = 'Collections';
+                    break;
+
+                case 'new_collection':
+                    title = 'New Collection';
+                    break;
+
+                case 'workspace_overview':
+                    title = 'Workspace';
+                    break;
+
                 case 'docs':
                     title = 'Documentation';
                     break;
@@ -979,6 +898,10 @@ export const appStore = {
 
                 case 'features':
                     title = 'Features';
+                    break;
+
+                case 'help':
+                    title = 'Help';
                     break;
 
                 case 'integrations':
@@ -1126,6 +1049,35 @@ export const appStore = {
             ...state,
             tabs: [],
             activeTabId: null,
+            recentTabs: newRecent
+        };
+
+        emit();
+    },
+
+    // Closes every tab with no unsaved changes, leaving dirty (in-progress)
+    // tabs open — the safer alternative to Close All.
+    closeSavedTabs() {
+        const closingTabs = state.tabs.filter((t) => !t.isDirty);
+        const remainingTabs = state.tabs.filter((t) => t.isDirty);
+
+        if (closingTabs.length === 0) return;
+
+        const newRecent = [
+            ...[...closingTabs].reverse(),
+            ...state.recentTabs
+        ].slice(0, 15);
+
+        const activeTabId =
+            state.activeTabId &&
+            remainingTabs.some((t) => t.id === state.activeTabId)
+                ? state.activeTabId
+                : remainingTabs[remainingTabs.length - 1]?.id ?? null;
+
+        state = {
+            ...state,
+            tabs: remainingTabs,
+            activeTabId,
             recentTabs: newRecent
         };
 
@@ -1340,7 +1292,6 @@ export const appStore = {
                 collections: [],
                 isLoadingWorkspaces: false,
                 hasHydratedWorkspaces: true,
-                workspacesLoadFailed: false,
                 tabs: [],
                 activeTabId: null
             };
@@ -1351,8 +1302,7 @@ export const appStore = {
 
         state = {
             ...state,
-            isLoadingWorkspaces: true,
-            workspacesLoadFailed: false
+            isLoadingWorkspaces: true
         };
 
         emit();
@@ -1367,11 +1317,6 @@ export const appStore = {
                 preferredWorkspaceId
             );
         } catch (error) {
-            if (isAuthFailure(error)) {
-                clearInvalidSession();
-                throw error;
-            }
-
             state = {
                 ...state,
                 workspaces: [],
@@ -1380,8 +1325,7 @@ export const appStore = {
                 tabs: [],
                 activeTabId: null,
                 isLoadingWorkspaces: false,
-                hasHydratedWorkspaces: true,
-                workspacesLoadFailed: true
+                hasHydratedWorkspaces: true
             };
 
             emit();
@@ -1426,8 +1370,6 @@ export const appStore = {
 
             activeTabId: nextSession.activeTabId,
 
-            envVariables: readStoredEnvVariables(ws.id),
-
             isSyncing: true,
 
             scanStep: `Loading ${ws.name}...`
@@ -1437,9 +1379,10 @@ export const appStore = {
 
         emit();
 
-        void appStore
-            .fetchCollections(ws.id)
-            .finally(() => {
+        void Promise.all([
+            appStore.fetchCollections(ws.id),
+            appStore.fetchHistory(ws.id)
+        ]).finally(() => {
             state = {
                 ...state,
                 isSyncing: false,
@@ -1583,10 +1526,6 @@ export const appStore = {
             envVariables: vars
         };
 
-        if (state.currentWorkspaceId) {
-            persistEnvVariables(state.currentWorkspaceId, vars);
-        }
-
         emit();
     },
 
@@ -1596,7 +1535,7 @@ export const appStore = {
                 'Create a workspace first',
                 'error'
             );
-            return;
+            return undefined;
         }
 
         try {
@@ -1616,11 +1555,13 @@ export const appStore = {
             };
 
             emit();
+            return newColl;
         } catch (error: any) {
             appStore.showToast(
                 error.message,
                 'error'
             );
+            return undefined;
         }
     },
 
@@ -1641,6 +1582,87 @@ export const appStore = {
                 error.message,
                 'error'
             );
+        }
+    },
+
+    // Saves the currently-open request into a collection: creates a new
+    // saved request the first time, or updates the existing one (including
+    // its last_response snapshot) on subsequent saves once request.id /
+    // request.collectionId identify an already-saved request.
+    async saveRequestToCollection(
+        collectionId: string,
+        request: RequestItem,
+        lastResponse?: unknown
+    ): Promise<RequestItem | null> {
+        const isAlreadySaved =
+            request.collectionId === collectionId &&
+            state.collections.some((c) =>
+                c.id === collectionId &&
+                (c.children ?? []).some((child) => child.id === request.id)
+            );
+
+        try {
+            let saved: RequestItem;
+
+            if (isAlreadySaved) {
+                saved = await apiService.updateRequest(
+                    collectionId,
+                    request.id,
+                    {
+                        name: request.name,
+                        method: request.rpcParams.method,
+                        params: request.rpcParams.params,
+                        network: request.network ?? null,
+                        ...(lastResponse !== undefined ? { lastResponse } : {})
+                    }
+                );
+
+                const updateNode = (nodes: CollectionNode[]): CollectionNode[] =>
+                    nodes.map((n) => {
+                        if (n.id === saved.id && n.type === 'request') {
+                            return { ...n, name: saved.name, requestData: saved };
+                        }
+                        if (n.children) {
+                            return { ...n, children: updateNode(n.children) };
+                        }
+                        return n;
+                    });
+
+                state = { ...state, collections: updateNode(state.collections) };
+            } else {
+                const newNode = await apiService.addRequest(collectionId, request);
+
+                if (lastResponse !== undefined && newNode.requestData) {
+                    saved = await apiService.updateRequest(
+                        collectionId,
+                        newNode.requestData.id,
+                        { lastResponse }
+                    );
+                    newNode.requestData = saved;
+                } else {
+                    saved = newNode.requestData ?? { ...request, id: newNode.id, collectionId };
+                }
+
+                const addToCollection = (nodes: CollectionNode[]): CollectionNode[] =>
+                    nodes.map((n) => {
+                        if (n.id === collectionId && n.type === 'collection') {
+                            return { ...n, children: [...(n.children ?? []), newNode] };
+                        }
+                        if (n.children) {
+                            return { ...n, children: addToCollection(n.children) };
+                        }
+                        return n;
+                    });
+
+                state = { ...state, collections: addToCollection(state.collections) };
+            }
+
+            emit();
+            appStore.showToast('Saved to collection', 'success');
+            return saved;
+        } catch (error: any) {
+            appStore.showToast(error?.message ?? 'Failed to save request', 'error');
+            return null;
         }
     },
 
@@ -1699,9 +1721,12 @@ export const appStore = {
                 : 'G',
 
             workspaceId:
-                state.currentWorkspaceId
+                state.currentWorkspaceId ??
+                undefined
         };
 
+        // Optimistic local update — the record round-trips to the backend
+        // below so it survives a refresh, but the UI shouldn't wait on that.
         state = {
             ...state,
             history: [
@@ -1711,20 +1736,59 @@ export const appStore = {
         };
 
         emit();
+
+        if (!state.user) return;
+
+        void apiService
+            .createHistoryEntry({
+                workspaceId:
+                    state.currentWorkspaceId ??
+                    undefined,
+                name: item.name,
+                requestType: item.type,
+                chain: item.rpcParams?.chain,
+                network: state.network,
+                method: item.rpcParams?.method,
+                params: item.rpcParams?.params,
+                status,
+                durationMs: duration
+            })
+            .catch((error) => {
+                console.error(
+                    'Failed to persist history entry:',
+                    error
+                );
+            });
     },
 
-    clearHistory() {
+    async clearHistory() {
+        const workspaceId =
+            state.currentWorkspaceId;
+
         state = {
             ...state,
 
             history: state.history.filter(
                 (h) =>
                     h.workspaceId !==
-                    state.currentWorkspaceId
+                    workspaceId
             )
         };
 
         emit();
+
+        if (!state.user) return;
+
+        try {
+            await apiService.clearHistory(
+                workspaceId ?? undefined
+            );
+        } catch (error) {
+            console.error(
+                'Failed to clear history:',
+                error
+            );
+        }
     },
 
     setAuthModal(isOpen: boolean) {
@@ -1751,6 +1815,11 @@ export const appStore = {
                 typeof window !== 'undefined'
             ) {
                 localStorage.setItem(
+                    'txio_token',
+                    token
+                );
+
+                localStorage.setItem(
                     'txio_viewMode',
                     'app'
                 );
@@ -1766,9 +1835,6 @@ export const appStore = {
             state = {
                 ...state,
                 user: hydratedUser,
-                comments: readStoredComments(
-                    hydratedUser
-                ),
                 isAuthModalOpen: false,
                 viewMode: 'app'
             };
@@ -1808,6 +1874,11 @@ export const appStore = {
                 typeof window !== 'undefined'
             ) {
                 localStorage.setItem(
+                    'txio_token',
+                    token
+                );
+
+                localStorage.setItem(
                     'txio_viewMode',
                     'app'
                 );
@@ -1823,7 +1894,6 @@ export const appStore = {
             state = {
                 ...state,
                 user: hydratedUser,
-                comments: {},
                 isAuthModalOpen: false,
                 viewMode: 'app'
             };
@@ -1847,17 +1917,63 @@ export const appStore = {
         }
     },
 
+    setPendingSignup(
+        pending: {
+            name: string;
+            email: string;
+            password: string;
+        } | null
+    ) {
+        state = {
+            ...state,
+            pendingSignup: pending
+        };
+
+        emit();
+    },
+
+    async completeSignup(otp: string) {
+        const pending = state.pendingSignup;
+
+        if (!pending) {
+            throw new Error(
+                'No signup in progress.'
+            );
+        }
+
+        await apiService.verifyOtp(
+            pending.email,
+            otp
+        );
+
+        await appStore.signup(
+            pending.name,
+            pending.email,
+            pending.password
+        );
+
+        state = {
+            ...state,
+            pendingSignup: null
+        };
+
+        emit();
+    },
+
     logout() {
         apiService.setToken(null);
 
         if (typeof window !== 'undefined') {
+            localStorage.removeItem(
+                'txio_token'
+            );
+
             localStorage.removeItem(
                 'txio_viewMode'
             );
         }
 
         clearStoredUser();
-        clearAllStoredEnvVariables();
         persistCurrentWorkspaceId('');
 
         state = {
@@ -1868,11 +1984,8 @@ export const appStore = {
             collections: [],
             tabs: [],
             activeTabId: null,
-            envVariables: [],
-            comments: {},
             isLoadingWorkspaces: false,
             hasHydratedWorkspaces: false,
-            workspacesLoadFailed: false,
             viewMode: 'landing'
         };
 
@@ -1921,13 +2034,98 @@ export const appStore = {
         }
     },
 
+    async fetchHistory(
+        workspaceId = state.currentWorkspaceId
+    ) {
+        if (!state.user) return;
+
+        try {
+            const entries =
+                await apiService.getHistory(
+                    workspaceId ?? undefined
+                );
+
+            if (
+                workspaceId !==
+                state.currentWorkspaceId
+            ) {
+                return;
+            }
+
+            const history: HistoryItem[] =
+                entries.map((entry) => {
+                    const id =
+                        extractId(entry.id) ||
+                        extractId(entry._id) ||
+                        `${entry.name}-${entry.executed_at}`;
+
+                    return {
+                        id,
+                        type:
+                            entry.request_type ===
+                            RequestType.TRANSACTION
+                                ? RequestType.TRANSACTION
+                                : RequestType.RPC,
+                        name: entry.name,
+                        rpcParams: {
+                            method:
+                                entry.method ??
+                                '',
+                            params:
+                                (entry.params as any[]) ??
+                                [],
+                            chain:
+                                (entry.chain as ChainId) ??
+                                undefined
+                        },
+                        moveParams: {
+                            ...DEFAULT_MOVE_CALL
+                        },
+                        timestamp: new Date(
+                            entry.executed_at
+                        ).getTime(),
+                        status: entry.status,
+                        duration:
+                            entry.duration_ms,
+                        network:
+                            (entry.network as Network) ??
+                            state.network,
+                        workspaceId:
+                            entry.workspace_id
+                                ? extractId(
+                                      entry.workspace_id
+                                  ) || undefined
+                                : undefined
+                    };
+                });
+
+            state = {
+                ...state,
+                history
+            };
+
+            emit();
+        } catch (error: any) {
+            console.error(
+                'Failed to fetch history:',
+                error
+            );
+        }
+    },
+
     async initialize() {
         if (typeof window === 'undefined')
             return;
 
-        const restoredUser = readStoredUser();
+        const token =
+            localStorage.getItem(
+                'txio_token'
+            );
 
-        if (restoredUser) {
+        if (token) {
+            const restoredUser =
+                readStoredUser() ||
+                buildUserFromToken(token);
             const hydratedRestoredUser =
                 restoredUser
                     ? applyUserProfileOverrides(
@@ -1941,7 +2139,7 @@ export const appStore = {
                 );
             }
 
-            apiService.setToken(null);
+            apiService.setToken(token);
 
             state = {
                 ...state,
@@ -1982,9 +2180,6 @@ export const appStore = {
                 state = {
                     ...state,
                     user: hydratedUser,
-                    comments: readStoredComments(
-                        hydratedUser
-                    ),
                     viewMode: 'app'
                 };
 
@@ -2007,25 +2202,6 @@ export const appStore = {
                         'Failed to restore workspaces during refresh:',
                         workspaceError
                     );
-
-                    if (isAuthFailure(workspaceError)) {
-                        clearInvalidSession();
-                        return;
-                    }
-
-                    // fetchWorkspaces() never ran, so it never got to flip
-                    // hasHydratedWorkspaces. Without this, a failed/timed-out
-                    // workspaces fetch leaves the workspace page stuck on its
-                    // "Loading workspace state" screen forever, since that
-                    // screen's loading condition is keyed off this flag.
-                    state = {
-                        ...state,
-                        isLoadingWorkspaces: false,
-                        hasHydratedWorkspaces: true,
-                        workspacesLoadFailed: true
-                    };
-
-                    emit();
                 }
             } catch (error) {
                 if (
@@ -2040,11 +2216,14 @@ export const appStore = {
                     );
 
                     localStorage.removeItem(
+                        'txio_token'
+                    );
+
+                    localStorage.removeItem(
                         'txio_viewMode'
                     );
 
                     clearStoredUser();
-                    clearAllStoredEnvVariables();
                     persistCurrentWorkspaceId('');
 
                     state = {
@@ -2055,11 +2234,8 @@ export const appStore = {
                         collections: [],
                         tabs: [],
                         activeTabId: null,
-                        envVariables: [],
-                        comments: {},
                         isLoadingWorkspaces: false,
                         hasHydratedWorkspaces: false,
-                        workspacesLoadFailed: false,
                         viewMode:
                             'landing'
                     };
@@ -2089,30 +2265,12 @@ export const appStore = {
                             'Failed to restore workspaces after profile fallback:',
                             workspaceError
                         );
-
-                        if (isAuthFailure(workspaceError)) {
-                            clearInvalidSession();
-                            return;
-                        }
-
-                        // Same as above: fetchWorkspaces() never ran here
-                        // either, so nothing else will ever clear the
-                        // workspace page's loading screen.
-                        state = {
-                            ...state,
-                            isLoadingWorkspaces: false,
-                            hasHydratedWorkspaces: true,
-                            workspacesLoadFailed: true
-                        };
-
-                        emit();
                     }
                 } else {
                     state = {
                         ...state,
                         isLoadingWorkspaces: false,
-                        hasHydratedWorkspaces: true,
-                        workspacesLoadFailed: false
+                        hasHydratedWorkspaces: true
                     };
 
                     emit();
@@ -2120,7 +2278,6 @@ export const appStore = {
             }
         } else {
             clearStoredUser();
-            clearAllStoredEnvVariables();
             persistCurrentWorkspaceId('');
 
             state = {
@@ -2131,11 +2288,8 @@ export const appStore = {
                 collections: [],
                 tabs: [],
                 activeTabId: null,
-                envVariables: [],
-                comments: {},
                 isLoadingWorkspaces: false,
                 hasHydratedWorkspaces: false,
-                workspacesLoadFailed: false,
                 viewMode: 'landing'
             };
 
@@ -2151,7 +2305,6 @@ export const appStore = {
     ) {
         if (user === null) {
             clearStoredUser();
-            clearAllStoredEnvVariables();
             persistCurrentWorkspaceId('');
 
             state = {
@@ -2162,11 +2315,8 @@ export const appStore = {
                 collections: [],
                 tabs: [],
                 activeTabId: null,
-                envVariables: [],
-                comments: {},
                 isLoadingWorkspaces: false,
-                hasHydratedWorkspaces: false,
-                workspacesLoadFailed: false
+                hasHydratedWorkspaces: false
             };
 
             emit();
@@ -2186,10 +2336,7 @@ export const appStore = {
 
             state = {
                 ...state,
-                user: hydratedUser,
-                comments: readStoredComments(
-                    hydratedUser
-                )
+                user: hydratedUser
             };
 
             persistStoredUser(
@@ -2288,10 +2435,7 @@ export const appStore = {
             comments: newComments
         };
 
-        persistComments(
-            state.user,
-            newComments
-        );
+        persistComments(newComments);
         emit();
     },
 
@@ -2309,7 +2453,6 @@ export const appStore = {
             | 'landing'
             | 'app'
             | 'docs'
-            | 'auth'
             | 'ecosystem'
             | 'signin'
             | 'signup'
@@ -2343,77 +2486,12 @@ export const appStore = {
     }
 };
 
-/**
- * Shallow equality: compares top-level fields of two values with Object.is.
- * Used to bail out of re-renders when a selector returns a new object/array
- * reference whose fields are all referentially unchanged.
- *
- * Caveat: selectors returning freshly-allocated containers (e.g.
- * `s => ({ a: s.a })` or `s => s.tabs.filter(...)`) are compared shallowly,
- * so derived arrays/objects will still trigger re-renders when any referenced
- * field changes. For derived data, memoize the derived value inside the
- * selector (or cache it in appStore state) so the reference is stable.
- */
-export const shallowEqual = <T,>(
-    a: T,
-    b: T
-): boolean => {
-    if (Object.is(a, b)) {
-        return true;
-    }
+import { useSyncExternalStore } from 'react';
 
-    if (
-        typeof a !== 'object' ||
-        a === null ||
-        typeof b !== 'object' ||
-        b === null
-    ) {
-        return false;
-    }
-
-    const aKeys = Object.keys(a);
-    const bKeys = Object.keys(b);
-
-    if (aKeys.length !== bKeys.length) {
-        return false;
-    }
-
-    return aKeys.every(
-        (key) =>
-            Object.prototype.hasOwnProperty.call(
-                b,
-                key
-            ) &&
-            Object.is(
-                (a as Record<string, unknown>)[key],
-                (b as Record<string, unknown>)[key]
-            )
-    );
-};
-
-/**
- * Subscribe to a slice of the global app store.
- *
- * `useAppStore()` (no argument) subscribes to the full state and re-renders
- * on every store update — the historical behavior.
- *
- * `useAppStore(state => state.theme)` subscribes to only the selected slice
- * and re-renders only when that slice changes (shallow-compared, so selectors
- * returning fresh object references bail out when all fields are unchanged).
- */
-export const useAppStore = <T = AppState,>(
-    selector?: (state: AppState) => T
-): T => {
-    const select =
-        selector ??
-        ((state: AppState) =>
-            state as unknown as T);
-
-    return useSyncExternalStoreWithSelector(
+export const useAppStore = () => {
+    return useSyncExternalStore(
         appStore.subscribe,
         appStore.getSnapshot,
-        appStore.getSnapshot,
-        select,
-        shallowEqual
+        appStore.getSnapshot
     );
 };

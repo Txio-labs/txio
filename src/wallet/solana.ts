@@ -1,8 +1,15 @@
+import {
+    Connection,
+    PublicKey,
+    Transaction,
+    TransactionInstruction
+} from '@solana/web3.js';
 import type {
     ConnectedWallet,
     WalletChainInfo,
     WalletId
 } from './types';
+import type { SolanaAccountMeta } from '../types';
 
 export type SolanaNetworkName =
     | 'mainnet-beta'
@@ -28,6 +35,14 @@ const SOLANA_WALLET_META: Partial<
     backpack: {
         name: 'Backpack',
         connectorName: 'Backpack'
+    },
+    glow: {
+        name: 'Glow',
+        connectorName: 'Glow'
+    },
+    'nightly-solana': {
+        name: 'Nightly',
+        connectorName: 'Nightly'
     }
 };
 
@@ -38,6 +53,10 @@ const solanaNetwork =
           ? 'testnet'
           : 'mainnet-beta';
 
+// api.mainnet-beta.solana.com / api.testnet.solana.com return HTTP 403 for
+// any request carrying a browser Origin header — see the matching note in
+// lib/constants.ts SOLANA_NETWORKS. Devnet's official endpoint has no such
+// restriction and PublicNode doesn't host a devnet mirror, so it's kept.
 const SOLANA_NETWORKS: Record<
     SolanaNetworkName,
     {
@@ -53,7 +72,7 @@ const SOLANA_NETWORKS: Record<
             network: 'mainnet-beta',
             isSupported: true
         },
-        rpcUrl: 'https://api.mainnet-beta.solana.com'
+        rpcUrl: 'https://solana-rpc.publicnode.com'
     },
     testnet: {
         chain: {
@@ -63,7 +82,7 @@ const SOLANA_NETWORKS: Record<
             network: 'testnet',
             isSupported: true
         },
-        rpcUrl: 'https://api.testnet.solana.com'
+        rpcUrl: 'https://solana-testnet-rpc.publicnode.com'
     },
     devnet: {
         chain: {
@@ -107,6 +126,12 @@ type SolanaProviderApi = {
     connect: (opts?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey: { toString: () => string } }>;
     disconnect: () => Promise<void>;
     isConnected?: boolean;
+    // Standard Solana wallet-adapter signing methods. Phantom, Solflare, and
+    // Backpack all implement at least signTransaction; signAndSendTransaction
+    // is a common but not universal convenience method some wallets add on
+    // top, letting the wallet itself submit to the RPC it trusts.
+    signTransaction?: (transaction: unknown) => Promise<unknown>;
+    signAndSendTransaction?: (transaction: unknown) => Promise<{ signature: string }>;
 };
 
 const withTimeout = async <T>(
@@ -157,6 +182,22 @@ const getBackpackProvider = (): SolanaProviderApi | undefined => {
     return undefined;
 };
 
+const getGlowProvider = (): SolanaProviderApi | undefined => {
+    const w = getBrowserWindow() as any;
+    if (w?.glow) {
+        return w.glow;
+    }
+    return undefined;
+};
+
+const getNightlySolanaProvider = (): SolanaProviderApi | undefined => {
+    const w = getBrowserWindow() as any;
+    if (w?.nightly?.solana) {
+        return w.nightly.solana;
+    }
+    return undefined;
+};
+
 const connectProvider = async (
     provider: SolanaProviderApi | undefined,
     walletId: WalletId,
@@ -201,11 +242,146 @@ const restoreProvider = async (
     }
 };
 
+const getSolanaProviderById = (
+    walletId: WalletId
+): SolanaProviderApi | undefined => {
+    switch (walletId) {
+        case 'phantom-solana':
+            return getPhantomProvider();
+        case 'solflare':
+            return getSolflareProvider();
+        case 'backpack':
+            return getBackpackProvider();
+        case 'glow':
+            return getGlowProvider();
+        case 'nightly-solana':
+            return getNightlySolanaProvider();
+        default:
+            return undefined;
+    }
+};
+
+function decodeInstructionData(
+    data: string,
+    encoding: 'hex' | 'base64' | 'utf8'
+): Buffer {
+    const trimmed = data.trim();
+    if (!trimmed) return Buffer.alloc(0);
+
+    switch (encoding) {
+        case 'hex':
+            return Buffer.from(trimmed.replace(/^0x/i, ''), 'hex');
+        case 'base64':
+            return Buffer.from(trimmed, 'base64');
+        case 'utf8':
+        default:
+            return Buffer.from(trimmed, 'utf8');
+    }
+}
+
+/**
+ * Builds a single-instruction Solana transaction, signs it via the
+ * connected wallet's injected provider, and submits it to the given RPC
+ * endpoint. This is the real execution path behind the RPC Builder's
+ * Solana "Transaction" mode — it does not simulate or mock anything.
+ */
+export async function sendSolanaTransaction(params: {
+    walletId: WalletId;
+    rpcUrl: string;
+    programId: string;
+    accounts: SolanaAccountMeta[];
+    data: string;
+    dataEncoding: 'hex' | 'base64' | 'utf8';
+}): Promise<{ signature: string }> {
+    const provider = getSolanaProviderById(params.walletId);
+    if (!provider) {
+        throw new Error('Wallet is not connected or does not support Solana.');
+    }
+    if (!provider.publicKey) {
+        throw new Error('Wallet has no active Solana public key.');
+    }
+    if (!provider.signTransaction && !provider.signAndSendTransaction) {
+        throw new Error('This wallet does not support signing transactions.');
+    }
+
+    let programIdKey: PublicKey;
+    try {
+        programIdKey = new PublicKey(params.programId.trim());
+    } catch {
+        throw new Error(`Invalid program ID: "${params.programId}"`);
+    }
+
+    const keys = params.accounts.map((account, index) => {
+        try {
+            return {
+                pubkey: new PublicKey(account.pubkey.trim()),
+                isSigner: account.isSigner,
+                isWritable: account.isWritable
+            };
+        } catch {
+            throw new Error(`Invalid account pubkey at row ${index + 1}: "${account.pubkey}"`);
+        }
+    });
+
+    const instructionData = decodeInstructionData(params.data, params.dataEncoding);
+
+    const instruction = new TransactionInstruction({
+        keys,
+        programId: programIdKey,
+        data: instructionData
+    });
+
+    const connection = new Connection(params.rpcUrl, 'confirmed');
+    const { blockhash, lastValidBlockHeight } = await withTimeout(
+        connection.getLatestBlockhash('confirmed'),
+        'Fetch recent blockhash'
+    );
+
+    const transaction = new Transaction({
+        feePayer: new PublicKey(provider.publicKey.toString()),
+        blockhash,
+        lastValidBlockHeight
+    }).add(instruction);
+
+    // Prefer the wallet's own signAndSendTransaction when available — it
+    // lets the wallet submit via the RPC it trusts (and, for hardware
+    // wallets, avoids a second round-trip). Fall back to sign-then-send
+    // ourselves against the app's configured RPC endpoint.
+    if (provider.signAndSendTransaction) {
+        const result = await withTimeout(
+            provider.signAndSendTransaction(transaction),
+            'Sign and send transaction',
+            60_000
+        );
+        return { signature: result.signature };
+    }
+
+    const signed = await withTimeout(
+        provider.signTransaction!(transaction),
+        'Sign transaction',
+        60_000
+    );
+
+    const rawTransaction = (signed as Transaction).serialize();
+    const signature = await connection.sendRawTransaction(rawTransaction, {
+        skipPreflight: false
+    });
+
+    await connection.confirmTransaction(
+        { signature, blockhash, lastValidBlockHeight },
+        'confirmed'
+    );
+
+    return { signature };
+}
+
 export const detectSolanaWallets = async () => {
     return {
         'phantom-solana': Boolean(getPhantomProvider()),
         solflare: Boolean(getSolflareProvider()),
-        backpack: Boolean(getBackpackProvider())
+        backpack: Boolean(getBackpackProvider()),
+        glow: Boolean(getGlowProvider()),
+        'nightly-solana': Boolean(getNightlySolanaProvider())
     };
 };
 
@@ -219,6 +395,10 @@ export const connectSolanaWallet = async (
             return connectProvider(getSolflareProvider(), walletId, 'Solflare');
         case 'backpack':
             return connectProvider(getBackpackProvider(), walletId, 'Backpack');
+        case 'glow':
+            return connectProvider(getGlowProvider(), walletId, 'Glow');
+        case 'nightly-solana':
+            return connectProvider(getNightlySolanaProvider(), walletId, 'Nightly');
         default:
             throw new Error(`Solana wallet "${walletId}" is not supported.`);
     }
@@ -234,6 +414,10 @@ export const restoreSolanaWallet = async (
             return restoreProvider(getSolflareProvider(), walletId, 'Solflare');
         case 'backpack':
             return restoreProvider(getBackpackProvider(), walletId, 'Backpack');
+        case 'glow':
+            return restoreProvider(getGlowProvider(), walletId, 'Glow');
+        case 'nightly-solana':
+            return restoreProvider(getNightlySolanaProvider(), walletId, 'Nightly');
         default:
             return null;
     }
@@ -252,6 +436,12 @@ export const disconnectSolanaWallet = async (
             break;
         case 'backpack':
             provider = getBackpackProvider();
+            break;
+        case 'glow':
+            provider = getGlowProvider();
+            break;
+        case 'nightly-solana':
+            provider = getNightlySolanaProvider();
             break;
     }
     

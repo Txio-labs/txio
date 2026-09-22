@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Blocks, Cpu, Database, Globe, Zap, Handshake, Star } from 'lucide-react';
 import { appStore, useAppStore } from '@/lib/store';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import gsap from 'gsap';
 
 interface PartnersPageProps {
@@ -116,22 +117,25 @@ export const PartnersPage: React.FC<
                         <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
                         <span>Ecosystem</span>
                     </button>
-                    <div className="h-6 w-px bg-slate-200 dark:bg-white/10"></div>
+                    <div className={`h-6 w-px ${theme === 'dark' ? 'bg-white/10' : 'bg-slate-200'}`}></div>
                     <div className="flex items-center gap-3">
                         <span className="font-black tracking-tighter text-lg">Partners</span>
                     </div>
                 </div>
 
-                <button 
-                    onClick={() =>
-                        navigateTo('app')
-                    }
-                    className="px-6 py-2.5 bg-electric-violet text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-soft-purple transition-all shadow-[0_10px_20px_-5px_rgba(163,163,163,0.4)] active:scale-95"
-                >
-                    {embedded
-                        ? 'New Request'
-                        : 'Launch'}
-                </button>
+                <div className="flex items-center gap-3">
+                    <ThemeToggle />
+                    <button
+                        onClick={() =>
+                            navigateTo('app')
+                        }
+                        className="px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-near-black rounded-xl font-black text-[10px] uppercase tracking-widest hover:opacity-90 transition-all shadow-[0_10px_20px_-5px_rgba(163,163,163,0.4)] active:scale-95"
+                    >
+                        {embedded
+                            ? 'New Request'
+                            : 'Launch'}
+                    </button>
+                </div>
             </nav>
 
             <section className={`relative ${embedded ? 'pt-28' : 'pt-48'} pb-32 px-6 md:px-12`}>
@@ -141,38 +145,43 @@ export const PartnersPage: React.FC<
                         animate={{ opacity: 1, y: 0 }}
                         className="text-center mb-32 space-y-8 partner-hero"
                     >
-                        <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-white/[0.03] border border-white/10">
+                        <div className={`inline-flex items-center gap-3 px-6 py-2 rounded-full border ${
+                            theme === 'dark' ? 'bg-white/[0.03] border-white/10' : 'bg-slate-900/[0.03] border-slate-200'
+                        }`}>
                             <Handshake size={16} className="text-electric-violet" />
                             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Who we work with</span>
                         </div>
                         <h1 className="text-6xl md:text-8xl font-black tracking-tight leading-tight">
                             Stronger <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-violet via-soft-purple to-sky-400">together.</span>
+                            <span className="text-electric-violet">together.</span>
                         </h1>
                         <p className="text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed font-medium">
                             We work alongside the foundations, labs, and protocols already doing the heavy lifting — so you don&apos;t have to integrate them yourself.
                         </p>
                     </motion.div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className={`rounded-[2rem] border overflow-hidden partner-card ${
+                        theme === 'dark' ? 'bg-[#18181b] border-white/5' : 'bg-white border-slate-200 shadow-lg'
+                    }`}>
                         {partners.map((p, i) => (
                             <motion.div
                                 key={p.name}
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: i * 0.1 }}
-                                whileHover={{ y: -10 }}
-                                className={`p-12 rounded-[4rem] border group transition-all partner-card ${
-                                    theme === 'dark' ? 'bg-[#18181b] border-white/5 hover:border-electric-violet/30' : 'bg-white border-slate-200 shadow-lg'
-                                }`}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.08 }}
+                                className={`group flex flex-col sm:flex-row sm:items-center gap-6 px-8 py-8 transition-colors ${
+                                    i !== 0 ? (theme === 'dark' ? 'border-t border-white/5' : 'border-t border-slate-200') : ''
+                                } ${theme === 'dark' ? 'hover:bg-white/[0.02]' : 'hover:bg-slate-50'}`}
                             >
-                                <div className="mb-10 text-electric-violet group-hover:scale-110 transition-transform duration-500">{p.logo}</div>
-                                <div className="space-y-4">
-                                    <div>
-                                        <h3 className="text-2xl font-black text-white">{p.name}</h3>
-                                        <div className="text-[10px] font-black uppercase tracking-widest text-electric-violet mt-1">{p.role}</div>
+                                <div className={`shrink-0 flex items-center justify-center w-16 h-16 rounded-2xl text-electric-violet border transition-colors ${
+                                    theme === 'dark' ? 'border-white/5 group-hover:border-electric-violet/30' : 'border-slate-200 group-hover:border-electric-violet/40'
+                                }`}>{p.logo}</div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-baseline gap-3">
+                                        <h3 className="text-xl font-black">{p.name}</h3>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-electric-violet">{p.role}</span>
                                     </div>
-                                    <p className="text-sm text-slate-500 leading-relaxed font-medium">
+                                    <p className="text-sm text-slate-500 leading-relaxed font-medium mt-1 max-w-2xl">
                                         {p.desc}
                                     </p>
                                 </div>

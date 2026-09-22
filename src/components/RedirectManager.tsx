@@ -1,50 +1,44 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAppStore, appStore } from '@/lib/store';
 import { apiService } from '@/services/api';
 import { FeatureId } from '@/types';
 
-// Read and clear the short-lived OAuth token the backend hands off. The
-// intended handoff is a URL fragment (`#token=...`): a cookie can't be used
-// here since the backend and frontend are different sites (different
-// eTLD+1), so a cookie the backend's redirect response sets is scoped to
-// the backend's own origin and never visible to document.cookie here — and
-// a fragment, unlike a query param, is never sent to any server (this one
-// included) and is stripped from Referer headers.
-//
-// The `?token=...` query-param branch below is a compatibility fallback:
-// older/currently-deployed backend builds hand the token off via the query
-// string instead of the fragment. It's read and stripped immediately either
-// way, but a query param does still reach this page's own server access
-// logs and Referer headers on the way in, so this path should be treated as
-// temporary — retire it once the backend is confirmed redeployed with the
-// fragment-based handoff.
-function consumeOAuthToken(): string | null {
+// Read and clear the short-lived OAuth token the backend hands off via a
+// URL fragment. A cookie can't be used here: the backend and frontend are
+// different sites (different eTLD+1), so a cookie the backend's redirect
+// response sets is scoped to the backend's own origin and is never visible
+// to document.cookie here. A fragment is never sent to any server (this
+// one included) and is stripped from Referer headers, so it's read once
+// on load and immediately stripped from the URL.
+function consumeOAuthFragmentToken(): string | null {
     if (typeof window === 'undefined') return null;
-
     const hash = window.location.hash;
-    const hashMatch = hash.match(/(?:^#|&)token=([^&]+)/);
-
-    if (hashMatch) {
-        const remainingHash = hash.replace(/(?:^#|&)token=[^&]+/, '').replace(/^#&/, '#');
-        const url = new URL(window.location.href);
-        url.hash = remainingHash === '#' ? '' : remainingHash;
-        window.history.replaceState({}, '', url.toString());
-        return decodeURIComponent(hashMatch[1]);
-    }
-
+    const match = hash.match(/(?:^#|&)token=([^&]+)/);
+    if (!match) return null;
+    const remainingHash = hash.replace(/(?:^#|&)token=[^&]+/, '').replace(/^#&/, '#');
     const url = new URL(window.location.href);
-    const queryToken = url.searchParams.get('token');
+    url.hash = remainingHash === '#' ? '' : remainingHash;
+    window.history.replaceState({}, '', url.toString());
+    return decodeURIComponent(match[1]);
+}
 
-    if (queryToken) {
-        url.searchParams.delete('token');
-        window.history.replaceState({}, '', url.toString());
-        return queryToken;
-    }
-
-    return null;
+// Same handoff mechanism as the token above, but for OAuth failures (state
+// mismatch, account already exists under a different provider, etc.) — the
+// backend redirects here with `#error=` instead of leaving the user on a
+// bare JSON response at its own domain.
+function consumeOAuthFragmentError(): string | null {
+    if (typeof window === 'undefined') return null;
+    const hash = window.location.hash;
+    const match = hash.match(/(?:^#|&)error=([^&]+)/);
+    if (!match) return null;
+    const remainingHash = hash.replace(/(?:^#|&)error=[^&]+/, '').replace(/^#&/, '#');
+    const url = new URL(window.location.href);
+    url.hash = remainingHash === '#' ? '' : remainingHash;
+    window.history.replaceState({}, '', url.toString());
+    return decodeURIComponent(match[1]);
 }
 
 const workspaceViewModeToTab: Partial<
@@ -74,6 +68,9 @@ export function RedirectManager() {
     const router = useRouter();
     const pathname = usePathname();
     const [initialized, setInitialized] = useState(false);
+    // Guards a one-time startup race in the viewMode->pathname effect below
+    // — see the comment there.
+    const hasSkippedInitialSync = useRef(false);
 
     // Restore session state BEFORE any redirect logic runs
     useEffect(() => {
@@ -108,15 +105,26 @@ export function RedirectManager() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pathname, initialized]);
 
+    // Surface an OAuth failure (state mismatch, account-linking conflict,
+    // provider not configured, etc.) as a toast instead of leaving the user
+    // on a bare backend response with no way back into the app.
+    useEffect(() => {
+        const error = consumeOAuthFragmentError();
+        if (!error) return;
+        appStore.showToast(error, 'error');
+    }, []);
+
     // Clean up URL if there are any query params left over
     useEffect(() => {
-        const token = consumeOAuthToken();
+        const token = consumeOAuthFragmentToken();
         if (!token) return;
 
         // OAuth callback: treat this as the source of truth and
         // prevent generic viewMode redirects from taking over.
         apiService.setToken(token);
-        void appStore.initialize();
+        void appStore.initialize().catch((e) => {
+            console.error('Post-token session initialization failed', e);
+        });
 
         try {
             const payloadSegment = token
@@ -151,33 +159,24 @@ export function RedirectManager() {
         }
     }, [initialized]);
 
-    // Only redirect after initialization is complete.
+    // Auth-driven redirects. These key off `user` and `pathname` directly
+    // (never off the viewMode -> path table below), so they can safely react
+    // to real URL navigation without racing the effect above.
     useEffect(() => {
         if (!initialized) return;
 
-        // Read live state rather than the viewMode/user captured in this
-        // effect's closure: the pathname -> viewMode sync effect above runs
-        // first within the same commit and may have already corrected
-        // appStore's viewMode to match pathname. Acting on the stale
-        // pre-correction closure value here would immediately redirect the
-        // user away from the page they're actually on, then the pathname
-        // change bounces back and the two effects fight forever.
-        const snapshot = appStore.getSnapshot();
-        const liveViewMode = snapshot.viewMode;
-        const liveUser = snapshot.user;
-
         // If authenticated, always stay on workspace.
-        if (liveUser) {
+        if (user) {
             const workspaceTab =
                 workspacePathToTab[pathname] ||
                 workspaceViewModeToTab[
-                    liveViewMode
+                    viewMode
                 ];
 
             if (workspaceTab) {
                 appStore.openTab(workspaceTab);
 
-                if (liveViewMode !== 'app') {
+                if (viewMode !== 'app') {
                     appStore.setViewMode('app');
                 }
             }
@@ -192,8 +191,21 @@ export function RedirectManager() {
         // If not authenticated and trying to access workspace, redirect to landing
         if (pathname === '/workspace') {
             router.replace('/');
-            return;
         }
+    }, [user, pathname, viewMode, router, initialized]);
+
+    // Sync URL from viewMode when viewMode changes via in-app navigation
+    // (e.g. an embedded tab switch calling appStore.setViewMode directly,
+    // without going through next/navigation). `pathname` is intentionally
+    // excluded from the dependency array — the effect above already keeps
+    // viewMode in sync when the user navigates via the URL/back-button, and
+    // reacting to both directions symmetrically makes the two effects fight:
+    // a raw router.push() leaves a one-render window where pathname has
+    // moved but viewMode hasn't caught up yet, so this effect would read a
+    // stale viewMode and shove the URL back to where it just came from.
+    useEffect(() => {
+        if (!initialized || user) return;
+        if (pathname === '/workspace') return;
 
         const modeToPath: Record<string, string> = {
             landing: '/',
@@ -208,11 +220,28 @@ export function RedirectManager() {
             partners: '/partners'
         };
 
-        const targetPath = modeToPath[liveViewMode];
+        // On the very first opportunity this effect gets to run after
+        // initialization, `viewMode` may still be its pre-hydration default
+        // ('landing') even though the pathname->viewMode effect above has
+        // already fired in this same commit to correct it — that effect's
+        // `setViewMode` call doesn't update *this* render's `viewMode`
+        // closure, only a future one. Without this guard this effect would
+        // read the stale default and bounce a hard-refreshed public route
+        // (e.g. '/features') straight back to '/'. So: skip exactly once,
+        // right after initialization, and only when pathname is a route
+        // this effect doesn't yet agree with — every run after that is
+        // trusted, including a legitimate in-app navigation to 'landing'.
+        if (!hasSkippedInitialSync.current) {
+            hasSkippedInitialSync.current = true;
+            if (modeToPath[viewMode] !== pathname) return;
+        }
+
+        const targetPath = modeToPath[viewMode];
         if (targetPath && pathname !== targetPath) {
             router.replace(targetPath);
         }
-    }, [viewMode, user, router, pathname, initialized]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [viewMode, user, router, initialized]);
 
     return null;
 }

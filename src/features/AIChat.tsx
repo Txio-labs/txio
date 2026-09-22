@@ -171,54 +171,54 @@ export const AIChat: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-near-black font-sans">
-      <div className="px-4 py-2 border-b border-white/5 bg-dark-indigo-glow flex justify-between items-center shrink-0">
-        <span className="font-bold text-slate-400 text-xs">AI Console</span>
-        <button onClick={() => setMessages([INITIAL_MESSAGE])} aria-label="Clear chat history" title="Clear chat history" className="p-1 text-slate-500 hover:text-white"><RefreshCw size={14}/></button>
+    <div className="flex flex-col h-full bg-white dark:bg-near-black font-sans">
+      <div className="px-4 py-2 border-b border-slate-200 dark:border-white/5 bg-slate-100 dark:bg-dark-indigo-glow flex justify-between items-center shrink-0">
+        <span className="font-bold text-slate-500 dark:text-slate-400 text-xs">AI Console</span>
+        <button onClick={() => setMessages([INITIAL_MESSAGE])} aria-label="Clear chat history" title="Clear chat history" className="p-1 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white"><RefreshCw size={14}/></button>
       </div>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
         {messages.map((m, i) => (
           <div key={i} className={`flex gap-3 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
-             <Avatar 
-                size="xs" 
-                type={m.role === 'model' ? 'bot' : 'user'} 
-                seed={m.role === 'model' ? 'sui-ai' : 'txio-user'} 
+             <Avatar
+                size="xs"
+                type={m.role === 'model' ? 'bot' : 'user'}
+                seed={m.role === 'model' ? 'sui-ai' : 'txio-user'}
              />
              <div className={`max-w-[90%] space-y-2`}>
-                 <div className={`p-3 rounded text-xs font-mono whitespace-pre-wrap relative group ${m.role === 'user' ? 'bg-slate-800 text-slate-200' : 'bg-near-black border border-white/5 text-slate-300'}`}>
+                 <div className={`p-3 rounded text-xs font-mono whitespace-pre-wrap relative group ${m.role === 'user' ? 'bg-slate-700 dark:bg-slate-800 text-white dark:text-slate-200' : 'bg-slate-100 dark:bg-near-black border border-slate-200 dark:border-white/5 text-slate-700 dark:text-slate-300'}`}>
                      {m.text}
                      {m.role === 'model' && (
-                        <button onClick={() => handleCopy(m.text, i)} aria-label="Copy response" title="Copy response" className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 text-slate-500 hover:text-white">
+                        <button onClick={() => handleCopy(m.text, i)} aria-label="Copy response" title="Copy response" className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white">
                             {copiedId === i ? <Check size={12}/> : <Copy size={12}/>}
                         </button>
                      )}
                  </div>
                  {m.toolCall && (
-                     <div className="bg-dark-indigo-glow border border-white/5 p-2 rounded flex items-center justify-between">
+                     <div className="bg-slate-100 dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 p-2 rounded flex items-center justify-between">
                          <div className="text-xs text-electric-violet font-mono flex items-center gap-2">
                              {m.toolCall.name === 'create_rpc_request' ? <Terminal size={12}/> : <Layers size={12}/>}
                              {resolveToolCallLabel(m.toolCall)}
                          </div>
-                         <button onClick={() => executeToolCall(m.toolCall!)} aria-label="Apply suggested action" title="Apply suggested action" className="p-1 bg-sui-700 text-white rounded hover:bg-electric-violet"><Plus size={12}/></button>
+                         <button onClick={() => executeToolCall(m.toolCall!)} aria-label="Apply suggested action" title="Apply suggested action" className="p-1 bg-electric-violet/60 text-white rounded hover:bg-electric-violet transition-colors"><Plus size={12}/></button>
                      </div>
                  )}
              </div>
           </div>
         ))}
-        {isTyping && <div className="text-xs text-slate-600 italic px-10">Processing...</div>}
+        {isTyping && <div className="text-xs text-slate-400 dark:text-slate-600 italic px-10">Processing...</div>}
       </div>
 
-      <div className="p-3 border-t border-white/5 bg-dark-indigo-glow">
+      <div className="p-3 border-t border-slate-200 dark:border-white/5 bg-slate-100 dark:bg-dark-indigo-glow">
           <form onSubmit={(e) => { e.preventDefault(); handleSend(input); }} className="relative">
-              <input 
-                  className="w-full bg-near-black border border-white/10 rounded p-2 pr-10 text-xs text-white font-mono focus:border-electric-violet outline-none"
+              <input
+                  className="w-full bg-white dark:bg-near-black border border-slate-300 dark:border-white/10 rounded p-2 pr-10 text-xs text-slate-900 dark:text-white font-mono focus:border-electric-violet outline-none"
                   placeholder="Enter prompt..."
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   disabled={isTyping}
               />
-              <button type="submit" disabled={!input.trim()} className="absolute right-2 top-1.5 text-slate-500 hover:text-white"><Send size={14}/></button>
+              <button type="submit" disabled={!input.trim()} className="absolute right-2 top-1.5 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white"><Send size={14}/></button>
           </form>
       </div>
     </div>
