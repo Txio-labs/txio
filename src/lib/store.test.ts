@@ -479,3 +479,20 @@ describe('appStore comments persistence', () => {
         expect(reloadedSnapshot.comments[requestId][0].content).toBe('Great API request structure!');
     });
 });
+
+describe('appStore terminal panel default', () => {
+    it('starts closed so it does not crowd the request editor before anything has run', async () => {
+        const { appStore } = await loadStore();
+        expect(appStore.getSnapshot().isTerminalOpen).toBe(false);
+    });
+
+    it('toggleTerminal flips it open and closed', async () => {
+        const { appStore } = await loadStore();
+
+        appStore.toggleTerminal();
+        expect(appStore.getSnapshot().isTerminalOpen).toBe(true);
+
+        appStore.toggleTerminal();
+        expect(appStore.getSnapshot().isTerminalOpen).toBe(false);
+    });
+});

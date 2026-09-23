@@ -665,7 +665,10 @@ let state: AppState = {
 
     isInspectorOpen: true,
 
-    isTerminalOpen: true,
+    // Closed by default — it's an execution console, not a landing view.
+    // ensureTerminalOpen() (terminalLog.ts) opens it automatically the first
+    // time a request actually runs; the toggle button still opens it by hand.
+    isTerminalOpen: false,
 
     isAuthModalOpen: false,
 
