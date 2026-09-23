@@ -37,3 +37,6 @@ playwright-report/
 .cache-synpress/
 .impeccable/
 lint_output.txt
+
+# test coverage output
+coverage/
