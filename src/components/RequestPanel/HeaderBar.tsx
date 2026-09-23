@@ -138,7 +138,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           onChange={onTypeChange}
           options={[
             { label: 'JSON-RPC', value: RequestType.RPC, icon: <Terminal size={12} className="text-emerald-500" /> },
-            { label: 'TX BUILDER', value: RequestType.TRANSACTION, icon: <Layers size={12} className="text-amber-500" /> }
+            { label: 'TRANSACTION', value: RequestType.TRANSACTION, icon: <Layers size={12} className="text-amber-500" /> }
           ]}
           fullWidth
         />
@@ -177,10 +177,10 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         {requestType === RequestType.TRANSACTION && onExecute && (
           <button
             onClick={onExecute}
-            disabled={isLoading || !activeAddress}
+            disabled={isLoading}
             className="h-[38px] bg-emerald-600 hover:bg-emerald-500 text-white px-3 rounded-lg font-bold flex items-center justify-center transition-all shadow-lg shadow-emerald-900/40 active:scale-95 disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed"
-            title={activeAddress ? 'Review wallet-based simulation' : 'Connect Wallet to review simulation'}
-            aria-label={activeAddress ? 'Review wallet-based simulation' : 'Connect wallet to review simulation'}
+            title={activeAddress ? 'Review, sign & execute' : 'Review transaction (connect a wallet to sign)'}
+            aria-label="Review and sign transaction"
           >
             <Zap size={14} fill="currentColor" />
           </button>

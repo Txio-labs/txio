@@ -177,11 +177,13 @@ export interface SolanaAccountMeta {
   isWritable: boolean;
 }
 
-// Params for a single-instruction Solana transaction, built and signed via
-// the connected wallet from the RPC Builder's Transaction mode. Kept
-// separate from MoveCallParams/RequestType.TRANSACTION (the Sui PTB path)
-// since Solana instructions have a completely different shape (program ID +
-// account list + raw instruction data, no modules/functions/type args).
+// A RequestType.TRANSACTION request targets `rpcParams.chain` and carries
+// that chain's params below: Sui → moveParams, EVM → evmTxParams,
+// Solana → solanaTxParams, Stellar → stellarTxParams. Each chain's shape
+// follows its native model rather than forcing one generic form.
+
+// Single-instruction Solana transaction: program ID + account list + raw
+// instruction data (no modules/functions/type args).
 export interface SolanaTxParams {
   programId: string;
   accounts: SolanaAccountMeta[];
@@ -189,6 +191,42 @@ export interface SolanaTxParams {
   // per `dataEncoding` at send time.
   data: string;
   dataEncoding: 'hex' | 'base64' | 'utf8';
+}
+
+// EVM contract call or value transfer. With `functionSignature` set (e.g.
+// "transfer(address,uint256)") calldata is ABI-encoded from `args`;
+// otherwise `data` is sent as raw hex calldata ("0x" for a plain transfer).
+export interface EvmTxParams {
+  chainId: number;
+  to: string;
+  // Native currency amount in whole units (ETH, POL, ...), e.g. "0.01".
+  value: string;
+  functionSignature: string;
+  args: string[];
+  data: string;
+  // Contract ABI (JSON) when loaded from Sourcify or pasted — drives the
+  // generated form, decoded results and decoded events.
+  abi?: string;
+  // Per-argument unit for uint inputs: decimals to scale by (18 = ether,
+  // 9 = gwei, token decimals, ...). Absent/0 means the value is in base units.
+  argDecimals?: (number | null)[];
+}
+
+export type StellarArgType =
+  | 'address' | 'i128' | 'u128' | 'i64' | 'u64' | 'i32' | 'u32'
+  | 'bool' | 'string' | 'symbol' | 'bytes';
+
+export interface StellarArg {
+  id: string;
+  type: StellarArgType;
+  value: string;
+}
+
+// Soroban smart contract invocation.
+export interface StellarTxParams {
+  contractId: string;
+  function: string;
+  args: StellarArg[];
 }
 
 export interface RequestItem {
@@ -209,11 +247,11 @@ export interface RequestItem {
   txType?: TransactionKind;
   moveParams: MoveCallParams;
   transferParams?: TransferParams;
-  // Present only for the RPC Builder's Solana "Transaction" mode — a
-  // single-instruction transaction to sign and send via the connected
-  // Solana wallet, independent of the Sui-specific PTB/RequestType.TRANSACTION
-  // path.
+  // Solana transaction params — used by TRANSACTION requests on Solana, and
+  // by the older RPC-type Solana "Transaction" mode toggle.
   solanaTxParams?: SolanaTxParams;
+  evmTxParams?: EvmTxParams;
+  stellarTxParams?: StellarTxParams;
   isLoading?: boolean;
   status?: number;
   timestamp?: number;

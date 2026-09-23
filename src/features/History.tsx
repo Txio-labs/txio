@@ -38,7 +38,7 @@ export const HistoryFeature: React.FC = () => {
     }, [history, search, filter, currentWorkspaceId]);
 
     const handleReplay = (item: any) => {
-        const type = item.type === RequestType.RPC ? 'rpc' : 'ptb';
+        const type = 'rpc';
         appStore.openTab(type, {
             ...item,
             id: undefined, // Create new ID for replay
@@ -144,7 +144,7 @@ export const HistoryFeature: React.FC = () => {
                                     : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                                 }`}
                             >
-                                {f === 'TRANSACTION' ? 'PTB' : f}
+                                {f === 'TRANSACTION' ? 'TX' : f}
                             </button>
                         ))}
                     </div>

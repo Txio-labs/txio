@@ -1,11 +1,32 @@
 import React, { useRef, useState } from 'react';
 import { Terminal, Layers, FolderOpen, FolderPlus, FolderKanban, ArrowRight } from 'lucide-react';
 import { appStore, useAppStore } from '@/lib/store';
-import { RequestType, RequestItem } from '../types';
-import { DEFAULT_MOVE_CALL } from '@/lib/constants';
+import { RequestType, RequestItem, ChainId } from '../types';
+import { DEFAULT_MOVE_CALL, RPC_CHAINS } from '@/lib/constants';
 import { ImportedRpcRequest, parseImportFile } from '@/lib/importRequest';
 import { ImportCurlModal } from '@/components/ImportCurlModal';
 import { apiService } from '@/services/api';
+import { withTxChain } from '@/services/transactionService';
+
+// Each chain builds transactions in its own native shape; the label says
+// what the user will actually get.
+export const TRANSACTION_OPTIONS: Record<ChainId, { title: string; subtitle: string }> = {
+  sui: { title: 'Sui Transaction', subtitle: 'Move call, simulated then signed with your wallet' },
+  evm: { title: 'EVM Contract Call', subtitle: 'Read or write a contract, or send a transfer' },
+  solana: { title: 'Solana Transaction', subtitle: 'Program instruction, simulated then signed' },
+  stellar: { title: 'Stellar Transaction', subtitle: 'Soroban contract call, simulated then signed' },
+};
+
+const LAST_CHAIN_KEY = 'txio_newRequestChain';
+
+const readLastChain = (): ChainId | null => {
+  try {
+    const v = localStorage.getItem(LAST_CHAIN_KEY);
+    return RPC_CHAINS.some((c) => c.id === v) ? (v as ChainId) : null;
+  } catch {
+    return null;
+  }
+};
 
 interface NewRequestPageProps {
   tabId: string;
@@ -27,6 +48,22 @@ export const NewRequestPage: React.FC<NewRequestPageProps> = ({ tabId, initialDa
   const [isPickingExisting, setIsPickingExisting] = useState(false);
 
   const topLevelCollections = collections.filter((c) => c.type === 'collection');
+
+  // No chain is preselected on first use — txio has no "default" chain.
+  // After that, the last choice is remembered as a convenience.
+  const [chain, setChain] = useState<ChainId | null>(
+    () => initialData?.rpcParams?.chain ?? readLastChain()
+  );
+  const chooseChain = (id: ChainId) => {
+    setChain(id);
+    try {
+      localStorage.setItem(LAST_CHAIN_KEY, id);
+    } catch {
+      // storage unavailable — the choice just isn't remembered
+    }
+  };
+  const chainLabel = RPC_CHAINS.find((c) => c.id === chain)?.label;
+  const txOption = chain ? TRANSACTION_OPTIONS[chain] : null;
 
   // Resolve a human-readable collection name for display when pre-scoped.
   const collectionName = collectionId
@@ -67,27 +104,23 @@ export const NewRequestPage: React.FC<NewRequestPageProps> = ({ tabId, initialDa
     setDestinationChosen(true);
   };
 
-  const handleCreate = async (type: 'rpc' | 'ptb') => {
-    let reqType = RequestType.RPC;
-    let name = 'Untitled Request';
+  const handleCreate = async (type: 'rpc' | 'transaction') => {
+    if (!chain) return;
+    const isTx = type === 'transaction';
 
-    if (type === 'ptb') {
-        reqType = RequestType.TRANSACTION;
-        name = 'Untitled PTB';
-    }
-
-    const requestData: RequestItem = {
+    const base: RequestItem = {
       id: tabId,
-      name: name,
-      type: reqType,
+      name: isTx ? `Untitled ${TRANSACTION_OPTIONS[chain].title}` : `Untitled ${chainLabel} Request`,
+      type: isTx ? RequestType.TRANSACTION : RequestType.RPC,
       network: appStore.getSnapshot().network,
-      rpcParams: { method: '', params: [] },
+      rpcParams: { method: '', params: [], chain },
       moveParams: { ...DEFAULT_MOVE_CALL },
       localVars: []
     };
+    const requestData = isTx ? withTxChain(base, chain) : base;
 
-    // 1. Finalize the request (changes tab type from 'new_request' to 'rpc' or 'ptb')
-    appStore.finalizeRequest(tabId, type === 'ptb' ? 'ptb' : 'rpc', requestData);
+    // 1. Finalize the request (changes tab type from 'new_request' to 'rpc')
+    appStore.finalizeRequest(tabId, 'rpc', requestData);
 
     // 2. CRITICAL: Set this tab as active so WorkspaceContent re-renders with RPCBuilder
     appStore.setActiveTab(tabId);
@@ -98,12 +131,12 @@ export const NewRequestPage: React.FC<NewRequestPageProps> = ({ tabId, initialDa
       try {
         await apiService.addRequest(collectionId, requestData);
         await appStore.fetchCollections();
-        appStore.showToast(`${type === 'rpc' ? 'RPC' : 'PTB'} request added to ${collectionName ?? 'collection'}`, 'success');
+        appStore.showToast(`${requestData.name.replace('Untitled ', '')} added to ${collectionName ?? 'collection'}`, 'success');
       } catch {
-        appStore.showToast(`${type === 'rpc' ? 'RPC' : 'PTB'} request created`, 'success');
+        appStore.showToast(`${requestData.name.replace('Untitled ', '')} created`, 'success');
       }
     } else {
-      appStore.showToast(`${type === 'rpc' ? 'RPC' : 'PTB'} request created`, 'success');
+      appStore.showToast(`${requestData.name.replace('Untitled ', '')} created`, 'success');
     }
   };
 
@@ -259,26 +292,50 @@ export const NewRequestPage: React.FC<NewRequestPageProps> = ({ tabId, initialDa
         )}
         {!collectionName && <div className="mb-6" />}
 
+        <div className="mb-6">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 px-1">Chain</div>
+          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Chain">
+            {RPC_CHAINS.map((c) => (
+              <button
+                key={c.id}
+                role="radio"
+                aria-checked={chain === c.id}
+                onClick={() => chooseChain(c.id)}
+                className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors ${
+                  chain === c.id
+                    ? 'border-electric-violet/60 bg-electric-violet/10 text-slate-900 dark:text-white'
+                    : 'border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-600'
+                }`}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+          {!chain && <p className="text-xs text-slate-500 mt-2 px-1">Pick the chain this request targets.</p>}
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <button
                 onClick={() => handleCreate('rpc')}
-                className="flex flex-col items-center gap-4 p-8 bg-slate-50 dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 rounded-lg hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors group text-center"
+                disabled={!chain}
+                className="flex flex-col items-center gap-4 p-8 bg-slate-50 dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 rounded-lg enabled:hover:border-slate-400 dark:enabled:hover:border-slate-600 enabled:hover:bg-slate-100 dark:enabled:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors group text-center"
             >
-                <div className="text-slate-400 dark:text-slate-500 group-hover:text-slate-900 dark:group-hover:text-white transition-colors"><Terminal size={32} /></div>
+                <div className="text-slate-400 dark:text-slate-500 group-enabled:group-hover:text-slate-900 dark:group-enabled:group-hover:text-white transition-colors"><Terminal size={32} /></div>
                 <div>
-                    <div className="font-bold text-slate-900 dark:text-slate-200">JSON-RPC</div>
-                    <div className="text-xs text-slate-500 mt-1">Standard RPC Method Call</div>
+                    <div className="font-bold text-slate-900 dark:text-slate-200">{chainLabel ? `${chainLabel} JSON-RPC` : 'JSON-RPC'}</div>
+                    <div className="text-xs text-slate-500 mt-1">Call any RPC method on the node</div>
                 </div>
             </button>
 
             <button
-                onClick={() => handleCreate('ptb')}
-                className="flex flex-col items-center gap-4 p-8 bg-slate-50 dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 rounded-lg hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors group text-center"
+                onClick={() => handleCreate('transaction')}
+                disabled={!chain}
+                className="flex flex-col items-center gap-4 p-8 bg-slate-50 dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 rounded-lg enabled:hover:border-slate-400 dark:enabled:hover:border-slate-600 enabled:hover:bg-slate-100 dark:enabled:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors group text-center"
             >
-                <div className="text-slate-400 dark:text-slate-500 group-hover:text-slate-900 dark:group-hover:text-white transition-colors"><Layers size={32} /></div>
+                <div className="text-slate-400 dark:text-slate-500 group-enabled:group-hover:text-slate-900 dark:group-enabled:group-hover:text-white transition-colors"><Layers size={32} /></div>
                 <div>
-                    <div className="font-bold text-slate-900 dark:text-slate-200">Transaction Builder</div>
-                    <div className="text-xs text-slate-500 mt-1">Move Call & PTB Construction</div>
+                    <div className="font-bold text-slate-900 dark:text-slate-200">{txOption?.title ?? 'Transaction'}</div>
+                    <div className="text-xs text-slate-500 mt-1">{txOption?.subtitle ?? 'Build and sign a transaction'}</div>
                 </div>
             </button>
         </div>

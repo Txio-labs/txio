@@ -4,6 +4,15 @@
 // / signAndExecuteMoveCall — see src/services/suiService.ts). This is the
 // single source of truth the new Response panel renders; nothing here is
 // fabricated.
+// Live progress of a signed transaction, from wallet prompt to confirmation.
+export type TxStage = 'awaiting-signature' | 'submitted' | 'included' | 'confirmed' | 'failed';
+
+export interface TxProgress {
+  stage: TxStage;
+  hash?: string;
+  explorerUrl?: string;
+}
+
 export interface RequestOutcome {
   status: number;
   duration: number;

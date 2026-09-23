@@ -3,7 +3,7 @@ import { RequestPanelProps, ActiveTab } from './types';
 import { HeaderBar } from './HeaderBar';
 import { RequestTabs } from './RequestTabs';
 import { RPCBuilder } from './builders/RPCBuilder';
-import { TransactionBuilder } from './builders/TransactionBuilder';
+import { TransactionEditor } from './builders/TransactionEditor';
 import { TestsEditor } from './editors/TestsEditor';
 import { HooksEditor } from './editors/HooksEditor';
 import { RawEditor } from './editors/RawEditor';
@@ -25,11 +25,12 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
   envVars,
   isReadOnly = false,
   testResults = [],
-  outcome = null
+  outcome = null,
+  txProgress = null
 }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('builder');
 
-  const chain = request.type === RequestType.RPC ? request.rpcParams.chain : undefined;
+  const chain = request.rpcParams.chain;
   const evmChainId = request.type === RequestType.RPC ? request.rpcParams.evmChainId : undefined;
 
   const handleTypeChange = (type: RequestType) => {
@@ -70,17 +71,20 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
       case 'transaction':
         return request.type === RequestType.TRANSACTION ? (
           <div className="p-4 md:p-6 space-y-8">
-            <TransactionBuilder
+            <TransactionEditor
               request={request}
               activeAddress={activeAddress}
               envVars={envVars}
               network={network}
               isReadOnly={isReadOnly}
               onChange={onChange}
+              outcome={outcome}
+              txProgress={txProgress}
+              isLoading={isLoading}
             />
           </div>
         ) : (
-          <TransactionNotice />
+          <TransactionNotice onConvert={() => onChange({ ...request, type: RequestType.TRANSACTION })} />
         );
 
       case 'raw':
@@ -96,13 +100,16 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
                 onChange={onChange}
               />
             ) : (
-              <TransactionBuilder
+              <TransactionEditor
                 request={request}
                 activeAddress={activeAddress}
                 envVars={envVars}
                 network={network}
                 isReadOnly={isReadOnly}
                 onChange={onChange}
+                outcome={outcome}
+                txProgress={txProgress}
+                isLoading={isLoading}
               />
             )}
           </div>

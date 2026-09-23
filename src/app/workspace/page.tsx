@@ -10,7 +10,6 @@ import { TeamMember } from "@/types";
 // Import your feature components
 import { Dashboard } from "@/features/Dashboard";
 import { RPCBuilder } from "@/features/RPCBuilder";
-import { PTBBuilder } from "@/features/PTBBuilder";
 import { HistoryFeature } from "@/features/History";
 import { NewRequestPage } from "@/features/NewRequestPage";
 import { WalletsPage } from "@/features/WalletsPage";
@@ -47,9 +46,10 @@ const WorkspaceContent: React.FC = () => {
         case 'dashboard':
             return <Dashboard />;
         case 'rpc':
-            return <RPCBuilder />;
+        // 'ptb' tabs are legacy (the Sui-only PTB canvas was removed); any
+        // still open from a previous session open in the request editor.
         case 'ptb':
-            return <PTBBuilder />;
+            return <RPCBuilder />;
         case 'history':
             return <HistoryFeature />;
         case 'settings':

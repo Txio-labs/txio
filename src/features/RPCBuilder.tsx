@@ -5,18 +5,23 @@ import { useAppStore, appStore } from '@/lib/store';
 import { useWallet } from '@/wallet';
 import { useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 import { RequestPanel } from '../components/RequestPanel/RequestPanel';
-import { RequestOutcome } from '../components/RequestPanel/response/types';
+import { RequestOutcome, TxProgress } from '../components/RequestPanel/response/types';
 import { RequestItem, RequestType, Network, AssertionResult } from '../types';
 import {
-    executeSuiRpc,
     executeChainRpc,
     looksLikeSuiNs,
     resolveChainRpcUrl,
     resolveSuiAddress,
-    simulateMoveCall,
-    signAndExecuteMoveCall,
     SuiRpcError,
 } from '../services/suiService';
+import {
+    describeTransaction,
+    executeTransaction,
+    getTxChain,
+    isMainnetExecution,
+    signerAddressFor,
+    simulateTransaction
+} from '../services/transactionService';
 import { sendSolanaTransaction } from '@/wallet';
 import { ADDRESS_FIRST_PARAM_METHODS } from '@/lib/constants';
 import { SignTransactionModal } from '../components/SignTransactionModal';
@@ -28,9 +33,6 @@ import {
 } from '@/lib/terminalLog';
 import { runHooks } from '@/lib/hooksEngine';
 import { evaluateAssertions, logAssertionResults } from '@/lib/assertionsEngine';
-
-const ZERO_ADDRESS =
-    '0x0000000000000000000000000000000000000000000000000000000000000000';
 
 const resolveVariables = (
     raw: string,
@@ -65,9 +67,23 @@ const resolveRequestVars = (
         }
     }
 
+    // Non-Sui transaction params are plain strings throughout, so a JSON
+    // round-trip substitutes variables in every field at once.
+    const resolveDeep = <T,>(value: T | undefined): T | undefined => {
+        if (value === undefined) return value;
+        try {
+            return JSON.parse(resolveVariables(JSON.stringify(value), vars)) as T;
+        } catch {
+            return value;
+        }
+    };
+
     const mp = request.moveParams;
     return {
         ...request,
+        evmTxParams: resolveDeep(request.evmTxParams),
+        solanaTxParams: resolveDeep(request.solanaTxParams),
+        stellarTxParams: resolveDeep(request.stellarTxParams),
         moveParams: {
             ...mp,
             packageId: resolveVariables(mp.packageId, vars),
@@ -94,7 +110,9 @@ export const RPCBuilder: React.FC = () => {
     const { currentWallet, openModal } = useWallet();
     const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
     const activeTab = tabs.find(t => t.id === activeTabId);
-    const connectedAddress = currentWallet?.family === 'sui' ? currentWallet.address : null;
+    const request = activeTab?.data as RequestItem;
+    // The signer is whichever connected wallet matches this request's chain.
+    const connectedAddress = request ? signerAddressFor(request, currentWallet) : null;
 
     const [isLoading, setIsLoading] = useState(false);
     const [isSignModalOpen, setIsSignModalOpen] = useState(false);
@@ -104,13 +122,13 @@ export const RPCBuilder: React.FC = () => {
     const [pendingNetwork, setPendingNetwork] = useState<Network | null>(null);
     const [testResults, setTestResults] = useState<AssertionResult[]>([]);
     const [outcome, setOutcome] = useState<RequestOutcome | null>(null);
-
-    const request = activeTab?.data as RequestItem;
+    const [txProgress, setTxProgress] = useState<TxProgress | null>(null);
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setTestResults([]);
         setOutcome(null);
+        setTxProgress(null);
     }, [activeTabId]);
 
     useEffect(() => {
@@ -121,9 +139,7 @@ export const RPCBuilder: React.FC = () => {
         ) {
             appStore.finalizeRequest(
                 activeTabId,
-                request.type === RequestType.RPC
-                    ? 'rpc'
-                    : 'ptb',
+                'rpc',
                 {
                     ...request,
                     network
@@ -143,7 +159,7 @@ export const RPCBuilder: React.FC = () => {
 
     const handleRequestChange = (updatedReq: RequestItem) => {
         if (activeTabId) {
-            appStore.finalizeRequest(activeTabId, updatedReq.type === RequestType.RPC ? 'rpc' : 'ptb', updatedReq);
+            appStore.finalizeRequest(activeTabId, 'rpc', updatedReq);
         }
     };
 
@@ -152,15 +168,14 @@ export const RPCBuilder: React.FC = () => {
         await executeCall();
     };
 
-    const executeCall = async (
-        simulationSender = connectedAddress ||
-            ZERO_ADDRESS
-    ) => {
+    const executeCall = async () => {
         if (!request) {
             return;
         }
 
         setIsLoading(true);
+        setTxProgress(null);
+        setOutcome(null);
 
         await runHooks(request.hooks, 'pre', network);
 
@@ -197,7 +212,7 @@ export const RPCBuilder: React.FC = () => {
 
         const commandLine =
                 resolved.type === RequestType.TRANSACTION
-                    ? `txio sui simulate ${resolved.moveParams.packageId}::${resolved.moveParams.module}::${resolved.moveParams.function}`
+                    ? `txio ${getTxChain(resolved)} simulate ${describeTransaction(resolved).target}`
                     : `txio ${resolved.rpcParams.chain ?? 'sui'} call --method ${resolved.rpcParams.method}${
                           resolved.rpcParams.params?.length
                               ? ` --params ${JSON.stringify(resolved.rpcParams.params)}`
@@ -209,28 +224,11 @@ export const RPCBuilder: React.FC = () => {
         try {
             let res;
 
-            if (
-                resolved.type ===
-                RequestType.TRANSACTION
-            ) {
-                const {
-                    packageId,
-                    module,
-                    function: func,
-                    typeArguments,
-                    arguments: args
-                } = resolved.moveParams;
-
-                res =
-                    await simulateMoveCall(
-                        network,
-                        simulationSender,
-                        packageId,
-                        module,
-                        func,
-                        typeArguments,
-                        args
-                    );
+            if (resolved.type === RequestType.TRANSACTION) {
+                res = await simulateTransaction(resolved, {
+                    network,
+                    wallet: currentWallet
+                });
             } else if (
                 resolved.rpcParams.chain === 'solana' &&
                 resolved.solanaTxParams
@@ -288,7 +286,7 @@ export const RPCBuilder: React.FC = () => {
                 httpStatus: status,
                 duration,
                 result,
-                sender: simulationSender
+                sender: connectedAddress ?? undefined
             });
             setTestResults(results);
             logAssertionResults(results, network);
@@ -329,7 +327,7 @@ export const RPCBuilder: React.FC = () => {
                 httpStatus: rpcError?.status ?? 500,
                 duration: rpcError?.duration,
                 error: message,
-                sender: simulationSender
+                sender: connectedAddress ?? undefined
             });
             setTestResults(results);
             logAssertionResults(results, network);
@@ -338,19 +336,17 @@ export const RPCBuilder: React.FC = () => {
         }
     };
 
-    const handleReviewSimulation = (
-        signer: string
-    ) => {
+    const handleReviewSimulation = () => {
         setIsSignModalOpen(false);
-        void executeCall(signer);
+        void executeCall();
     };
 
     const handleExecuteTransaction = async () => {
         if (!request || !connectedAddress) return;
         if (isLoading || isMainnetWarningOpen) return;
 
-        // Check if trying to execute on mainnet - show execution confirmation
-        if (network === 'mainnet') {
+        // Spending real funds — confirm first.
+        if (isMainnetExecution(request, network)) {
             setIsMainnetWarningOpen(true);
             return;
         }
@@ -363,6 +359,8 @@ export const RPCBuilder: React.FC = () => {
 
         setIsLoading(true);
         setIsMainnetWarningOpen(false);
+        setOutcome(null);
+        setTxProgress({ stage: 'awaiting-signature' });
 
         await runHooks(request.hooks, 'pre', network);
 
@@ -371,42 +369,22 @@ export const RPCBuilder: React.FC = () => {
         );
         const resolved = resolveRequestVars(request, activeEnvVars);
 
-        const commandLine =
-            resolved.type === RequestType.TRANSACTION
-                ? `txio sui execute ${resolved.moveParams.packageId}::${resolved.moveParams.module}::${resolved.moveParams.function}`
-                : `txio sui call --method ${resolved.rpcParams.method}${
-                      resolved.rpcParams.params?.length
-                          ? ` --params ${JSON.stringify(resolved.rpcParams.params)}`
-                          : ''
-                  }`;
+        const commandLine = `txio ${getTxChain(resolved)} execute ${describeTransaction(resolved).target}`;
 
         ensureTerminalOpen();
 
         try {
             let res;
 
-            if (resolved.type === RequestType.TRANSACTION) {
-                const {
-                    packageId,
-                    module,
-                    function: func,
-                    typeArguments,
-                    arguments: args
-                } = resolved.moveParams;
-
-                res = await signAndExecuteMoveCall(
-                    network,
-                    connectedAddress,
-                    packageId,
-                    module,
-                    func,
-                    typeArguments,
-                    args,
-                    signAndExecuteTransaction
-                );
-            } else {
-                throw new Error('Execute mode is only supported for Move calls, not raw RPC requests.');
+            if (resolved.type !== RequestType.TRANSACTION) {
+                throw new Error('Only transaction requests can be signed and executed.');
             }
+            res = await executeTransaction(resolved, {
+                network,
+                wallet: currentWallet,
+                suiSignAndExecute: signAndExecuteTransaction,
+                onProgress: setTxProgress
+            });
 
             const { result, duration, status } = res;
 
@@ -446,6 +424,8 @@ export const RPCBuilder: React.FC = () => {
                     ? error.message
                     : 'Transaction execution failed.';
 
+            setTxProgress((prev) => ({ ...(prev ?? {}), stage: 'failed' }));
+
             appStore.addToHistory(
                 request,
                 rpcError?.status ?? 500,
@@ -464,7 +444,8 @@ export const RPCBuilder: React.FC = () => {
                 status: rpcError?.status ?? 500,
                 duration: rpcError?.duration ?? 0,
                 timestamp: Date.now(),
-                error: message
+                error: message,
+                result: (error as { result?: unknown })?.result
             });
 
             const results = evaluateAssertions(request.tests, {
@@ -501,6 +482,7 @@ export const RPCBuilder: React.FC = () => {
                     envVars={envVariables}
                     testResults={testResults}
                     outcome={outcome}
+                    txProgress={txProgress}
                 />
             </div>
 

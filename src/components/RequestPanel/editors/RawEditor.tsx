@@ -2,93 +2,7 @@ import React from 'react';
 import { FileJson, ChevronRight } from 'lucide-react';
 import { JsonEditor } from '../../ui/JsonEditor';
 import { RequestItem, RequestType } from '../../../types';
-
-const RPC_TEMPLATES = [
-    {
-        label: 'Get Owned Objects',
-        method: 'suix_getOwnedObjects',
-        params: [
-            "0x7d20dcdb2bca4f508ea9613994683eb4e76e9c4ed27790dd226ee5310f5194d1",
-            { "options": { "showContent": true, "showType": true, "showOwner": true } }
-        ]
-    },
-    {
-        label: 'Get Object',
-        method: 'sui_getObject',
-        params: [
-            "0x_OBJECT_ID",
-            { "showType": true, "showOwner": true, "showContent": true }
-        ]
-    },
-    {
-        label: 'Multi Get Objects',
-        method: 'sui_multiGetObjects',
-        params: [
-            ["0x_ID_1", "0x_ID_2"],
-            { "showType": true, "showOwner": true, "showContent": true }
-        ]
-    },
-    {
-        label: 'Get Balance (SUI)',
-        method: 'suix_getBalance',
-        params: ["0x_WALLET_ADDRESS", "0x2::sui::SUI"]
-    },
-    {
-        label: 'Get All Balances',
-        method: 'suix_getAllBalances',
-        params: ["0x_WALLET_ADDRESS"]
-    },
-    {
-        label: 'Get Coins',
-        method: 'suix_getCoins',
-        params: ["0x_WALLET_ADDRESS", "0x2::sui::SUI", null, 50]
-    },
-    {
-        label: 'Query Transactions',
-        method: 'suix_queryTransactionBlocks',
-        params: [
-            { "filter": { "FromAddress": "0x_WALLET_ADDRESS" }, "options": { "showInput": true, "showEffects": true, "showEvents": true } },
-            null,
-            10,
-            true
-        ]
-    },
-    {
-        label: 'Get Transaction',
-        method: 'sui_getTransactionBlock',
-        params: ["TX_DIGEST", { "showInput": true, "showEffects": true, "showEvents": true }]
-    },
-    {
-        label: 'Dry Run Transaction',
-        method: 'sui_dryRunTransactionBlock',
-        params: ["TX_BYTES_BASE64"]
-    },
-    {
-        label: 'Execute Transaction',
-        method: 'sui_executeTransactionBlock',
-        params: ["TX_BYTES_BASE64", ["SIGNATURE"], { "showEffects": true, "showEvents": true }]
-    },
-    {
-        label: 'Get Package Modules',
-        method: 'sui_getNormalizedMoveModulesByPackage',
-        params: ["0x_PACKAGE_ID"]
-    },
-    {
-        label: 'Get Module',
-        method: 'sui_getNormalizedMoveModule',
-        params: ["0x_PACKAGE_ID", "MODULE_NAME"]
-    },
-    {
-        label: 'System State',
-        method: 'suix_getLatestSuiSystemState',
-        params: []
-    },
-    {
-        label: 'Chain ID',
-        method: 'sui_getChainIdentifier',
-        params: []
-    }
-];
+import { RPC_METHOD_TEMPLATES } from '@/lib/constants';
 
 interface RawEditorProps {
   request: RequestItem;
@@ -108,10 +22,20 @@ export const RawEditor: React.FC<RawEditorProps> = ({
     }
   };
 
-  const applyTemplate = (template: typeof RPC_TEMPLATES[0]) => {
+  // Templates follow the request's chain; applying one keeps the chain and
+  // EVM network (only method + params change).
+  const chain = request.rpcParams.chain ?? 'sui';
+  const templates = Object.entries(RPC_METHOD_TEMPLATES[chain] ?? {}).map(([method, params]) => ({
+    label: method,
+    method,
+    params: [...params]
+  }));
+
+  const applyTemplate = (template: { method: string; params: unknown[] }) => {
     onChange({
       ...request,
       rpcParams: {
+        ...request.rpcParams,
         method: template.method,
         params: template.params
       }
@@ -165,7 +89,7 @@ export const RawEditor: React.FC<RawEditorProps> = ({
             <FileJson size={12}/> Templates
           </h3>
           <div className="space-y-2">
-            {RPC_TEMPLATES.map((t, idx) => (
+            {templates.map((t, idx) => (
               <button 
                 key={idx}
                 onClick={() => applyTemplate(t)}

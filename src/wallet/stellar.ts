@@ -1,10 +1,12 @@
 import {
     isConnected as isFreighterConnected,
+    signTransaction as freighterSignTransaction,
     requestAccess
 } from '@stellar/freighter-api';
 import {
     getPublicKey as getLobstrPublicKey,
-    isConnected as isLobstrConnected
+    isConnected as isLobstrConnected,
+    signTransaction as lobstrSignTransaction
 } from '@lobstrco/signer-extension-api';
 
 import type {
@@ -783,3 +785,33 @@ export const fetchStellarBalance =
             decimals: 7
         };
     };
+
+/**
+ * Asks the connected Stellar wallet to sign a transaction envelope (XDR).
+ * Returns the signed XDR; submitting it is the caller's job.
+ */
+export const signStellarTransaction = async (
+    walletId: WalletId,
+    transactionXdr: string,
+    networkPassphrase: string,
+    address: string
+): Promise<string> => {
+    if (walletId === 'freighter') {
+        const result = await freighterSignTransaction(transactionXdr, {
+            networkPassphrase,
+            address
+        });
+        if (result.error) {
+            throw new Error(result.error.message || 'Freighter declined to sign the transaction.');
+        }
+        return result.signedTxXdr;
+    }
+    if (walletId === 'lobstr') {
+        const signed = await lobstrSignTransaction(transactionXdr);
+        if (!signed) {
+            throw new Error('LOBSTR declined to sign the transaction.');
+        }
+        return signed;
+    }
+    throw new Error(`Stellar wallet "${walletId}" does not support signing here.`);
+};

@@ -57,7 +57,7 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
           <div className="flex items-center gap-3">
             <div className="w-1.5 h-6 bg-sky-500 rounded-full"></div>
             <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-[0.2em]">
-              Smart Contract Configuration
+              Sui Move Call
             </h3>
           </div>
           {activeAddress && (
@@ -70,7 +70,7 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
         <div className="space-y-6">
           <div className="space-y-2">
             <label className="block text-[10px] uppercase font-bold text-slate-600 tracking-widest">
-              Contract ID
+              Package ID
             </label>
             <VariableInput 
               className="w-full bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-mono focus:border-sky-500 outline-none"
@@ -184,7 +184,7 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
 
           <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-white/10">
             <label className="flex items-center gap-2 text-[10px] uppercase font-bold text-slate-500 tracking-widest">
-              <Zap size={12} className="text-amber-500" /> Gas Budget (Units)
+              <Zap size={12} className="text-amber-500" /> Gas Budget (MIST)
             </label>
             <input 
               className="w-full bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-mono text-amber-500 focus:border-amber-500/50 outline-none font-bold"

@@ -2,7 +2,9 @@ import {
     Connection,
     PublicKey,
     Transaction,
-    TransactionInstruction
+    TransactionInstruction,
+    TransactionMessage,
+    VersionedTransaction
 } from '@solana/web3.js';
 import type {
     ConnectedWallet,
@@ -279,31 +281,14 @@ function decodeInstructionData(
     }
 }
 
-/**
- * Builds a single-instruction Solana transaction, signs it via the
- * connected wallet's injected provider, and submits it to the given RPC
- * endpoint. This is the real execution path behind the RPC Builder's
- * Solana "Transaction" mode — it does not simulate or mock anything.
- */
-export async function sendSolanaTransaction(params: {
-    walletId: WalletId;
-    rpcUrl: string;
+type SolanaInstructionParams = {
     programId: string;
     accounts: SolanaAccountMeta[];
     data: string;
     dataEncoding: 'hex' | 'base64' | 'utf8';
-}): Promise<{ signature: string }> {
-    const provider = getSolanaProviderById(params.walletId);
-    if (!provider) {
-        throw new Error('Wallet is not connected or does not support Solana.');
-    }
-    if (!provider.publicKey) {
-        throw new Error('Wallet has no active Solana public key.');
-    }
-    if (!provider.signTransaction && !provider.signAndSendTransaction) {
-        throw new Error('This wallet does not support signing transactions.');
-    }
+};
 
+const buildSolanaInstruction = (params: SolanaInstructionParams): TransactionInstruction => {
     let programIdKey: PublicKey;
     try {
         programIdKey = new PublicKey(params.programId.trim());
@@ -331,6 +316,78 @@ export async function sendSolanaTransaction(params: {
         data: instructionData
     });
 
+    return instruction;
+};
+
+/**
+ * Simulates a single-instruction transaction against the RPC without
+ * signing it. The fee payer must be an existing, funded account — the
+ * connected wallet when there is one.
+ */
+export async function simulateSolanaTransaction(params: SolanaInstructionParams & {
+    rpcUrl: string;
+    feePayer: string;
+}): Promise<{ err: unknown; logs: string[] | null; unitsConsumed: number | null }> {
+    const instruction = buildSolanaInstruction(params);
+    let payerKey: PublicKey;
+    try {
+        payerKey = new PublicKey(params.feePayer.trim());
+    } catch {
+        throw new Error(`Invalid fee payer: "${params.feePayer}"`);
+    }
+
+    const connection = new Connection(params.rpcUrl, 'confirmed');
+    const { blockhash } = await withTimeout(
+        connection.getLatestBlockhash('confirmed'),
+        'Fetch recent blockhash'
+    );
+    const message = new TransactionMessage({
+        payerKey,
+        recentBlockhash: blockhash,
+        instructions: [instruction]
+    }).compileToV0Message();
+
+    const { value } = await withTimeout(
+        connection.simulateTransaction(new VersionedTransaction(message), {
+            sigVerify: false,
+            replaceRecentBlockhash: true
+        }),
+        'Simulate transaction'
+    );
+    return {
+        err: value.err ?? null,
+        logs: value.logs ?? null,
+        unitsConsumed: value.unitsConsumed ?? null
+    };
+}
+
+/**
+ * Builds a single-instruction Solana transaction, signs it via the
+ * connected wallet's injected provider, and submits it to the given RPC
+ * endpoint. This is the real execution path behind the RPC Builder's
+ * Solana "Transaction" mode — it does not simulate or mock anything.
+ */
+export async function sendSolanaTransaction(params: {
+    walletId: WalletId;
+    rpcUrl: string;
+    programId: string;
+    accounts: SolanaAccountMeta[];
+    data: string;
+    dataEncoding: 'hex' | 'base64' | 'utf8';
+}): Promise<{ signature: string }> {
+    const provider = getSolanaProviderById(params.walletId);
+    if (!provider) {
+        throw new Error('Wallet is not connected or does not support Solana.');
+    }
+    if (!provider.publicKey) {
+        throw new Error('Wallet has no active Solana public key.');
+    }
+    if (!provider.signTransaction && !provider.signAndSendTransaction) {
+        throw new Error('This wallet does not support signing transactions.');
+    }
+
+    const instruction = buildSolanaInstruction(params);
+
     const connection = new Connection(params.rpcUrl, 'confirmed');
     const { blockhash, lastValidBlockHeight } = await withTimeout(
         connection.getLatestBlockhash('confirmed'),
@@ -343,13 +400,13 @@ export async function sendSolanaTransaction(params: {
         lastValidBlockHeight
     }).add(instruction);
 
-    // Prefer the wallet's own signAndSendTransaction when available — it
-    // lets the wallet submit via the RPC it trusts (and, for hardware
-    // wallets, avoids a second round-trip). Fall back to sign-then-send
-    // ourselves against the app's configured RPC endpoint.
-    if (provider.signAndSendTransaction) {
+    // Prefer sign-then-send through the app's RPC: the transaction then lands
+    // on the network selected in txio, even if the wallet's own UI is set to
+    // a different cluster. Fall back to the wallet submitting it only when it
+    // can't sign without sending.
+    if (!provider.signTransaction) {
         const result = await withTimeout(
-            provider.signAndSendTransaction(transaction),
+            provider.signAndSendTransaction!(transaction),
             'Sign and send transaction',
             60_000
         );
@@ -357,7 +414,7 @@ export async function sendSolanaTransaction(params: {
     }
 
     const signed = await withTimeout(
-        provider.signTransaction!(transaction),
+        provider.signTransaction(transaction),
         'Sign transaction',
         60_000
     );

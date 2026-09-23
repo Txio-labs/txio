@@ -281,7 +281,7 @@ export const CollectionsPage: React.FC = () => {
                                                     return (
                                                         <tr
                                                             key={node.id}
-                                                            onClick={() => req && appStore.openTab(req.type === RequestType.RPC ? 'rpc' : 'ptb', req)}
+                                                            onClick={() => req && appStore.openTab('rpc', req)}
                                                             className="cursor-pointer hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors"
                                                         >
                                                             <td className="px-4 py-2.5">

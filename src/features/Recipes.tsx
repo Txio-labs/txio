@@ -22,7 +22,7 @@ function recipeTypeToTabType(type: string): FeatureId {
         case 'Publish':
         case 'PTB':
         default:
-            return 'ptb';
+            return 'rpc';
     }
 }
 

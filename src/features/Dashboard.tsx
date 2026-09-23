@@ -11,6 +11,7 @@ import {
     Repeat,
     Clock
 } from 'lucide-react';
+import { describeTransaction } from '@/services/transactionService';
 import { useAppStore, appStore } from '@/lib/store';
 import { useWallet } from '@/wallet';
 import { RequestType, HistoryItem, ChainId } from '@/types';
@@ -388,7 +389,7 @@ const TransactionsTable: React.FC<{ transactions: HistoryItem[] }> = ({ transact
                             <th className="px-5 py-2 font-medium">Chain</th>
                             <th className="px-2 py-2 font-medium">Call</th>
                             <th className="px-2 py-2 font-medium">Status</th>
-                            <th className="px-2 py-2 font-medium hidden sm:table-cell">Gas Budget</th>
+                            <th className="px-2 py-2 font-medium hidden sm:table-cell">Kind</th>
                             <th className="px-5 py-2 font-medium text-right">Time</th>
                         </tr>
                     </thead>
@@ -397,18 +398,18 @@ const TransactionsTable: React.FC<{ transactions: HistoryItem[] }> = ({ transact
                             <tr
                                 key={idx}
                                 className="cursor-pointer hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors"
-                                onClick={() => appStore.openTab('ptb', item)}
+                                onClick={() => appStore.openTab('rpc', item)}
                             >
                                 <td className="px-5 py-2.5 text-slate-500 capitalize">{item.rpcParams?.chain ?? 'sui'}</td>
                                 <td className="px-2 py-2.5 font-mono text-slate-600 dark:text-slate-300 truncate max-w-[140px]">
-                                    {item.moveParams.module}::{item.moveParams.function}
+                                    {describeTransaction(item).target}
                                 </td>
                                 <td className="px-2 py-2.5">
                                     <span className={`inline-flex items-center gap-1 ${item.status < 400 ? 'text-emerald-500' : 'text-red-500'}`}>
                                         <span className="w-1.5 h-1.5 rounded-full bg-current" /> {item.status < 400 ? 'Confirmed' : 'Failed'}
                                     </span>
                                 </td>
-                                <td className="px-2 py-2.5 text-slate-500 font-mono hidden sm:table-cell">{item.moveParams.gasBudget || '—'}</td>
+                                <td className="px-2 py-2.5 text-slate-500 hidden sm:table-cell">{describeTransaction(item).kind}</td>
                                 <td className="px-5 py-2.5 text-right text-slate-500">{timeAgo(item.timestamp)}</td>
                             </tr>
                         ))}

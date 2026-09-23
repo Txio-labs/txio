@@ -519,90 +519,22 @@ export const resolveSuiAddress = async (
     return result;
 };
 
-export const simulateMoveCall = async (
-  network: Network,
-  sender: string,
-  packageId: string,
-  module: string,
-  func: string,
-  typeArgs: string[],
-  args: BuilderArg[]
-) => {
-    // Convert BuilderArgs to raw arguments for simulation/inspection
-    // For simulation, we can often pass pure values as is, and object IDs as strings
-    const rawArgs = args.map(arg => {
-        if (arg.type === 'u64' || arg.type === 'u128' || arg.type === 'u256') {
-            return arg.value; // Passed as string to avoid precision loss
-        }
-        if (arg.type === 'u8' || arg.type === 'u16' || arg.type === 'u32') {
-            return parseInt(arg.value);
-        }
-        if (arg.type === 'bool') {
-            return arg.value === 'true';
-        }
-        // Address, String, Object ID, etc.
-        return arg.value;
-    });
-
-    const resolvedSender = await resolveSuiAddress(network, sender);
-
-    const method = 'sui_devInspectTransactionBlock';
-    const params = [
-        resolvedSender,
-        {
-            kind: 'moveCall',
-            target: `${packageId}::${module}::${func}`,
-            typeArguments: typeArgs,
-            arguments: rawArgs
-        },
-        null,
-        null
-    ];
-
-    return executeSuiRpc(network, method, params);
-};
-
-export const getOwnedObjects = async (network: Network, address: string) => {
-    const resolved = await resolveSuiAddress(network, address);
-    return executeSuiRpc(network, 'suix_getOwnedObjects', [
-        resolved,
-        { options: { showType: true, showContent: true, showDisplay: true } }
-    ]);
-};
-
-export const getObject = async (network: Network, objectId: string) => {
-    return executeSuiRpc(network, 'sui_getObject', [
-        objectId,
-        { showType: true, showContent: true, showOwner: true }
-    ]);
-};
-
-export const getBalance = async (network: Network, owner: string) => {
-    const resolved = await resolveSuiAddress(network, owner);
-    return executeSuiRpc(network, 'suix_getBalance', [
-        resolved,
-        '0x2::sui::SUI'
-    ]);
-};
-
-export const signAndExecuteMoveCall = async (
-  network: Network,
-  sender: string,
+/**
+ * Builds a single Move call as a Sui Transaction with typed arguments.
+ * Shared by simulation (devInspect) and wallet execution so both run the
+ * exact same transaction.
+ */
+export const buildMoveCallTransaction = async (
   packageId: string,
   module: string,
   func: string,
   typeArgs: string[],
   args: BuilderArg[],
-  signAndExecuteTransaction: (transactionBlock: any) => Promise<any>
+  gasBudget?: string
 ) => {
-    const resolvedSender = await resolveSuiAddress(network, sender);
-
-    // Import Transaction dynamically to avoid circular dependencies
     const { Transaction } = await import('@mysten/sui/transactions');
-
     const txb = new Transaction();
 
-    // Convert BuilderArgs into typed transaction arguments
     const txArgs = args.map(arg => {
         switch (arg.type) {
             case 'u8':
@@ -638,8 +570,94 @@ export const signAndExecuteMoveCall = async (
         arguments: txArgs
     });
 
+    if (gasBudget && /^\d+$/.test(gasBudget.trim()) && BigInt(gasBudget.trim()) > BigInt(0)) {
+        txb.setGasBudget(BigInt(gasBudget.trim()));
+    }
+
+    return txb;
+};
+
+/**
+ * Runs the Move call through `devInspectTransactionBlock`: executes it
+ * against current chain state without signing or committing anything.
+ * Any sender works, so this runs even with no wallet connected.
+ */
+export const simulateMoveCall = async (
+  network: Network,
+  sender: string,
+  packageId: string,
+  module: string,
+  func: string,
+  typeArgs: string[],
+  args: BuilderArg[]
+) => {
+    const resolvedSender = await resolveSuiAddress(network, sender);
+    const txb = await buildMoveCallTransaction(packageId, module, func, typeArgs, args);
+    const endpoint = getActiveSuiRpcUrl(network);
+    const { SuiJsonRpcClient } = await import('@mysten/sui/jsonRpc');
+    const client = new SuiJsonRpcClient({ url: endpoint, network });
+
+    const startTime = performance.now();
     try {
-        const result = await signAndExecuteTransaction(txb);
+        const result = await client.devInspectTransactionBlock({
+            sender: resolvedSender,
+            transactionBlock: txb
+        });
+        const duration = Math.round(performance.now() - startTime);
+        const failed = result.effects?.status?.status === 'failure';
+        return { result, duration, status: failed ? 400 : 200 };
+    } catch (error) {
+        throw new SuiRpcError(
+            error instanceof Error && error.message.trim()
+                ? error.message
+                : 'Move call simulation failed.',
+            { status: 500, endpoint, duration: Math.round(performance.now() - startTime) }
+        );
+    }
+};
+
+export const getOwnedObjects = async (network: Network, address: string) => {
+    const resolved = await resolveSuiAddress(network, address);
+    return executeSuiRpc(network, 'suix_getOwnedObjects', [
+        resolved,
+        { options: { showType: true, showContent: true, showDisplay: true } }
+    ]);
+};
+
+export const getObject = async (network: Network, objectId: string) => {
+    return executeSuiRpc(network, 'sui_getObject', [
+        objectId,
+        { showType: true, showContent: true, showOwner: true }
+    ]);
+};
+
+export const getBalance = async (network: Network, owner: string) => {
+    const resolved = await resolveSuiAddress(network, owner);
+    return executeSuiRpc(network, 'suix_getBalance', [
+        resolved,
+        '0x2::sui::SUI'
+    ]);
+};
+
+export const signAndExecuteMoveCall = async (
+  network: Network,
+  sender: string,
+  packageId: string,
+  module: string,
+  func: string,
+  typeArgs: string[],
+  args: BuilderArg[],
+  signAndExecuteTransaction: (transactionBlock: any) => Promise<any>,
+  gasBudget?: string
+) => {
+    const resolvedSender = await resolveSuiAddress(network, sender);
+    const txb = await buildMoveCallTransaction(packageId, module, func, typeArgs, args, gasBudget);
+    txb.setSender(resolvedSender);
+
+    try {
+        // Name the chain explicitly so the wallet signs for the app's
+        // network, not whichever one it happens to be switched to.
+        const result = await signAndExecuteTransaction({ transaction: txb, chain: `sui:${network}` });
         return {
             result: {
                 digest: result.digest,

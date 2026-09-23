@@ -12,7 +12,7 @@ interface Message extends AiChatMessage {
 
 const INITIAL_MESSAGE: Message = {
   role: 'model',
-  text: 'Sui AI Console ready.'
+  text: 'AI Console ready.'
 };
 
 export const AIChat: React.FC = () => {
@@ -147,7 +147,7 @@ export const AIChat: React.FC = () => {
     }
 
     if (toolCall.name === 'create_ptb') {
-      appStore.openTab('ptb', {
+      appStore.openTab('rpc', {
         id: `ptb-gen-${Date.now()}`,
         name:
           typeof args.name === 'string' &&
@@ -183,7 +183,7 @@ export const AIChat: React.FC = () => {
              <Avatar
                 size="xs"
                 type={m.role === 'model' ? 'bot' : 'user'}
-                seed={m.role === 'model' ? 'sui-ai' : 'txio-user'}
+                seed={m.role === 'model' ? 'txio-ai' : 'txio-user'}
              />
              <div className={`max-w-[90%] space-y-2`}>
                  <div className={`p-3 rounded text-xs font-mono whitespace-pre-wrap relative group ${m.role === 'user' ? 'bg-slate-700 dark:bg-slate-800 text-white dark:text-slate-200' : 'bg-slate-100 dark:bg-near-black border border-slate-200 dark:border-white/5 text-slate-700 dark:text-slate-300'}`}>

@@ -1,5 +1,5 @@
 import { RequestItem, RequestType, Network, RPCHealthMetric, EnvironmentVariable, AssertionResult } from '../../types';
-import { RequestOutcome } from './response/types';
+import { RequestOutcome, TxProgress } from './response/types';
 
 export interface RequestPanelProps {
   request: RequestItem;
@@ -13,6 +13,7 @@ export interface RequestPanelProps {
   isReadOnly?: boolean;
   testResults?: AssertionResult[];
   outcome?: RequestOutcome | null;
+  txProgress?: TxProgress | null;
 }
 
 export interface BuilderTabProps {

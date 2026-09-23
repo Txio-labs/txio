@@ -42,7 +42,7 @@ export const CommandPalette: React.FC = () => {
                                 ? `RPC: ${node.requestData.rpcParams.method}`
                                 : `TX: ${node.requestData.moveParams.module}::${node.requestData.moveParams.function}`,
                             icon: node.requestData.type === RequestType.RPC ? <Terminal size={14} /> : <Layers size={14} />,
-                            action: () => appStore.openTab(node.requestData?.type === RequestType.RPC ? 'rpc' : 'ptb', node.requestData),
+                            action: () => appStore.openTab('rpc', node.requestData),
                             keywords: [node.name, 'request', 'collection']
                         });
                     }
@@ -58,8 +58,7 @@ export const CommandPalette: React.FC = () => {
 
         // 1. Global Actions
         items.push(
-            { id: 'new-req', title: 'New Request', subtitle: 'Create a blank JSON-RPC or Move Call', icon: <Plus size={14} />, action: () => appStore.openTab('new_request'), keywords: ['new', 'create', 'request'] },
-            { id: 'new-ptb', title: 'New PTB', subtitle: 'Programmable Transaction Block Builder', icon: <Layers size={14} />, action: () => appStore.openTab('ptb'), keywords: ['new', 'create', 'ptb', 'transaction'] },
+            { id: 'new-req', title: 'New Request', subtitle: 'JSON-RPC call or transaction on any chain', icon: <Plus size={14} />, action: () => appStore.openTab('new_request'), keywords: ['new', 'create', 'request', 'transaction', 'contract'] },
             { id: 'move-builder', title: 'Move Builder', subtitle: 'Write and deploy Move contracts visually', icon: <Code2 size={14} />, action: () => appStore.openTab('move'), keywords: ['move', 'contract', 'deploy', 'builder'] },
             { id: 'playground', title: 'Playground', subtitle: 'Test SDK snippets against live state', icon: <Sparkles size={14} />, action: () => appStore.openTab('playground'), keywords: ['playground', 'sdk', 'snippet', 'test'] },
             { id: 'settings', title: 'Settings', icon: <Settings size={14} />, action: () => appStore.openTab('settings'), keywords: ['config', 'preferences'] },

@@ -67,7 +67,7 @@ const WorkspaceRequestsPanel: React.FC = () => {
                     return (
                         <button
                             key={node.id}
-                            onClick={() => req && appStore.openTab(req.type === RequestType.RPC ? 'rpc' : 'ptb', req)}
+                            onClick={() => req && appStore.openTab('rpc', req)}
                             className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white dark:hover:bg-white/5 transition-colors"
                         >
                             <Command size={14} className="text-slate-400 shrink-0" />

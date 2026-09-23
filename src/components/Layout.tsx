@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { Tab } from './ui/Tabs';
-import { ALL_NETWORKS, TabItem, Network, RPCHealthMetric, FeatureId } from '../types';
+import { ALL_NETWORKS, TabItem, Network, RPCHealthMetric, FeatureId, RequestType } from '../types';
 import { NetworkSwitcherModal } from './NetworkSwitcherModal';
 import { CommandPalette } from './CommandPalette';
 import { TerminalPanel } from './TerminalPanel';
@@ -135,8 +135,10 @@ export const Layout: React.FC<LayoutProps> = ({
     ]);
     const isRequestView = Boolean(activeTab && REQUEST_TAB_TYPES.has(activeTab.type));
 
-    const activeChainId = activeTab?.data?.rpcParams?.chain ?? 'sui';
-    const activeChainLabel = RPC_CHAINS.find((c) => c.id === activeChainId)?.label ?? 'Sui';
+    // Only a request has a chain — outside one, show no chain rather than
+    // implying a default.
+    const activeChainId = isRequestView ? activeTab?.data?.rpcParams?.chain ?? 'sui' : null;
+    const activeChainLabel = activeChainId ? RPC_CHAINS.find((c) => c.id === activeChainId)?.label ?? activeChainId : null;
 
     useEffect(() => {
         let mounted = true;
@@ -328,10 +330,12 @@ export const Layout: React.FC<LayoutProps> = ({
                                 </div>
                             )}
 
+                            {activeChainLabel && (
                             <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 text-xs shadow-sm">
                                 <Globe size={11} className="text-slate-500" />
                                 <span className="text-slate-600 dark:text-slate-300 font-medium truncate max-w-[110px]">{activeChainLabel}</span>
                             </div>
+                            )}
 
                             <div className="relative" ref={networkMenuRef}>
                                 <button
@@ -465,7 +469,7 @@ export const Layout: React.FC<LayoutProps> = ({
                                             onSelect={() => onSelectTab && onSelectTab(tab.id)}
                                             onClose={() => onCloseTab && onCloseTab(tab.id)}
                                             onRename={(newTitle) => onRenameTab && onRenameTab(tab.id, newTitle)}
-                                            icon={tab.type === 'ptb' ? <Layers size={12}/> : tab.type === 'rpc' ? <Command size={12}/> : tab.type === 'ai_chat' ? <Sparkles size={12} className="text-electric-violet"/> : undefined}
+                                            icon={tab.type === 'ptb' || (tab.type === 'rpc' && tab.data?.type === RequestType.TRANSACTION) ? <Layers size={12}/> : tab.type === 'rpc' ? <Command size={12}/> : tab.type === 'ai_chat' ? <Sparkles size={12} className="text-electric-violet"/> : undefined}
                                         />
                                     ))}
                                 </div>
