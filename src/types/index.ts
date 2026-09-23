@@ -275,6 +275,11 @@ export interface HistoryItem extends RequestItem {
   network: Network;
   userInitials?: string;
   workspaceId?: string; // Added for workspace filtering
+  // Execution outcome for a TRANSACTION entry (tx hash, gas paid, decoded
+  // events, explorer URL, or the error) — see transactionService.ts's
+  // TxResult/executeTransaction. Absent for RPC entries and for history
+  // rows fetched before this field existed on the backend.
+  executionResult?: unknown;
 }
 
 export interface RequestHistoryItem {

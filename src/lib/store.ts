@@ -19,6 +19,12 @@ import {
 
 import { DEFAULT_MOVE_CALL } from './constants';
 import {
+    DEFAULT_EVM_TX,
+    DEFAULT_SOLANA_TX,
+    DEFAULT_STELLAR_TX,
+    getTxParamsForHistory
+} from '../services/transactionService';
+import {
     DEFAULT_APP_SETTINGS,
     normalizeAppSettings,
     normalizeNotificationPreferences
@@ -58,9 +64,15 @@ const networkStorageKey =
     'txio_network';
 const commentsStorageKey =
     'txio_comments';
+const sessionsStorageKey =
+    'txio_workspace_sessions';
 
 const emit = () => {
     listeners.forEach((l) => l());
+    // Debounced; cheap no-op until tabs/currentWorkspaceId are set on boot.
+    // Hooked here rather than at each tab-mutating call site so a refresh
+    // reliably restores wherever the user was — see scheduleSessionPersist.
+    scheduleSessionPersist();
 };
 
 const getUserProfileStorageKeys = (
@@ -261,6 +273,103 @@ const persistCurrentWorkspaceId = (
     );
 };
 
+type WorkspaceSession = {
+    tabs: TabItem[];
+    activeTabId: string | null;
+};
+
+const isWorkspaceSessionMap = (
+    value: unknown
+): value is Record<string, WorkspaceSession> =>
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.values(value).every(
+        (session) =>
+            typeof session === 'object' &&
+            session !== null &&
+            Array.isArray(
+                (session as WorkspaceSession)
+                    .tabs
+            )
+    );
+
+// Open tabs (which request/page is open, and its in-progress data) so a
+// page refresh returns to where the user was instead of dropping back to
+// the Dashboard. Keyed per workspace, same as the in-memory
+// `workspaceSessions` cache this mirrors — see hydrateWorkspaceState and
+// setWorkspace. Best-effort: a corrupt or oversized value is dropped rather
+// than crashing the app on boot.
+const readStoredWorkspaceSessions =
+    (): Record<string, WorkspaceSession> => {
+        if (typeof window === 'undefined') {
+            return {};
+        }
+
+        try {
+            const raw = localStorage.getItem(
+                sessionsStorageKey
+            );
+
+            if (!raw) {
+                return {};
+            }
+
+            const parsed = JSON.parse(raw);
+
+            return isWorkspaceSessionMap(parsed)
+                ? parsed
+                : {};
+        } catch {
+            return {};
+        }
+    };
+
+const persistWorkspaceSessions = (
+    sessions: Record<string, WorkspaceSession>
+) => {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    try {
+        localStorage.setItem(
+            sessionsStorageKey,
+            JSON.stringify(sessions)
+        );
+    } catch {
+        // Storage unavailable or quota exceeded — the open tab just won't
+        // survive a refresh; nothing else depends on this write succeeding.
+    }
+};
+
+let sessionPersistTimer: ReturnType<typeof setTimeout> | null = null;
+
+// Debounced rather than run on every emit() — tab/request edits emit on
+// every keystroke, and writing to localStorage that often would be wasted
+// work for a value nothing reads until the next full page load.
+const scheduleSessionPersist = () => {
+    if (sessionPersistTimer) {
+        clearTimeout(sessionPersistTimer);
+    }
+
+    sessionPersistTimer = setTimeout(() => {
+        sessionPersistTimer = null;
+
+        if (!state.currentWorkspaceId) {
+            return;
+        }
+
+        persistWorkspaceSessions({
+            ...state.workspaceSessions,
+            [state.currentWorkspaceId]: {
+                tabs: state.tabs,
+                activeTabId: state.activeTabId
+            }
+        });
+    }, 500);
+};
+
 const readStoredSettings = () => {
     if (typeof window === 'undefined') {
         return DEFAULT_APP_SETTINGS;
@@ -416,11 +525,16 @@ const hydrateWorkspaceState = async (
                       currentSession
               }
             : state.workspaceSessions;
+    // In-memory workspaceSessions only holds sessions visited earlier in
+    // this tab (populated by switching workspaces). On a fresh page load
+    // it's always empty, so fall back to the persisted copy from
+    // localStorage — this is what makes a refresh return to the same open
+    // request/page instead of the Dashboard.
+    const storedSessions = readStoredWorkspaceSessions();
     const nextSession =
         nextWorkspaceId
-            ? updatedSessions[
-                  nextWorkspaceId
-              ] || {
+            ? updatedSessions[nextWorkspaceId] ||
+              storedSessions[nextWorkspaceId] || {
                   tabs: [],
                   activeTabId: null
               }
@@ -438,8 +552,14 @@ const hydrateWorkspaceState = async (
         workspaces,
         currentWorkspaceId:
             nextWorkspaceId,
-        workspaceSessions:
-            updatedSessions,
+        // Merge in every persisted session, not just the one being switched
+        // to, so other workspaces' tabs are also restored in-memory and
+        // available without another localStorage read if the user switches
+        // workspaces later in this session.
+        workspaceSessions: {
+            ...storedSessions,
+            ...updatedSessions
+        },
         tabs: nextSession.tabs,
         activeTabId:
             nextSession.activeTabId,
@@ -1765,8 +1885,15 @@ export const appStore = {
     addToHistory(
         item: RequestItem,
         status: number,
-        duration: number
+        duration: number,
+        // The execution outcome (tx hash, gas paid, decoded events,
+        // explorer URL — or the error) from transactionService.ts. Only
+        // meaningful for TRANSACTION requests; omitted for RPC calls, whose
+        // response is already captured by params/method.
+        result?: unknown
     ) {
+        const txParams = getTxParamsForHistory(item);
+
         const historyItem: HistoryItem = {
             ...item,
 
@@ -1787,7 +1914,9 @@ export const appStore = {
 
             workspaceId:
                 state.currentWorkspaceId ??
-                undefined
+                undefined,
+
+            executionResult: result
         };
 
         // Optimistic local update — the record round-trips to the backend
@@ -1815,6 +1944,8 @@ export const appStore = {
                 network: state.network,
                 method: item.rpcParams?.method,
                 params: item.rpcParams?.params,
+                txParams,
+                result,
                 status,
                 durationMs: duration
             })
@@ -2124,13 +2255,28 @@ export const appStore = {
                         extractId(entry._id) ||
                         `${entry.name}-${entry.executed_at}`;
 
+                    const type =
+                        entry.request_type ===
+                        RequestType.TRANSACTION
+                            ? RequestType.TRANSACTION
+                            : RequestType.RPC;
+                    // Route the stored tx_params back into whichever
+                    // chain-specific field it came from (see
+                    // getTxParamsForHistory) so reopening a saved
+                    // transaction shows its real params instead of a blank
+                    // form. entries saved before this field existed on the
+                    // backend fall back to the empty defaults, same as
+                    // before.
+                    const chain =
+                        (entry.chain as ChainId) ??
+                        'sui';
+                    const hasTxParams =
+                        type === RequestType.TRANSACTION &&
+                        entry.tx_params != null;
+
                     return {
                         id,
-                        type:
-                            entry.request_type ===
-                            RequestType.TRANSACTION
-                                ? RequestType.TRANSACTION
-                                : RequestType.RPC,
+                        type,
                         name: entry.name,
                         rpcParams: {
                             method:
@@ -2143,9 +2289,24 @@ export const appStore = {
                                 (entry.chain as ChainId) ??
                                 undefined
                         },
-                        moveParams: {
-                            ...DEFAULT_MOVE_CALL
-                        },
+                        moveParams:
+                            hasTxParams && chain === 'sui'
+                                ? (entry.tx_params as typeof DEFAULT_MOVE_CALL)
+                                : { ...DEFAULT_MOVE_CALL },
+                        evmTxParams:
+                            hasTxParams && chain === 'evm'
+                                ? (entry.tx_params as typeof DEFAULT_EVM_TX)
+                                : undefined,
+                        solanaTxParams:
+                            hasTxParams && chain === 'solana'
+                                ? (entry.tx_params as typeof DEFAULT_SOLANA_TX)
+                                : undefined,
+                        stellarTxParams:
+                            hasTxParams && chain === 'stellar'
+                                ? (entry.tx_params as typeof DEFAULT_STELLAR_TX)
+                                : undefined,
+                        executionResult:
+                            entry.result ?? undefined,
                         timestamp: new Date(
                             entry.executed_at
                         ).getTime(),

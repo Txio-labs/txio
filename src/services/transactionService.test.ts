@@ -2,10 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { decodeFunctionData, parseAbi } from 'viem';
 import {
     DEFAULT_EVM_TX,
+    DEFAULT_SOLANA_TX,
+    DEFAULT_STELLAR_TX,
     buildEvmCalldata,
     checkEvmArg,
     describeTransaction,
     getTxChain,
+    getTxParamsForHistory,
     isMainnetExecution,
     signerAddressFor,
     toStellarScVal,
@@ -46,6 +49,27 @@ describe('chain selection', () => {
         expect(stellar.stellarTxParams).toEqual({ contractId: '', function: '', args: [] });
         // Params for other chains are kept, so switching back loses nothing.
         expect(stellar.evmTxParams).toEqual(DEFAULT_EVM_TX);
+    });
+});
+
+describe('getTxParamsForHistory', () => {
+    it('returns undefined for a plain RPC request — it already has method/params in history', () => {
+        const rpc = { ...txRequest(), type: RequestType.RPC };
+        expect(getTxParamsForHistory(rpc)).toBeUndefined();
+    });
+
+    it("picks the request's active chain's native params, not another chain's", () => {
+        const move = { ...DEFAULT_MOVE_CALL, packageId: '0x2', module: 'coin', function: 'split' };
+        const sui = txRequest({ moveParams: move });
+        expect(getTxParamsForHistory(sui)).toBe(move);
+
+        const evm = withTxChain(txRequest(), 'evm');
+        expect(getTxParamsForHistory(evm)).toEqual(DEFAULT_EVM_TX);
+        // Switching chain doesn't leak the previous chain's params through.
+        expect(getTxParamsForHistory(evm)).not.toBe(move);
+
+        expect(getTxParamsForHistory(withTxChain(txRequest(), 'solana'))).toEqual(DEFAULT_SOLANA_TX);
+        expect(getTxParamsForHistory(withTxChain(txRequest(), 'stellar'))).toEqual(DEFAULT_STELLAR_TX);
     });
 });
 

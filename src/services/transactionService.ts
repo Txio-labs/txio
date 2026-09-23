@@ -30,6 +30,7 @@ import {
     EvmTxParams,
     Network,
     RequestItem,
+    RequestType,
     StellarArg,
     StellarTxParams,
     SolanaTxParams
@@ -96,6 +97,27 @@ export const TX_CHAIN_LABELS: Record<ChainId, string> = {
 };
 
 export const getTxChain = (request: RequestItem): ChainId => request.rpcParams?.chain ?? 'sui';
+
+/**
+ * The chain-native params for a TRANSACTION request, whichever of
+ * moveParams/evmTxParams/solanaTxParams/stellarTxParams applies — this is
+ * what a saved History entry needs to actually replay/redisplay a
+ * transaction instead of just recording that one ran. Undefined for RPC
+ * requests, which already have their own method/params in history.
+ */
+export const getTxParamsForHistory = (request: RequestItem): unknown => {
+    if (request.type !== RequestType.TRANSACTION) return undefined;
+    switch (getTxChain(request)) {
+        case 'sui':
+            return request.moveParams;
+        case 'evm':
+            return request.evmTxParams;
+        case 'solana':
+            return request.solanaTxParams;
+        case 'stellar':
+            return request.stellarTxParams;
+    }
+};
 
 /** Wallet family that can sign for each chain. */
 export const walletFamilyForChain = (chain: ChainId): WalletChainFamily => chain;

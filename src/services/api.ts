@@ -132,6 +132,8 @@ interface BackendHistoryEntry {
     network: string;
     method?: string | null;
     params?: unknown;
+    tx_params?: unknown;
+    result?: unknown;
     status: number;
     duration_ms: number;
     executed_at: string;
@@ -1448,6 +1450,12 @@ class ApiService {
         network: string;
         method?: string;
         params?: unknown;
+        // Chain-native transaction params (Sui moveParams, EVM evmTxParams,
+        // Solana solanaTxParams, Stellar stellarTxParams) and the execution
+        // outcome — see transactionService.ts's getTxParamsForHistory and
+        // the result shape it produces. Absent for plain RPC entries.
+        txParams?: unknown;
+        result?: unknown;
         status: number;
         durationMs: number;
     }): Promise<BackendHistoryEntry> {
@@ -1461,6 +1469,8 @@ class ApiService {
                 network: entry.network,
                 method: entry.method,
                 params: entry.params,
+                tx_params: entry.txParams,
+                result: entry.result,
                 status: entry.status,
                 duration_ms: entry.durationMs
             })

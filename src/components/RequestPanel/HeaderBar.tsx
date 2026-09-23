@@ -178,7 +178,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           <button
             onClick={onExecute}
             disabled={isLoading}
-            className="h-[38px] bg-emerald-600 hover:bg-emerald-500 text-white px-3 rounded-lg font-bold flex items-center justify-center transition-all shadow-lg shadow-emerald-900/40 active:scale-95 disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed"
+            className="h-[38px] bg-electric-violet hover:opacity-90 text-white px-3 rounded-lg font-bold flex items-center justify-center transition-all shadow-lg active:scale-95 disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed"
             title={activeAddress ? 'Review, sign & execute' : 'Review transaction (connect a wallet to sign)'}
             aria-label="Review and sign transaction"
           >

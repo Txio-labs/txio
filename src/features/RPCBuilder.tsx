@@ -265,7 +265,7 @@ export const RPCBuilder: React.FC = () => {
 
             await runHooks(request.hooks, 'post', network, result);
 
-            appStore.addToHistory(request, status, duration);
+            appStore.addToHistory(request, status, duration, result);
 
             logCommandToTerminal({
                 command: commandLine,
@@ -304,7 +304,8 @@ export const RPCBuilder: React.FC = () => {
             appStore.addToHistory(
                 request,
                 rpcError?.status ?? 500,
-                rpcError?.duration ?? 0
+                rpcError?.duration ?? 0,
+                (error as { result?: unknown })?.result
             );
 
             logCommandToTerminal({
@@ -390,7 +391,7 @@ export const RPCBuilder: React.FC = () => {
 
             await runHooks(request.hooks, 'post', network, result);
 
-            appStore.addToHistory(request, status, duration);
+            appStore.addToHistory(request, status, duration, result);
 
             logCommandToTerminal({
                 command: commandLine,
@@ -429,7 +430,8 @@ export const RPCBuilder: React.FC = () => {
             appStore.addToHistory(
                 request,
                 rpcError?.status ?? 500,
-                rpcError?.duration ?? 0
+                rpcError?.duration ?? 0,
+                (error as { result?: unknown })?.result
             );
 
             logCommandToTerminal({

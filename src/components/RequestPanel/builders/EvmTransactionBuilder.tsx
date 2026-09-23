@@ -198,11 +198,16 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
         loadTokenMeta(params.chainId, params.to, abi)
       ]);
       const single = activeFn.outputs.length === 1 && isUint(activeFn.outputs[0].type);
-      setReadState({ loading: false, result: formatReadResult(value, single ? tokenMeta : null), error: null });
-      appStore.addToHistory(request, 200, Math.round(performance.now() - start));
+      const formatted = formatReadResult(value, single ? tokenMeta : null);
+      setReadState({ loading: false, result: formatted, error: null });
+      // `decoded` matches the field name TxTracker/simulateEvm already use
+      // for a read return value, so this reads the same way whether it's
+      // shown live or reopened later from History.
+      appStore.addToHistory(request, 200, Math.round(performance.now() - start), { decoded: formatted });
     } catch (err) {
-      setReadState({ loading: false, result: null, error: err instanceof Error ? err.message : 'Read failed.' });
-      appStore.addToHistory(request, 500, Math.round(performance.now() - start));
+      const message = err instanceof Error ? err.message : 'Read failed.';
+      setReadState({ loading: false, result: null, error: message });
+      appStore.addToHistory(request, 500, Math.round(performance.now() - start), { error: message });
     }
   };
 

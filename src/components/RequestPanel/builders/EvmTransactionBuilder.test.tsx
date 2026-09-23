@@ -132,10 +132,18 @@ describe('EvmTransactionBuilder', () => {
         await waitFor(() => expect(mocks.readContract).toHaveBeenCalled());
         expect(mocks.readContract.mock.calls[0][0].args).toEqual([ALICE]);
         expect(await screen.findByText('balanceOf → 4210.55 USDC (4210550000)')).toBeInTheDocument();
-        expect(mocks.addToHistory).toHaveBeenCalledWith(expect.anything(), 200, expect.any(Number));
+        // Passes the decoded value through as `result`, keyed the same way
+        // TxTracker/simulateEvm shape a read result, so a reopened History
+        // entry for this call shows the same "4210.55 USDC" answer.
+        expect(mocks.addToHistory).toHaveBeenCalledWith(
+            expect.anything(),
+            200,
+            expect.any(Number),
+            { decoded: '4210.55 USDC (4210550000)' }
+        );
     });
 
-    it('shows the revert reason when a read fails', async () => {
+    it('shows the revert reason when a read fails, and records it to history', async () => {
         mocks.readContract.mockRejectedValue(new Error('Reverted: paused'));
         render(<Harness start={{ ...initial, evmTxParams: { ...initial.evmTxParams!, abi: JSON.stringify(erc20) } }} />);
 
@@ -145,5 +153,11 @@ describe('EvmTransactionBuilder', () => {
         fireEvent.click(screen.getByRole('button', { name: /^read$/i }));
 
         expect(await screen.findByText('Reverted: paused')).toBeInTheDocument();
+        expect(mocks.addToHistory).toHaveBeenCalledWith(
+            expect.anything(),
+            500,
+            expect.any(Number),
+            { error: 'Reverted: paused' }
+        );
     });
 });

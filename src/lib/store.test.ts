@@ -5,6 +5,8 @@ import {
     it,
     vi
 } from 'vitest';
+import { RequestType } from '../types';
+import { DEFAULT_MOVE_CALL } from './constants';
 
 vi.mock('../services/api', () => {
     class ApiError extends Error {
@@ -22,13 +24,20 @@ vi.mock('../services/api', () => {
 
     return {
         ApiError,
+        // Real implementation (not a vi.fn()): store.ts calls this directly
+        // to normalize a history/collection entry's Mongo-shaped id, and the
+        // test fixtures below use plain string ids, which it already
+        // passes through unchanged.
+        extractId: (value: unknown) => (typeof value === 'string' ? value : ''),
         apiService: {
             login: vi.fn(),
             register: vi.fn(),
             setToken: vi.fn(),
             getProfile: vi.fn(),
             getWorkspaces: vi.fn(),
-            getCollections: vi.fn()
+            getCollections: vi.fn(),
+            createHistoryEntry: vi.fn(),
+            getHistory: vi.fn()
         }
     };
 });
@@ -477,6 +486,154 @@ describe('appStore comments persistence', () => {
         const reloadedSnapshot = reloaded.appStore.getSnapshot();
         expect(reloadedSnapshot.comments[requestId]).toHaveLength(1);
         expect(reloadedSnapshot.comments[requestId][0].content).toBe('Great API request structure!');
+    });
+});
+
+describe('appStore.addToHistory transaction params round-trip', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        vi.resetAllMocks();
+    });
+
+    const evmTxRequest = {
+        id: 'req-evm',
+        type: RequestType.TRANSACTION,
+        name: 'Transfer USDC',
+        rpcParams: { method: '', params: [], chain: 'evm' as const },
+        moveParams: { ...DEFAULT_MOVE_CALL },
+        evmTxParams: { chainId: 1, to: '0xabc', value: '0', functionSignature: 'transfer(address,uint256)', args: ['0xabc', '5'], data: '' }
+    };
+
+    it('sends the active chain params and the execution result to the backend', async () => {
+        localStorage.setItem('txio_token', 'cached-token');
+        localStorage.setItem('txio_user', JSON.stringify(user));
+
+        const { appStore, apiService } = await loadStore();
+        apiService.getProfile.mockResolvedValue(user);
+        apiService.getWorkspaces.mockResolvedValue([]);
+        apiService.createHistoryEntry.mockResolvedValue({ name: 'x', request_type: 'TRANSACTION', network: 'mainnet', status: 200, duration_ms: 0, executed_at: '2026-01-01T00:00:00.000Z' });
+
+        await appStore.initialize();
+
+        appStore.addToHistory(evmTxRequest, 200, 812, {
+            hash: '0xdeadbeef',
+            explorerUrl: 'https://etherscan.io/tx/0xdeadbeef'
+        });
+
+        expect(apiService.createHistoryEntry).toHaveBeenCalledWith(
+            expect.objectContaining({
+                txParams: evmTxRequest.evmTxParams,
+                result: { hash: '0xdeadbeef', explorerUrl: 'https://etherscan.io/tx/0xdeadbeef' },
+                status: 200,
+                durationMs: 812
+            })
+        );
+
+        // Optimistic local entry carries the same result immediately,
+        // before the backend round-trip resolves.
+        const snapshot = appStore.getSnapshot();
+        expect(snapshot.history.at(-1)).toMatchObject({
+            evmTxParams: evmTxRequest.evmTxParams,
+            executionResult: { hash: '0xdeadbeef', explorerUrl: 'https://etherscan.io/tx/0xdeadbeef' }
+        });
+    });
+
+    it('omits txParams/result for a plain RPC request', async () => {
+        localStorage.setItem('txio_token', 'cached-token');
+        localStorage.setItem('txio_user', JSON.stringify(user));
+
+        const { appStore, apiService } = await loadStore();
+        apiService.getProfile.mockResolvedValue(user);
+        apiService.getWorkspaces.mockResolvedValue([]);
+        apiService.createHistoryEntry.mockResolvedValue({ name: 'x', request_type: 'TRANSACTION', network: 'mainnet', status: 200, duration_ms: 0, executed_at: '2026-01-01T00:00:00.000Z' });
+
+        await appStore.initialize();
+
+        const rpcRequest = {
+            id: 'req-rpc',
+            type: RequestType.RPC,
+            name: 'getChainIdentifier',
+            rpcParams: { method: 'sui_getChainIdentifier', params: [], chain: 'sui' as const },
+            moveParams: { ...DEFAULT_MOVE_CALL }
+        };
+
+        appStore.addToHistory(rpcRequest, 200, 45);
+
+        expect(apiService.createHistoryEntry).toHaveBeenCalledWith(
+            expect.objectContaining({ txParams: undefined, result: undefined })
+        );
+    });
+});
+
+describe('appStore.fetchHistory chain-specific params read-back', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        vi.resetAllMocks();
+    });
+
+    it('routes a stored tx_params entry back into the field matching its chain, and carries the result', async () => {
+        localStorage.setItem('txio_token', 'cached-token');
+        localStorage.setItem('txio_user', JSON.stringify(user));
+
+        const { appStore, apiService } = await loadStore();
+        apiService.getProfile.mockResolvedValue(user);
+        apiService.getWorkspaces.mockResolvedValue([workspace]);
+        apiService.getCollections.mockResolvedValue([]);
+        apiService.getHistory.mockResolvedValue([
+            {
+                id: 'h1',
+                name: 'Transfer USDC',
+                request_type: 'TRANSACTION',
+                chain: 'evm',
+                network: 'mainnet',
+                tx_params: { chainId: 1, to: '0xabc', value: '0', functionSignature: '', args: [], data: '' },
+                result: { hash: '0xdeadbeef' },
+                status: 200,
+                duration_ms: 900,
+                executed_at: '2026-01-01T00:00:00.000Z'
+            }
+        ]);
+
+        await appStore.initialize();
+        await appStore.fetchHistory(workspace.id);
+
+        const entry = appStore.getSnapshot().history.find((h) => h.id === 'h1');
+        expect(entry).toMatchObject({
+            evmTxParams: { chainId: 1, to: '0xabc', value: '0', functionSignature: '', args: [], data: '' },
+            executionResult: { hash: '0xdeadbeef' }
+        });
+        // Never leaks into a chain-mismatched field.
+        expect(entry?.solanaTxParams).toBeUndefined();
+        expect(entry?.stellarTxParams).toBeUndefined();
+    });
+
+    it('falls back to empty defaults for entries saved before tx_params existed', async () => {
+        localStorage.setItem('txio_token', 'cached-token');
+        localStorage.setItem('txio_user', JSON.stringify(user));
+
+        const { appStore, apiService } = await loadStore();
+        apiService.getProfile.mockResolvedValue(user);
+        apiService.getWorkspaces.mockResolvedValue([workspace]);
+        apiService.getCollections.mockResolvedValue([]);
+        apiService.getHistory.mockResolvedValue([
+            {
+                id: 'h2',
+                name: 'Old Move call',
+                request_type: 'TRANSACTION',
+                chain: 'sui',
+                network: 'mainnet',
+                status: 200,
+                duration_ms: 500,
+                executed_at: '2026-01-01T00:00:00.000Z'
+            }
+        ]);
+
+        await appStore.initialize();
+        await appStore.fetchHistory(workspace.id);
+
+        const entry = appStore.getSnapshot().history.find((h) => h.id === 'h2');
+        expect(entry?.moveParams).toEqual(DEFAULT_MOVE_CALL);
+        expect(entry?.executionResult).toBeUndefined();
     });
 });
 
