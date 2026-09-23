@@ -16,7 +16,7 @@ import { normalizeNotificationPreferences } from '../lib/appConfig';
 const DEFAULT_API_BASE =
     process.env.NODE_ENV === 'development'
         ? 'http://localhost:8000/api/v1'
-        : 'https://txio-oyac.onrender.com/api/v1';
+        : 'https://api.txio.xyz/api/v1';
 
 // NEXT_PUBLIC_API_URL is set per-environment (e.g. in Vercel) and is easy to
 // configure as just the backend origin, without the /api/v1 prefix every

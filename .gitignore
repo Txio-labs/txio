@@ -5,6 +5,7 @@ node_modules/
 .next/
 out/
 *.tsbuildinfo
+target/
 # Bun is not part of the toolchain (npm + package-lock.json is);
 # ignore its lockfile so it can't be swept into a commit by accident.
 bun.lock

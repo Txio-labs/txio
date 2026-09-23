@@ -6,16 +6,12 @@ import {
 } from 'lucide-react';
 import { Github } from '@/components/icons/BrandIcons';
 import { appStore, useAppStore } from '@/lib/store';
+import { API_BASE as DOCS_API_BASE } from '@/services/api';
 import logo from '../assets/txio2.png';
 
 interface DocsPageProps {
     embedded?: boolean;
 }
-
-// The docs describe the deployed API contract, not whichever backend the
-// reader's local .env happens to point at — so this is a fixed constant,
-// not the env-dependent API_BASE from services/api.
-const DOCS_API_BASE = 'https://txio-oyac.onrender.com/api/v1';
 
 type Method = 'GET' | 'POST';
 
@@ -379,10 +375,6 @@ export const DocsPage: React.FC<DocsPageProps> = ({ embedded = false }) => {
                     <Search size={13} />
                     <span>Search chains, commands, endpoints…</span>
                 </div>
-
-                <span className="hidden rounded-md border border-slate-200 bg-slate-100 px-2 py-1 font-mono text-[11px] text-[#1f9e6b] dark:border-white/10 dark:bg-[#171b22] dark:text-[#3ecf8e] lg:inline">
-                    {DOCS_API_BASE}
-                </span>
 
                 <nav className="ml-auto hidden items-center gap-5 text-[13px] text-slate-500 dark:text-[#8b93a1] lg:flex">
                     <button type="button" onClick={() => scrollToSection('overview')} className="hover:text-electric-violet">Guide</button>
