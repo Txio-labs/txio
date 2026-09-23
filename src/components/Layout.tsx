@@ -25,7 +25,8 @@ import {
     CircleDot,
     Wallet,
     Activity,
-    MoreHorizontal
+    MoreHorizontal,
+    ShieldCheck,
 } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { Tab } from './ui/Tabs';
@@ -75,6 +76,10 @@ const NAV_RAIL_BOTTOM: NavRailItem[] = [
     { id: 'help', label: 'Help', icon: HelpCircle },
 ];
 
+// Only rendered for accounts with the server-side is_admin flag; the backend
+// rejects /admin requests from anyone else regardless of what the UI shows.
+const ADMIN_NAV_ITEM: NavRailItem = { id: 'admin', label: 'Admin', icon: ShieldCheck };
+
 export const Layout: React.FC<LayoutProps> = ({
     workspace,
     inspector,
@@ -98,8 +103,10 @@ export const Layout: React.FC<LayoutProps> = ({
         activeTabId: storeActiveTabId,
         workspaces,
         currentWorkspaceId,
-        notifications
+        notifications,
+        user
     } = useAppStore();
+    const navRailBottom = user?.isAdmin ? [ADMIN_NAV_ITEM, ...NAV_RAIL_BOTTOM] : NAV_RAIL_BOTTOM;
     const logo = theme === 'dark' ? logoDark : logoLight;
     const { currentWallet, isConnected, openModal } = useWallet();
     const [rpcHealth, setRpcHealth] =
@@ -241,7 +248,7 @@ export const Layout: React.FC<LayoutProps> = ({
                     </div>
 
                     <div className="flex flex-col items-center gap-1 w-full px-2 mb-1">
-                        {NAV_RAIL_BOTTOM.map((item) => {
+                        {navRailBottom.map((item) => {
                             const isActive = activeTab?.type === item.id;
                             return (
                                 <button

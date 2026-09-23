@@ -85,6 +85,7 @@ describe('apiService', () => {
                 bannerUrl: undefined,
                 githubAccount: undefined,
                 googleLinked: false,
+                isAdmin: false,
                 notificationPreferences: {
                     emailDigests: true,
                     emailSecurityAlerts: true,

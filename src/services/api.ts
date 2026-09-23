@@ -7,6 +7,11 @@ import {
     RequestItem,
     RequestType,
     UserProfile,
+    AdminOverview,
+    AdminUser,
+    AdminRequest,
+    AdminCollection,
+    AdminRpcLog,
     NotificationPreferences,
     Workspace
 } from '../types';
@@ -100,6 +105,8 @@ interface BackendUserProfile {
     githubAccount?: BackendGitHubAccount | null;
     google_linked?: boolean;
     googleLinked?: boolean;
+    is_admin?: boolean;
+    isAdmin?: boolean;
 }
 
 interface BackendAuthResponse {
@@ -293,7 +300,8 @@ const normalizeUserProfile = (
                 )
             ),
         githubAccount: user.githubAccount || user.github_account || undefined,
-        googleLinked: Boolean(user.googleLinked ?? user.google_linked)
+        googleLinked: Boolean(user.googleLinked ?? user.google_linked),
+        isAdmin: Boolean(user.isAdmin ?? user.is_admin)
     };
 };
 
@@ -1339,6 +1347,35 @@ class ApiService {
         }
 
         return response;
+    }
+
+    // Admin
+    async getAdminOverview(): Promise<AdminOverview> {
+        return this.request<AdminOverview>('/admin/overview');
+    }
+
+    async getAdminUsers(limit = 200): Promise<AdminUser[]> {
+        return this.request<AdminUser[]>(`/admin/accounts?limit=${limit}`);
+    }
+
+    async getAdminRequests(limit = 200): Promise<AdminRequest[]> {
+        return this.request<AdminRequest[]>(`/admin/requests?limit=${limit}`);
+    }
+
+    async getAdminCollections(limit = 200): Promise<AdminCollection[]> {
+        return this.request<AdminCollection[]>(`/admin/collections?limit=${limit}`);
+    }
+
+    async getAdminRpcLogs(limit = 200): Promise<AdminRpcLog[]> {
+        return this.request<AdminRpcLog[]>(`/admin/logs?limit=${limit}`);
+    }
+
+    /** Permanently deletes an account and everything it owns. */
+    async adminDeleteUser(email: string): Promise<void> {
+        await this.request<{ message: string; email: string }>('/admin/users/delete', {
+            method: 'POST',
+            body: JSON.stringify({ email })
+        });
     }
 
     // Sessions

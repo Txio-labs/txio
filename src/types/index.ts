@@ -26,7 +26,7 @@ export const isNetwork = (
 // `WalletChainFamily` (wallet/types.ts), which the wallet layer already uses.
 export type ChainId = 'sui' | 'evm' | 'stellar' | 'solana';
 
-export type FeatureId = 'dashboard' | 'rpc' | 'ptb' | 'move' | 'playground' | 'workspace_overview' | 'history' | 'settings' | 'new_request' | 'new_collection' | 'profile' | 'account' | 'ai_chat' | 'runner' | 'collections' | 'docs' | 'ecosystem' | 'features' | 'help' | 'integrations' | 'infrastructure' | 'partners';
+export type FeatureId = 'dashboard' | 'rpc' | 'ptb' | 'move' | 'playground' | 'workspace_overview' | 'history' | 'settings' | 'new_request' | 'new_collection' | 'profile' | 'account' | 'ai_chat' | 'runner' | 'collections' | 'docs' | 'ecosystem' | 'features' | 'help' | 'integrations' | 'infrastructure' | 'partners' | 'admin';
 
 
 export interface TabItem {
@@ -362,6 +362,7 @@ export interface UserProfile {
   notificationPreferences?: NotificationPreferences;
   githubAccount?: GitHubAccount;
   googleLinked?: boolean;
+  isAdmin?: boolean;
 }
 
 export interface TeamMember {
@@ -406,4 +407,64 @@ export interface ActiveSession {
   last_active_at: string;
   /** True when this entry corresponds to the currently active JWT. */
   is_current: boolean;
+}
+
+// Admin dashboard (server enforces User.is_admin on every /admin route)
+export interface AdminOverview {
+  users: number;
+  admins: number;
+  workspaces: number;
+  collections: number;
+  saved_requests: number;
+  history_entries: number;
+  rpc_logs: number;
+  active_sessions: number;
+  signups_last_7d: number;
+  requests_last_24h: number;
+  rpc_calls_last_24h: number;
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string | null;
+  created_at: string | null;
+  is_admin: boolean;
+  google_linked: boolean;
+  github_login: string | null;
+  tier: string | null;
+  collection_count: number;
+  request_count: number;
+  last_active_at: string | null;
+}
+
+export interface AdminRequest {
+  id: string;
+  user_email: string | null;
+  name: string;
+  request_type: string | null;
+  chain: string | null;
+  network: string | null;
+  method: string | null;
+  status: number | null;
+  duration_ms: number | null;
+  executed_at: string | null;
+}
+
+export interface AdminCollection {
+  id: string;
+  name: string;
+  description: string | null;
+  owner_email: string | null;
+  request_count: number;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface AdminRpcLog {
+  method: string;
+  success: boolean;
+  error: string | null;
+  timestamp: string;
+  user_email?: string | null;
 }

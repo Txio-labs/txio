@@ -801,7 +801,8 @@ export const appStore = {
             'features',
             'integrations',
             'infrastructure',
-            'partners'
+            'partners',
+            'admin'
         ];
 
         if (singletonFeatures.includes(type)) {
@@ -862,6 +863,10 @@ export const appStore = {
 
                 case 'settings':
                     title = 'Settings';
+                    break;
+
+                case 'admin':
+                    title = 'Admin';
                     break;
 
                 case 'new_request':

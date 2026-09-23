@@ -31,6 +31,7 @@ import { NetworksPage } from "@/features/NetworksPage";
 import { CollectionsPage } from "@/features/CollectionsPage";
 import { WorkspaceOverviewPage } from "@/features/WorkspaceOverviewPage";
 import { HelpPage } from "@/features/HelpPage";
+import { AdminPage } from "@/features/AdminPage";
 
 const MOCK_TEAM: TeamMember[] = [];
 
@@ -53,6 +54,8 @@ const WorkspaceContent: React.FC = () => {
             return <HistoryFeature />;
         case 'settings':
             return <SettingsPage />;
+        case 'admin':
+            return <AdminPage />;
         case 'profile':
             return <WalletsPage />;
         case 'account':
