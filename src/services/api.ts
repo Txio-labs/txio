@@ -13,6 +13,12 @@ import {
 import { DEFAULT_MOVE_CALL } from '../lib/constants';
 import { normalizeNotificationPreferences } from '../lib/appConfig';
 
+// NOTE: vercel.json's Content-Security-Policy connect-src is a static value
+// (Vercel parses vercel.json at deploy time and this app builds with
+// output: 'export', so there's no middleware to inject it from env) — if
+// this default or NEXT_PUBLIC_API_URL's backend host ever changes, update
+// connect-src in vercel.json to match, or requests will be silently blocked
+// by the browser.
 const DEFAULT_API_BASE =
     process.env.NODE_ENV === 'development'
         ? 'http://localhost:8000/api/v1'

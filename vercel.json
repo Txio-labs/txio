@@ -1,6 +1,5 @@
 {
   "cleanUrls": true,
-  "_comment": "connect-src below must be kept in sync with NEXT_PUBLIC_API_URL (Vercel env var) — Vercel parses this file statically at deploy time, and this app builds with output: 'export' so there's no middleware to inject the header dynamically from env.",
   "headers": [
     {
       "source": "/(.*)",
