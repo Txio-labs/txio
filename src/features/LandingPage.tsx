@@ -598,8 +598,7 @@ export const LandingPage: React.FC = () => {
                     <div className="flex flex-col md:flex-row justify-between items-start gap-12 mb-20">
                         <div className="max-w-xs">
                             <div className="flex items-center gap-3 mb-6">
-                                <Code2 size={24} className={isDark ? 'text-electric-violet' : 'text-violet-600'} />
-                                <span className="text-xl font-bold tracking-tighter">txio</span>
+                                <img src={logo.src} alt="txio" className="h-8 w-auto" />
                             </div>
                             <p className={`text-sm leading-relaxed mb-4 ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
                                 Tools for the people building the chains.
