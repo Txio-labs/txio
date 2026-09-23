@@ -163,7 +163,8 @@ export const GeneralTab: React.FC<TabProps & { onLogout: () => void }> = ({ user
                                 {!user.githubAccount && (
                                     <button
                                         type="button"
-                                        onClick={() => window.location.href = `${process.env.NEXT_PUBLIC_API_BASE ?? ''}/auth/github/login`}
+                                        onClick={() => appStore.showToast('GitHub linking is coming soon', 'info')}
+                                        aria-label="Connect GitHub"
                                         className="ml-auto text-[11px] text-electric-violet hover:opacity-80 font-medium transition-colors"
                                     >
                                         Connect →
@@ -188,6 +189,7 @@ export const GeneralTab: React.FC<TabProps & { onLogout: () => void }> = ({ user
                                                 : `${API_BASE}/auth/google/login`;
                                             window.location.href = url;
                                         }}
+                                        aria-label="Connect Google"
                                         className="ml-auto text-[11px] text-electric-violet hover:opacity-80 font-medium transition-colors"
                                     >
                                         Connect →

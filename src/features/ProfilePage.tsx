@@ -20,7 +20,7 @@ import {
 import { Github } from '@/components/icons/BrandIcons';
 import { useAppStore, appStore } from '@/lib/store';
 import { normalizeNotificationPreferences } from '@/lib/appConfig';
-import { API_BASE, apiService } from '@/services/api';
+import { apiService } from '@/services/api';
 import { Avatar } from '../components/ui/Avatar';
 import type { ActiveSession, NotificationPreferences, UserProfile } from '../types';
 
@@ -761,12 +761,7 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
                                             {!user.githubAccount && (
                                                 <button
                                                     type="button"
-                                                    onClick={() => {
-                                                        const linkToken = apiService.getToken();
-                                                        window.location.href = linkToken
-                                                            ? `${API_BASE}/auth/github/login?link_token=${encodeURIComponent(linkToken)}`
-                                                            : `${API_BASE}/auth/github/login`;
-                                                    }}
+                                                    onClick={() => appStore.showToast('GitHub linking is coming soon', 'info')}
                                                     className="ml-auto text-[11px] text-electric-violet hover:opacity-80 font-medium transition-colors"
                                                 >
                                                     Connect →

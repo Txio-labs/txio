@@ -18,6 +18,7 @@ vi.mock('../../../lib/store', () => ({
 
 vi.mock('../../../services/api', () => ({
     API_BASE: 'https://api.example.com/api/v1',
+    apiService: { getToken: () => null },
 }));
 
 import { GeneralTab } from './GeneralTab';
@@ -46,62 +47,18 @@ describe('GeneralTab', () => {
     });
 
     describe('GitHub connect button', () => {
-        it('github_connect_link_uses_correct_api_base_url', async () => {
-            const { container } = render(
-                <GeneralTab user={mockUser} onLogout={mockLogout} />
-            );
-
-            // Find the Connect button
-            const connectButton = screen.getByRole('button', { name: 'Connect →' });
-            expect(connectButton).toBeTruthy();
-
-            // Verify the href uses the correct API base
-            expect(connectButton.onclick).toBeTruthy();
-
-            // We need to check the actual URL that would be used
+        it('github_connect_shows_coming_soon_without_navigating', () => {
             const mockLocation = { href: '' };
             const originalLocation = window.location;
-            Object.defineProperty(window, 'location', {
-                value: mockLocation,
-                configurable: true,
-            });
+            Object.defineProperty(window, 'location', { value: mockLocation, configurable: true });
 
-            fireEvent.click(connectButton);
+            render(<GeneralTab user={mockUser} onLogout={mockLogout} />);
+            fireEvent.click(screen.getByRole('button', { name: 'Connect GitHub' }));
 
-            expect(mockLocation.href).toBe('https://api.example.com/api/v1/auth/github/login');
+            expect(showToast).toHaveBeenCalledWith('GitHub linking is coming soon', 'info');
+            expect(mockLocation.href).toBe('');
 
-            Object.defineProperty(window, 'location', {
-                value: originalLocation,
-                configurable: true,
-            });
-        });
-
-        it('github_connect_link_does_not_use_undefined_var', async () => {
-            const { container } = render(
-                <GeneralTab user={mockUser} onLogout={mockLogout} />
-            );
-
-            const connectButton = screen.getByRole('button', { name: 'Connect →' });
-
-            // Mock location to capture the href
-            const mockLocation = { href: '' };
-            const originalLocation = window.location;
-            Object.defineProperty(window, 'location', {
-                value: mockLocation,
-                configurable: true,
-            });
-
-            fireEvent.click(connectButton);
-
-            // Verify the link does NOT produce a broken relative path
-            expect(mockLocation.href).not.toBe('/auth/github/login');
-            expect(mockLocation.href).not.toBe('');
-            expect(mockLocation.href).not.toBe('undefined/auth/github/login');
-
-            Object.defineProperty(window, 'location', {
-                value: originalLocation,
-                configurable: true,
-            });
+            Object.defineProperty(window, 'location', { value: originalLocation, configurable: true });
         });
 
         it('github_connect_link_not_shown_when_already_linked', () => {
@@ -121,7 +78,7 @@ describe('GeneralTab', () => {
             expect(screen.getByText('@testuser')).toBeTruthy();
 
             // Should NOT show the Connect button
-            expect(screen.queryByRole('button', { name: 'Connect →' })).toBeNull();
+            expect(screen.queryByRole('button', { name: 'Connect GitHub' })).toBeNull();
         });
 
         it('already_linked_github_account_unaffected', () => {
@@ -141,7 +98,7 @@ describe('GeneralTab', () => {
             expect(screen.getByText('@developer')).toBeTruthy();
 
             // Verify no connect button is shown
-            const connectButton = screen.queryByRole('button', { name: 'Connect →' });
+            const connectButton = screen.queryByRole('button', { name: 'Connect GitHub' });
             expect(connectButton).toBeNull();
         });
     });

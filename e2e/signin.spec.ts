@@ -19,6 +19,15 @@ test.describe('/signin', () => {
     await expect(page.getByText(/login failed|invalid/i)).toBeVisible();
   });
 
+  for (const provider of ['GitHub', 'X']) {
+    test(`${provider} button shows coming soon and stays on the page`, async ({ page }) => {
+      await page.goto('/signin');
+      await page.getByRole('button', { name: provider, exact: true }).click();
+      await expect(page.getByText(`${provider} sign-in is coming soon`)).toBeVisible();
+      await expect(page).toHaveURL('/signin');
+    });
+  }
+
   // TODO: valid-credential login (asserts redirect to /workspace) once a
   // seeded test account exists — see fixtures/auth.ts for the token-seeding
   // approach used elsewhere.

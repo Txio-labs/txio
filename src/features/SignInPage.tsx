@@ -11,7 +11,7 @@ import {
     Eye,
     EyeOff
 } from 'lucide-react';
-import { Github, Twitter } from '@/components/icons/BrandIcons';
+import { Github, XLogo } from '@/components/icons/BrandIcons';
 
 import { appStore, useAppStore } from '@/lib/store';
 import { API_BASE, apiService } from '@/services/api';
@@ -183,31 +183,14 @@ export const SignInPage: React.FC = () => {
     };
 
     const handleSocialLogin = (provider: string) => {
+        if (provider !== 'Google') {
+            appStore.showToast(`${provider} sign-in is coming soon`, 'info');
+            return;
+        }
+
         setSocialLoading(provider);
-
-        appStore.showToast(
-            `Connecting to ${provider}...`,
-            'info'
-        );
-
-        // OAuth providers
-        if (provider === 'Google') {
-            window.location.href = `${API_BASE}/auth/google/login`;
-            return;
-        }
-
-        if (provider === 'GitHub') {
-            window.location.href = `${API_BASE}/auth/github/login`;
-            return;
-        }
-
-        setTimeout(() => {
-            appStore.showToast(
-                `${provider} login is not connected yet`,
-                'info'
-            );
-            setSocialLoading(null);
-        }, 2000);
+        appStore.showToast(`Connecting to ${provider}...`, 'info');
+        window.location.href = `${API_BASE}/auth/google/login`;
     };
 
     const handleForgotPasswordEmailSubmit = async (e: React.FormEvent) => {
@@ -626,24 +609,24 @@ export const SignInPage: React.FC = () => {
                                     <button
                                         type="button"
                                         disabled={socialLoading !== null}
-                                        onClick={() => handleSocialLogin('Twitter')}
+                                        onClick={() => handleSocialLogin('X')}
                                         className={`flex items-center justify-center gap-2 py-3 rounded-xl border transition-all ${
                                             theme === 'dark'
                                                 ? 'border-white/5 bg-white/5 hover:bg-white/10 disabled:opacity-50'
                                                 : 'border-slate-200 bg-white hover:bg-slate-50 shadow-sm disabled:opacity-50'
                                         }`}
                                     >
-                                        {socialLoading === 'Twitter' ? (
+                                        {socialLoading === 'X' ? (
                                             <div className="w-4 h-4 border-2 border-slate-500 border-t-electric-violet rounded-full animate-spin"></div>
                                         ) : (
-                                            <Twitter
+                                            <XLogo
                                                 size={18}
                                                 className="text-slate-300"
                                             />
                                         )}
 
                                         <span className="text-sm font-bold">
-                                            Twitter
+                                            X
                                         </span>
                                     </button>
                                 </div>
