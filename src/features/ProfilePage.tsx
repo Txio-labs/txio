@@ -30,7 +30,6 @@ const NAME_MIN_LENGTH = 2;
 const NAME_MAX_LENGTH = 60;
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024; // 2 MB
 const MAX_BANNER_BYTES = 5 * 1024 * 1024; // 5 MB
-const SAVE_LATENCY_MS = 600;
 const SAVED_FLASH_MS = 2000;
 const ERROR_FLASH_MS = 3000;
 
@@ -606,9 +605,9 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
 
         save.begin();
         try {
-            await new Promise<void>((resolve) => setTimeout(resolve, SAVE_LATENCY_MS));
+            const updatedUser = await apiService.updateProfile(values.name.trim());
             if (!save.isMounted()) return;
-            appStore.updateUser({ name: values.name.trim() });
+            appStore.updateUser(updatedUser);
             save.succeed();
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Could not save changes.';

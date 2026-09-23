@@ -1444,6 +1444,63 @@ export const appStore = {
         }
     },
 
+    async renameWorkspace(
+        workspaceId: string,
+        name: string
+    ) {
+        try {
+            const workspace =
+                await apiService.updateWorkspace(
+                    workspaceId,
+                    name
+                );
+
+            await appStore.fetchWorkspaces(
+                workspaceId
+            );
+
+            appStore.showToast(
+                'Workspace renamed',
+                'success'
+            );
+
+            return workspace;
+        } catch (error) {
+            appStore.showToast(
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to rename workspace',
+                'error'
+            );
+            throw error;
+        }
+    },
+
+    async deleteWorkspace(
+        workspaceId: string
+    ) {
+        try {
+            await apiService.deleteWorkspace(
+                workspaceId
+            );
+
+            await appStore.fetchWorkspaces();
+
+            appStore.showToast(
+                'Workspace deleted',
+                'success'
+            );
+        } catch (error) {
+            appStore.showToast(
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to delete workspace',
+                'error'
+            );
+            throw error;
+        }
+    },
+
     toggleSidebar() {
         state = {
             ...state,

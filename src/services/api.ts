@@ -861,6 +861,19 @@ class ApiService {
         return normalizeUserProfile(data.user);
     }
 
+    async updateProfile(name: string): Promise<UserProfile> {
+        const data =
+            await this.request<BackendWrappedUserResponse>(
+                '/auth/update-profile',
+                {
+                    method: 'POST',
+                    body: JSON.stringify({ name })
+                }
+            );
+
+        return normalizeUserProfile(data.user);
+    }
+
     async updateNotificationPreferences(
         notificationPreferences: NotificationPreferences
     ): Promise<UserProfile> {
@@ -966,6 +979,31 @@ class ApiService {
             );
 
         return normalizeWorkspace(data);
+    }
+
+    async updateWorkspace(
+        workspaceId: string,
+        name: string
+    ): Promise<Workspace> {
+        const data =
+            await this.request<BackendWorkspace>(
+                `/workspaces/${encodeURIComponent(workspaceId)}`,
+                {
+                    method: 'PUT',
+                    body: JSON.stringify({ name })
+                }
+            );
+
+        return normalizeWorkspace(data);
+    }
+
+    async deleteWorkspace(
+        workspaceId: string
+    ): Promise<void> {
+        await this.request(
+            `/workspaces/${encodeURIComponent(workspaceId)}`,
+            { method: 'DELETE' }
+        );
     }
 
     // Collections
