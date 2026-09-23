@@ -70,19 +70,17 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
 
       case 'transaction':
         return request.type === RequestType.TRANSACTION ? (
-          <div className="p-4 md:p-6 space-y-8">
-            <TransactionEditor
-              request={request}
-              activeAddress={activeAddress}
-              envVars={envVars}
-              network={network}
-              isReadOnly={isReadOnly}
-              onChange={onChange}
-              outcome={outcome}
-              txProgress={txProgress}
-              isLoading={isLoading}
-            />
-          </div>
+          <TransactionEditor
+            request={request}
+            activeAddress={activeAddress}
+            envVars={envVars}
+            network={network}
+            isReadOnly={isReadOnly}
+            onChange={onChange}
+            outcome={outcome}
+            txProgress={txProgress}
+            isLoading={isLoading}
+          />
         ) : (
           <TransactionNotice onConvert={() => onChange({ ...request, type: RequestType.TRANSACTION })} />
         );
@@ -92,27 +90,25 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
 
       case 'builder':
       default:
-        return (
+        return request.type === RequestType.RPC ? (
           <div className="p-4 md:p-6 space-y-8">
-            {request.type === RequestType.RPC ? (
-              <RPCBuilder
-                request={request}
-                onChange={onChange}
-              />
-            ) : (
-              <TransactionEditor
-                request={request}
-                activeAddress={activeAddress}
-                envVars={envVars}
-                network={network}
-                isReadOnly={isReadOnly}
-                onChange={onChange}
-                outcome={outcome}
-                txProgress={txProgress}
-                isLoading={isLoading}
-              />
-            )}
+            <RPCBuilder
+              request={request}
+              onChange={onChange}
+            />
           </div>
+        ) : (
+          <TransactionEditor
+            request={request}
+            activeAddress={activeAddress}
+            envVars={envVars}
+            network={network}
+            isReadOnly={isReadOnly}
+            onChange={onChange}
+            outcome={outcome}
+            txProgress={txProgress}
+            isLoading={isLoading}
+          />
         );
     }
   };

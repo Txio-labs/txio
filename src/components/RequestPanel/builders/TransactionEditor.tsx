@@ -1,4 +1,5 @@
 import React from 'react';
+import { Layers } from 'lucide-react';
 import { Select } from '../../Select';
 import { ChainId, EnvironmentVariable, Network, RequestItem } from '../../../types';
 import { RPC_CHAINS } from '@/lib/constants';
@@ -25,6 +26,9 @@ interface TransactionEditorProps {
 /**
  * Transaction form for any chain: pick the chain, get that chain's native
  * transaction shape. Simulation and execution go through transactionService.
+ * Same outer layout as the other tabs in this strip (Headers/Auth/Advanced):
+ * a centered max-w-2xl column with flat bg-slate-50 cards — no bespoke
+ * styling for this one tab.
  */
 export const TransactionEditor: React.FC<TransactionEditorProps> = ({
   request,
@@ -62,19 +66,26 @@ export const TransactionEditor: React.FC<TransactionEditorProps> = ({
   })();
 
   return (
-    <div className="space-y-4">
+    <div className="p-6 md:p-10 max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <span className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Chain</span>
-        <div className="w-48">
-          <Select
-            value={chain}
-            options={RPC_CHAINS.map((c) => ({ label: c.label, value: c.id }))}
-            onChange={(v) => onChange(withTxChain(request, v as ChainId))}
-            fullWidth
-            disabled={isReadOnly}
-          />
-        </div>
+        <Layers size={16} className="text-slate-400" />
+        <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-[0.2em]">
+          Transaction
+        </h3>
       </div>
+
+      <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black/40">
+        <div className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Chain</div>
+        <div className="text-xs text-slate-500 mb-3">Which chain this transaction targets — sets the params below and which wallet can sign it.</div>
+        <Select
+          value={chain}
+          options={RPC_CHAINS.map((c) => ({ label: c.label, value: c.id }))}
+          onChange={(v) => onChange(withTxChain(request, v as ChainId))}
+          fullWidth
+          disabled={isReadOnly}
+        />
+      </div>
+
       {form}
       <TxTracker outcome={outcome} progress={txProgress} isLoading={isLoading} />
     </div>

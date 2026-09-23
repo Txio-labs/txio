@@ -34,8 +34,8 @@ interface EvmTransactionBuilderProps {
 }
 
 const inputClass =
-  'w-full bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-mono text-slate-900 dark:text-white focus:border-indigo-500 outline-none';
-const labelClass = 'block text-[10px] uppercase font-bold text-slate-600 tracking-widest';
+  'w-full bg-white dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-slate-700 dark:text-slate-200 focus:border-electric-violet focus:outline-none transition-colors';
+const labelClass = 'block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1.5';
 const smallBtn =
   'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed';
 
@@ -228,20 +228,16 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
   const listed = groups ? (tab === 'read' ? groups.read : groups.write) : [];
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div className="bg-slate-100 dark:bg-near-black/40 backdrop-blur-sm p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
-            <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-[0.2em]">Contract Call</h3>
+    <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black/40 space-y-5">
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-bold text-slate-700 dark:text-slate-200">EVM contract call</div>
+        {activeAddress && (
+          <div className="flex items-center gap-2 px-2.5 py-1 bg-white dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-full text-[10px] font-mono text-emerald-500 dark:text-emerald-400">
+            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+            Signer: {activeAddress.slice(0, 6)}...{activeAddress.slice(-4)}
           </div>
-          {activeAddress && (
-            <div className="flex items-center gap-2 px-3 py-1 bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-full text-[10px] font-mono text-emerald-400">
-              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-              Signer: {activeAddress.slice(0, 6)}...{activeAddress.slice(-4)}
-            </div>
-          )}
-        </div>
+        )}
+      </div>
 
         {/* 1. Chain + contract */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -351,7 +347,7 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
                   aria-selected={tab === t}
                   onClick={() => setTab(t)}
                   className={`flex items-center gap-1.5 px-3 py-1 text-[11px] font-semibold rounded-md ${
-                    tab === t ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-300' : 'text-slate-500'
+                    tab === t ? 'bg-electric-violet/10 text-electric-violet' : 'text-slate-500'
                   }`}
                 >
                   {t === 'read' ? <Eye size={12} /> : <PenLine size={12} />}
@@ -405,7 +401,7 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
                         aria-label={`Argument ${name}`}
                         onClick={() => setArg(i, value === 'true' ? 'false' : 'true')}
                         disabled={isReadOnly}
-                        className={`h-5 w-9 rounded-full transition-colors relative ${value === 'true' ? 'bg-indigo-500' : 'bg-slate-300 dark:bg-slate-700'}`}
+                        className={`h-5 w-9 rounded-full transition-colors relative ${value === 'true' ? 'bg-electric-violet' : 'bg-slate-300 dark:bg-slate-700'}`}
                       >
                         <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${value === 'true' ? 'left-4' : 'left-0.5'}`} />
                       </button>
@@ -414,7 +410,7 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
                         aria-label={`Argument ${name}`}
                         aria-invalid={Boolean(problem)}
                         className={`flex-1 min-w-0 bg-slate-50 dark:bg-near-black border rounded-lg px-3 py-2 text-xs font-mono text-slate-900 dark:text-white outline-none ${
-                          problem ? 'border-rose-500/60' : 'border-slate-200 dark:border-white/10 focus:border-indigo-500'
+                          problem ? 'border-rose-500/60' : 'border-slate-200 dark:border-white/10 focus:border-electric-violet'
                         }`}
                         value={value}
                         onChange={(e) => setArg(i, e.target.value)}
@@ -487,7 +483,7 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
             <button
               onClick={runRead}
               disabled={readState.loading || toInvalid || !params.to.trim()}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-electric-violet hover:opacity-90 text-white text-xs font-bold disabled:opacity-40"
             >
               {readState.loading ? <Loader2 size={13} className="animate-spin" /> : <Eye size={13} />} Read
             </button>
@@ -499,7 +495,6 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
             {readState.error && <p className="text-xs text-rose-500 break-words">{readState.error}</p>}
           </div>
         )}
-      </div>
     </div>
   );
 };
