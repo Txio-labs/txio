@@ -10,12 +10,16 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     ArrowLeft,
+    Check,
+    ChevronDown,
     Command,
     FolderKanban,
     Globe,
     Layers,
+    LayoutGrid,
     MoreHorizontal,
     Pencil,
+    Plus,
     Settings2,
     Trash2,
     Users,
@@ -112,18 +116,29 @@ export const WorkspaceOverviewPage: React.FC = () => {
     const currentWorkspace = workspaces.find((w) => w.id === currentWorkspaceId) || workspaces[0];
     const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>('Overview');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isWsMenuOpen, setIsWsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+    const wsMenuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (!isMenuOpen) return;
+        if (!isMenuOpen && !isWsMenuOpen) return;
         const handleClickOutside = (event: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
                 setIsMenuOpen(false);
             }
+            if (wsMenuRef.current && !wsMenuRef.current.contains(event.target as Node)) {
+                setIsWsMenuOpen(false);
+            }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isMenuOpen]);
+    }, [isMenuOpen, isWsMenuOpen]);
+
+    const handleCreateWorkspace = () => {
+        setIsWsMenuOpen(false);
+        const name = window.prompt('Workspace name');
+        if (name?.trim()) void appStore.createWorkspace(name.trim());
+    };
 
     const handleRenameWorkspace = () => {
         setIsMenuOpen(false);
@@ -192,29 +207,80 @@ export const WorkspaceOverviewPage: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0 relative" ref={menuRef}>
-                        <button
-                            onClick={() => setIsMenuOpen((o) => !o)}
-                            className="p-2 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
-                        >
-                            <MoreHorizontal size={16} />
-                        </button>
-                        {isMenuOpen && (
-                            <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 p-1.5">
-                                <button
-                                    onClick={handleRenameWorkspace}
-                                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
-                                >
-                                    <Pencil size={13} className="text-slate-400" /> Rename workspace
-                                </button>
-                                <button
-                                    onClick={handleDeleteWorkspace}
-                                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium text-red-500 hover:bg-red-500/10 transition-colors"
-                                >
-                                    <Trash2 size={13} /> Delete workspace
-                                </button>
-                            </div>
-                        )}
+                    <div className="flex items-center gap-2 shrink-0">
+                        <div className="relative" ref={wsMenuRef}>
+                            <button
+                                onClick={() => setIsWsMenuOpen((o) => !o)}
+                                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-bold transition-colors ${
+                                    isWsMenuOpen
+                                        ? 'border-slate-300 dark:border-white/20 bg-slate-100 dark:bg-white/5'
+                                        : 'border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5'
+                                }`}
+                            >
+                                <LayoutGrid size={13} className="text-slate-500" />
+                                Switch Workspace
+                                <ChevronDown size={11} className={`text-slate-500 transition-transform duration-200 ${isWsMenuOpen ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {isWsMenuOpen && (
+                                <div className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
+                                    <div className="px-3 pt-2.5 pb-1.5 text-[10px] font-mono uppercase tracking-[0.16em] text-slate-400 dark:text-slate-600">
+                                        {workspaces.length === 1 ? '1 workspace' : `${workspaces.length} workspaces`}
+                                    </div>
+                                    <div className="px-1.5 pb-1.5 max-h-64 overflow-y-auto custom-scrollbar space-y-0.5">
+                                        {workspaces.map((ws) => {
+                                            const isActive = ws.id === currentWorkspace?.id;
+                                            return (
+                                                <button
+                                                    key={ws.id}
+                                                    onClick={() => { appStore.setWorkspace(ws); setIsWsMenuOpen(false); }}
+                                                    className={`w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${
+                                                        isActive ? 'bg-electric-violet/10 text-slate-900 dark:text-white font-medium' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.04]'
+                                                    }`}
+                                                >
+                                                    <span className="truncate flex-1">{ws.name}</span>
+                                                    {isActive && <Check size={12} className="text-electric-violet shrink-0" />}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    <div className="p-1.5 bg-slate-50 dark:bg-white/[0.015] border-t border-slate-200 dark:border-white/[0.06]">
+                                        <button
+                                            onClick={handleCreateWorkspace}
+                                            className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.04] hover:text-slate-900 dark:hover:text-white transition-colors"
+                                        >
+                                            <Plus size={14} className="text-electric-violet shrink-0" />
+                                            <span>Create workspace</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="relative" ref={menuRef}>
+                            <button
+                                onClick={() => setIsMenuOpen((o) => !o)}
+                                className="p-2 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                            >
+                                <MoreHorizontal size={16} />
+                            </button>
+                            {isMenuOpen && (
+                                <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 p-1.5">
+                                    <button
+                                        onClick={handleRenameWorkspace}
+                                        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                                    >
+                                        <Pencil size={13} className="text-slate-400" /> Rename workspace
+                                    </button>
+                                    <button
+                                        onClick={handleDeleteWorkspace}
+                                        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium text-red-500 hover:bg-red-500/10 transition-colors"
+                                    >
+                                        <Trash2 size={13} /> Delete workspace
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
