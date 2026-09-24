@@ -30,7 +30,7 @@ export const NewCollectionPage: React.FC<NewCollectionPageProps> = ({ tabId }) =
 
   return (
     <div className="h-full bg-white dark:bg-near-black flex flex-col p-8 overflow-y-auto">
-      <div className="max-w-3xl w-full mx-auto">
+      <div className="w-full">
         <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-200 dark:border-white/5">
           <div className="p-2 bg-electric-violet/10 rounded-lg">
             <FolderPlus size={24} className="text-electric-violet" />
