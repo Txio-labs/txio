@@ -257,7 +257,7 @@ export const CollectionsPage: React.FC = () => {
                                             <Filter size={12} /> Filter
                                         </button>
                                         <button
-                                            onClick={() => appStore.openTab('new_request')}
+                                            onClick={() => selectedId && appStore.openTab('new_request', { collectionId: selectedId })}
                                             className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-near-black text-xs font-bold hover:opacity-90 transition-opacity shrink-0"
                                         >
                                             <Plus size={12} /> Add Request

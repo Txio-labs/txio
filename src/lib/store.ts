@@ -1797,6 +1797,9 @@ export const appStore = {
                         name: request.name,
                         method: request.rpcParams.method,
                         params: request.rpcParams.params,
+                        requestType: request.type,
+                        chain: request.rpcParams.chain,
+                        txParams: getTxParamsForHistory(request),
                         network: request.network ?? null,
                         ...(lastResponse !== undefined ? { lastResponse } : {})
                     }
