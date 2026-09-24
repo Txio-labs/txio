@@ -1,9 +1,10 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { Wallet, Box, X, BrainCircuit, MessageSquare } from 'lucide-react';
-import { Network, ActivityLog, Comment } from '../../types';
+import { ALL_NETWORKS, Network, ActivityLog, Comment } from '../../types';
 import { getOwnedObjects } from '../../services/suiService';
 import { useWallet } from '@/wallet';
-import { useAppStore } from '@/lib/store';
+import { useAppStore, appStore } from '@/lib/store';
+import { Select } from '@/components/Select';
 import {
   WalletTab,
   ObjectsTab,
@@ -12,6 +13,15 @@ import {
 } from './Tabs';
 
 type RightPanelTab = 'wallet' | 'objects' | 'analysis' | 'discuss';
+
+const networkColorClass = (network: Network) => {
+  switch (network) {
+    case 'mainnet': return 'bg-emerald-400';
+    case 'testnet': return 'bg-amber-400';
+    case 'devnet': return 'bg-blue-400';
+    case 'localnet': return 'bg-fuchsia-400';
+  }
+};
 
 interface RightPanelProps {
   network: Network;
@@ -135,14 +145,18 @@ export const RightPanel: React.FC<RightPanelProps> = ({
       <div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-slate-200 dark:border-white/[0.06] bg-white dark:bg-dark-indigo-glow">
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 tracking-tight">Inspector</span>
-          <div className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
-            network === 'mainnet' ? 'bg-emerald-500/[0.12] text-emerald-400' :
-            network === 'testnet' ? 'bg-amber-500/[0.12] text-amber-400' :
-            network === 'devnet' ? 'bg-blue-500/[0.12] text-blue-400' :
-            'bg-fuchsia-500/[0.12] text-fuchsia-400'
-          }`}>
-            {network}
-          </div>
+          <Select
+            value={network}
+            size="xs"
+            variant="outline"
+            className="min-w-0"
+            options={ALL_NETWORKS.map((option) => ({
+              value: option,
+              label: option,
+              icon: <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${networkColorClass(option)}`} />
+            }))}
+            onChange={(nextNetwork) => appStore.requestNetworkSwitch(nextNetwork as Network)}
+          />
         </div>
         <button
           onClick={onClose}

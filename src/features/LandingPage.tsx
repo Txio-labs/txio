@@ -131,7 +131,7 @@ export const LandingPage: React.FC = () => {
             isDark ? 'bg-near-black text-white' : 'bg-slate-50 text-slate-900'
         }`}>
             {/* Navigation */}
-            <nav className={`fixed top-0 left-0 right-0 h-20 border-b backdrop-blur-xl z-50 px-6 md:px-12 flex items-center justify-between ${
+            <nav className={`fixed top-0 left-0 right-0 h-20 border-b backdrop-blur-xl z-50 px-4 sm:px-6 lg:px-12 flex items-center justify-between ${
                 isDark ? 'border-white/5 bg-near-black/50' : 'border-slate-200 bg-slate-50/70'
             }`}>
                 <button
@@ -145,7 +145,7 @@ export const LandingPage: React.FC = () => {
                     <span className="text-xl font-bold tracking-tighter">txio</span>
                 </button>
 
-                <div className={`hidden md:flex items-center gap-8 text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                <div className={`hidden lg:flex items-center gap-6 xl:gap-8 text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                     <button
                         onClick={() => appStore.setViewMode('features')}
                         className={`transition-colors ${isDark ? 'hover:text-white' : 'hover:text-slate-900'}`}
@@ -194,7 +194,7 @@ export const LandingPage: React.FC = () => {
                     </button>
                     <button
                         onClick={() => appStore.setViewMode('signup')}
-                        className={`px-4 sm:px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-electric-violet hover:text-white transition-all duration-300 active:scale-95 ${
+                        className={`hidden sm:inline-flex px-4 sm:px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-electric-violet hover:text-white transition-all duration-300 active:scale-95 ${
                             isDark
                                 ? 'bg-white text-near-black shadow-[0_0_20px_rgba(255,255,255,0.1)]'
                                 : 'bg-slate-900 text-white shadow-[0_4px_16px_rgba(15,23,42,0.15)]'
@@ -206,7 +206,7 @@ export const LandingPage: React.FC = () => {
                         onClick={() => setMobileMenuOpen((v) => !v)}
                         aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
                         aria-expanded={mobileMenuOpen}
-                        className={`md:hidden flex items-center justify-center w-10 h-10 rounded-xl border transition-colors ${
+                        className={`lg:hidden flex items-center justify-center w-10 h-10 rounded-xl border transition-colors ${
                             isDark ? 'border-white/10 text-slate-300 hover:text-white' : 'border-slate-200 text-slate-600 hover:text-slate-900'
                         }`}
                     >
@@ -221,7 +221,7 @@ export const LandingPage: React.FC = () => {
                     initial={{ opacity: 0, y: -12 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -12 }}
-                    className={`fixed top-20 left-0 right-0 z-40 md:hidden border-b backdrop-blur-xl px-6 py-6 flex flex-col gap-1 text-sm font-medium ${
+                    className={`fixed top-20 left-0 right-0 z-40 lg:hidden border-b backdrop-blur-xl px-6 py-6 flex flex-col gap-1 text-sm font-medium ${
                         isDark ? 'border-white/5 bg-near-black/95 text-slate-300' : 'border-slate-200 bg-slate-50/95 text-slate-600'
                     }`}
                 >
@@ -256,6 +256,19 @@ export const LandingPage: React.FC = () => {
                         className={`text-left py-3 font-bold transition-colors ${isDark ? 'hover:text-white' : 'hover:text-slate-900'}`}
                     >
                         Sign In
+                    </button>
+                    <button
+                        onClick={() => {
+                            appStore.setViewMode('signup');
+                            setMobileMenuOpen(false);
+                        }}
+                        className={`mt-2 w-full rounded-xl px-4 py-3 text-left font-bold transition-colors ${
+                            isDark
+                                ? 'bg-white text-near-black hover:bg-slate-200'
+                                : 'bg-slate-900 text-white hover:bg-slate-700'
+                        }`}
+                    >
+                        Get Started
                     </button>
                 </motion.div>
             )}
@@ -633,9 +646,6 @@ export const LandingPage: React.FC = () => {
                         isDark ? 'border-white/5 text-slate-700' : 'border-slate-200 text-slate-400'
                     }`}>
                         <span>© 2026 txio infrastructure</span>
-                        <span className={`mt-4 md:mt-0 font-mono normal-case tracking-normal rounded px-2 py-1 ${
-                            isDark ? 'text-green-400 bg-white/5 border border-white/10' : 'text-green-600 bg-green-50 border border-green-200'
-                        }`}>v2.4.0 stable</span>
                     </div>
                 </div>
             </footer>

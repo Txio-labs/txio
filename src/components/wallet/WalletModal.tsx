@@ -21,6 +21,7 @@ import {
     useWallet
 } from '@/wallet';
 import { shortenAddress } from '@/wallet';
+import { appStore } from '@/lib/store';
 
 import { WalletGlyph } from './WalletGlyph';
 
@@ -245,7 +246,9 @@ export function WalletModal() {
                                             isCurrent={currentWallet?.id === wallet.id}
                                             isPending={pendingWalletId === wallet.id}
                                             accentColor={activeCategory === 'popular' ? CHAIN_FAMILY_COLOR[wallet.chainFamily] : activeAccent}
-                                            onConnect={() => void connect(wallet.id).catch(() => undefined)}
+                                            onConnect={() => void connect(wallet.id).catch((err) => {
+                                                appStore.showToast(err instanceof Error ? err.message : 'Failed to connect wallet.', 'error');
+                                            })}
                                         />
                                     ))}
 

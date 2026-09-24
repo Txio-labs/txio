@@ -92,10 +92,10 @@ export const EcosystemPage: React.FC<EcosystemPageProps> = ({ embedded = false }
                     <span className="hidden sm:inline">Home</span>
                 </button>
                 <div className={`h-5 w-px ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
-                <div className="flex shrink-0 items-center gap-2 font-mono text-[15px] font-semibold">
+                <div className="flex min-w-0 items-center gap-2 font-mono text-[15px] font-semibold">
                     <span className="h-2 w-2 rounded-full bg-electric-violet shadow-[0_0_8px_#a3a3a3]" />
-                    <span>txio</span>
-                    <span className={isDark ? 'text-[#5c6472]' : 'text-slate-400'}>/ ecosystem</span>
+                    <span className="shrink-0">txio</span>
+                    <span className={`hidden truncate sm:inline ${isDark ? 'text-[#5c6472]' : 'text-slate-400'}`}>/ ecosystem</span>
                 </div>
 
                 <nav className={`ml-auto hidden items-center gap-5 text-[13px] lg:flex ${isDark ? 'text-[#8b93a1]' : 'text-slate-500'}`}>
@@ -116,6 +116,8 @@ export const EcosystemPage: React.FC<EcosystemPageProps> = ({ embedded = false }
                 <button
                     type="button"
                     onClick={() => setMobileNavOpen((v) => !v)}
+                    aria-label={mobileNavOpen ? 'Close navigation' : 'Open navigation'}
+                    aria-expanded={mobileNavOpen}
                     className={`lg:hidden ${isDark ? 'text-[#8b93a1] hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}
                 >
                     {mobileNavOpen ? <X size={20} /> : <Menu size={20} />}
@@ -150,6 +152,20 @@ export const EcosystemPage: React.FC<EcosystemPageProps> = ({ embedded = false }
                                 {item.label}
                             </button>
                         ))}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setMobileNavOpen(false);
+                                navigateTo('signup');
+                            }}
+                            className={`mt-4 flex w-full items-center rounded-md px-2.5 py-3 text-left text-[14px] font-black uppercase tracking-widest transition-colors ${
+                                isDark
+                                    ? 'bg-white text-near-black hover:bg-slate-200'
+                                    : 'bg-slate-900 text-white hover:bg-slate-700'
+                            }`}
+                        >
+                            {embedded ? 'New request' : 'Launch'}
+                        </button>
                     </div>
                 </div>
             )}
@@ -411,9 +427,6 @@ export const EcosystemPage: React.FC<EcosystemPageProps> = ({ embedded = false }
                     isDark ? 'border-white/5 text-slate-700' : 'border-slate-200 text-slate-400'
                 }`}>
                     <span>© 2026 txio labs • universal infrastructure</span>
-                    <span className={`mt-4 md:mt-0 font-mono text-green-400 normal-case tracking-normal border rounded px-2 py-1 ${
-                        isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200'
-                    }`}>v2.4.0 stable</span>
                 </div>
             </footer>
         </div>

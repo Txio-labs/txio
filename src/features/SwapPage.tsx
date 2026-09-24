@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { AlertTriangle, ArrowDown, Loader2, Repeat, Zap } from 'lucide-react';
 
 import { useWallet } from '@/wallet';
+import { appStore } from '@/lib/store';
 import { RPC_CHAINS, EVM_CHAINS, DEFAULT_EVM_CHAIN_ID } from '@/lib/constants';
 import { getRoutes, LifiError, LifiRoute } from '@/lib/lifi';
 import { ChainId, RequestType, RequestItem, SwapParams } from '../types';
@@ -82,9 +83,14 @@ export const SwapPage: React.FC = () => {
             setRoutes(found);
             if (found.length === 0) {
                 setError('No routes found for this pair/amount.');
+                appStore.showToast('No routes found for this pair/amount.', 'error');
+            } else {
+                appStore.showToast(`${found.length} route${found.length === 1 ? '' : 's'} found`, 'success');
             }
         } catch (err) {
-            setError(err instanceof LifiError ? err.message : 'Failed to fetch routes.');
+            const message = err instanceof LifiError ? err.message : 'Failed to fetch routes.';
+            setError(message);
+            appStore.showToast(message, 'error');
         } finally {
             setLoading(false);
         }
@@ -131,7 +137,7 @@ export const SwapPage: React.FC = () => {
                 </p>
             </div>
 
-            <div className="flex-1 p-6 max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-6 items-start">
+            <div className="flex-1 p-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             <div className="space-y-5 w-full">
                 {/* From */}
                 <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow p-4 space-y-3">

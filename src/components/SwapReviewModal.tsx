@@ -148,6 +148,7 @@ export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, reques
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Swap failed.';
             setError(message);
+            appStore.showToast(message, 'error');
             appStore.addToHistory(
                 request,
                 500,

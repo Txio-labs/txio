@@ -60,8 +60,11 @@ export const SwapResumeModal: React.FC<SwapResumeModalProps> = ({ isOpen, item, 
                 toChain: swapParams.toChain
             });
             setStatus(result);
+            appStore.showToast(`Status: ${result.status}`, 'info');
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to check status.');
+            const message = err instanceof Error ? err.message : 'Failed to check status.';
+            setError(message);
+            appStore.showToast(message, 'error');
         } finally {
             setChecking(false);
         }
@@ -69,7 +72,9 @@ export const SwapResumeModal: React.FC<SwapResumeModalProps> = ({ isOpen, item, 
 
     const handleResubmit = async () => {
         if (!item.evmTxParams) {
-            setError('Re-submitting is only supported for EVM legs today.');
+            const message = 'Re-submitting is only supported for EVM legs today.';
+            setError(message);
+            appStore.showToast(message, 'error');
             return;
         }
         setResubmitting(true);
@@ -79,7 +84,9 @@ export const SwapResumeModal: React.FC<SwapResumeModalProps> = ({ isOpen, item, 
             appStore.showToast('Leg re-submitted', 'success');
             onClose();
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Re-submit failed.');
+            const message = err instanceof Error ? err.message : 'Re-submit failed.';
+            setError(message);
+            appStore.showToast(message, 'error');
         } finally {
             setResubmitting(false);
         }
