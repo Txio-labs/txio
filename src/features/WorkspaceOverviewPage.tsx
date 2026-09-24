@@ -32,6 +32,7 @@ import { CollectionsPage } from './CollectionsPage';
 import { NetworksPage } from './NetworksPage';
 import { WalletsPage } from './WalletsPage';
 import { EnvironmentList } from '@/components/SideBar/EnvironmentList';
+import { PromptModal } from '@/components/PromptModal';
 
 function flattenRequests(nodes: CollectionNode[], collectionName: string): { node: CollectionNode; collectionName: string }[] {
     const out: { node: CollectionNode; collectionName: string }[] = [];
@@ -134,19 +135,18 @@ export const WorkspaceOverviewPage: React.FC = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isMenuOpen, isWsMenuOpen]);
 
+    const [isCreateWsModalOpen, setIsCreateWsModalOpen] = useState(false);
+    const [isRenameWsModalOpen, setIsRenameWsModalOpen] = useState(false);
+
     const handleCreateWorkspace = () => {
         setIsWsMenuOpen(false);
-        const name = window.prompt('Workspace name');
-        if (name?.trim()) void appStore.createWorkspace(name.trim());
+        setIsCreateWsModalOpen(true);
     };
 
     const handleRenameWorkspace = () => {
         setIsMenuOpen(false);
         if (!currentWorkspace) return;
-        const name = window.prompt('Workspace name', currentWorkspace.name);
-        if (name?.trim() && name.trim() !== currentWorkspace.name) {
-            void appStore.renameWorkspace(currentWorkspace.id, name.trim());
-        }
+        setIsRenameWsModalOpen(true);
     };
 
     const handleDeleteWorkspace = () => {
@@ -450,6 +450,38 @@ export const WorkspaceOverviewPage: React.FC = () => {
                 )}
                 {activeTab === 'Wallets' && <div className="-mx-6 md:-mx-8 -mt-2"><WalletsPage /></div>}
             </div>
+
+            <PromptModal
+                isOpen={isCreateWsModalOpen}
+                onClose={() => setIsCreateWsModalOpen(false)}
+                title="Create Workspace"
+                description="Give your new workspace a name."
+                label="Workspace name"
+                placeholder="e.g. My Team"
+                confirmLabel="Create"
+                icon={Users}
+                onSubmit={(name) => {
+                    setIsCreateWsModalOpen(false);
+                    void appStore.createWorkspace(name);
+                }}
+            />
+
+            <PromptModal
+                isOpen={isRenameWsModalOpen}
+                onClose={() => setIsRenameWsModalOpen(false)}
+                title="Rename Workspace"
+                label="Workspace name"
+                placeholder="e.g. My Team"
+                initialValue={currentWorkspace?.name ?? ''}
+                confirmLabel="Save"
+                icon={Pencil}
+                onSubmit={(name) => {
+                    setIsRenameWsModalOpen(false);
+                    if (currentWorkspace && name !== currentWorkspace.name) {
+                        void appStore.renameWorkspace(currentWorkspace.id, name);
+                    }
+                }}
+            />
         </div>
     );
 };

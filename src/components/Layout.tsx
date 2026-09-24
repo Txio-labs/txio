@@ -34,6 +34,7 @@ import { useAppStore, appStore } from '@/lib/store';
 import { Tab } from './ui/Tabs';
 import { TabItem, FeatureId, RequestType } from '../types';
 import { NetworkSwitcherModal } from './NetworkSwitcherModal';
+import { PromptModal } from './PromptModal';
 import { CommandPalette } from './CommandPalette';
 import { TerminalPanel } from './TerminalPanel';
 import { useWallet } from '@/wallet';
@@ -113,6 +114,7 @@ export const Layout: React.FC<LayoutProps> = ({
     const { currentWallet, isConnected, openModal } = useWallet();
     const [isNotifOpen, setIsNotifOpen] = useState(false);
     const [isWsDropdownOpen, setIsWsDropdownOpen] = useState(false);
+    const [isCreateWsModalOpen, setIsCreateWsModalOpen] = useState(false);
     const [isTabMenuOpen, setIsTabMenuOpen] = useState(false);
     const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
     const notifRef = useRef<HTMLDivElement>(null);
@@ -162,6 +164,20 @@ export const Layout: React.FC<LayoutProps> = ({
                 onConfirm={() => appStore.confirmNetworkSwitch()}
                 from={network}
                 to={pendingNetworkSwitch || network}
+            />
+            <PromptModal
+                isOpen={isCreateWsModalOpen}
+                onClose={() => setIsCreateWsModalOpen(false)}
+                title="Create Workspace"
+                description="Give your new workspace a name."
+                label="Workspace name"
+                placeholder="e.g. My Team"
+                confirmLabel="Create"
+                icon={LayoutGrid}
+                onSubmit={(name) => {
+                    setIsCreateWsModalOpen(false);
+                    onCreateWorkspace?.(name);
+                }}
             />
 
             {/* Top Energy Line */}
@@ -303,9 +319,8 @@ export const Layout: React.FC<LayoutProps> = ({
                                                 <div className="p-1.5 bg-slate-50 dark:bg-white/[0.015] border-t border-slate-200 dark:border-white/[0.06]">
                                                     <button
                                                         onClick={() => {
-                                                            const name = window.prompt('Workspace name');
-                                                            if (name?.trim()) onCreateWorkspace(name.trim());
                                                             setIsWsDropdownOpen(false);
+                                                            setIsCreateWsModalOpen(true);
                                                         }}
                                                         className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.04] hover:text-slate-900 dark:hover:text-white transition-colors"
                                                     >
