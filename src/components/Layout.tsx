@@ -30,6 +30,7 @@ import {
     ShieldCheck,
     Menu,
     KeyRound,
+    Repeat,
     CheckCircle2,
     XCircle,
     Info,
@@ -70,6 +71,7 @@ interface NavRailItem {
 const NAV_RAIL_TOP: NavRailItem[] = [
     { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
     { id: 'rpc', label: 'Requests', icon: Zap },
+    { id: 'swap', label: 'Swap', icon: Repeat },
     { id: 'history', label: 'History', icon: Activity },
     { id: 'collections', label: 'Collections', icon: FolderKanban },
     { id: 'workspace_overview', label: 'Workspaces', icon: Briefcase },

@@ -32,6 +32,7 @@ import { WorkspaceOverviewPage } from "@/features/WorkspaceOverviewPage";
 import { HelpPage } from "@/features/HelpPage";
 import { AdminPage } from "@/features/AdminPage";
 import { ApprovalsPage } from "@/features/ApprovalsPage";
+import { SwapPage } from "@/features/SwapPage";
 
 const MOCK_TEAM: TeamMember[] = [];
 
@@ -59,6 +60,8 @@ const WorkspaceContent: React.FC = () => {
             return <AdminPage />;
         case 'approvals':
             return <ApprovalsPage />;
+        case 'swap':
+            return <SwapPage />;
         case 'profile':
             return <WalletsPage />;
         case 'account':

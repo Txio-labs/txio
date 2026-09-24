@@ -1,10 +1,11 @@
 
 import React, { useState, useMemo } from 'react';
-import { Clock, CheckCircle2, XCircle, Search, Trash2, Terminal, Layers, Calendar, ArrowRight, LayoutList, ExternalLink, Download, AlertTriangle } from 'lucide-react';
+import { Clock, CheckCircle2, XCircle, Search, Trash2, Terminal, Layers, Calendar, ArrowRight, LayoutList, ExternalLink, Download, AlertTriangle, RotateCw } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { ChainId, HistoryItem, RequestType } from '../types';
 import { RPC_CHAINS } from '@/lib/constants';
 import { exportHistory } from '@/lib/exportHistory';
+import { isSwapResumable, SwapResumeModal } from '@/components/SwapResumeModal';
 
 type HistoryFilter = 'ALL' | 'RPC' | 'TRANSACTION' | 'ERROR';
 
@@ -23,6 +24,7 @@ export const HistoryFeature: React.FC = () => {
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
     const [confirmClear, setConfirmClear] = useState(false);
+    const [resumeItem, setResumeItem] = useState<HistoryItem | null>(null);
 
     const knownWallets = useMemo(() => {
         const seen = new Map<string, { address: string; family?: string }>();
@@ -332,8 +334,17 @@ export const HistoryFeature: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* Explorer + Replay */}
+                                {/* Explorer + Resume + Replay */}
                                 <div className="col-span-1 text-right flex items-center justify-end gap-1">
+                                    {item.type === RequestType.SWAP && isSwapResumable(item) && (
+                                        <button
+                                            onClick={() => setResumeItem(item)}
+                                            className="p-2 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/10 rounded-lg transition-all"
+                                            title="Resume stuck swap"
+                                        >
+                                            <RotateCw size={16} />
+                                        </button>
+                                    )}
                                     {explorerUrlFor(item) && (
                                         <a
                                             href={explorerUrlFor(item)}
@@ -359,6 +370,12 @@ export const HistoryFeature: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            <SwapResumeModal
+                isOpen={Boolean(resumeItem)}
+                item={resumeItem}
+                onClose={() => setResumeItem(null)}
+            />
         </div>
     );
 };
