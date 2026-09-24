@@ -185,19 +185,19 @@ export const CommandPalette: React.FC = () => {
                                     onClick={() => { cmd.action(); appStore.setCommandPalette(false); }}
                                     onMouseEnter={() => setSelectedIndex(idx)}
                                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
-                                        idx === selectedIndex ? 'bg-slate-900 dark:bg-white text-white dark:text-near-black' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
+                                        idx === selectedIndex ? 'bg-electric-violet/10' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
                                     }`}
                                 >
-                                    <div className={`p-1.5 rounded ${idx === selectedIndex ? 'bg-white/20 text-white dark:text-near-black' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'}`}>
+                                    <div className={`p-1.5 rounded ${idx === selectedIndex ? 'bg-electric-violet/15 text-electric-violet' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'}`}>
                                         {cmd.icon}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <div className={`text-sm font-medium ${idx === selectedIndex ? 'text-white dark:text-near-black' : 'text-slate-700 dark:text-slate-200'}`}>{cmd.title}</div>
+                                        <div className={`text-sm font-medium ${idx === selectedIndex ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-200'}`}>{cmd.title}</div>
                                         {cmd.subtitle && (
-                                            <div className={`text-xs truncate ${idx === selectedIndex ? 'text-white/70 dark:text-near-black/70' : 'text-slate-500'}`}>{cmd.subtitle}</div>
+                                            <div className={`text-xs truncate ${idx === selectedIndex ? 'text-slate-500 dark:text-slate-400' : 'text-slate-500'}`}>{cmd.subtitle}</div>
                                         )}
                                     </div>
-                                    {idx === selectedIndex && <ArrowRight size={14} className="text-white/70 dark:text-near-black/70" />}
+                                    {idx === selectedIndex && <ArrowRight size={14} className="text-electric-violet" />}
                                 </button>
                             ))}
                         </div>
