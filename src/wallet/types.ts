@@ -24,7 +24,8 @@ export type WalletConnectionMethod =
     | 'walletconnect'
     | 'sdk'
     | 'wallet-standard'
-    | 'deeplink';
+    | 'deeplink'
+    | 'hardware';
 
 export type WalletId =
     | 'metamask'
@@ -39,6 +40,7 @@ export type WalletId =
     | 'zerion'
     | 'oneinch'
     | 'frame'
+    | 'ledger'
     | 'sui-wallet'
     | 'suiet'
     | 'ethos'

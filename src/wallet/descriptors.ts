@@ -232,6 +232,22 @@ export const WALLET_DESCRIPTORS: WalletDescriptor[] =
             iconSeed: 'frame'
         },
         {
+            id: 'ledger',
+            name: 'Ledger',
+            shortName: 'LG',
+            chainFamily: 'evm',
+            methods: ['hardware'],
+            tags: [
+                'evm',
+                'hardware'
+            ],
+            description:
+                'Sign with a Ledger hardware wallet over WebHID — your private key never leaves the device.',
+            installUrl:
+                'https://www.ledger.com/',
+            iconSeed: 'ledger'
+        },
+        {
             id: 'sui-wallet',
             name: 'Sui Wallet',
             shortName: 'SW',

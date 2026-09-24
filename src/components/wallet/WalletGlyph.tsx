@@ -60,6 +60,10 @@ const GLYPH_STYLES: Record<
         ring: 'from-slate-500/70 to-zinc-300/40',
         fill: 'from-slate-700 to-zinc-500'
     },
+    ledger: {
+        ring: 'from-slate-900/70 to-slate-600/40',
+        fill: 'from-slate-900 to-slate-700'
+    },
     'sui-wallet': {
         ring: 'from-electric-violet/80 to-electric-violet/40',
         fill: 'from-electric-violet to-slate-700'

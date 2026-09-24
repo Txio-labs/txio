@@ -3,6 +3,7 @@ import {
     metaMask,
     walletConnect
 } from 'wagmi/connectors';
+import { ledgerConnector } from './hardware/ledgerConnector';
 import {
     createConfig,
     http
@@ -57,7 +58,8 @@ export const EVM_CONNECTOR_IDS = {
     'trust-wallet': 'com.trustwallet.app',
     rainbow: 'me.rainbow',
     'okx-wallet': 'com.okex.wallet',
-    'brave-wallet': 'com.brave.wallet'
+    'brave-wallet': 'com.brave.wallet',
+    ledger: 'ledger'
 } as const;
 
 const connectors = [
@@ -65,6 +67,7 @@ const connectors = [
     coinbaseWallet({
         appName: 'txio'
     }),
+    ledgerConnector(),
     ...(walletConnectProjectId
         ? [
               walletConnect({

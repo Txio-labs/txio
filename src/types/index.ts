@@ -31,7 +31,7 @@ export const isNetwork = (
 // doesn't appear as a selectable chain in the UI until it has one.
 export type ChainId = 'sui' | 'evm' | 'stellar' | 'solana' | 'aptos' | 'cardano';
 
-export type FeatureId = 'dashboard' | 'rpc' | 'ptb' | 'move' | 'playground' | 'workspace_overview' | 'history' | 'settings' | 'new_request' | 'new_collection' | 'profile' | 'account' | 'ai_chat' | 'runner' | 'collections' | 'docs' | 'ecosystem' | 'features' | 'help' | 'integrations' | 'infrastructure' | 'partners' | 'admin' | 'approvals' | 'swap';
+export type FeatureId = 'dashboard' | 'rpc' | 'ptb' | 'move' | 'playground' | 'workspace_overview' | 'history' | 'settings' | 'new_request' | 'new_collection' | 'profile' | 'account' | 'ai_chat' | 'runner' | 'collections' | 'docs' | 'ecosystem' | 'features' | 'help' | 'integrations' | 'infrastructure' | 'partners' | 'admin' | 'approvals' | 'swap' | 'automation';
 
 
 export interface TabItem {

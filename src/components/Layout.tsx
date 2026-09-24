@@ -78,6 +78,7 @@ const NAV_RAIL_TOP: NavRailItem[] = [
     { id: 'infrastructure', label: 'Networks', icon: NetworkIcon },
     { id: 'profile', label: 'Wallets', icon: WalletIcon },
     { id: 'approvals', label: 'Approvals', icon: KeyRound },
+    { id: 'automation', label: 'Automation', icon: ShieldCheck },
 ];
 
 const NAV_RAIL_BOTTOM: NavRailItem[] = [

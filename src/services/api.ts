@@ -125,6 +125,63 @@ interface BackendCollection {
     description?: string | null;
 }
 
+export interface BackendSpendPolicy {
+    id?: MongoIdLike;
+    _id?: MongoIdLike;
+    wallet_family: string;
+    wallet_address: string;
+    chain?: string | null;
+    daily_limit_usd?: number | null;
+    per_tx_limit_usd?: number | null;
+    max_tx_per_hour?: number | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface BackendSessionKey {
+    id?: MongoIdLike;
+    _id?: MongoIdLike;
+    wallet_family: string;
+    wallet_address: string;
+    label: string;
+    delegate_address: string;
+    scoped_contracts: string[];
+    max_amount_per_tx_usd?: number | null;
+    expires_at: string;
+    revoked_at?: string | null;
+    created_at: string;
+}
+
+export type BackendTriggerKind =
+    | { kind: 'recurring'; interval_minutes: number }
+    | { kind: 'time_once'; at: string }
+    | { kind: 'price_threshold'; chain: string; token: string; above: boolean; value_usd: number };
+
+export interface BackendScheduledTask {
+    id?: MongoIdLike;
+    _id?: MongoIdLike;
+    session_key_id: MongoIdLike;
+    name: string;
+    trigger: BackendTriggerKind;
+    request_template: unknown;
+    status: 'active' | 'paused' | 'cancelled';
+    next_run_at?: string | null;
+    last_run_at?: string | null;
+    last_error?: string | null;
+    created_at: string;
+}
+
+export interface BackendWebhookSubscription {
+    id?: MongoIdLike;
+    _id?: MongoIdLike;
+    url: string;
+    events: string[];
+    is_active: boolean;
+    last_delivered_at?: string | null;
+    last_delivery_error?: string | null;
+    created_at: string;
+}
+
 interface BackendHistoryEntry {
     id?: MongoIdLike;
     _id?: MongoIdLike;
@@ -1431,6 +1488,127 @@ class ApiService {
             method: 'POST',
             body: JSON.stringify({ email })
         });
+    }
+
+    // Spend policies
+    async upsertSpendPolicy(policy: {
+        walletFamily: string;
+        walletAddress: string;
+        chain?: string;
+        dailyLimitUsd?: number | null;
+        perTxLimitUsd?: number | null;
+        maxTxPerHour?: number | null;
+    }): Promise<BackendSpendPolicy> {
+        return this.request<BackendSpendPolicy>('/spend-policies', {
+            method: 'POST',
+            body: JSON.stringify({
+                wallet_family: policy.walletFamily,
+                wallet_address: policy.walletAddress,
+                chain: policy.chain,
+                daily_limit_usd: policy.dailyLimitUsd,
+                per_tx_limit_usd: policy.perTxLimitUsd,
+                max_tx_per_hour: policy.maxTxPerHour
+            })
+        });
+    }
+
+    async getSpendPolicy(walletAddress: string): Promise<BackendSpendPolicy | null> {
+        return this.request<BackendSpendPolicy | null>(`/spend-policies?wallet_address=${encodeURIComponent(walletAddress)}`);
+    }
+
+    async deleteSpendPolicy(walletAddress: string): Promise<void> {
+        await this.request(`/spend-policies?wallet_address=${encodeURIComponent(walletAddress)}`, { method: 'DELETE' });
+    }
+
+    async checkSpendPolicy(walletAddress: string, usdValue: number): Promise<{ allowed: boolean; reason?: string | null }> {
+        return this.request('/spend-policies/check', {
+            method: 'POST',
+            body: JSON.stringify({ wallet_address: walletAddress, usd_value: usdValue })
+        });
+    }
+
+    // Session keys
+    async createSessionKey(req: {
+        walletFamily: string;
+        walletAddress: string;
+        label: string;
+        delegateAddress: string;
+        delegatePrivateKey: string;
+        scopedContracts: string[];
+        maxAmountPerTxUsd?: number | null;
+        expiresAt: string;
+    }): Promise<BackendSessionKey> {
+        return this.request<BackendSessionKey>('/session-keys', {
+            method: 'POST',
+            body: JSON.stringify({
+                wallet_family: req.walletFamily,
+                wallet_address: req.walletAddress,
+                label: req.label,
+                delegate_address: req.delegateAddress,
+                delegate_private_key: req.delegatePrivateKey,
+                scoped_contracts: req.scopedContracts,
+                max_amount_per_tx_usd: req.maxAmountPerTxUsd,
+                expires_at: req.expiresAt
+            })
+        });
+    }
+
+    async listSessionKeys(): Promise<BackendSessionKey[]> {
+        return this.request<BackendSessionKey[]>('/session-keys');
+    }
+
+    async revokeSessionKey(id: string): Promise<void> {
+        await this.request(`/session-keys/${id}/revoke`, { method: 'POST' });
+    }
+
+    // Scheduled tasks
+    async createScheduledTask(req: {
+        name: string;
+        sessionKeyId: string;
+        trigger: BackendTriggerKind;
+        requestTemplate: unknown;
+    }): Promise<BackendScheduledTask> {
+        return this.request<BackendScheduledTask>('/scheduled-tasks', {
+            method: 'POST',
+            body: JSON.stringify({
+                name: req.name,
+                session_key_id: req.sessionKeyId,
+                trigger: req.trigger,
+                request_template: req.requestTemplate
+            })
+        });
+    }
+
+    async listScheduledTasks(): Promise<BackendScheduledTask[]> {
+        return this.request<BackendScheduledTask[]>('/scheduled-tasks');
+    }
+
+    async pauseScheduledTask(id: string): Promise<void> {
+        await this.request(`/scheduled-tasks/${id}/pause`, { method: 'POST' });
+    }
+
+    async resumeScheduledTask(id: string): Promise<void> {
+        await this.request(`/scheduled-tasks/${id}/resume`, { method: 'POST' });
+    }
+
+    async cancelScheduledTask(id: string): Promise<void> {
+        await this.request(`/scheduled-tasks/${id}/cancel`, { method: 'POST' });
+    }
+
+    // Webhooks
+    async createWebhook(url: string, events: string[]): Promise<{ id: string; url: string; events: string[]; secret: string }> {
+        return this.request('/webhooks', {
+            method: 'POST',
+            body: JSON.stringify({ url, events })
+        });
+    }
+
+    async listWebhooks(): Promise<BackendWebhookSubscription[]> {
+        return this.request<BackendWebhookSubscription[]>('/webhooks');
+    }
+
+    async deleteWebhook(id: string): Promise<void> {
+        await this.request(`/webhooks/${id}`, { method: 'DELETE' });
     }
 
     // Sessions
