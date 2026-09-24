@@ -8,6 +8,7 @@ const api = vi.hoisted(() => ({
     getAdminRequests: vi.fn(),
     getAdminCollections: vi.fn(),
     getAdminRpcLogs: vi.fn(),
+    getAdminEndpointStats: vi.fn(),
     adminDeleteUser: vi.fn()
 }));
 
@@ -66,7 +67,10 @@ const seed = () => {
         { id: 'c1', name: 'Sui basics', description: 'Starter calls', owner_email: 'ada@example.com', request_count: 5, created_at: iso, updated_at: iso }
     ]);
     api.getAdminRpcLogs.mockResolvedValue([
-        { method: 'sui_getObject', success: false, error: 'object not found', timestamp: iso, user_email: 'bob@example.com' }
+        { method: 'sui_getObject', success: false, error: 'object not found', timestamp: iso, user_email: 'bob@example.com', endpoint: 'https://sui-rpc.publicnode.com', duration_ms: 42 }
+    ]);
+    api.getAdminEndpointStats.mockResolvedValue([
+        { endpoint: 'https://sui-rpc.publicnode.com', total_calls: 10, failed_calls: 1, avg_duration_ms: 55.5, recent_errors: ['object not found'] }
     ]);
 };
 

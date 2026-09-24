@@ -1,9 +1,110 @@
 
 import React, { useState } from 'react';
-import { Settings, Server, Layout, Shield, Monitor, Globe, ChevronRight } from 'lucide-react';
+import { Settings, Server, Layout, Shield, Monitor, Globe, ChevronRight, Plus, X, ArrowUp, ArrowDown } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { EVM_NETWORKS, NETWORKS, SOLANA_NETWORKS, STELLAR_NETWORKS } from '@/lib/constants';
-import { ALL_NETWORKS, Network } from '../types';
+import { AppSettings, ALL_NETWORKS, Network } from '../types';
+
+type RpcSettingsKey = 'customRpc' | 'evmCustomRpc' | 'stellarCustomRpc' | 'solanaCustomRpc';
+
+/**
+ * Editable, ordered list of failover RPC endpoints for one (chain, network)
+ * pair. First entry is tried first; the built-in default (shown separately)
+ * is always the final fallback and isn't part of this list.
+ */
+const RpcEndpointListEditor: React.FC<{
+  endpoints: string[];
+  onChange: (next: string[]) => void;
+}> = ({ endpoints, onChange }) => {
+  const [draft, setDraft] = useState('');
+
+  const addEndpoint = () => {
+    const value = draft.trim();
+    if (!value || endpoints.includes(value)) {
+      return;
+    }
+    onChange([...endpoints, value]);
+    setDraft('');
+  };
+
+  const removeAt = (index: number) => {
+    onChange(endpoints.filter((_, i) => i !== index));
+  };
+
+  const move = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= endpoints.length) {
+      return;
+    }
+    const next = [...endpoints];
+    [next[index], next[target]] = [next[target], next[index]];
+    onChange(next);
+  };
+
+  return (
+    <div className="space-y-1.5">
+      {endpoints.map((url, index) => (
+        <div key={`${url}-${index}`} className="flex items-center gap-1.5">
+          <span className="w-4 shrink-0 text-center text-[10px] font-bold text-slate-500">{index + 1}</span>
+          <span className="flex-1 min-w-0 truncate rounded-md border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black px-2.5 py-1.5 font-mono text-xs text-slate-900 dark:text-white">
+            {url}
+          </span>
+          <button
+            type="button"
+            onClick={() => move(index, -1)}
+            disabled={index === 0}
+            title="Higher priority"
+            className="rounded p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white disabled:opacity-30"
+          >
+            <ArrowUp size={12} />
+          </button>
+          <button
+            type="button"
+            onClick={() => move(index, 1)}
+            disabled={index === endpoints.length - 1}
+            title="Lower priority"
+            className="rounded p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white disabled:opacity-30"
+          >
+            <ArrowDown size={12} />
+          </button>
+          <button
+            type="button"
+            onClick={() => removeAt(index)}
+            title="Remove"
+            className="rounded p-1 text-slate-400 hover:bg-red-500/10 hover:text-red-500"
+          >
+            <X size={12} />
+          </button>
+        </div>
+      ))}
+
+      <div className="flex items-center gap-1.5">
+        <span className="w-4 shrink-0" />
+        <input
+          className="flex-1 min-w-0 bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-md px-2.5 py-1.5 text-xs text-slate-900 dark:text-white font-mono placeholder:text-slate-400 dark:placeholder:text-slate-700 focus:border-electric-violet outline-none"
+          placeholder="Add a backup RPC URL…"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              addEndpoint();
+            }
+          }}
+        />
+        <button
+          type="button"
+          onClick={addEndpoint}
+          disabled={!draft.trim()}
+          title="Add endpoint"
+          className="rounded p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white disabled:opacity-30"
+        >
+          <Plus size={14} />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 type SettingsSection = 'general' | 'network' | 'appearance';
 
@@ -207,7 +308,7 @@ export const SettingsPage: React.FC = () => {
                 <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
                     <div>
                         <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Network & RPC</h2>
-                        <p className="text-slate-400 text-sm">Manage custom RPC endpoints for each environment, per chain.</p>
+                        <p className="text-slate-400 text-sm">Add backup RPC endpoints per chain and network. Requests try each in order, top to bottom, before falling back to the built-in default.</p>
                     </div>
 
                     {([
@@ -215,7 +316,7 @@ export const SettingsPage: React.FC = () => {
                         { chainLabel: 'EVM', defaults: EVM_NETWORKS, settingsKey: 'evmCustomRpc' as const },
                         { chainLabel: 'Stellar', defaults: STELLAR_NETWORKS, settingsKey: 'stellarCustomRpc' as const },
                         { chainLabel: 'Solana', defaults: SOLANA_NETWORKS, settingsKey: 'solanaCustomRpc' as const }
-                    ]).map(({ chainLabel, defaults, settingsKey }) => (
+                    ] as { chainLabel: string; defaults: Record<Network, string>; settingsKey: RpcSettingsKey }[]).map(({ chainLabel, defaults, settingsKey }) => (
                         <div key={chainLabel} className="bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 rounded-xl p-6 space-y-6">
                             <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">{chainLabel}</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -223,15 +324,13 @@ export const SettingsPage: React.FC = () => {
                                     <div key={net} className="space-y-2 min-w-0">
                                         <div className="flex justify-between gap-2">
                                             <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase shrink-0">{net}</label>
-                                            <span className="text-[10px] text-slate-500 dark:text-slate-600 truncate">Default: {defaults[net as Network]}</span>
+                                            <span className="text-[10px] text-slate-500 dark:text-slate-600 truncate">Fallback: {defaults[net]}</span>
                                         </div>
-                                        <input
-                                            className="w-full bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white font-mono placeholder:text-slate-400 dark:placeholder:text-slate-700 focus:border-electric-violet outline-none"
-                                            placeholder={`Custom ${net} RPC URL`}
-                                            value={settings[settingsKey][net as Network]}
-                                            onChange={(e) => appStore.updateSettings({
-                                                [settingsKey]: { ...settings[settingsKey], [net]: e.target.value }
-                                            })}
+                                        <RpcEndpointListEditor
+                                            endpoints={settings[settingsKey][net]}
+                                            onChange={(next) => appStore.updateSettings({
+                                                [settingsKey]: { ...settings[settingsKey], [net]: next }
+                                            } as Partial<AppSettings>)}
                                         />
                                     </div>
                                 ))}

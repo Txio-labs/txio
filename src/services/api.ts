@@ -1,5 +1,6 @@
 import {
     ActiveSession,
+    ChainId,
     CollectionNode,
     isNetwork,
     Network,
@@ -12,11 +13,13 @@ import {
     AdminRequest,
     AdminCollection,
     AdminRpcLog,
+    AdminEndpointStats,
     NotificationPreferences,
     Workspace
 } from '../types';
 import { DEFAULT_MOVE_CALL } from '../lib/constants';
 import { normalizeNotificationPreferences } from '../lib/appConfig';
+import { getTxParamsForHistory } from './transactionService';
 
 // NOTE: vercel.json's Content-Security-Policy connect-src is a static value
 // (Vercel parses vercel.json at deploy time and this app builds with
@@ -164,6 +167,9 @@ interface BackendSavedRequest {
     name: string;
     method: string;
     params?: unknown;
+    request_type?: string;
+    chain?: string | null;
+    tx_params?: unknown;
     network?: string | null;
     rpc_url?: string | null;
     last_response?: unknown;
@@ -332,13 +338,24 @@ const normalizeSavedRequest = (
         extractId(request.id ?? request._id) ||
         `${request.method}-${request.name}`;
 
+    // A TRANSACTION request's target lives in tx_params (chain-native —
+    // Sui moveParams, EVM evmTxParams, etc.), not method/params — see
+    // getTxParamsForHistory, which this mirrors for the History read-back.
+    // Older saved requests have no request_type and default to RPC.
+    const type =
+        request.request_type === RequestType.TRANSACTION
+            ? RequestType.TRANSACTION
+            : RequestType.RPC;
+    const chain = (request.chain as ChainId) ?? undefined;
+    const hasTxParams = type === RequestType.TRANSACTION && request.tx_params != null;
+
     return {
         id,
         name:
             request.name?.trim() ||
             request.method?.trim() ||
             'Saved Request',
-        type: RequestType.RPC,
+        type,
         network: isNetwork(request.network)
             ? request.network
             : undefined,
@@ -346,11 +363,25 @@ const normalizeSavedRequest = (
             method: request.method || '',
             params: normalizeRpcParams(
                 request.params
-            )
+            ),
+            chain
         },
-        moveParams: {
-            ...DEFAULT_MOVE_CALL
-        },
+        moveParams:
+            hasTxParams && chain === 'sui'
+                ? (request.tx_params as RequestItem['moveParams'])
+                : { ...DEFAULT_MOVE_CALL },
+        evmTxParams:
+            hasTxParams && chain === 'evm'
+                ? (request.tx_params as RequestItem['evmTxParams'])
+                : undefined,
+        solanaTxParams:
+            hasTxParams && chain === 'solana'
+                ? (request.tx_params as RequestItem['solanaTxParams'])
+                : undefined,
+        stellarTxParams:
+            hasTxParams && chain === 'stellar'
+                ? (request.tx_params as RequestItem['stellarTxParams'])
+                : undefined,
         localVars: [],
         timestamp: request.last_executed_at
             ? Date.parse(
@@ -1150,6 +1181,13 @@ class ApiService {
         collectionId: string,
         request: Partial<RequestItem>
     ): Promise<CollectionNode> {
+        // Only a full RequestItem carries chain-native transaction params;
+        // a genuinely partial one (missing `type`) has none to send.
+        const txParams =
+            request.type === RequestType.TRANSACTION
+                ? getTxParamsForHistory(request as RequestItem)
+                : undefined;
+
         const data =
             await this.request<BackendSavedRequest>(
                 `/collections/${collectionId}/requests`,
@@ -1163,6 +1201,9 @@ class ApiService {
                         params:
                             request.rpcParams
                                 ?.params,
+                        request_type: request.type,
+                        chain: request.rpcParams?.chain,
+                        tx_params: txParams,
                         network:
                             request.network ??
                             'mainnet'
@@ -1188,6 +1229,9 @@ class ApiService {
             name?: string;
             method?: string;
             params?: any;
+            requestType?: string;
+            chain?: string;
+            txParams?: unknown;
             network?: string | null;
             lastResponse?: unknown | null;
         }
@@ -1196,6 +1240,9 @@ class ApiService {
         if (updates.name !== undefined) body.name = updates.name;
         if (updates.method !== undefined) body.method = updates.method;
         if (updates.params !== undefined) body.params = updates.params;
+        if (updates.requestType !== undefined) body.request_type = updates.requestType;
+        if (updates.chain !== undefined) body.chain = updates.chain;
+        if (updates.txParams !== undefined) body.tx_params = updates.txParams;
         if (updates.network !== undefined) body.network = updates.network;
         if (updates.lastResponse !== undefined) body.last_response = updates.lastResponse;
 
@@ -1370,6 +1417,10 @@ class ApiService {
 
     async getAdminRpcLogs(limit = 200): Promise<AdminRpcLog[]> {
         return this.request<AdminRpcLog[]>(`/admin/logs?limit=${limit}`);
+    }
+
+    async getAdminEndpointStats(sampleSize = 1000): Promise<AdminEndpointStats[]> {
+        return this.request<AdminEndpointStats[]>(`/admin/endpoint-stats?limit=${sampleSize}`);
     }
 
     /** Permanently deletes an account and everything it owns. */

@@ -1,5 +1,5 @@
 
-import { resolveChainCustomRpcUrl, resolveRpcUrl } from '@/lib/appConfig';
+import { resolveChainCustomRpcUrl, resolveChainRpcUrlList, resolveRpcUrl, resolveRpcUrlList } from '@/lib/appConfig';
 import { appStore } from '@/lib/store';
 import { getEvmChain, STELLAR_HORIZON_URLS } from '@/lib/constants';
 import {
@@ -64,6 +64,71 @@ export const resolveChainRpcUrl = (
   }
 
   return resolveChainCustomRpcUrl(chain, network, appStore.getSnapshot().settings);
+};
+
+/** Every endpoint to try, in priority order, for the given chain+network — used for failover. */
+export const resolveChainRpcUrls = (
+  chain: ChainId,
+  network: Network,
+  evmChainId?: number
+): string[] => {
+  if (chain !== 'sui' && chain !== 'evm' && chain !== 'stellar' && chain !== 'solana') {
+    throw new Error(`No RPC endpoint configuration exists for chain "${chain}" yet.`);
+  }
+
+  if (chain === 'evm' && evmChainId) {
+    return [getEvmChain(evmChainId).rpcUrl];
+  }
+
+  return resolveChainRpcUrlList(chain, network, appStore.getSnapshot().settings);
+};
+
+/**
+ * POSTs a JSON-RPC request to each endpoint in order, moving to the next
+ * only on a network-level failure (timeout, DNS, connection refused) — not
+ * on an RPC-level error response, since that's a real answer from a healthy
+ * node and retrying elsewhere won't change it. This is the "automatic
+ * failover across providers" primitive every chain's RPC call now goes
+ * through, whether the endpoint list has one entry (the common case) or
+ * several (once a user configures backup endpoints in Settings).
+ */
+const postJsonRpcWithFailover = async (
+  endpoints: string[],
+  body: Record<string, unknown>
+): Promise<{ response: Response; data: any; duration: number; url: string }> => {
+  let lastNetworkError: unknown = null;
+  let lastUrl = endpoints[0];
+
+  for (const url of endpoints) {
+    lastUrl = url;
+    const startTime = performance.now();
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), RPC_TIMEOUT_MS);
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      const data = await response.json();
+      const duration = Math.round(performance.now() - startTime);
+
+      return { response, data, duration, url };
+    } catch (error) {
+      // AbortError (timeout) and network-level failures (fetch throws
+      // before a response exists) both mean this endpoint is unusable —
+      // fall through to the next one. A response that parsed but carried
+      // an HTTP or RPC error is handled by the caller, not retried here.
+      lastNetworkError = error;
+    }
+  }
+
+  throw lastNetworkError;
 };
 
 /**
@@ -177,7 +242,8 @@ export const executeChainRpc = async (
     return getStellarBalanceViaHorizon(network, params[0]);
   }
 
-  const url = resolveChainRpcUrl(chain, network, evmChainId);
+  const endpoints = resolveChainRpcUrls(chain, network, evmChainId);
+  const primaryUrl = endpoints[0];
   const startTime = performance.now();
 
   // Soroban RPC (Stellar) takes a single params OBJECT per call, not a
@@ -186,31 +252,12 @@ export const executeChainRpc = async (
   const requestParams = chain === 'stellar' ? (params[0] ?? {}) : params;
 
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(
-      () => controller.abort(),
-      RPC_TIMEOUT_MS
-    );
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 1,
-        method,
-        params: requestParams,
-      }),
-      signal: controller.signal
+    const { response, data, duration, url } = await postJsonRpcWithFailover(endpoints, {
+      jsonrpc: '2.0',
+      id: 1,
+      method,
+      params: requestParams,
     });
-    clearTimeout(timeoutId);
-
-    const data = await response.json();
-    const duration = Math.round(
-      performance.now() - startTime
-    );
 
     if (!response.ok) {
       const message =
@@ -253,15 +300,15 @@ export const executeChainRpc = async (
     if (error?.name === 'AbortError') {
       throw new SuiRpcError(
         `RPC request timed out after ${RPC_TIMEOUT_MS / 1000}s.`,
-        { status: 504, endpoint: url, duration }
+        { status: 504, endpoint: primaryUrl, duration }
       );
     }
 
     throw new SuiRpcError(
       error instanceof Error && error.message.trim()
         ? error.message
-        : `Unable to reach the configured ${chain.toUpperCase()} RPC endpoint.`,
-      { status: 0, endpoint: url, duration }
+        : `Unable to reach any configured ${chain.toUpperCase()} RPC endpoint (tried ${endpoints.length}).`,
+      { status: 0, endpoint: primaryUrl, duration }
     );
   }
 };
@@ -307,35 +354,18 @@ export const executeSuiRpc = async (
   method: string,
   params: any[]
 ): Promise<{ result: any; duration: number; status: number }> => {
-  const url = getActiveSuiRpcUrl(network);
+  const endpoints = resolveRpcUrlList(network, appStore.getSnapshot().settings);
+  const primaryUrl = endpoints[0];
   const startTime = performance.now();
 
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(
-      () => controller.abort(),
-      RPC_TIMEOUT_MS
-    );
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 1,
-        method,
-        params,
-      }),
-      signal: controller.signal
+    const { response, data: rawData, duration, url } = await postJsonRpcWithFailover(endpoints, {
+      jsonrpc: '2.0',
+      id: 1,
+      method,
+      params,
     });
-    clearTimeout(timeoutId);
-
-    const data: SuiRpcResponse = await response.json();
-    const duration = Math.round(
-      performance.now() - startTime
-    );
+    const data: SuiRpcResponse = rawData;
 
     if (!response.ok) {
       const message =
@@ -384,7 +414,7 @@ export const executeSuiRpc = async (
         `RPC request timed out after ${RPC_TIMEOUT_MS / 1000}s.`,
         {
           status: 504,
-          endpoint: url,
+          endpoint: primaryUrl,
           duration,
         }
       );
@@ -394,10 +424,10 @@ export const executeSuiRpc = async (
       error instanceof Error &&
         error.message.trim()
         ? error.message
-        : 'Unable to reach the configured Sui RPC endpoint.',
+        : `Unable to reach any configured Sui RPC endpoint (tried ${endpoints.length}).`,
       {
         status: 0,
-        endpoint: url,
+        endpoint: primaryUrl,
         duration,
       }
     );

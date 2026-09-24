@@ -64,19 +64,26 @@ export type EvmExplorer = 'family' | 'blockscout';
 export type StellarExplorer = 'stellarexpert' | 'stellarchain';
 export type SolanaExplorer = 'solanaexplorer' | 'solscan' | 'solanafm';
 
+/**
+ * An ordered set of extra RPC endpoints to try, beyond the network's
+ * built-in default, for failover. Tried in array order; the built-in
+ * default (NETWORKS/EVM_NETWORKS/etc) is always the final fallback.
+ */
+export type RpcEndpointOverrides = Record<Network, string[]>;
+
 export interface AppSettings {
     theme: 'dark' | 'light';
     showLineNumbers: boolean;
     autoSave: boolean;
     telemetry: boolean;
-    /** Custom Sui RPC endpoint overrides, per network. */
-    customRpc: Record<Network, string>;
-    /** Custom EVM RPC endpoint overrides, per network. */
-    evmCustomRpc: Record<Network, string>;
-    /** Custom Stellar/Soroban RPC endpoint overrides, per network. */
-    stellarCustomRpc: Record<Network, string>;
-    /** Custom Solana RPC endpoint overrides, per network. */
-    solanaCustomRpc: Record<Network, string>;
+    /** Custom Sui RPC endpoint overrides, per network. First entry is tried first. */
+    customRpc: RpcEndpointOverrides;
+    /** Custom EVM RPC endpoint overrides, per network. First entry is tried first. */
+    evmCustomRpc: RpcEndpointOverrides;
+    /** Custom Stellar/Soroban RPC endpoint overrides, per network. First entry is tried first. */
+    stellarCustomRpc: RpcEndpointOverrides;
+    /** Custom Solana RPC endpoint overrides, per network. First entry is tried first. */
+    solanaCustomRpc: RpcEndpointOverrides;
     /** Preferred Sui block explorer. */
     explorer: SuiExplorer;
     /** Preferred EVM explorer family: chain-native (Etherscan-family) or Blockscout. */
@@ -510,4 +517,15 @@ export interface AdminRpcLog {
   error: string | null;
   timestamp: string;
   user_email?: string | null;
+  endpoint?: string | null;
+  duration_ms?: number | null;
+}
+
+/** Per-endpoint usage/health rollup: most-used endpoints, failures, latency. */
+export interface AdminEndpointStats {
+  endpoint: string;
+  total_calls: number;
+  failed_calls: number;
+  avg_duration_ms: number | null;
+  recent_errors: string[];
 }

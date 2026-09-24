@@ -22,6 +22,8 @@ export const AdvancedEditor: React.FC<AdvancedEditorProps> = ({ chain }) => {
   const resolvedChain = chain ?? 'sui';
   const settingsKey = CUSTOM_RPC_KEY[resolvedChain];
   const customRpcForChain = settings[settingsKey];
+  const endpointsForNetwork = customRpcForChain[network] || [];
+  const primaryEndpoint = endpointsForNetwork[0] || '';
 
   return (
     <div className="p-6 md:p-10 max-w-2xl mx-auto space-y-6">
@@ -48,16 +50,21 @@ export const AdvancedEditor: React.FC<AdvancedEditorProps> = ({ chain }) => {
       <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black/40">
         <div className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Custom RPC endpoint</div>
         <div className="text-xs text-slate-500 mb-3">
-          Override the default <span className="font-mono uppercase">{resolvedChain}</span> endpoint for <span className="font-mono">{network}</span>. Leave blank to use the default.
+          Highest-priority override for <span className="font-mono uppercase">{resolvedChain}</span> on <span className="font-mono">{network}</span>. Leave blank to use the default.
+          {endpointsForNetwork.length > 1 ? ` ${endpointsForNetwork.length - 1} more backup endpoint${endpointsForNetwork.length > 2 ? 's are' : ' is'} configured in Settings.` : ' Add backup endpoints for failover in Settings → Network & RPC.'}
         </div>
         <input
           type="text"
-          value={customRpcForChain[network] || ''}
-          onChange={(e) =>
+          value={primaryEndpoint}
+          onChange={(e) => {
+            const value = e.target.value;
+            const next = value.trim()
+              ? [value, ...endpointsForNetwork.slice(1)]
+              : endpointsForNetwork.slice(1);
             appStore.updateSettings({
-              [settingsKey]: { ...customRpcForChain, [network]: e.target.value }
+              [settingsKey]: { ...customRpcForChain, [network]: next }
             })
-          }
+          }}
           placeholder="https://..."
           className="w-full bg-white dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-slate-700 dark:text-slate-200 focus:border-electric-violet focus:outline-none transition-colors"
         />

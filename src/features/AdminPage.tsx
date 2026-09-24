@@ -8,6 +8,7 @@ import {
     Loader2,
     RefreshCw,
     Search,
+    Server,
     ShieldCheck,
     Trash2,
     Users,
@@ -19,13 +20,14 @@ import { appStore, useAppStore } from '@/lib/store';
 import { SkeletonRow, SkeletonStat } from '@/components/ui/Skeleton';
 import type {
     AdminCollection,
+    AdminEndpointStats,
     AdminOverview,
     AdminRequest,
     AdminRpcLog,
     AdminUser
 } from '@/types';
 
-type AdminView = 'users' | 'requests' | 'collections' | 'rpc';
+type AdminView = 'users' | 'requests' | 'collections' | 'rpc' | 'endpoints';
 
 interface AdminData {
     overview: AdminOverview;
@@ -33,13 +35,15 @@ interface AdminData {
     requests: AdminRequest[];
     collections: AdminCollection[];
     rpcLogs: AdminRpcLog[];
+    endpointStats: AdminEndpointStats[];
 }
 
 const VIEWS: { id: AdminView; label: string; icon: React.ElementType }[] = [
     { id: 'users', label: 'Users', icon: Users },
     { id: 'requests', label: 'Requests', icon: Zap },
     { id: 'collections', label: 'Collections', icon: FolderKanban },
-    { id: 'rpc', label: 'RPC logs', icon: Activity }
+    { id: 'rpc', label: 'RPC logs', icon: Activity },
+    { id: 'endpoints', label: 'Endpoints', icon: Server }
 ];
 
 export const formatRelative = (iso: string | null | undefined, now = Date.now()): string => {
@@ -61,14 +65,15 @@ const matches = (query: string, ...fields: (string | null | undefined)[]) =>
     !query || fields.some((f) => f?.toLowerCase().includes(query));
 
 const fetchAdminData = async (): Promise<AdminData> => {
-    const [overview, users, requests, collections, rpcLogs] = await Promise.all([
+    const [overview, users, requests, collections, rpcLogs, endpointStats] = await Promise.all([
         apiService.getAdminOverview(),
         apiService.getAdminUsers(),
         apiService.getAdminRequests(),
         apiService.getAdminCollections(),
-        apiService.getAdminRpcLogs()
+        apiService.getAdminRpcLogs(),
+        apiService.getAdminEndpointStats()
     ]);
-    return { overview, users, requests, collections, rpcLogs };
+    return { overview, users, requests, collections, rpcLogs, endpointStats };
 };
 
 const StatCard: React.FC<{ label: string; value: number; hint?: string }> = ({ label, value, hint }) => (
@@ -250,12 +255,17 @@ export const AdminPage: React.FC = () => {
         () => (data?.rpcLogs ?? []).filter((l) => matches(q, l.user_email, l.method, l.error)),
         [data, q]
     );
+    const endpointStats = useMemo(
+        () => (data?.endpointStats ?? []).filter((s) => matches(q, s.endpoint)),
+        [data, q]
+    );
 
     const counts: Record<AdminView, number> = {
         users: users.length,
         requests: requests.length,
         collections: collections.length,
-        rpc: rpcLogs.length
+        rpc: rpcLogs.length,
+        endpoints: endpointStats.length
     };
 
     if (error?.forbidden) {
@@ -474,19 +484,59 @@ export const AdminPage: React.FC = () => {
                         {view === 'rpc' && (
                             <>
                                 <thead className="sticky top-0 bg-white dark:bg-near-black border-b border-slate-200 dark:border-white/5">
-                                    <tr><Th>Result</Th><Th>Method</Th><Th>User</Th><Th>Error</Th><Th>When</Th></tr>
+                                    <tr><Th>Result</Th><Th>Method</Th><Th>Endpoint</Th><Th>User</Th><Th>Duration</Th><Th>Error</Th><Th>When</Th></tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
-                                    {rpcLogs.length === 0 && <EmptyRow colSpan={5} label="No RPC calls match." />}
+                                    {rpcLogs.length === 0 && <EmptyRow colSpan={7} label="No RPC calls match." />}
                                     {rpcLogs.map((l, i) => (
                                         <tr key={`${l.timestamp}-${i}`} className="hover:bg-slate-50 dark:hover:bg-white/[0.02]">
                                             <Td><Badge tone={l.success ? 'green' : 'red'}>{l.success ? 'OK' : 'Failed'}</Badge></Td>
                                             <Td className="font-mono">{l.method}</Td>
+                                            <Td className="font-mono max-w-[220px] truncate" title={l.endpoint ?? undefined}>{l.endpoint ?? <span className="text-slate-400">—</span>}</Td>
                                             <Td>{l.user_email ?? <span className="text-slate-400">—</span>}</Td>
-                                            <Td className="max-w-[280px] truncate text-rose-500" title={l.error ?? undefined}>{l.error ?? ''}</Td>
+                                            <Td className="tabular-nums">{l.duration_ms != null ? `${l.duration_ms} ms` : '—'}</Td>
+                                            <Td className="max-w-[220px] truncate text-rose-500" title={l.error ?? undefined}>{l.error ?? ''}</Td>
                                             <Td title={l.timestamp}>{formatRelative(l.timestamp)}</Td>
                                         </tr>
                                     ))}
+                                </tbody>
+                            </>
+                        )}
+
+                        {view === 'endpoints' && (
+                            <>
+                                <thead className="sticky top-0 bg-white dark:bg-near-black border-b border-slate-200 dark:border-white/5">
+                                    <tr><Th>Endpoint</Th><Th>Total calls</Th><Th>Failures</Th><Th>Failure rate</Th><Th>Avg latency</Th><Th>Recent errors</Th></tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
+                                    {endpointStats.length === 0 && <EmptyRow colSpan={6} label="No endpoint activity recorded yet." />}
+                                    {endpointStats.map((s) => {
+                                        const failureRate = s.total_calls > 0 ? s.failed_calls / s.total_calls : 0;
+                                        return (
+                                            <tr key={s.endpoint} className="hover:bg-slate-50 dark:hover:bg-white/[0.02]">
+                                                <Td className="font-mono max-w-[280px] truncate" title={s.endpoint}>{s.endpoint}</Td>
+                                                <Td className="tabular-nums">{s.total_calls.toLocaleString()}</Td>
+                                                <Td className="tabular-nums">{s.failed_calls.toLocaleString()}</Td>
+                                                <Td>
+                                                    <Badge tone={failureRate === 0 ? 'green' : failureRate < 0.1 ? 'slate' : 'red'}>
+                                                        {(failureRate * 100).toFixed(1)}%
+                                                    </Badge>
+                                                </Td>
+                                                <Td className="tabular-nums">{s.avg_duration_ms != null ? `${Math.round(s.avg_duration_ms)} ms` : '—'}</Td>
+                                                <Td className="max-w-[320px]">
+                                                    {s.recent_errors.length === 0 ? (
+                                                        <span className="text-slate-400">—</span>
+                                                    ) : (
+                                                        <div className="flex flex-col gap-0.5">
+                                                            {s.recent_errors.slice(0, 3).map((err, i) => (
+                                                                <span key={i} className="truncate text-rose-500" title={err}>{err}</span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </Td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </>
                         )}

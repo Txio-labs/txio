@@ -1,4 +1,4 @@
-import { AppSettings, ChainId, Network, NotificationPreferences } from '../types';
+import { AppSettings, ChainId, Network, NotificationPreferences, RpcEndpointOverrides } from '../types';
 import { EVM_NETWORKS, NETWORKS, SOLANA_NETWORKS, STELLAR_NETWORKS } from './constants';
 
 export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
@@ -8,11 +8,41 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
     inAppProductUpdates: false
 };
 
-const EMPTY_CUSTOM_RPC: Record<Network, string> = {
-    mainnet: '',
-    testnet: '',
-    devnet: '',
-    localnet: ''
+const EMPTY_CUSTOM_RPC: RpcEndpointOverrides = {
+    mainnet: [],
+    testnet: [],
+    devnet: [],
+    localnet: []
+};
+
+/**
+ * Settings persisted before multi-endpoint failover shipped stored one
+ * string per network instead of an array. Accepts either shape and always
+ * returns the array form, dropping blank entries.
+ */
+const normalizeRpcOverrides = (
+    raw: unknown
+): RpcEndpointOverrides => {
+    const result: RpcEndpointOverrides = { ...EMPTY_CUSTOM_RPC };
+
+    if (!raw || typeof raw !== 'object') {
+        return result;
+    }
+
+    for (const network of Object.keys(result) as Network[]) {
+        const value = (raw as Record<string, unknown>)[network];
+
+        if (typeof value === 'string') {
+            result[network] = value.trim() ? [value.trim()] : [];
+        } else if (Array.isArray(value)) {
+            result[network] = value
+                .filter((entry): entry is string => typeof entry === 'string')
+                .map((entry) => entry.trim())
+                .filter(Boolean);
+        }
+    }
+
+    return result;
 };
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
@@ -43,22 +73,10 @@ export const normalizeAppSettings = (
     const merged: AppSettings = {
         ...DEFAULT_APP_SETTINGS,
         ...settings,
-        customRpc: {
-            ...DEFAULT_APP_SETTINGS.customRpc,
-            ...(settings?.customRpc || {})
-        },
-        evmCustomRpc: {
-            ...DEFAULT_APP_SETTINGS.evmCustomRpc,
-            ...(settings?.evmCustomRpc || {})
-        },
-        stellarCustomRpc: {
-            ...DEFAULT_APP_SETTINGS.stellarCustomRpc,
-            ...(settings?.stellarCustomRpc || {})
-        },
-        solanaCustomRpc: {
-            ...DEFAULT_APP_SETTINGS.solanaCustomRpc,
-            ...(settings?.solanaCustomRpc || {})
-        }
+        customRpc: normalizeRpcOverrides(settings?.customRpc),
+        evmCustomRpc: normalizeRpcOverrides(settings?.evmCustomRpc),
+        stellarCustomRpc: normalizeRpcOverrides(settings?.stellarCustomRpc),
+        solanaCustomRpc: normalizeRpcOverrides(settings?.solanaCustomRpc)
     };
 
     // Backward-compat: older persisted state only had Sui `explorer`.
@@ -75,14 +93,19 @@ export const normalizeAppSettings = (
     return merged;
 };
 
+/** The single best endpoint to use — first configured override, or the built-in default. */
 export const resolveRpcUrl = (
     network: Network,
     settings: Pick<AppSettings, 'customRpc'> = DEFAULT_APP_SETTINGS
-) => {
-    const customUrl =
-        settings.customRpc[network]?.trim();
+) => resolveRpcUrlList(network, settings)[0];
 
-    return customUrl || NETWORKS[network];
+/** Every endpoint to try for this network, in priority order, ending with the built-in default. */
+export const resolveRpcUrlList = (
+    network: Network,
+    settings: Pick<AppSettings, 'customRpc'> = DEFAULT_APP_SETTINGS
+): string[] => {
+    const overrides = settings.customRpc[network] || [];
+    return [...overrides, NETWORKS[network]];
 };
 
 /**
@@ -95,23 +118,27 @@ export const resolveChainCustomRpcUrl = (
     chain: Extract<ChainId, 'sui' | 'evm' | 'stellar' | 'solana'>,
     network: Network,
     settings: Pick<AppSettings, 'customRpc' | 'evmCustomRpc' | 'stellarCustomRpc' | 'solanaCustomRpc'> = DEFAULT_APP_SETTINGS
-) => {
+) => resolveChainRpcUrlList(chain, network, settings)[0];
+
+/** Every endpoint to try for this chain+network, in priority order, ending with the built-in default. */
+export const resolveChainRpcUrlList = (
+    chain: Extract<ChainId, 'sui' | 'evm' | 'stellar' | 'solana'>,
+    network: Network,
+    settings: Pick<AppSettings, 'customRpc' | 'evmCustomRpc' | 'stellarCustomRpc' | 'solanaCustomRpc'> = DEFAULT_APP_SETTINGS
+): string[] => {
     if (chain === 'sui') {
-        return resolveRpcUrl(network, settings);
+        return resolveRpcUrlList(network, settings);
     }
 
     if (chain === 'evm') {
-        const customUrl = settings.evmCustomRpc[network]?.trim();
-        return customUrl || EVM_NETWORKS[network];
+        return [...(settings.evmCustomRpc[network] || []), EVM_NETWORKS[network]];
     }
 
     if (chain === 'solana') {
-        const customUrl = settings.solanaCustomRpc[network]?.trim();
-        return customUrl || SOLANA_NETWORKS[network];
+        return [...(settings.solanaCustomRpc[network] || []), SOLANA_NETWORKS[network]];
     }
 
-    const customUrl = settings.stellarCustomRpc[network]?.trim();
-    return customUrl || STELLAR_NETWORKS[network];
+    return [...(settings.stellarCustomRpc[network] || []), STELLAR_NETWORKS[network]];
 };
 
 const getSuiExplorerHost = (
