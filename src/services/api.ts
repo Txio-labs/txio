@@ -182,6 +182,17 @@ export interface BackendWebhookSubscription {
     created_at: string;
 }
 
+export interface BackendApiKey {
+    id?: MongoIdLike;
+    _id?: MongoIdLike;
+    label: string;
+    key_prefix: string;
+    scopes: string[];
+    last_used_at?: string | null;
+    revoked_at?: string | null;
+    created_at: string;
+}
+
 interface BackendHistoryEntry {
     id?: MongoIdLike;
     _id?: MongoIdLike;
@@ -1609,6 +1620,22 @@ class ApiService {
 
     async deleteWebhook(id: string): Promise<void> {
         await this.request(`/webhooks/${id}`, { method: 'DELETE' });
+    }
+
+    // API keys (public API access)
+    async createApiKey(label: string, scopes: string[]): Promise<{ id: string; label: string; key_prefix: string; scopes: string[]; key: string }> {
+        return this.request('/api-keys', {
+            method: 'POST',
+            body: JSON.stringify({ label, scopes })
+        });
+    }
+
+    async listApiKeys(): Promise<BackendApiKey[]> {
+        return this.request<BackendApiKey[]>('/api-keys');
+    }
+
+    async revokeApiKey(id: string): Promise<void> {
+        await this.request(`/api-keys/${id}`, { method: 'DELETE' });
     }
 
     // Sessions

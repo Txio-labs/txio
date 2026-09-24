@@ -34,6 +34,7 @@ import { AdminPage } from "@/features/AdminPage";
 import { ApprovalsPage } from "@/features/ApprovalsPage";
 import { SwapPage } from "@/features/SwapPage";
 import { AutomationPage } from "@/features/AutomationPage";
+import { DevelopersPage } from "@/features/DevelopersPage";
 
 const MOCK_TEAM: TeamMember[] = [];
 
@@ -65,6 +66,8 @@ const WorkspaceContent: React.FC = () => {
             return <SwapPage />;
         case 'automation':
             return <AutomationPage />;
+        case 'developers':
+            return <DevelopersPage />;
         case 'profile':
             return <WalletsPage />;
         case 'account':

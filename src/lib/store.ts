@@ -39,7 +39,6 @@ import {
     extractId
 } from '../services/api';
 
-// Simple Event Emitter for State Updates
 type Listener = () => void;
 
 const listeners = new Set<Listener>();
@@ -785,9 +784,6 @@ let state: AppState = {
 
     isInspectorOpen: true,
 
-    // Closed by default — it's an execution console, not a landing view.
-    // ensureTerminalOpen() (terminalLog.ts) opens it automatically the first
-    // time a request actually runs; the toggle button still opens it by hand.
     isTerminalOpen: false,
 
     isAuthModalOpen: false,
@@ -942,7 +938,11 @@ export const appStore = {
             'integrations',
             'infrastructure',
             'partners',
-            'admin'
+            'admin',
+            'swap',
+            'approvals',
+            'automation',
+            'developers'
         ];
 
         if (singletonFeatures.includes(type)) {
@@ -1059,6 +1059,22 @@ export const appStore = {
 
                 case 'partners':
                     title = 'Partners';
+                    break;
+
+                case 'swap':
+                    title = 'Swap';
+                    break;
+
+                case 'approvals':
+                    title = 'Approvals';
+                    break;
+
+                case 'automation':
+                    title = 'Automation';
+                    break;
+
+                case 'developers':
+                    title = 'Developers';
                     break;
 
                 default:

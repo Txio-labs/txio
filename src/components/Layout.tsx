@@ -29,6 +29,7 @@ import {
     MoreHorizontal,
     ShieldCheck,
     Menu,
+    Code2,
     KeyRound,
     Repeat,
     CheckCircle2,
@@ -83,6 +84,7 @@ const NAV_RAIL_TOP: NavRailItem[] = [
 
 const NAV_RAIL_BOTTOM: NavRailItem[] = [
     { id: 'docs', label: 'Documentation', icon: BookOpen },
+    { id: 'developers', label: 'Developers', icon: Code2 },
     { id: 'settings', label: 'Settings', icon: Settings },
     { id: 'help', label: 'Help', icon: HelpCircle },
 ];

@@ -131,7 +131,8 @@ export const SwapPage: React.FC = () => {
                 </p>
             </div>
 
-            <div className="flex-1 p-6 max-w-2xl mx-auto w-full space-y-5">
+            <div className="flex-1 p-6 max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-6 items-start">
+            <div className="space-y-5 w-full">
                 {/* From */}
                 <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow p-4 space-y-3">
                     <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">From</label>
@@ -274,44 +275,54 @@ export const SwapPage: React.FC = () => {
                         <AlertTriangle size={13} /> {error}
                     </div>
                 )}
+            </div>
 
-                {routes.length > 0 && (
-                    <div className="space-y-2">
+            <div className="space-y-2 w-full">
+                {routes.length > 0 ? (
+                    <>
                         <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                             {routes.length} route{routes.length === 1 ? '' : 's'} found
                         </label>
-                        {routes.map((route) => (
-                            <button
-                                key={route.id}
-                                onClick={() => handleSelectRoute(route)}
-                                className={`w-full text-left rounded-xl border p-4 transition-colors ${
-                                    selectedRoute?.id === route.id
-                                        ? 'border-electric-violet bg-electric-violet/5'
-                                        : 'border-slate-200 dark:border-white/10 bg-white dark:bg-dark-indigo-glow hover:border-electric-violet/40'
-                                }`}
-                            >
-                                <div className="flex items-center justify-between gap-3">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        {(route.tags ?? []).map((tag) => (
-                                            <span key={tag} className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                                                {tag}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {routes.map((route) => (
+                                <button
+                                    key={route.id}
+                                    onClick={() => handleSelectRoute(route)}
+                                    className={`w-full text-left rounded-xl border p-4 transition-colors ${
+                                        selectedRoute?.id === route.id
+                                            ? 'border-electric-violet bg-electric-violet/5'
+                                            : 'border-slate-200 dark:border-white/10 bg-white dark:bg-dark-indigo-glow hover:border-electric-violet/40'
+                                    }`}
+                                >
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            {(route.tags ?? []).map((tag) => (
+                                                <span key={tag} className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                            <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                                                {route.steps.map((s) => s.tool).join(' → ')}
                                             </span>
-                                        ))}
-                                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                                            {route.steps.map((s) => s.tool).join(' → ')}
-                                        </span>
+                                        </div>
+                                        <span className="text-[10px] text-slate-400 shrink-0">{routeHopCount(route)} hop{routeHopCount(route) === 1 ? '' : 's'}</span>
                                     </div>
-                                    <span className="text-[10px] text-slate-400">{routeHopCount(route)} hop{routeHopCount(route) === 1 ? '' : 's'}</span>
-                                </div>
-                                <div className="mt-2 flex items-center gap-4 text-[11px] text-slate-500">
-                                    <span>Cost {routeCostLabel(route)}</span>
-                                    <span>~{routeTimeLabel(route)}</span>
-                                    <span>You receive {route.toAmountMin}</span>
-                                </div>
-                            </button>
-                        ))}
+                                    <div className="mt-2 flex items-center gap-4 text-[11px] text-slate-500">
+                                        <span>Cost {routeCostLabel(route)}</span>
+                                        <span>~{routeTimeLabel(route)}</span>
+                                        <span>You receive {route.toAmountMin}</span>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </>
+                ) : (
+                    <div className="hidden lg:flex flex-col items-center justify-center h-full min-h-[320px] rounded-xl border border-dashed border-slate-200 dark:border-white/10 text-center p-6">
+                        <Zap size={24} className="text-slate-300 dark:text-slate-700 mb-3" />
+                        <p className="text-xs text-slate-400">Compared routes will appear here.</p>
                     </div>
                 )}
+            </div>
             </div>
 
             <SwapReviewModal
