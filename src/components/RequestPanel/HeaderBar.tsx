@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Play, Zap, Loader2, Server, Terminal, Layers, FolderPlus, Check, ChevronDown } from 'lucide-react';
 import { Select } from '../Select';
-import { RequestType, Network, ChainId, RPCHealthMetric, RequestItem } from '../../types';
+import { RequestType, Network, ChainId, RPCHealthMetric, RequestItem, ALL_NETWORKS } from '../../types';
 import { appStore, useAppStore } from '@/lib/store';
 import { resolveChainRpcUrl, getChainRpcHealth } from '../../services/suiService';
 import { RequestOutcome } from './response/types';
@@ -42,10 +42,18 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const [saveMenuRect, setSaveMenuRect] = useState<{ top: number; right: number } | null>(null);
+  const [isNetworkMenuOpen, setIsNetworkMenuOpen] = useState(false);
   const saveButtonRef = useRef<HTMLDivElement>(null);
   const saveMenuPortalRef = useRef<HTMLDivElement>(null);
+  const networkMenuRef = useRef<HTMLDivElement>(null);
   const chain: ChainId = chainProp ?? 'sui';
   const endpoint = resolveChainRpcUrl(chain, network, evmChainId);
+
+  const handleNetworkSwitch = (newNetwork: Network) => {
+    setIsNetworkMenuOpen(false);
+    if (newNetwork === network) return;
+    appStore.requestNetworkSwitch(newNetwork);
+  };
 
   const topLevelCollections = collections.filter((c) => c.type === 'collection');
 
@@ -75,6 +83,9 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         saveMenuPortalRef.current && !saveMenuPortalRef.current.contains(target)
       ) {
         setIsSaveMenuOpen(false);
+      }
+      if (networkMenuRef.current && !networkMenuRef.current.contains(target)) {
+        setIsNetworkMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -146,9 +157,45 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
       
       {/* Enhanced Endpoint Context */}
       <div className="flex-1 flex items-center bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1.5 h-[38px] min-w-[200px] group focus-within:border-slate-300 dark:focus-within:border-white/20 transition-colors">
-        <div className="flex items-center gap-2 mr-3 border-r border-slate-200 dark:border-white/10 pr-3">
-          <Server size={12} className="text-slate-500" />
-          <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase">{network}</span>
+        <div className="relative shrink-0 mr-3 border-r border-slate-200 dark:border-white/10 pr-3" ref={networkMenuRef}>
+          <button
+            type="button"
+            onClick={() => setIsNetworkMenuOpen((v) => !v)}
+            className="flex items-center gap-1.5 -my-1 py-1 text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase hover:text-slate-900 dark:hover:text-white transition-colors"
+            title="Switch network"
+          >
+            <Server size={12} className="text-slate-500" />
+            <span>{network}</span>
+            <ChevronDown size={10} className={`text-slate-500 transition-transform duration-200 ${isNetworkMenuOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {isNetworkMenuOpen && (
+            <div className="absolute top-full left-0 mt-2 w-40 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
+              <div className="p-1">
+                {ALL_NETWORKS.map((net) => (
+                  <button
+                    key={net}
+                    onClick={() => handleNetworkSwitch(net)}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold capitalize transition-colors ${
+                      network === net
+                        ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white'
+                        : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-700 dark:text-slate-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <div
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          net === 'mainnet' ? 'bg-emerald-500' : net === 'testnet' ? 'bg-amber-500' : 'bg-blue-500'
+                        }`}
+                      ></div>
+                      {net}
+                    </div>
+                    {network === net && <Check size={12} className="text-electric-violet" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         <div className="flex-1 flex items-center gap-2 overflow-hidden">
           <span className="text-xs font-mono text-slate-500 truncate" title={endpoint}>{endpoint}</span>
