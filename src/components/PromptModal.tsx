@@ -46,7 +46,7 @@ export const PromptModal: React.FC<PromptModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/5 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden relative"
+        className="bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/5 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden relative"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-electric-violet to-transparent opacity-50" />
