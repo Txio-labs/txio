@@ -113,6 +113,8 @@ export const RPCBuilder: React.FC = () => {
     const request = activeTab?.data as RequestItem;
     // The signer is whichever connected wallet matches this request's chain.
     const connectedAddress = request ? signerAddressFor(request, currentWallet) : null;
+    // Attached to history entries so the activity feed can filter/attribute by wallet.
+    const historyWallet = currentWallet ? { family: currentWallet.family, address: currentWallet.address } : null;
 
     const [isLoading, setIsLoading] = useState(false);
     const [isSignModalOpen, setIsSignModalOpen] = useState(false);
@@ -265,7 +267,7 @@ export const RPCBuilder: React.FC = () => {
 
             await runHooks(request.hooks, 'post', network, result);
 
-            appStore.addToHistory(request, status, duration, result);
+            appStore.addToHistory(request, status, duration, result, historyWallet);
 
             logCommandToTerminal({
                 command: commandLine,
@@ -305,7 +307,8 @@ export const RPCBuilder: React.FC = () => {
                 request,
                 rpcError?.status ?? 500,
                 rpcError?.duration ?? 0,
-                (error as { result?: unknown })?.result
+                (error as { result?: unknown })?.result,
+                historyWallet
             );
 
             logCommandToTerminal({
@@ -391,7 +394,7 @@ export const RPCBuilder: React.FC = () => {
 
             await runHooks(request.hooks, 'post', network, result);
 
-            appStore.addToHistory(request, status, duration, result);
+            appStore.addToHistory(request, status, duration, result, historyWallet);
 
             logCommandToTerminal({
                 command: commandLine,
@@ -431,7 +434,8 @@ export const RPCBuilder: React.FC = () => {
                 request,
                 rpcError?.status ?? 500,
                 rpcError?.duration ?? 0,
-                (error as { result?: unknown })?.result
+                (error as { result?: unknown })?.result,
+                historyWallet
             );
 
             logCommandToTerminal({

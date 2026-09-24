@@ -139,7 +139,8 @@ describe('EvmTransactionBuilder', () => {
             expect.anything(),
             200,
             expect.any(Number),
-            { decoded: '4210.55 USDC (4210550000)' }
+            { decoded: '4210.55 USDC (4210550000)' },
+            null
         );
     });
 
@@ -157,7 +158,8 @@ describe('EvmTransactionBuilder', () => {
             expect.anything(),
             500,
             expect.any(Number),
-            { error: 'Reverted: paused' }
+            { error: 'Reverted: paused' },
+            null
         );
     });
 });

@@ -5,12 +5,18 @@
  * checks against each endpoint (same mechanism the RPC Builder's header
  * uses), not fabricated numbers. Aptos has no RPC endpoint infrastructure in
  * this app yet (it's a REST API, not JSON-RPC) — it's omitted rather than
- * shown with invented data. The "Add Network" panel is a no-op placeholder
- * (see the TODO on its submit handler).
+ * shown with invented data.
+ *
+ * The "Add Network" panel adds a backup RPC endpoint to an existing
+ * chain+environment pair (the same AppSettings.*CustomRpc arrays the
+ * Settings page's "Network & RPC" editor and the RPC failover client both
+ * already read) — not a genuinely new chain. ChainId is a fixed 4-member
+ * union with no "custom chain" variant, so that's out of scope here.
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import {
     Activity,
+    AlertTriangle,
     Boxes,
     Copy,
     Loader2,
@@ -19,13 +25,22 @@ import {
     Shield,
     X
 } from 'lucide-react';
-import { useAppStore } from '@/lib/store';
-import { ALL_NETWORKS, ChainId, Network } from '@/types';
+import { appStore, useAppStore } from '@/lib/store';
+import { ALL_NETWORKS, AppSettings, ChainId, Network } from '@/types';
 import { EVM_NETWORKS, NETWORKS, SOLANA_NETWORKS, STELLAR_NETWORKS } from '@/lib/constants';
 import { getChainRpcHealth } from '@/services/suiService';
 
 type ChainFamily = 'sui' | 'evm' | 'solana' | 'stellar';
 type NetworkStatus = 'online' | 'degraded' | 'offline' | 'checking';
+
+type RpcSettingsKey = 'customRpc' | 'evmCustomRpc' | 'stellarCustomRpc' | 'solanaCustomRpc';
+
+const SETTINGS_KEY_FOR_CHAIN: Record<ChainFamily, RpcSettingsKey> = {
+    sui: 'customRpc',
+    evm: 'evmCustomRpc',
+    solana: 'solanaCustomRpc',
+    stellar: 'stellarCustomRpc'
+};
 
 const CHAIN_META: Record<ChainFamily, { label: string; color: string }> = {
     sui: { label: 'Sui', color: '#6fbcf0' },
@@ -98,12 +113,18 @@ const STATUS_META: Record<NetworkStatus, { label: string; dot: string; text: str
 const ROWS_PER_PAGE = 12;
 
 export const NetworksPage: React.FC = () => {
-    useAppStore();
+    const { settings } = useAppStore();
     const [search, setSearch] = useState('');
     const [chainFilter, setChainFilter] = useState<ChainFamily | 'all'>('all');
     const [page, setPage] = useState(1);
     const [isAddPanelOpen, setIsAddPanelOpen] = useState(false);
     const [rows, setRows] = useState<NetworkRow[]>(ALL_ROWS);
+
+    const [addChain, setAddChain] = useState<ChainFamily>('sui');
+    const [addNetwork, setAddNetwork] = useState<Network>('mainnet');
+    const [addRpcUrl, setAddRpcUrl] = useState('');
+    const [addError, setAddError] = useState<string | null>(null);
+    const [addSuccess, setAddSuccess] = useState(false);
 
     // Live health check per row — same `getChainRpcHealth` mechanism the RPC
     // Builder's header uses, run once on mount rather than mocked figures.
@@ -163,6 +184,60 @@ export const NetworksPage: React.FC = () => {
         ? Math.round(checkedRows.reduce((sum, r) => sum + r.latencyMs, 0) / checkedRows.length)
         : 0;
     const activeChainCount = new Set(rows.map((r) => r.chain)).size;
+
+    const resetAddForm = () => {
+        setAddChain('sui');
+        setAddNetwork('mainnet');
+        setAddRpcUrl('');
+        setAddError(null);
+        setAddSuccess(false);
+    };
+
+    const closeAddPanel = () => {
+        setIsAddPanelOpen(false);
+        resetAddForm();
+    };
+
+    const handleAddNetwork = () => {
+        setAddError(null);
+        const url = addRpcUrl.trim();
+
+        if (!url) {
+            setAddError('Enter an RPC URL.');
+            return;
+        }
+
+        try {
+            const parsed = new URL(url);
+            if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:' && parsed.protocol !== 'ws:' && parsed.protocol !== 'wss:') {
+                setAddError('URL must use http(s):// or ws(s)://.');
+                return;
+            }
+        } catch {
+            setAddError('Enter a valid URL, e.g. https://...');
+            return;
+        }
+
+        const settingsKey = SETTINGS_KEY_FOR_CHAIN[addChain];
+        const existing = settings[settingsKey][addNetwork] ?? [];
+        if (existing.includes(url)) {
+            setAddError('This endpoint is already configured for this chain and network.');
+            return;
+        }
+
+        appStore.updateSettings({
+            [settingsKey]: {
+                ...settings[settingsKey],
+                [addNetwork]: [...existing, url]
+            }
+        } as Partial<AppSettings>);
+
+        setAddSuccess(true);
+        setAddRpcUrl('');
+        setTimeout(() => {
+            closeAddPanel();
+        }, 900);
+    };
 
     return (
         <div className="h-full overflow-y-auto custom-scrollbar bg-white dark:bg-near-black p-6 md:p-8 relative">
@@ -366,16 +441,16 @@ export const NetworksPage: React.FC = () => {
                 <>
                     <div
                         className="fixed inset-0 z-40 bg-black/20 dark:bg-black/40"
-                        onClick={() => setIsAddPanelOpen(false)}
+                        onClick={closeAddPanel}
                     />
                     <div className="fixed top-0 right-0 h-full w-full max-w-sm bg-white dark:bg-[#18181b] border-l border-slate-200 dark:border-white/10 z-50 shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
                         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-white/10 shrink-0">
                             <div>
                                 <h2 className="text-sm font-bold text-slate-900 dark:text-white">Add Network</h2>
-                                <p className="text-[11px] text-slate-500 mt-0.5">Configure a new blockchain network or custom RPC endpoint.</p>
+                                <p className="text-[11px] text-slate-500 mt-0.5">Add a backup RPC endpoint for an existing chain and environment.</p>
                             </div>
                             <button
-                                onClick={() => setIsAddPanelOpen(false)}
+                                onClick={closeAddPanel}
                                 className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
                             >
                                 <X size={16} />
@@ -384,56 +459,58 @@ export const NetworksPage: React.FC = () => {
 
                         <div className="flex-1 overflow-y-auto custom-scrollbar px-5 py-4 space-y-4">
                             <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-700 dark:text-slate-200">Network Name *</label>
-                                <input
-                                    placeholder="e.g. Ethereum Mainnet"
-                                    className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black px-3 text-xs text-slate-900 dark:text-white outline-none focus:border-electric-violet/50"
-                                />
-                            </div>
-                            <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-slate-700 dark:text-slate-200">Blockchain *</label>
-                                <select className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black px-3 text-xs text-slate-700 dark:text-slate-200 outline-none focus:border-electric-violet/50">
-                                    <option>Select blockchain</option>
+                                <select
+                                    value={addChain}
+                                    onChange={(e) => setAddChain(e.target.value as ChainFamily)}
+                                    className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black px-3 text-xs text-slate-700 dark:text-slate-200 outline-none focus:border-electric-violet/50"
+                                >
                                     {(Object.keys(CHAIN_META) as ChainFamily[]).map((c) => (
-                                        <option key={c}>{CHAIN_META[c].label}</option>
+                                        <option key={c} value={c}>{CHAIN_META[c].label}</option>
                                     ))}
                                 </select>
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-slate-700 dark:text-slate-200">Environment *</label>
-                                <select className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black px-3 text-xs text-slate-700 dark:text-slate-200 outline-none focus:border-electric-violet/50">
-                                    <option>Production</option>
-                                    <option>Staging</option>
-                                    <option>Development</option>
+                                <select
+                                    value={addNetwork}
+                                    onChange={(e) => setAddNetwork(e.target.value as Network)}
+                                    className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black px-3 text-xs text-slate-700 dark:text-slate-200 outline-none focus:border-electric-violet/50"
+                                >
+                                    {ALL_NETWORKS.map((net) => (
+                                        <option key={net} value={net}>{ENV_LABEL[net]} ({net})</option>
+                                    ))}
                                 </select>
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-slate-700 dark:text-slate-200">RPC URL *</label>
                                 <input
+                                    value={addRpcUrl}
+                                    onChange={(e) => { setAddRpcUrl(e.target.value); setAddError(null); }}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') handleAddNetwork(); }}
                                     placeholder="https://..."
                                     className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black px-3 text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-electric-violet/50"
                                 />
+                                <p className="text-[10px] text-slate-500">
+                                    Tried before the built-in default for {CHAIN_META[addChain].label} {ENV_LABEL[addNetwork]}. Same list as Settings → Network & RPC.
+                                </p>
                             </div>
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-700 dark:text-slate-200">Chain ID</label>
-                                <input
-                                    placeholder="e.g. 1 (optional)"
-                                    className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black px-3 text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-electric-violet/50"
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-700 dark:text-slate-200">Authentication (optional)</label>
-                                <select className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black px-3 text-xs text-slate-700 dark:text-slate-200 outline-none focus:border-electric-violet/50">
-                                    <option>None</option>
-                                    <option>API Key</option>
-                                    <option>Bearer Token</option>
-                                </select>
-                            </div>
+
+                            {addError && (
+                                <div className="flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/10 px-3 py-2 text-[11px] text-red-600 dark:text-red-400">
+                                    <AlertTriangle size={13} className="shrink-0" /> {addError}
+                                </div>
+                            )}
+                            {addSuccess && (
+                                <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-900/10 px-3 py-2 text-[11px] text-emerald-600 dark:text-emerald-400">
+                                    Endpoint added.
+                                </div>
+                            )}
                         </div>
 
                         <div className="px-5 py-4 border-t border-slate-200 dark:border-white/10 shrink-0">
                             <button
-                                onClick={() => setIsAddPanelOpen(false)}
+                                onClick={handleAddNetwork}
                                 className="w-full h-10 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-near-black text-sm font-bold hover:opacity-90 transition-opacity"
                             >
                                 Add Network

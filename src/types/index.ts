@@ -287,6 +287,11 @@ export interface HistoryItem extends RequestItem {
   // TxResult/executeTransaction. Absent for RPC entries and for history
   // rows fetched before this field existed on the backend.
   executionResult?: unknown;
+  // Which linked wallet executed this request — the active signer's family
+  // and address at the time it ran. Absent for entries recorded before
+  // multi-wallet linking, or for RPC calls made with no wallet connected.
+  walletFamily?: string;
+  walletAddress?: string;
 }
 
 export interface RequestHistoryItem {

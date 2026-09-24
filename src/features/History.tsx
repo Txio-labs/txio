@@ -1,31 +1,57 @@
 
 import React, { useState, useMemo } from 'react';
-import { Clock, CheckCircle2, XCircle, Search, Filter, Trash2, Terminal, Layers, Calendar, ArrowRight, LayoutList, ExternalLink } from 'lucide-react';
+import { Clock, CheckCircle2, XCircle, Search, Trash2, Terminal, Layers, Calendar, ArrowRight, LayoutList, ExternalLink, Download, AlertTriangle } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
-import { RequestType } from '../types';
+import { ChainId, HistoryItem, RequestType } from '../types';
+import { RPC_CHAINS } from '@/lib/constants';
+import { exportHistory } from '@/lib/exportHistory';
 
 type HistoryFilter = 'ALL' | 'RPC' | 'TRANSACTION' | 'ERROR';
+
+// The backend caps stored history at 500 entries per user — if a filtered
+// view still hits this, older entries may already be pruned rather than
+// simply hidden by the current filters, which matters for an accounting
+// export.
+const HISTORY_CAP = 500;
 
 export const HistoryFeature: React.FC = () => {
     const { history, currentWorkspaceId } = useAppStore();
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState<HistoryFilter>('ALL');
+    const [chainFilter, setChainFilter] = useState<ChainId | 'all'>('all');
+    const [walletFilter, setWalletFilter] = useState<string | 'all'>('all');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
     const [confirmClear, setConfirmClear] = useState(false);
+
+    const knownWallets = useMemo(() => {
+        const seen = new Map<string, { address: string; family?: string }>();
+        for (const item of history ?? []) {
+            if (item?.walletAddress && !seen.has(item.walletAddress)) {
+                seen.set(item.walletAddress, { address: item.walletAddress, family: item.walletFamily });
+            }
+        }
+        return Array.from(seen.values());
+    }, [history]);
 
     const filteredHistory = useMemo(() => {
         if (!history) return [];
-        return history.slice().reverse().filter(item => {
+        const fromMs = dateFrom ? new Date(dateFrom).getTime() : null;
+        // Include the entire "to" day, not just its midnight instant.
+        const toMs = dateTo ? new Date(dateTo).getTime() + 24 * 60 * 60 * 1000 - 1 : null;
+
+        return history.slice().reverse().filter((item): item is HistoryItem => {
             if (!item) return false;
-            
+
             // Filter by Workspace
             if (item.workspaceId && item.workspaceId !== currentWorkspaceId) return false;
 
             const searchLower = search.toLowerCase();
             const name = item.name || '';
-            const method = item.type === RequestType.RPC 
+            const method = item.type === RequestType.RPC
                 ? (item.rpcParams?.method || '')
                 : (item.txType || '');
-            
+
             const matchesSearch = name.toLowerCase().includes(searchLower) || method.toLowerCase().includes(searchLower);
             if (!matchesSearch) return false;
 
@@ -33,11 +59,17 @@ export const HistoryFeature: React.FC = () => {
             if (filter === 'TRANSACTION' && item.type !== RequestType.TRANSACTION) return false;
             if (filter === 'ERROR' && (item.status && item.status < 400)) return false;
 
+            if (chainFilter !== 'all' && item.rpcParams?.chain !== chainFilter) return false;
+            if (walletFilter !== 'all' && item.walletAddress !== walletFilter) return false;
+
+            if (fromMs !== null && (!item.timestamp || item.timestamp < fromMs)) return false;
+            if (toMs !== null && (!item.timestamp || item.timestamp > toMs)) return false;
+
             return true;
         });
-    }, [history, search, filter, currentWorkspaceId]);
+    }, [history, search, filter, chainFilter, walletFilter, dateFrom, dateTo, currentWorkspaceId]);
 
-    const handleReplay = (item: any) => {
+    const handleReplay = (item: HistoryItem) => {
         const type = 'rpc';
         appStore.openTab(type, {
             ...item,
@@ -64,7 +96,7 @@ export const HistoryFeature: React.FC = () => {
         }).format(new Date(timestamp));
     };
 
-    const renderDetails = (item: any) => {
+    const renderDetails = (item: HistoryItem) => {
         if (item.type === RequestType.RPC) {
             const paramsStr = JSON.stringify(item.rpcParams?.params || []);
             const truncatedParams = paramsStr.length > 80 ? paramsStr.substring(0, 80) + '...' : paramsStr;
@@ -86,7 +118,7 @@ export const HistoryFeature: React.FC = () => {
         }
     };
 
-    const explorerUrlFor = (item: any): string | undefined => {
+    const explorerUrlFor = (item: HistoryItem): string | undefined => {
         const result = item.executionResult;
         return result && typeof result === 'object'
             ? (result as { explorerUrl?: string }).explorerUrl
@@ -115,22 +147,49 @@ export const HistoryFeature: React.FC = () => {
                         </h1>
                         <p className="text-xs text-slate-500 mt-1">Full audit log of executions in this workspace.</p>
                     </div>
-                    {filteredHistory.length > 0 && (
-                        <button
-                            onClick={handleClear}
-                            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                                confirmClear
-                                ? 'bg-red-600 text-white shadow-lg'
-                                : 'text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20'
-                            }`}
-                        >
-                            <Trash2 size={14} /> {confirmClear ? 'Confirm Clear' : 'Clear Log'}
-                        </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                        {filteredHistory.length > 0 && (
+                            <div className="flex bg-white dark:bg-near-black p-1 rounded-lg border border-slate-200 dark:border-white/5">
+                                <button
+                                    onClick={() => exportHistory(filteredHistory, 'csv')}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+                                    title="Export the filtered list as CSV"
+                                >
+                                    <Download size={12} /> CSV
+                                </button>
+                                <button
+                                    onClick={() => exportHistory(filteredHistory, 'json')}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+                                    title="Export the filtered list as JSON"
+                                >
+                                    <Download size={12} /> JSON
+                                </button>
+                            </div>
+                        )}
+                        {filteredHistory.length > 0 && (
+                            <button
+                                onClick={handleClear}
+                                className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                                    confirmClear
+                                    ? 'bg-red-600 text-white shadow-lg'
+                                    : 'text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20'
+                                }`}
+                            >
+                                <Trash2 size={14} /> {confirmClear ? 'Confirm Clear' : 'Clear Log'}
+                            </button>
+                        )}
+                    </div>
                 </div>
 
-                <div className="flex gap-4 items-center">
-                    <div className="relative flex-1 max-w-md group">
+                {filteredHistory.length >= HISTORY_CAP && (
+                    <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-900/10 px-3 py-2 text-[11px] text-amber-700 dark:text-amber-400">
+                        <AlertTriangle size={13} className="shrink-0" />
+                        Showing the most recent {HISTORY_CAP} entries — older history may not be included in this view or export.
+                    </div>
+                )}
+
+                <div className="flex gap-4 items-center flex-wrap">
+                    <div className="relative flex-1 min-w-[200px] max-w-md group">
                         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-electric-violet transition-colors" />
                         <input
                             value={search}
@@ -154,6 +213,56 @@ export const HistoryFeature: React.FC = () => {
                                 {f === 'TRANSACTION' ? 'TX' : f}
                             </button>
                         ))}
+                    </div>
+
+                    <select
+                        value={chainFilter}
+                        onChange={(e) => setChainFilter(e.target.value as ChainId | 'all')}
+                        className="h-9 rounded-lg border border-slate-200 dark:border-white/5 bg-white dark:bg-near-black px-3 text-xs font-bold text-slate-600 dark:text-slate-300 outline-none focus:border-electric-violet"
+                    >
+                        <option value="all">All chains</option>
+                        {RPC_CHAINS.map((c) => (
+                            <option key={c.id} value={c.id}>{c.label}</option>
+                        ))}
+                    </select>
+
+                    {knownWallets.length > 0 && (
+                        <select
+                            value={walletFilter}
+                            onChange={(e) => setWalletFilter(e.target.value)}
+                            className="h-9 rounded-lg border border-slate-200 dark:border-white/5 bg-white dark:bg-near-black px-3 text-xs font-bold text-slate-600 dark:text-slate-300 outline-none focus:border-electric-violet max-w-[160px]"
+                        >
+                            <option value="all">All wallets</option>
+                            {knownWallets.map((w) => (
+                                <option key={w.address} value={w.address}>
+                                    {w.family ? `${w.family} · ` : ''}{w.address.slice(0, 6)}...{w.address.slice(-4)}
+                                </option>
+                            ))}
+                        </select>
+                    )}
+
+                    <div className="flex items-center gap-1.5">
+                        <input
+                            type="date"
+                            value={dateFrom}
+                            onChange={(e) => setDateFrom(e.target.value)}
+                            className="h-9 rounded-lg border border-slate-200 dark:border-white/5 bg-white dark:bg-near-black px-2 text-xs text-slate-600 dark:text-slate-300 outline-none focus:border-electric-violet"
+                        />
+                        <span className="text-xs text-slate-400">–</span>
+                        <input
+                            type="date"
+                            value={dateTo}
+                            onChange={(e) => setDateTo(e.target.value)}
+                            className="h-9 rounded-lg border border-slate-200 dark:border-white/5 bg-white dark:bg-near-black px-2 text-xs text-slate-600 dark:text-slate-300 outline-none focus:border-electric-violet"
+                        />
+                        {(dateFrom || dateTo) && (
+                            <button
+                                onClick={() => { setDateFrom(''); setDateTo(''); }}
+                                className="text-[10px] font-bold text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                            >
+                                Clear
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

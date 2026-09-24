@@ -135,6 +135,8 @@ interface BackendHistoryEntry {
     network: string;
     method?: string | null;
     params?: unknown;
+    wallet_family?: string | null;
+    wallet_address?: string | null;
     tx_params?: unknown;
     result?: unknown;
     status: number;
@@ -1501,6 +1503,8 @@ class ApiService {
         network: string;
         method?: string;
         params?: unknown;
+        walletFamily?: string;
+        walletAddress?: string;
         // Chain-native transaction params (Sui moveParams, EVM evmTxParams,
         // Solana solanaTxParams, Stellar stellarTxParams) and the execution
         // outcome — see transactionService.ts's getTxParamsForHistory and
@@ -1520,6 +1524,8 @@ class ApiService {
                 network: entry.network,
                 method: entry.method,
                 params: entry.params,
+                wallet_family: entry.walletFamily,
+                wallet_address: entry.walletAddress,
                 tx_params: entry.txParams,
                 result: entry.result,
                 status: entry.status,
@@ -1528,8 +1534,12 @@ class ApiService {
         });
     }
 
-    async getHistory(workspaceId?: string): Promise<BackendHistoryEntry[]> {
-        const query = workspaceId ? `?workspace_id=${encodeURIComponent(workspaceId)}` : '';
+    async getHistory(workspaceId?: string, walletAddress?: string, walletFamily?: string): Promise<BackendHistoryEntry[]> {
+        const params = new URLSearchParams();
+        if (workspaceId) params.set('workspace_id', workspaceId);
+        if (walletAddress) params.set('wallet_address', walletAddress);
+        if (walletFamily) params.set('wallet_family', walletFamily);
+        const query = params.toString() ? `?${params.toString()}` : '';
         return this.request<BackendHistoryEntry[]>(`/history${query}`);
     }
 

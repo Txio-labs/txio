@@ -1893,7 +1893,11 @@ export const appStore = {
         // explorer URL — or the error) from transactionService.ts. Only
         // meaningful for TRANSACTION requests; omitted for RPC calls, whose
         // response is already captured by params/method.
-        result?: unknown
+        result?: unknown,
+        // The wallet that signed/sent this request, if any — the active
+        // signer at execution time. Omitted for RPC calls made with no
+        // wallet connected.
+        wallet?: { family: string; address: string } | null
     ) {
         const txParams = getTxParamsForHistory(item);
 
@@ -1919,7 +1923,10 @@ export const appStore = {
                 state.currentWorkspaceId ??
                 undefined,
 
-            executionResult: result
+            executionResult: result,
+
+            walletFamily: wallet?.family,
+            walletAddress: wallet?.address
         };
 
         // Optimistic local update — the record round-trips to the backend
@@ -1947,6 +1954,8 @@ export const appStore = {
                 network: state.network,
                 method: item.rpcParams?.method,
                 params: item.rpcParams?.params,
+                walletFamily: wallet?.family,
+                walletAddress: wallet?.address,
                 txParams,
                 result,
                 status,
@@ -2310,6 +2319,10 @@ export const appStore = {
                                 : undefined,
                         executionResult:
                             entry.result ?? undefined,
+                        walletFamily:
+                            entry.wallet_family ?? undefined,
+                        walletAddress:
+                            entry.wallet_address ?? undefined,
                         timestamp: new Date(
                             entry.executed_at
                         ).getTime(),

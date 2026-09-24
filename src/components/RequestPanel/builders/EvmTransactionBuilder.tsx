@@ -203,11 +203,13 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
       // `decoded` matches the field name TxTracker/simulateEvm already use
       // for a read return value, so this reads the same way whether it's
       // shown live or reopened later from History.
-      appStore.addToHistory(request, 200, Math.round(performance.now() - start), { decoded: formatted });
+      const historyWallet = activeAddress ? { family: 'evm', address: activeAddress } : null;
+      appStore.addToHistory(request, 200, Math.round(performance.now() - start), { decoded: formatted }, historyWallet);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Read failed.';
       setReadState({ loading: false, result: null, error: message });
-      appStore.addToHistory(request, 500, Math.round(performance.now() - start), { error: message });
+      const historyWallet = activeAddress ? { family: 'evm', address: activeAddress } : null;
+      appStore.addToHistory(request, 500, Math.round(performance.now() - start), { error: message }, historyWallet);
     }
   };
 
@@ -371,16 +373,28 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
           </div>
         ) : (
           <div className="space-y-2">
-            <label className={labelClass} htmlFor="evm-fn">Function</label>
+            <div className="flex items-center gap-2">
+              <span className={labelClass}>Function</span>
+              {!params.functionSignature.trim() && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500">
+                  Raw Calldata mode
+                </span>
+              )}
+            </div>
             <input
               id="evm-fn"
               className={inputClass}
               value={params.functionSignature}
               onChange={(e) => setSignature(e.target.value)}
-              placeholder="transfer(address to, uint256 amount) — or load the ABI above; empty for a plain transfer"
+              placeholder="transfer(address to, uint256 amount) — or load the ABI above; leave empty for raw calldata"
               disabled={isReadOnly}
             />
             {sigError && <p className="text-[11px] text-rose-500">{sigError}</p>}
+            {!params.functionSignature.trim() && (
+              <p className="text-[11px] text-slate-500">
+                No function signature — this call sends the raw calldata below directly, unencoded.
+              </p>
+            )}
           </div>
         )}
 
@@ -470,13 +484,13 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
 
         {!activeFn && !groups && (
           <div className="space-y-2">
-            <label className={labelClass} htmlFor="evm-data">Calldata (optional)</label>
+            <label className={labelClass} htmlFor="evm-data">Raw Calldata (optional)</label>
             <input
               id="evm-data"
               className={inputClass}
               value={params.data}
               onChange={(e) => update({ data: e.target.value })}
-              placeholder="0x — raw hex calldata"
+              placeholder="0x — raw hex calldata, sent as-is"
               disabled={isReadOnly}
             />
           </div>
