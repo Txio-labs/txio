@@ -28,6 +28,7 @@ import {
     MoreHorizontal,
     ShieldCheck,
     Menu,
+    KeyRound,
 } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { Tab } from './ui/Tabs';
@@ -69,6 +70,7 @@ const NAV_RAIL_TOP: NavRailItem[] = [
     { id: 'workspace_overview', label: 'Workspaces', icon: Briefcase },
     { id: 'infrastructure', label: 'Networks', icon: NetworkIcon },
     { id: 'profile', label: 'Wallets', icon: WalletIcon },
+    { id: 'approvals', label: 'Approvals', icon: KeyRound },
 ];
 
 const NAV_RAIL_BOTTOM: NavRailItem[] = [
