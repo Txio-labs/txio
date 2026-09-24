@@ -75,6 +75,25 @@ describe('AdminPage', () => {
         seed();
     });
 
+    it('shows a skeleton table and stat cards while the first load is in flight', async () => {
+        let resolveOverview!: (value: unknown) => void;
+        api.getAdminOverview.mockReturnValue(new Promise((resolve) => { resolveOverview = resolve; }));
+
+        render(<AdminPage />);
+
+        // No real data yet, so no admin/user content is visible...
+        expect(screen.queryByText('ada@example.com')).not.toBeInTheDocument();
+        // ...but the table shape and stat grid are already there, matching
+        // the real layout, not a bare spinner.
+        expect(screen.getAllByTestId('skeleton').length).toBeGreaterThan(0);
+        expect(screen.getByRole('columnheader', { name: 'User' })).toBeInTheDocument();
+
+        resolveOverview(overview);
+        expect(await screen.findByText('ada@example.com')).toBeInTheDocument();
+        // Skeleton is gone once real content has loaded.
+        expect(screen.queryByTestId('skeleton')).not.toBeInTheDocument();
+    });
+
     it('shows platform totals and the user list by default', async () => {
         render(<AdminPage />);
 

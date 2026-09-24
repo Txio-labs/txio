@@ -27,6 +27,7 @@ import {
     Activity,
     MoreHorizontal,
     ShieldCheck,
+    Menu,
 } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { Tab } from './ui/Tabs';
@@ -117,6 +118,7 @@ export const Layout: React.FC<LayoutProps> = ({
     const [isNotifOpen, setIsNotifOpen] = useState(false);
     const [isWsDropdownOpen, setIsWsDropdownOpen] = useState(false);
     const [isTabMenuOpen, setIsTabMenuOpen] = useState(false);
+    const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
     const networkMenuRef = useRef<HTMLDivElement>(null);
     const notifRef = useRef<HTMLDivElement>(null);
     const wsMenuRef = useRef<HTMLDivElement>(null);
@@ -211,11 +213,25 @@ export const Layout: React.FC<LayoutProps> = ({
             )}
 
             <div className="flex-1 flex min-h-0">
+                {/* Below md the rail can't sit permanently beside a full-width
+                    main view, so it's hidden by default and opens as an
+                    off-canvas drawer from the hamburger trigger in the header. */}
+                {isMobileNavOpen && (
+                    <button
+                        onClick={() => setIsMobileNavOpen(false)}
+                        aria-label="Close navigation"
+                        className="md:hidden fixed inset-0 z-30 bg-near-black/50 animate-in fade-in duration-150"
+                    />
+                )}
                 {/* Icon + label nav rail */}
-                <nav className="w-[76px] shrink-0 flex flex-col items-center bg-slate-50 dark:bg-near-black border-r border-slate-200 dark:border-white/10 z-20 py-3">
+                <nav
+                    className={`fixed inset-y-0 left-0 z-40 md:static md:z-20 w-[76px] shrink-0 flex flex-col items-center bg-slate-50 dark:bg-near-black border-r border-slate-200 dark:border-white/10 py-3 transition-transform duration-200 md:translate-x-0 ${
+                        isMobileNavOpen ? 'translate-x-0' : '-translate-x-full'
+                    }`}
+                >
                     <button
                         className="flex flex-col items-center gap-1 mb-4 group cursor-pointer"
-                        onClick={() => appStore.setActiveTab(null)}
+                        onClick={() => { appStore.setActiveTab(null); setIsMobileNavOpen(false); }}
                         title="TXIO"
                     >
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
@@ -234,7 +250,7 @@ export const Layout: React.FC<LayoutProps> = ({
                             return (
                                 <button
                                     key={item.id}
-                                    onClick={() => appStore.openTab(item.id)}
+                                    onClick={() => { appStore.openTab(item.id); setIsMobileNavOpen(false); }}
                                     title={item.label}
                                     className={`w-full flex flex-col items-center gap-1 py-2 rounded-lg transition-all ${
                                         isActive
@@ -255,7 +271,7 @@ export const Layout: React.FC<LayoutProps> = ({
                             return (
                                 <button
                                     key={item.id}
-                                    onClick={() => appStore.openTab(item.id)}
+                                    onClick={() => { appStore.openTab(item.id); setIsMobileNavOpen(false); }}
                                     title={item.label}
                                     className={`w-full flex flex-col items-center gap-1 py-2 rounded-lg transition-all ${
                                         isActive
@@ -274,8 +290,16 @@ export const Layout: React.FC<LayoutProps> = ({
                 <div className="flex-1 flex flex-col min-w-0">
                     {/* Top bar: workspace, chain, network, search, notifications, wallet, profile */}
                     <header className="h-12 bg-slate-50 dark:bg-near-black border-b border-slate-200 dark:border-white/10 flex items-center px-3 shrink-0 z-20 gap-1.5">
+                            <button
+                                onClick={() => setIsMobileNavOpen(true)}
+                                aria-label="Open navigation"
+                                className="md:hidden p-1.5 -ml-1 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors shrink-0"
+                            >
+                                <Menu size={16} />
+                            </button>
+
                             {currentWorkspace && (
-                                <div className="relative" ref={wsMenuRef}>
+                                <div className="relative shrink-0" ref={wsMenuRef}>
                                     <button
                                         onClick={() => setIsWsDropdownOpen((o) => !o)}
                                         className={`flex items-center gap-1.5 px-2 py-1 rounded-full bg-white dark:bg-dark-indigo-glow border text-xs shadow-sm transition-colors ${
@@ -284,8 +308,8 @@ export const Layout: React.FC<LayoutProps> = ({
                                         title="Switch workspace"
                                     >
                                         <LayoutGrid size={11} className="text-slate-500" />
-                                        <span className="text-slate-600 dark:text-slate-300 font-medium truncate max-w-[120px]">{currentWorkspace.name}</span>
-                                        <ChevronDown size={10} className={`text-slate-500 transition-transform duration-200 shrink-0 ${isWsDropdownOpen ? 'rotate-180' : ''}`} />
+                                        <span className="hidden sm:inline text-slate-600 dark:text-slate-300 font-medium truncate max-w-[120px]">{currentWorkspace.name}</span>
+                                        <ChevronDown size={10} className={`hidden sm:block text-slate-500 transition-transform duration-200 shrink-0 ${isWsDropdownOpen ? 'rotate-180' : ''}`} />
                                     </button>
 
                                     {isWsDropdownOpen && (
@@ -331,16 +355,16 @@ export const Layout: React.FC<LayoutProps> = ({
                             )}
 
                             {activeChainLabel && (
-                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 text-xs shadow-sm">
+                            <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-full bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 text-xs shadow-sm shrink-0">
                                 <Globe size={11} className="text-slate-500" />
                                 <span className="text-slate-600 dark:text-slate-300 font-medium truncate max-w-[110px]">{activeChainLabel}</span>
                             </div>
                             )}
 
-                            <div className="relative" ref={networkMenuRef}>
+                            <div className="relative shrink-0" ref={networkMenuRef}>
                                 <button
                                     onClick={() => setIsNetworkMenuOpen(!isNetworkMenuOpen)}
-                                    className={`flex items-center gap-1 px-2 py-1 rounded-full bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 text-xs hover:bg-slate-100 dark:hover:bg-[#111] transition-all hover:border-slate-300 dark:hover:border-white/20 shadow-sm ${isNetworkMenuOpen ? 'border-slate-600 bg-slate-200 dark:bg-slate-800' : ''} w-24`}
+                                    className={`flex items-center gap-1 px-2 py-1 rounded-full bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 text-xs hover:bg-slate-100 dark:hover:bg-[#111] transition-all hover:border-slate-300 dark:hover:border-white/20 shadow-sm ${isNetworkMenuOpen ? 'border-slate-600 bg-slate-200 dark:bg-slate-800' : ''} w-24 shrink-0`}
                                     title="Network"
                                 >
                                     <div className={`w-1.5 h-1.5 rounded-full ${rpcHealth?.status === 'healthy' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' : rpcHealth?.status === 'degraded' ? 'bg-amber-500' : 'bg-red-500'} animate-pulse`}></div>
@@ -387,14 +411,14 @@ export const Layout: React.FC<LayoutProps> = ({
                                 )}
                             </div>
 
-                            <div className="flex-1 flex justify-center px-2">
+                            <div className="flex-1 flex justify-center px-2 min-w-0">
                                 <button
                                     onClick={() => appStore.setCommandPalette(true)}
-                                    className="flex items-center gap-1.5 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/20 hover:bg-slate-100 dark:hover:bg-[#111] px-2.5 py-1 rounded-full text-xs text-slate-400 w-full max-w-md transition-all group shadow-inner"
+                                    className="flex items-center justify-center sm:justify-start gap-1.5 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/20 hover:bg-slate-100 dark:hover:bg-[#111] p-1.5 sm:px-2.5 sm:py-1 rounded-full text-xs text-slate-400 w-8 sm:w-full sm:max-w-md transition-all group shadow-inner shrink-0 sm:shrink"
                                     title="Search requests, collections, networks... (Ctrl+K)"
                                 >
-                                    <Search size={11} className="group-hover:text-electric-violet" />
-                                    <span className="whitespace-nowrap">Search requests, collections, networks...</span>
+                                    <Search size={11} className="group-hover:text-electric-violet shrink-0" />
+                                    <span className="hidden sm:inline whitespace-nowrap truncate">Search requests, collections, networks...</span>
                                     <div className="ml-auto hidden md:flex items-center gap-0.5">
                                         <span className="bg-slate-100 dark:bg-white/5 px-1 rounded text-[9px] text-slate-500 group-hover:text-slate-600 dark:text-slate-300">⌘</span>
                                         <span className="bg-slate-100 dark:bg-white/5 px-1 rounded text-[9px] text-slate-500 group-hover:text-slate-600 dark:text-slate-300">K</span>
@@ -402,7 +426,7 @@ export const Layout: React.FC<LayoutProps> = ({
                                 </button>
                             </div>
 
-                            <div className="relative" ref={notifRef}>
+                            <div className="relative shrink-0" ref={notifRef}>
                                 <button
                                     onClick={() => setIsNotifOpen((o) => !o)}
                                     className={`p-1.5 rounded hover:bg-slate-100 dark:hover:bg-white/10 transition-colors relative ${isNotifOpen ? 'text-electric-violet' : 'text-slate-500'}`}
@@ -434,7 +458,7 @@ export const Layout: React.FC<LayoutProps> = ({
 
                             <button
                                 onClick={openModal}
-                                className={`flex items-center gap-1.5 px-2 py-1 rounded-full border text-xs font-medium transition-all shadow-sm ${
+                                className={`flex items-center gap-1.5 px-2 py-1 rounded-full border text-xs font-medium transition-all shadow-sm shrink-0 ${
                                     isConnected
                                         ? 'bg-white dark:bg-dark-indigo-glow border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-white/20'
                                         : 'bg-electric-violet/10 border-electric-violet/20 text-electric-violet hover:bg-electric-violet/20'
@@ -529,9 +553,20 @@ export const Layout: React.FC<LayoutProps> = ({
                         </main>
 
                         {isInspectorOpen && (
-                            <aside className="w-80 bg-slate-50 dark:bg-near-black border-l border-slate-200 dark:border-white/10 flex flex-col shrink-0 z-10 shadow-2xl">
-                                {inspector}
-                            </aside>
+                            <>
+                                {/* Below md the panel can't dock beside a full-width main
+                                    view without clipping its own content, so it becomes a
+                                    full-screen overlay instead — same panel, same close
+                                    button, just not squeezed into the row. */}
+                                <button
+                                    onClick={() => appStore.toggleInspector()}
+                                    aria-label="Close inspector overlay"
+                                    className="md:hidden fixed inset-0 z-30 bg-near-black/50 animate-in fade-in duration-150"
+                                />
+                                <aside className="fixed inset-y-0 right-0 z-40 w-full max-w-sm md:static md:z-10 md:w-80 md:max-w-none bg-slate-50 dark:bg-near-black border-l border-slate-200 dark:border-white/10 flex flex-col shrink-0 shadow-2xl animate-in slide-in-from-right duration-200 md:animate-none">
+                                    {inspector}
+                                </aside>
+                            </>
                         )}
                     </div>
                 </div>

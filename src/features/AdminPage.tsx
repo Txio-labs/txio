@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { apiService, ApiError } from '@/services/api';
 import { appStore, useAppStore } from '@/lib/store';
+import { SkeletonRow, SkeletonStat } from '@/components/ui/Skeleton';
 import type {
     AdminCollection,
     AdminOverview,
@@ -295,7 +296,7 @@ export const AdminPage: React.FC = () => {
                     </button>
                 </div>
 
-                {o && (
+                {o ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                         <StatCard label="Users" value={o.users} hint={`+${o.signups_last_7d} in 7 days`} />
                         <StatCard label="Requests run" value={o.history_entries} hint={`${o.requests_last_24h} in 24h`} />
@@ -303,6 +304,10 @@ export const AdminPage: React.FC = () => {
                         <StatCard label="Collections" value={o.collections} hint={`${o.saved_requests} saved requests`} />
                         <StatCard label="Workspaces" value={o.workspaces} />
                         <StatCard label="Sessions" value={o.active_sessions} hint={`${o.admins} admin${o.admins === 1 ? '' : 's'}`} />
+                    </div>
+                ) : loading && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                        {Array.from({ length: 6 }).map((_, i) => <SkeletonStat key={i} />)}
                     </div>
                 )}
 
@@ -347,9 +352,14 @@ export const AdminPage: React.FC = () => {
                 )}
 
                 {loading && !data && (
-                    <div className="flex items-center justify-center gap-2 py-20 text-xs text-slate-500">
-                        <Loader2 size={16} className="animate-spin" /> Loading admin data…
-                    </div>
+                    <table className="w-full min-w-[720px]">
+                        <thead className="sticky top-0 bg-white dark:bg-near-black border-b border-slate-200 dark:border-white/5">
+                            <tr><Th>User</Th><Th>Linked</Th><Th>Collections</Th><Th>Requests</Th><Th>Last active</Th><Th>Joined</Th><Th><span className="sr-only">Actions</span></Th></tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
+                            {Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} columns={7} />)}
+                        </tbody>
+                    </table>
                 )}
 
                 {data && (
