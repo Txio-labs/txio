@@ -1,20 +1,28 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     AlertTriangle,
+    ArrowDownRight,
     ArrowRight,
+    ArrowUpRight,
     FileText,
+    Loader2,
     Shield,
     Wallet,
     X
 } from 'lucide-react';
 
 import { ConnectWalletButton } from '@/components/wallet/ConnectWalletButton';
+import { VerificationBadge } from '@/components/ui/VerificationBadge';
 import type { ConnectedWallet } from '@/wallet';
 import { shortenAddress } from '@/wallet';
 
-import { RequestItem } from '../types';
+import { Network, RequestItem } from '../types';
 import {
     describeTransaction,
+    getTxTargetAddress,
+    simulateTransaction,
+    summarizeSimulation,
+    SimulationSummary,
     TX_CHAIN_LABELS,
     walletFamilyForChain
 } from '@/services/transactionService';
@@ -27,6 +35,8 @@ interface SignTransactionModalProps {
   onRequestConnect: () => void;
   wallet: ConnectedWallet | null;
   request: RequestItem | null;
+  /** Needed to run the pre-trade simulation preview. Omit to skip the preview. */
+  network?: Network;
 }
 
 export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
@@ -36,13 +46,52 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
   onExecute,
   onRequestConnect,
   wallet,
-  request
+  request,
+  network
 }) => {
+  const [preview, setPreview] = useState<{ loading: boolean; summary: SimulationSummary | null; error: string | null }>({
+    loading: false,
+    summary: null,
+    error: null
+  });
+
+  useEffect(() => {
+    if (!isOpen || !request || !network) {
+      return;
+    }
+
+    let cancelled = false;
+    queueMicrotask(() => setPreview({ loading: true, summary: null, error: null }));
+
+    simulateTransaction(request, { network, wallet })
+      .then((txResult) => {
+        if (cancelled) return;
+        setPreview({ loading: false, summary: summarizeSimulation(request, txResult), error: null });
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setPreview({
+          loading: false,
+          summary: null,
+          error: err instanceof Error ? err.message : 'Simulation preview failed.'
+        });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // Only re-run when the modal opens for a (possibly new) request — not on
+    // every wallet/network render tick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, request, network]);
+
   if (!isOpen || !request) return null;
 
   const summary = describeTransaction(request);
   const chainLabel = TX_CHAIN_LABELS[summary.chain];
   const canSign = Boolean(wallet?.address && wallet.family === walletFamilyForChain(summary.chain));
+  const targetAddress = getTxTargetAddress(request);
+  const evmChainId = request.evmTxParams?.chainId;
 
   // Simulation doesn't need a signature; it just uses the wallet as sender
   // when one is connected.
@@ -124,6 +173,12 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
                                         {summary.target}
                                     </span>
                                 </div>
+                                {targetAddress && (
+                                    <div className="flex justify-between items-center text-xs gap-4">
+                                        <span className="text-slate-500">Verification</span>
+                                        <VerificationBadge chain={summary.chain} address={targetAddress} evmChainId={evmChainId} />
+                                    </div>
+                                )}
                                 {summary.details.map(([label, value]) => (
                                     <div key={label} className="flex justify-between text-xs gap-4">
                                         <span className="text-slate-500">{label}</span>
@@ -131,6 +186,56 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
                                     </div>
                                 ))}
                             </div>
+                        </div>
+                     </div>
+
+                     <div>
+                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-3 block">Simulation Preview</label>
+                        <div className="bg-white dark:bg-near-black border border-slate-200 dark:border-white/5 rounded-lg overflow-hidden">
+                            {!network ? (
+                                <p className="p-3 text-xs text-slate-500">Simulation preview unavailable.</p>
+                            ) : preview.loading ? (
+                                <div className="p-3 flex items-center gap-2 text-xs text-slate-500">
+                                    <Loader2 size={13} className="animate-spin" /> Simulating…
+                                </div>
+                            ) : preview.error ? (
+                                <div className="p-3 flex gap-2 text-xs text-red-500 dark:text-red-400">
+                                    <AlertTriangle size={13} className="shrink-0 mt-0.5" />
+                                    <span>{preview.error}</span>
+                                </div>
+                            ) : preview.summary ? (
+                                <div className="p-3 space-y-2">
+                                    {preview.summary.balanceChanges.length === 0 && preview.summary.warnings.length === 0 ? (
+                                        <p className="text-xs text-slate-500">No balance changes detected. This call doesn&apos;t appear to move funds.</p>
+                                    ) : (
+                                        <>
+                                            {preview.summary.balanceChanges.map((change, i) => (
+                                                <div key={i} className="flex items-center justify-between text-xs gap-4">
+                                                    <span className="flex items-center gap-1.5 text-slate-500">
+                                                        {change.direction === 'out' ? (
+                                                            <ArrowUpRight size={12} className="text-red-500" />
+                                                        ) : (
+                                                            <ArrowDownRight size={12} className="text-emerald-500" />
+                                                        )}
+                                                        {change.direction === 'out' ? 'Sends' : 'Receives'}
+                                                    </span>
+                                                    <span className="font-mono text-slate-700 dark:text-slate-300 truncate max-w-[220px]" title={change.asset}>
+                                                        {change.amount} {change.asset}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                            {preview.summary.warnings.map((warning, i) => (
+                                                <div key={i} className="flex gap-2 text-xs text-amber-600 dark:text-amber-500">
+                                                    <AlertTriangle size={13} className="shrink-0 mt-0.5" />
+                                                    <span>{warning}</span>
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
+                                </div>
+                            ) : (
+                                <p className="p-3 text-xs text-slate-500">—</p>
+                            )}
                         </div>
                      </div>
 

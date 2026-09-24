@@ -196,6 +196,24 @@ export const validateTransaction = (request: RequestItem): string | null => {
     }
 };
 
+/**
+ * The single raw contract/program address a transaction targets, for
+ * verification-badge lookups — narrower than `describeTransaction().target`,
+ * which for Sui includes the module/function too.
+ */
+export const getTxTargetAddress = (request: RequestItem): string | null => {
+    switch (getTxChain(request)) {
+        case 'sui':
+            return request.moveParams?.packageId?.trim() || null;
+        case 'evm':
+            return request.evmTxParams?.to?.trim() || null;
+        case 'solana':
+            return request.solanaTxParams?.programId?.trim() || null;
+        case 'stellar':
+            return request.stellarTxParams?.contractId?.trim() || null;
+    }
+};
+
 /** Human-readable summary for review screens and terminal logs. */
 export const describeTransaction = (
     request: RequestItem
@@ -594,6 +612,103 @@ const requireSigner = (request: RequestItem, wallet: ConnectedWallet | null): Co
 const assertValid = (request: RequestItem) => {
     const problem = validateTransaction(request);
     if (problem) throw new Error(problem);
+};
+
+// ---------------------------------------------------------------------------
+// Pre-trade simulation summary
+// ---------------------------------------------------------------------------
+
+export interface SimulationBalanceChange {
+    asset: string;
+    amount: string;
+    direction: 'in' | 'out';
+}
+
+/** Plain-language view of a simulation, layered on top of the raw `TxResult`. */
+export interface SimulationSummary {
+    chain: ChainId;
+    success: boolean;
+    balanceChanges: SimulationBalanceChange[];
+    warnings: string[];
+    /** The underlying TxResult.result, preserved for the raw/JSON view. */
+    raw: unknown;
+}
+
+const MAX_UINT256 = (BigInt(2) ** BigInt(256) - BigInt(1)).toString();
+
+/** ERC-20/721 `approve(address,uint256)` selector. */
+const APPROVE_SELECTOR = '0x095ea7b3';
+/** ERC-721/1155 `setApprovalForAll(address,bool)` selector. */
+const SET_APPROVAL_FOR_ALL_SELECTOR = '0xa22cb465';
+
+/** Flags an EVM request that grants a token spend approval, especially an unlimited one. */
+const evmApprovalWarnings = (p: EvmTxParams): string[] => {
+    const warnings: string[] = [];
+    const signature = p.functionSignature.trim().toLowerCase();
+    const isApprove = signature.startsWith('approve(') || p.data.trim().toLowerCase().startsWith(APPROVE_SELECTOR);
+    const isApprovalForAll =
+        signature.startsWith('setapprovalforall(') || p.data.trim().toLowerCase().startsWith(SET_APPROVAL_FOR_ALL_SELECTOR);
+
+    if (isApprovalForAll) {
+        warnings.push('Grants approval for ALL tokens in this contract, not a fixed amount — a common phishing pattern.');
+    } else if (isApprove) {
+        const amountArg = p.args[1]?.trim();
+        if (amountArg === MAX_UINT256 || amountArg?.toLowerCase() === 'max' || amountArg?.toLowerCase() === 'unlimited') {
+            warnings.push('Grants an unlimited spending approval — the spender can move any amount, at any time, until revoked.');
+        } else {
+            warnings.push('Grants a token spending approval to another address.');
+        }
+    }
+
+    return warnings;
+};
+
+/** Turns a raw TxResult into a plain-language balance-change/warning summary. */
+export const summarizeSimulation = (
+    request: RequestItem,
+    txResult: TxResult
+): SimulationSummary => {
+    const chain = getTxChain(request);
+    const success = txResult.status < 400;
+    const warnings: string[] = chain === 'evm' && request.evmTxParams ? evmApprovalWarnings(request.evmTxParams) : [];
+
+    if (chain === 'sui') {
+        const result = txResult.result as { balanceChanges?: { coinType: string; amount: string }[] } | undefined;
+        const balanceChanges: SimulationBalanceChange[] = (result?.balanceChanges ?? []).map((change) => {
+            const negative = change.amount.trim().startsWith('-');
+            return {
+                asset: change.coinType,
+                amount: negative ? change.amount.slice(1) : change.amount,
+                direction: negative ? 'out' : 'in'
+            };
+        });
+        return { chain, success, balanceChanges, warnings, raw: txResult.result };
+    }
+
+    if (chain === 'evm') {
+        const p = request.evmTxParams;
+        const balanceChanges: SimulationBalanceChange[] = [];
+        if (p && p.value.trim() && p.value.trim() !== '0') {
+            const net = getEvmTxChain(p.chainId);
+            balanceChanges.push({ asset: net?.nativeCurrency.symbol ?? 'native', amount: p.value.trim(), direction: 'out' });
+        }
+        return { chain, success, balanceChanges, warnings, raw: txResult.result };
+    }
+
+    if (chain === 'solana') {
+        const result = txResult.result as { err?: unknown; logs?: string[] | null } | undefined;
+        if (result?.err) {
+            warnings.push(`Simulation failed: ${JSON.stringify(result.err)}`);
+        }
+        return { chain, success, balanceChanges: [], warnings, raw: txResult.result };
+    }
+
+    // stellar — Soroban's simulateTransaction response carries no structured
+    // balance-diff; surface a failure warning when the sim itself failed.
+    if (!success) {
+        warnings.push('Simulation failed — this call would revert on-chain.');
+    }
+    return { chain, success, balanceChanges: [], warnings, raw: txResult.result };
 };
 
 /** Runs the transaction against current chain state without signing it. */

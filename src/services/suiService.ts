@@ -608,9 +608,13 @@ export const buildMoveCallTransaction = async (
 };
 
 /**
- * Runs the Move call through `devInspectTransactionBlock`: executes it
- * against current chain state without signing or committing anything.
- * Any sender works, so this runs even with no wallet connected.
+ * Runs the Move call through `dryRunTransactionBlock`: executes it against
+ * current chain state without signing or committing anything. Unlike
+ * `devInspectTransactionBlock`, the dry-run response includes structured
+ * `balanceChanges`/`objectChanges` — required for the plain-language
+ * pre-trade simulation summary (see `summarizeSimulation` in
+ * transactionService.ts). Any sender works, so this runs even with no
+ * wallet connected.
  */
 export const simulateMoveCall = async (
   network: Network,
@@ -623,16 +627,15 @@ export const simulateMoveCall = async (
 ) => {
     const resolvedSender = await resolveSuiAddress(network, sender);
     const txb = await buildMoveCallTransaction(packageId, module, func, typeArgs, args);
+    txb.setSender(resolvedSender);
     const endpoint = getActiveSuiRpcUrl(network);
     const { SuiJsonRpcClient } = await import('@mysten/sui/jsonRpc');
     const client = new SuiJsonRpcClient({ url: endpoint, network });
 
     const startTime = performance.now();
     try {
-        const result = await client.devInspectTransactionBlock({
-            sender: resolvedSender,
-            transactionBlock: txb
-        });
+        const transactionBlock = await txb.build({ client });
+        const result = await client.dryRunTransactionBlock({ transactionBlock });
         const duration = Math.round(performance.now() - startTime);
         const failed = result.effects?.status?.status === 'failure';
         return { result, duration, status: failed ? 400 : 200 };

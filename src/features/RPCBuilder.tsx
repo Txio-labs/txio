@@ -496,6 +496,7 @@ export const RPCBuilder: React.FC = () => {
                 wallet={currentWallet}
                 onRequestConnect={openModal}
                 request={request}
+                network={network}
             />
 
             <NetworkSwitcherModal

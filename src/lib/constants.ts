@@ -21,6 +21,17 @@ export const NETWORKS: Record<Network, string> = {
   localnet: 'http://127.0.0.1:9000',
 };
 
+// Built-in secondary mirrors, tried after any user-configured custom
+// endpoints and before the primary NETWORKS default fails over to nothing.
+// PublicNode fronts through Cloudflare and is occasionally unreachable from
+// specific networks/ISPs/extensions even though it's not down globally —
+// this gives Sui mainnet/testnet calls somewhere else to go automatically
+// instead of a hard failure. Only added where independently verified live.
+export const NETWORKS_FALLBACK: Partial<Record<Network, string>> = {
+  mainnet: 'https://sui-mainnet-endpoint.blockvision.org',
+  testnet: 'https://sui-testnet-endpoint.blockvision.org',
+};
+
 // Default public RPC endpoints for non-Sui chains, keyed by network.
 export const EVM_NETWORKS: Record<Network, string> = {
   mainnet: 'https://eth.llamarpc.com',

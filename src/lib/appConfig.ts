@@ -1,5 +1,5 @@
 import { AppSettings, ChainId, Network, NotificationPreferences, RpcEndpointOverrides } from '../types';
-import { EVM_NETWORKS, NETWORKS, SOLANA_NETWORKS, STELLAR_NETWORKS } from './constants';
+import { EVM_NETWORKS, NETWORKS, NETWORKS_FALLBACK, SOLANA_NETWORKS, STELLAR_NETWORKS } from './constants';
 
 export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
     emailDigests: true,
@@ -99,13 +99,19 @@ export const resolveRpcUrl = (
     settings: Pick<AppSettings, 'customRpc'> = DEFAULT_APP_SETTINGS
 ) => resolveRpcUrlList(network, settings)[0];
 
-/** Every endpoint to try for this network, in priority order, ending with the built-in default. */
+/**
+ * Every endpoint to try for this network, in priority order: user-configured
+ * overrides first, then the built-in fallback mirror (if one exists for this
+ * network), then the primary default — so a single provider being briefly
+ * unreachable doesn't fail every call.
+ */
 export const resolveRpcUrlList = (
     network: Network,
     settings: Pick<AppSettings, 'customRpc'> = DEFAULT_APP_SETTINGS
 ): string[] => {
     const overrides = settings.customRpc[network] || [];
-    return [...overrides, NETWORKS[network]];
+    const fallback = NETWORKS_FALLBACK[network];
+    return [...overrides, ...(fallback ? [fallback] : []), NETWORKS[network]];
 };
 
 /**

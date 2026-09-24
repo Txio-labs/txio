@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Clock, CheckCircle2, XCircle, Search, Filter, Trash2, Terminal, Layers, Calendar, ArrowRight, LayoutList } from 'lucide-react';
+import { Clock, CheckCircle2, XCircle, Search, Filter, Trash2, Terminal, Layers, Calendar, ArrowRight, LayoutList, ExternalLink } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { RequestType } from '../types';
 
@@ -84,6 +84,13 @@ export const HistoryFeature: React.FC = () => {
                 </div>
             );
         }
+    };
+
+    const explorerUrlFor = (item: any): string | undefined => {
+        const result = item.executionResult;
+        return result && typeof result === 'object'
+            ? (result as { explorerUrl?: string }).explorerUrl
+            : undefined;
     };
 
     const handleClear = () => {
@@ -216,8 +223,20 @@ export const HistoryFeature: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* Replay Button */}
-                                <div className="col-span-1 text-right">
+                                {/* Explorer + Replay */}
+                                <div className="col-span-1 text-right flex items-center justify-end gap-1">
+                                    {explorerUrlFor(item) && (
+                                        <a
+                                            href={explorerUrlFor(item)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="p-2 text-slate-500 hover:text-electric-violet hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                            title="View on explorer"
+                                        >
+                                            <ExternalLink size={16} />
+                                        </a>
+                                    )}
                                     <button
                                         onClick={() => handleReplay(item)}
                                         className="p-2 text-slate-500 hover:text-electric-violet hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-all opacity-0 group-hover:opacity-100"
