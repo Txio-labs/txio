@@ -1,8 +1,17 @@
 'use client';
 
-import React, { Suspense, useMemo, useState } from 'react';
+import React, {
+    Suspense,
+    useEffect,
+    useMemo,
+    useState
+} from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { SuiClientProvider, WalletProvider } from "@mysten/dapp-kit";
+import {
+    SuiClientProvider,
+    WalletProvider,
+    useSuiClientContext
+} from "@mysten/dapp-kit";
 import { WagmiProvider } from 'wagmi';
 import "@mysten/dapp-kit/dist/index.css";
 import { WalletModal } from '@/components/wallet/WalletModal';
@@ -43,6 +52,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
                     networks={networks}
                     defaultNetwork={network}
                 >
+                    <SuiNetworkSync network={network} />
                     <WalletProvider autoConnect={false}>
                         <WalletManagerProvider>
                             <ThemeSync />
@@ -59,4 +69,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
             </WagmiProvider>
         </QueryClientProvider>
     );
+}
+
+function SuiNetworkSync({ network }: { network: typeof ALL_NETWORKS[number] }) {
+    const { network: selectedNetwork, selectNetwork } = useSuiClientContext();
+
+    useEffect(() => {
+        if (selectedNetwork !== network) {
+            selectNetwork(network);
+        }
+    }, [network, selectNetwork, selectedNetwork]);
+
+    return null;
 }
