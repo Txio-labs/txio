@@ -44,6 +44,14 @@ export const TransactionEditor: React.FC<TransactionEditorProps> = ({
 }) => {
   const chain = getTxChain(request);
 
+  // Aptos and Cardano have no transaction-builder form yet (Aptos has a
+  // working adapter but no UI component; Cardano has neither) — keep them
+  // out of this selector so switching a TRANSACTION request's chain here
+  // can't land on a chain with nothing to render. They still work as RPC
+  // requests via RPC_CHAINS in the Params tab, and Aptos transactions can
+  // already be built via the API/collections once its builder ships.
+  const TX_BUILDER_CHAINS = RPC_CHAINS.filter((c) => c.id !== 'aptos' && c.id !== 'cardano');
+
   const form = (() => {
     switch (chain) {
       case 'evm':
@@ -52,7 +60,7 @@ export const TransactionEditor: React.FC<TransactionEditorProps> = ({
         return <SolanaTransactionBuilder request={request} activeAddress={activeAddress} onChange={onChange} />;
       case 'stellar':
         return <StellarTransactionBuilder request={request} activeAddress={activeAddress} isReadOnly={isReadOnly} onChange={onChange} />;
-      default:
+      case 'sui':
         return (
           <TransactionBuilder
             request={request}
@@ -62,6 +70,16 @@ export const TransactionEditor: React.FC<TransactionEditorProps> = ({
             isReadOnly={isReadOnly}
             onChange={onChange}
           />
+        );
+      default:
+        // Aptos/Cardano: no builder form yet — surfaced via the disabled
+        // "Transaction" option in NewRequestPage rather than reachable here
+        // in normal use, but handled explicitly in case an older saved
+        // request already has one of these chains.
+        return (
+          <div className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-white/10 text-center text-xs text-slate-500">
+            Transaction building isn't available for {chain} yet.
+          </div>
         );
     }
   })();
@@ -81,7 +99,7 @@ export const TransactionEditor: React.FC<TransactionEditorProps> = ({
         <div className="max-w-xs">
           <Select
             value={chain}
-            options={RPC_CHAINS.map((c) => ({ label: c.label, value: c.id }))}
+            options={TX_BUILDER_CHAINS.map((c) => ({ label: c.label, value: c.id }))}
             onChange={(v) => onChange(withTxChain(request, v as ChainId))}
             fullWidth
             disabled={isReadOnly}
