@@ -98,11 +98,27 @@ const buildWallet = (
 const getBrowserWindow = () =>
     typeof window !== 'undefined' ? window : undefined;
 
+// Aptos entry-function payload shape every major extension wallet
+// (Petra/Martian/Pontem/Rise/Nightly) accepts to signAndSubmitTransaction —
+// the de facto standard predating the formal AIP-62 wallet standard, which
+// these wallets also still support this legacy shape for.
+export type AptosEntryFunctionPayload = {
+    type: 'entry_function_payload';
+    function: string; // "<address>::<module>::<function>"
+    type_arguments: string[];
+    arguments: unknown[];
+    max_gas_amount?: string;
+    gas_unit_price?: string;
+};
+
 type AptosProviderApi = {
     account?: () => Promise<{ address: string }>;
     connect: () => Promise<{ address: string }>;
     disconnect: () => Promise<void>;
     isConnected?: () => Promise<boolean>;
+    signAndSubmitTransaction?: (
+        payload: AptosEntryFunctionPayload
+    ) => Promise<{ hash: string } | string>;
 };
 
 const withTimeout = async <T>(
@@ -223,6 +239,58 @@ const restoreProvider = async (
         return null;
     }
 };
+
+const getAptosProviderById = (
+    walletId: WalletId
+): AptosProviderApi | undefined => {
+    switch (walletId) {
+        case 'petra':
+            return getPetraProvider();
+        case 'martian':
+            return getMartianProvider();
+        case 'pontem':
+            return getPontemProvider();
+        case 'rise-wallet':
+            return getRiseProvider();
+        case 'nightly-aptos':
+            return getNightlyAptosProvider();
+        default:
+            return undefined;
+    }
+};
+
+/**
+ * Signs and submits an Aptos entry-function transaction via the connected
+ * wallet's injected provider. Unlike Solana/EVM, the wallet itself builds,
+ * signs and submits the transaction (it fetches the sequence number and
+ * simulates gas internally) — Txio supplies the entry-function payload, not
+ * a fully-built and locally-signed transaction, matching how Petra/Martian/
+ * Pontem/Rise/Nightly's signAndSubmitTransaction is actually used in the
+ * wild for entry_function_payload calls.
+ */
+export async function signAndSubmitAptosTransaction(
+    walletId: WalletId,
+    payload: AptosEntryFunctionPayload
+): Promise<{ hash: string }> {
+    const provider = getAptosProviderById(walletId);
+    if (!provider) {
+        throw new Error('Wallet is not connected or does not support Aptos.');
+    }
+    if (!provider.signAndSubmitTransaction) {
+        throw new Error('This wallet does not support signing Aptos transactions.');
+    }
+
+    const result = await withTimeout(
+        provider.signAndSubmitTransaction(payload),
+        'Sign and submit transaction',
+        60_000
+    );
+    const hash = typeof result === 'string' ? result : result.hash;
+    if (!hash) {
+        throw new Error('Wallet did not return a transaction hash.');
+    }
+    return { hash };
+}
 
 export const detectAptosWallets = async () => {
     return {

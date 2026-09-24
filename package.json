@@ -12,6 +12,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@aptos-labs/ts-sdk": "^7.3.0",
     "@dicebear/collection": "^9.4.2",
     "@dicebear/core": "^9.3.0",
     "@lobstrco/signer-extension-api": "^2.0.0",

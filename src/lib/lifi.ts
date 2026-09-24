@@ -22,8 +22,14 @@ export class LifiError extends Error {
     }
 }
 
-/** Maps Txio's ChainId to the LI.FI chain key it expects in requests. Aptos has no LI.FI coverage. */
-const LIFI_CHAIN_KEY: Record<ChainId, string> = {
+/**
+ * Maps Txio's ChainId to the LI.FI chain key it expects in requests.
+ * Partial (not `Record<ChainId, string>`) because LI.FI doesn't bridge every
+ * chain Txio knows about — Aptos and Cardano have no LI.FI coverage, and
+ * `lifiChainKeyFor` throws a clear error for those rather than sending
+ * `undefined` into a request.
+ */
+const LIFI_CHAIN_KEY: Partial<Record<ChainId, string>> = {
     evm: 'eth', // caller must override with the specific EVM chain key/id when not Ethereum mainnet
     sui: 'sui',
     solana: 'sol',
@@ -32,7 +38,11 @@ const LIFI_CHAIN_KEY: Record<ChainId, string> = {
 
 export const lifiChainKeyFor = (chain: ChainId, evmChainId?: number): string | number => {
     if (chain === 'evm' && evmChainId) return evmChainId;
-    return LIFI_CHAIN_KEY[chain];
+    const key = LIFI_CHAIN_KEY[chain];
+    if (key === undefined) {
+        throw new LifiError(`${chain} is not supported for swaps/bridges.`, 0);
+    }
+    return key;
 };
 
 export interface LifiTransactionRequest {

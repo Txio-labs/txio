@@ -9,8 +9,11 @@ import { apiService } from '@/services/api';
 import { withTxChain } from '@/services/transactionService';
 
 // Each chain builds transactions in its own native shape; the label says
-// what the user will actually get.
-export const TRANSACTION_OPTIONS: Record<ChainId, { title: string; subtitle: string }> = {
+// what the user will actually get. Partial (not `Record<ChainId, ...>`)
+// because the TRANSACTION request type needs a ChainAdapter to build/sign —
+// Aptos and Cardano have none yet, so they're deliberately absent here and
+// the "Transaction" option is disabled for them below (RPC still works).
+export const TRANSACTION_OPTIONS: Partial<Record<ChainId, { title: string; subtitle: string }>> = {
   sui: { title: 'Sui Transaction', subtitle: 'Move call, simulated then signed with your wallet' },
   evm: { title: 'EVM Contract Call', subtitle: 'Read or write a contract, or send a transfer' },
   solana: { title: 'Solana Transaction', subtitle: 'Program instruction, simulated then signed' },
@@ -108,9 +111,11 @@ export const NewRequestPage: React.FC<NewRequestPageProps> = ({ tabId, initialDa
     if (!chain) return;
     const isTx = type === 'transaction';
 
+    if (isTx && !TRANSACTION_OPTIONS[chain]) return;
+
     const base: RequestItem = {
       id: tabId,
-      name: isTx ? `Untitled ${TRANSACTION_OPTIONS[chain].title}` : `Untitled ${chainLabel} Request`,
+      name: isTx ? `Untitled ${TRANSACTION_OPTIONS[chain]!.title}` : `Untitled ${chainLabel} Request`,
       type: isTx ? RequestType.TRANSACTION : RequestType.RPC,
       network: appStore.getSnapshot().network,
       rpcParams: { method: '', params: [], chain },
@@ -329,13 +334,15 @@ export const NewRequestPage: React.FC<NewRequestPageProps> = ({ tabId, initialDa
 
             <button
                 onClick={() => handleCreate('transaction')}
-                disabled={!chain}
+                disabled={!chain || !txOption}
                 className="flex flex-col items-center gap-4 p-8 bg-slate-50 dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 rounded-lg enabled:hover:border-slate-400 dark:enabled:hover:border-slate-600 enabled:hover:bg-slate-100 dark:enabled:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors group text-center"
             >
                 <div className="text-slate-400 dark:text-slate-500 group-enabled:group-hover:text-slate-900 dark:group-enabled:group-hover:text-white transition-colors"><Layers size={32} /></div>
                 <div>
                     <div className="font-bold text-slate-900 dark:text-slate-200">{txOption?.title ?? 'Transaction'}</div>
-                    <div className="text-xs text-slate-500 mt-1">{txOption?.subtitle ?? 'Build and sign a transaction'}</div>
+                    <div className="text-xs text-slate-500 mt-1">
+                      {txOption?.subtitle ?? (chain ? `Transaction building isn't supported for ${chainLabel} yet` : 'Build and sign a transaction')}
+                    </div>
                 </div>
             </button>
         </div>

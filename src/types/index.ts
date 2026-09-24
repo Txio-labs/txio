@@ -24,7 +24,12 @@ export const isNetwork = (
 
 // Chains the RPC Method Builder can target. Kept in sync with
 // `WalletChainFamily` (wallet/types.ts), which the wallet layer already uses.
-export type ChainId = 'sui' | 'evm' | 'stellar' | 'solana';
+// 'cardano' has no adapter implementation yet — see CardanoAdapter in
+// services/adapters/cardanoAdapter.ts, which explicitly reports
+// "not yet supported" from every method rather than being silently absent
+// from the type. It's excluded from RPC_CHAINS (lib/constants.ts) so it
+// doesn't appear as a selectable chain in the UI until it has one.
+export type ChainId = 'sui' | 'evm' | 'stellar' | 'solana' | 'aptos' | 'cardano';
 
 export type FeatureId = 'dashboard' | 'rpc' | 'ptb' | 'move' | 'playground' | 'workspace_overview' | 'history' | 'settings' | 'new_request' | 'new_collection' | 'profile' | 'account' | 'ai_chat' | 'runner' | 'collections' | 'docs' | 'ecosystem' | 'features' | 'help' | 'integrations' | 'infrastructure' | 'partners' | 'admin' | 'approvals' | 'swap';
 
@@ -258,6 +263,31 @@ export interface StellarTxParams {
   args: StellarArg[];
 }
 
+// Aptos Move entry-function call. Aptos is Move-based like Sui, so this
+// mirrors MoveCallParams' shape (module address/module/function/type args/
+// args) rather than inventing a different model — but it's kept as its own
+// type because the two chains diverge underneath: Aptos entry functions take
+// a flat BCS-serialized argument list (no object/shared-object distinction,
+// no PTB, no gas objects — just sequence number + gas unit price + max gas).
+export interface AptosTxParams {
+  moduleAddress: string;
+  module: string;
+  function: string;
+  typeArguments: string[];
+  arguments: BuilderArg[];
+  maxGasAmount?: string;
+  gasUnitPrice?: string;
+}
+
+// Cardano has no adapter implementation yet (see CardanoAdapter) — this
+// shape is a placeholder so RequestItem/withTxChain compile against a real
+// type rather than `unknown`, not a claim that Cardano's UTxO/script/datum/
+// redeemer transaction model is represented here. It intentionally does NOT
+// pretend Cardano is a contract-address+function chain.
+export interface CardanoTxParams {
+  note?: string;
+}
+
 export interface RequestItem {
   id: string;
   type: RequestType;
@@ -281,6 +311,8 @@ export interface RequestItem {
   solanaTxParams?: SolanaTxParams;
   evmTxParams?: EvmTxParams;
   stellarTxParams?: StellarTxParams;
+  aptosTxParams?: AptosTxParams;
+  cardanoTxParams?: CardanoTxParams;
   // Present for RequestType.SWAP requests — see SwapParams.
   swapParams?: SwapParams;
   isLoading?: boolean;

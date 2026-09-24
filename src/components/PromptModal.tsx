@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { LucideIcon, X } from 'lucide-react';
 
 interface PromptModalProps {
@@ -27,10 +27,18 @@ export const PromptModal: React.FC<PromptModalProps> = ({
   onSubmit
 }) => {
   const [value, setValue] = useState(initialValue);
+  // Tracks whether `value` has been reset for the current open. Adjusting
+  // state during render (rather than in an effect) is React's documented
+  // pattern for resetting state in response to a prop change — see
+  // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes.
+  const [resetForOpen, setResetForOpen] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) setValue(initialValue);
-  }, [isOpen, initialValue]);
+  if (isOpen && !resetForOpen) {
+    setResetForOpen(true);
+    if (value !== initialValue) setValue(initialValue);
+  } else if (!isOpen && resetForOpen) {
+    setResetForOpen(false);
+  }
 
   if (!isOpen) return null;
 

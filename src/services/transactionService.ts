@@ -6,6 +6,8 @@ import { suiAdapter } from './adapters/suiAdapter';
 import { evmAdapter, DEFAULT_EVM_TX, getEvmTxChain, checkEvmArg, coerceEvmArgs, buildEvmCalldata, toJsonSafe } from './adapters/evmAdapter';
 import { solanaAdapter, DEFAULT_SOLANA_TX } from './adapters/solanaAdapter';
 import { stellarAdapter, DEFAULT_STELLAR_TX, toStellarScVal } from './adapters/stellarAdapter';
+import { aptosAdapter, DEFAULT_APTOS_TX } from './adapters/aptosAdapter';
+import { cardanoAdapter } from './adapters/cardanoAdapter';
 
 /**
  * One entry point for building, simulating and executing transactions on
@@ -25,13 +27,16 @@ export { ChainExecutionError } from './chainAdapter';
 export { DEFAULT_EVM_TX, getEvmTxChain, checkEvmArg, coerceEvmArgs, buildEvmCalldata, toJsonSafe };
 export { DEFAULT_SOLANA_TX };
 export { DEFAULT_STELLAR_TX, toStellarScVal };
+export { DEFAULT_APTOS_TX };
 
 /** Every chain's adapter, keyed by ChainId — the registry the dispatcher below looks up. */
 const ADAPTERS: Record<ChainId, ChainAdapter> = {
     sui: suiAdapter,
     evm: evmAdapter,
     solana: solanaAdapter,
-    stellar: stellarAdapter
+    stellar: stellarAdapter,
+    aptos: aptosAdapter,
+    cardano: cardanoAdapter
 };
 
 /** The adapter for a given chain — throws rather than returning undefined for an unregistered chain. */
@@ -45,7 +50,9 @@ export const TX_CHAIN_LABELS: Record<ChainId, string> = {
     sui: suiAdapter.label,
     evm: evmAdapter.label,
     solana: solanaAdapter.label,
-    stellar: stellarAdapter.label
+    stellar: stellarAdapter.label,
+    aptos: aptosAdapter.label,
+    cardano: cardanoAdapter.label
 };
 
 export const getTxChain = (request: RequestItem): ChainId => request.rpcParams?.chain ?? 'sui';
@@ -68,11 +75,17 @@ export const getTxParamsForHistory = (request: RequestItem): unknown => {
             return request.solanaTxParams;
         case 'stellar':
             return request.stellarTxParams;
+        case 'aptos':
+            return request.aptosTxParams;
+        case 'cardano':
+            return request.cardanoTxParams;
     }
 };
 
 /** Wallet family that can sign for each chain. */
-export const walletFamilyForChain = (chain: ChainId): WalletChainFamily => chain;
+/** Returns null for a chain with no wallet layer yet (Cardano) — never matches a connected wallet. */
+export const walletFamilyForChain = (chain: ChainId): WalletChainFamily | null =>
+    chain === 'cardano' ? null : chain;
 
 /** Switches a request to `chain`, seeding that chain's params if missing. */
 export const withTxChain = (request: RequestItem, chain: ChainId): RequestItem => ({
@@ -81,7 +94,8 @@ export const withTxChain = (request: RequestItem, chain: ChainId): RequestItem =
     moveParams: request.moveParams ?? { ...DEFAULT_MOVE_CALL },
     ...(chain === 'evm' && !request.evmTxParams ? { evmTxParams: { ...DEFAULT_EVM_TX } } : {}),
     ...(chain === 'solana' && !request.solanaTxParams ? { solanaTxParams: { ...DEFAULT_SOLANA_TX } } : {}),
-    ...(chain === 'stellar' && !request.stellarTxParams ? { stellarTxParams: { ...DEFAULT_STELLAR_TX } } : {})
+    ...(chain === 'stellar' && !request.stellarTxParams ? { stellarTxParams: { ...DEFAULT_STELLAR_TX } } : {}),
+    ...(chain === 'aptos' && !request.aptosTxParams ? { aptosTxParams: { ...DEFAULT_APTOS_TX } } : {})
 });
 
 // ---------------------------------------------------------------------------
@@ -222,8 +236,9 @@ export const summarizeSimulation = (
         return { chain, success, balanceChanges: [], warnings, raw: txResult.result };
     }
 
-    // stellar — Soroban's simulateTransaction response carries no structured
-    // balance-diff; surface a failure warning when the sim itself failed.
+    // stellar/aptos — neither's simulation response carries a structured
+    // balance-diff Txio parses yet; surface a failure warning when the sim
+    // itself failed rather than fabricating balance changes.
     if (!success) {
         warnings.push('Simulation failed — this call would revert on-chain.');
     }

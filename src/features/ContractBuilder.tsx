@@ -25,7 +25,12 @@ interface ChainContractConfig {
 const randomHex = (length: number) =>
     Array.from({ length }, () => Math.floor(Math.random() * 16).toString(16)).join('');
 
-const CHAIN_CONTRACT_CONFIG: Record<ChainId, ChainContractConfig> = {
+// Only chains with a Move/Solidity/Rust contract-building flow implemented
+// here. Aptos and Cardano have no ChainAdapter/contract-builder support yet,
+// so they're intentionally absent — `Partial` (not `Record<ChainId, ...>`)
+// keeps that honest, and CONTRACT_BUILDER_CHAINS below is what the chain
+// selector actually iterates, so unsupported chains can't be picked.
+const CHAIN_CONTRACT_CONFIG: Partial<Record<ChainId, ChainContractConfig>> = {
     sui: {
         label: 'Sui',
         fileExt: 'move',
@@ -125,25 +130,39 @@ const CHAIN_CONTRACT_CONFIG: Record<ChainId, ChainContractConfig> = {
     }
 };
 
+// Chains the Contract Builder's chain selector offers — every chain that has
+// an entry in CHAIN_CONTRACT_CONFIG above, in RPC_CHAINS' display order.
+// Filtering RPC_CHAINS (rather than iterating ChainId directly) means a
+// chain added to ChainId without a contract-builder config here — like
+// Aptos or Cardano today — simply doesn't appear as an option, instead of
+// appearing and then crashing on the missing config lookup.
+export const CONTRACT_BUILDER_CHAINS = RPC_CHAINS.filter((c) => c.id in CHAIN_CONTRACT_CONFIG);
+
 const DEFAULT_CONTRACT_NAMES: Record<ChainId, string> = {
-    sui: CHAIN_CONTRACT_CONFIG.sui.defaultContractName,
-    evm: CHAIN_CONTRACT_CONFIG.evm.defaultContractName,
-    stellar: CHAIN_CONTRACT_CONFIG.stellar.defaultContractName,
-    solana: CHAIN_CONTRACT_CONFIG.solana.defaultContractName
+    sui: CHAIN_CONTRACT_CONFIG.sui!.defaultContractName,
+    evm: CHAIN_CONTRACT_CONFIG.evm!.defaultContractName,
+    stellar: CHAIN_CONTRACT_CONFIG.stellar!.defaultContractName,
+    solana: CHAIN_CONTRACT_CONFIG.solana!.defaultContractName,
+    aptos: '',
+    cardano: ''
 };
 
 const DEFAULT_CODE_BY_CHAIN: Record<ChainId, string> = {
-    sui: CHAIN_CONTRACT_CONFIG.sui.defaultCode,
-    evm: CHAIN_CONTRACT_CONFIG.evm.defaultCode,
-    stellar: CHAIN_CONTRACT_CONFIG.stellar.defaultCode,
-    solana: CHAIN_CONTRACT_CONFIG.solana.defaultCode
+    sui: CHAIN_CONTRACT_CONFIG.sui!.defaultCode,
+    evm: CHAIN_CONTRACT_CONFIG.evm!.defaultCode,
+    stellar: CHAIN_CONTRACT_CONFIG.stellar!.defaultCode,
+    solana: CHAIN_CONTRACT_CONFIG.solana!.defaultCode,
+    aptos: '',
+    cardano: ''
 };
 
 const DEFAULT_EDITION_BY_CHAIN: Record<ChainId, string> = {
-    sui: CHAIN_CONTRACT_CONFIG.sui.editions[0],
-    evm: CHAIN_CONTRACT_CONFIG.evm.editions[0],
-    stellar: CHAIN_CONTRACT_CONFIG.stellar.editions[0],
-    solana: CHAIN_CONTRACT_CONFIG.solana.editions[0]
+    sui: CHAIN_CONTRACT_CONFIG.sui!.editions[0],
+    evm: CHAIN_CONTRACT_CONFIG.evm!.editions[0],
+    stellar: CHAIN_CONTRACT_CONFIG.stellar!.editions[0],
+    solana: CHAIN_CONTRACT_CONFIG.solana!.editions[0],
+    aptos: '',
+    cardano: ''
 };
 
 export const ContractBuilder: React.FC = () => {
@@ -161,7 +180,9 @@ export const ContractBuilder: React.FC = () => {
     const [isDeploying, setIsDeploying] = useState(false);
     const [deployResult, setDeployResult] = useState('');
 
-    const config = CHAIN_CONTRACT_CONFIG[chain];
+    // Non-null: `chain` only ever holds a value from CONTRACT_BUILDER_CHAINS
+    // (see the Select below), which is filtered to CHAIN_CONTRACT_CONFIG's keys.
+    const config = CHAIN_CONTRACT_CONFIG[chain]!;
     const contractName = contractNames[chain];
     const code = codeByChain[chain];
     const edition = editionByChain[chain];
@@ -267,7 +288,7 @@ export const ContractBuilder: React.FC = () => {
                         <Select
                             value={chain}
                             onChange={(value) => handleChainChange(value as ChainId)}
-                            options={RPC_CHAINS.map((c) => ({ label: c.label, value: c.id }))}
+                            options={CONTRACT_BUILDER_CHAINS.map((c) => ({ label: c.label, value: c.id }))}
                             fullWidth
                             variant="glass"
                         />

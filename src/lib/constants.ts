@@ -74,12 +74,24 @@ export const SOLANA_NETWORKS: Record<Network, string> = {
   localnet: 'http://127.0.0.1:8899',
 };
 
+// Aptos fullnode REST API endpoints (NOT JSON-RPC — Aptos exposes a REST
+// API, so this is intentionally not part of resolveChainRpcUrl/
+// resolveChainCustomRpcUrl in appConfig.ts, which speak JSON-RPC). No public
+// localnet endpoint exists; a local Aptos node's default REST port is used.
+export const APTOS_NETWORKS: Record<Network, string> = {
+  mainnet: 'https://fullnode.mainnet.aptoslabs.com/v1',
+  testnet: 'https://fullnode.testnet.aptoslabs.com/v1',
+  devnet: 'https://fullnode.devnet.aptoslabs.com/v1',
+  localnet: 'http://127.0.0.1:8080/v1',
+};
+
 // Chains the RPC Method Builder can target, in display order.
 export const RPC_CHAINS: ReadonlyArray<{ id: ChainId; label: string }> = [
   { id: 'sui', label: 'Sui' },
   { id: 'evm', label: 'Ethereum / EVM' },
   { id: 'stellar', label: 'Stellar' },
   { id: 'solana', label: 'Solana' },
+  { id: 'aptos', label: 'Aptos' },
 ];
 
 export const DEFAULT_RPC_CHAIN: ChainId = 'sui';
@@ -125,9 +137,13 @@ export const DEFAULT_EVM_CHAIN_ID = 1;
 export const getEvmChain = (id: number | undefined): EvmChainInfo =>
   EVM_CHAINS.find((c) => c.id === id) ?? EVM_CHAINS[0];
 
-// RPC method suggestions, keyed by chain. `Record<ChainId, ...>` keeps this
-// exhaustive as chains are added.
-export const COMMON_RPC_METHODS: Record<ChainId, string[]> = {
+// RPC method suggestions, keyed by chain. Partial (not `Record<ChainId, ...>`)
+// because not every ChainId speaks JSON-RPC with known methods — Aptos
+// exposes a REST API rather than JSON-RPC (see APTOS_NETWORKS above) and
+// Cardano has no adapter yet, so both are intentionally absent. Callers
+// (RPCBuilder.tsx, RawEditor.tsx, CommandPalette.tsx) fall back to an empty
+// list rather than crashing on the missing entry.
+export const COMMON_RPC_METHODS: Partial<Record<ChainId, string[]>> = {
   sui: [
     'suix_getOwnedObjects',
     'sui_getObject',
@@ -202,7 +218,9 @@ export const ADDRESS_FIRST_PARAM_METHODS: ReadonlySet<string> = new Set([
 
 // Pre-filled parameter templates for known RPC methods, keyed by chain.
 // Used when the user picks a method with empty params and via the "Insert template" action.
-export const RPC_METHOD_TEMPLATES: Readonly<Record<ChainId, Readonly<Record<string, ReadonlyArray<unknown>>>>> = {
+// Partial for the same reason as COMMON_RPC_METHODS above — Aptos/Cardano
+// have no entry here yet.
+export const RPC_METHOD_TEMPLATES: Readonly<Partial<Record<ChainId, Readonly<Record<string, ReadonlyArray<unknown>>>>>> = {
   sui: {
     suix_getOwnedObjects: [
       '<owner address or name.sui>',

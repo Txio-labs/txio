@@ -64,8 +64,12 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
   }, [isMethodMenuOpen, updateMenuRect]);
 
   const chain: ChainId = request.rpcParams.chain ?? DEFAULT_RPC_CHAIN;
-  const methodsForChain = COMMON_RPC_METHODS[chain];
-  const templatesForChain = RPC_METHOD_TEMPLATES[chain];
+  // Some chains (Aptos today) have no known-method catalog yet — fall back
+  // to empty rather than crashing on the missing lookup entry. Memoized so
+  // the fallback literal is referentially stable across renders (otherwise
+  // every hook depending on these would re-run every render).
+  const methodsForChain = useMemo(() => COMMON_RPC_METHODS[chain] ?? [], [chain]);
+  const templatesForChain = useMemo(() => RPC_METHOD_TEMPLATES[chain] ?? {}, [chain]);
 
   // Only Solana has a real transaction-signing path today (see
   // sendSolanaTransaction in wallet/solana.ts) — the mode toggle only makes
