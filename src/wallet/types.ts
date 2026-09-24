@@ -136,7 +136,17 @@ export interface WalletConnectErrorShape {
 }
 
 export interface WalletProviderContextValue {
+    /** Convenience alias for linkedWallets.get(activeSignerFamily) — the wallet a new sign action targets. */
     currentWallet: ConnectedWallet | null;
+    /** Every wallet linked in this session, one slot per chain family, connected simultaneously. */
+    linkedWallets: Partial<
+        Record<WalletChainFamily, ConnectedWallet>
+    >;
+    /** Which linked wallet's family is used when the user signs — switchable without disconnecting anything. */
+    activeSignerFamily: WalletChainFamily | null;
+    setActiveSigner: (
+        family: WalletChainFamily
+    ) => void;
     status: WalletConnectionStatus;
     error: WalletConnectErrorShape | null;
     wallets: WalletCatalogItem[];
@@ -150,7 +160,10 @@ export interface WalletProviderContextValue {
     connect: (
         walletId: WalletId
     ) => Promise<void>;
-    disconnect: () => Promise<void>;
+    /** Disconnects the given chain family's linked wallet. Omit to disconnect the active signer. */
+    disconnect: (
+        family?: WalletChainFamily
+    ) => Promise<void>;
     switchEvmChain: (
         chainId: number
     ) => Promise<void>;

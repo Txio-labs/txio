@@ -47,10 +47,12 @@ import {
 import { connectSolanaWallet, detectSolanaWallets, restoreSolanaWallet, disconnectSolanaWallet } from '../solana';
 import { connectAptosWallet, detectAptosWallets, restoreAptosWallet, disconnectAptosWallet } from '../aptos';
 import {
-    clearActiveWalletSnapshot,
-    persistActiveWalletSnapshot,
+    clearLinkedWallet,
+    persistActiveSignerFamily,
+    persistLinkedWallet,
     persistRecentWallet,
-    readActiveWalletSnapshot,
+    readActiveSignerFamily,
+    readLinkedWallets,
     readRecentWallets
 } from '../storage';
 import type {
@@ -161,10 +163,12 @@ export function WalletManagerProvider({
     const [
         preferredWalletId,
         setPreferredWalletId
-    ] = useState<WalletId | null>(
-        () =>
-            readActiveWalletSnapshot()
-                ?.walletId || null
+    ] = useState<WalletId | null>(null);
+    const [
+        activeSignerFamily,
+        setActiveSignerFamilyState
+    ] = useState<WalletChainFamily | null>(
+        () => readActiveSignerFamily()
     );
     const [
         recentWalletIds,
@@ -320,7 +324,7 @@ export function WalletManagerProvider({
                 family: 'sui' as const,
                 chain: {
                     id: 'sui',
-                    family: 'sui',
+                    family: 'sui' as const,
                     name: 'Sui',
                     network,
                     isSupported: true
@@ -364,7 +368,7 @@ export function WalletManagerProvider({
                 family: 'evm' as const,
                 chain: {
                     id: `eip155:${evmAccount.chainId}`,
-                    family: 'evm',
+                    family: 'evm' as const,
                     name:
                         evmAccount.chain
                             ?.name || 'EVM',
@@ -382,96 +386,80 @@ export function WalletManagerProvider({
             };
         }, [evmAccount, evmConnectedAt]);
 
-    const currentWallet = useMemo(() => {
-        const connectedWallets = [
+    const linkedWallets = useMemo(() => {
+        const map: Partial<
+            Record<WalletChainFamily, ConnectedWallet>
+        > = {};
+
+        const candidates: (ConnectedWallet | null)[] = [
             connectedEvmWallet,
             connectedSuiWallet,
             stellarSession,
             solanaSession,
             aptosSession
-        ].filter(
-            Boolean
-        ) as ConnectedWallet[];
+        ];
 
-        if (
-            preferredWalletId
-        ) {
-            const preferred =
-                connectedWallets.find(
-                    (wallet) =>
-                        wallet.id ===
-                        preferredWalletId
-                );
+        for (const wallet of candidates) {
+            if (wallet) {
+                map[wallet.family] = wallet;
+            }
+        }
+
+        return map;
+    }, [
+        connectedEvmWallet,
+        connectedSuiWallet,
+        stellarSession,
+        solanaSession,
+        aptosSession
+    ]);
+
+    const currentWallet = useMemo(() => {
+        if (activeSignerFamily) {
+            const active =
+                linkedWallets[
+                    activeSignerFamily
+                ];
+            if (active) {
+                return active;
+            }
+        }
+
+        if (preferredWalletId) {
+            const preferred = Object.values(
+                linkedWallets
+            ).find(
+                (wallet) =>
+                    wallet?.id ===
+                    preferredWalletId
+            );
 
             if (preferred) {
                 return preferred;
             }
         }
 
-        return connectedWallets[0] || null;
+        return (
+            Object.values(linkedWallets)[0] ||
+            null
+        );
     }, [
-        connectedEvmWallet,
-        connectedSuiWallet,
-        preferredWalletId,
-        stellarSession,
-        solanaSession,
-        aptosSession
+        activeSignerFamily,
+        linkedWallets,
+        preferredWalletId
     ]);
 
-    const disconnectFamiliesExcept =
-        useCallback(
-            async (
-                family: WalletChainFamily
-            ) => {
-                if (
-                    family !== 'evm' &&
-                    evmAccount.isConnected
-                ) {
-                    try {
-                        await disconnectEvmAsync();
-                    } catch {
-                        // noop
-                    }
-                }
-
-                if (
-                    family !== 'sui' &&
-                    suiWalletState.isConnected
-                ) {
-                    try {
-                        await disconnectSuiAsync();
-                    } catch {
-                        // noop
-                    }
-                }
-
-                if (
-                    family !== 'stellar' &&
-                    stellarSession
-                ) {
-                    setStellarSession(
-                        null
-                    );
-                }
-                if (family !== 'solana' && solanaSession) {
-                    await disconnectSolanaWallet(solanaSession.id);
-                    setSolanaSession(null);
-                }
-                if (family !== 'aptos' && aptosSession) {
-                    await disconnectAptosWallet(aptosSession.id);
-                    setAptosSession(null);
-                }
-            },
-            [
-                disconnectEvmAsync,
-                disconnectSuiAsync,
-                evmAccount.isConnected,
-                stellarSession,
-                solanaSession,
-                aptosSession,
-                suiWalletState.isConnected
-            ]
-        );
+    const setActiveSigner = useCallback(
+        (family: WalletChainFamily) => {
+            setActiveSignerFamilyState(
+                family
+            );
+            persistActiveSignerFamily(
+                family
+            );
+        },
+        []
+    );
 
     useEffect(() => {
         if (
@@ -492,20 +480,6 @@ export function WalletManagerProvider({
                 setError(null);
                 setPreferredWalletId(
                     currentWallet.id
-                );
-                persistActiveWalletSnapshot(
-                    {
-                        walletId:
-                            currentWallet.id,
-                        family:
-                            currentWallet.family,
-                        address:
-                            currentWallet.address,
-                        chainId:
-                            currentWallet.chain.id,
-                        connectedAt:
-                            currentWallet.connectedAt
-                    }
                 );
             });
             return;
@@ -534,31 +508,29 @@ export function WalletManagerProvider({
         suiWalletState.isConnecting
     ]);
 
+    // Persist every linked wallet's session (one slot per family) whenever
+    // the set of linked wallets changes, independent of which is active.
     useEffect(() => {
-        if (
-            !restoreAttemptedRef.current &&
-            !currentWallet
-        ) {
-            return;
-        }
+        for (const wallet of Object.values(
+            linkedWallets
+        )) {
+            if (!wallet) {
+                continue;
+            }
 
-        if (
-            !currentWallet &&
-            !pendingWalletId &&
-            !evmAccount.isConnecting &&
-            !evmAccount.isReconnecting &&
-            !suiWalletState.isConnecting
-        ) {
-            clearActiveWalletSnapshot();
+            persistLinkedWallet(wallet.family, {
+                walletId: wallet.id,
+                family: wallet.family,
+                address: wallet.address,
+                chainId: wallet.chain.id,
+                connectedAt: wallet.connectedAt
+            });
         }
-    }, [
-        currentWallet,
-        evmAccount.isConnecting,
-        evmAccount.isReconnecting,
-        pendingWalletId,
-        suiWalletState.isConnecting
-    ]);
+    }, [linkedWallets]);
 
+    // Restore every family that was linked in a previous session, in
+    // parallel — not just one. Sui restore additionally waits on
+    // `suiWallets` being populated before it can run.
     useEffect(() => {
         if (
             restoreAttemptedRef.current
@@ -566,173 +538,192 @@ export function WalletManagerProvider({
             return;
         }
 
-        const snapshot =
-            readActiveWalletSnapshot();
+        const snapshots =
+            readLinkedWallets();
+        const families = Object.keys(
+            snapshots
+        ) as WalletChainFamily[];
 
-        if (!snapshot) {
+        if (!families.length) {
             restoreAttemptedRef.current =
                 true;
             return;
         }
 
+        const suiSnapshot =
+            snapshots.sui;
         if (
-            snapshot.family === 'sui'
+            suiSnapshot &&
+            !suiWallets.length
         ) {
-            if (!suiWallets.length) {
-                return;
+            // Wait for the Sui wallet-standard registry to populate
+            // before deciding whether the restore can proceed.
+            return;
+        }
+
+        restoreAttemptedRef.current = true;
+        const restoredFamily =
+            readActiveSignerFamily();
+        let anyPending = false;
+
+        for (const family of families) {
+            const snapshot =
+                snapshots[family];
+            if (!snapshot) {
+                continue;
             }
 
-            restoreAttemptedRef.current =
-                true;
-            const wallet =
-                findSuiWallet(
-                    suiWallets,
-                    snapshot.walletId
-                );
-
-            if (!wallet) {
-                clearActiveWalletSnapshot();
-                return;
-            }
-
-            queueMicrotask(() => {
-                setStatus('connecting');
-                setPendingWalletId(
-                    snapshot.walletId
-                );
-            });
-
-            void connectSuiAsync({
-                wallet
-            })
-                .then(() => {
-                    setPreferredWalletId(
+            if (family === 'sui') {
+                const wallet =
+                    findSuiWallet(
+                        suiWallets,
                         snapshot.walletId
                     );
-                    setSuiConnectedAt(
-                        Date.now()
-                    );
-                })
-                .catch(() => {
-                    clearActiveWalletSnapshot();
-                })
-                .finally(() => {
-                    setPendingWalletId(
-                        null
-                    );
-                });
 
-            return;
-        }
-
-        if (
-            snapshot.family === 'evm'
-        ) {
-            restoreAttemptedRef.current =
-                true;
-            const connectorId =
-                EVM_CONNECTOR_IDS[
-                    snapshot.walletId as keyof typeof EVM_CONNECTOR_IDS
-                ];
-            const connectors =
-                connectorId
-                    ? evmConnectors.filter(
-                          (
-                              connector
-                          ) =>
-                              connector.id ===
-                              connectorId
-                      )
-                    : evmConnectors;
-
-            queueMicrotask(() => {
-                setStatus('connecting');
-                setPendingWalletId(
-                    snapshot.walletId
-                );
-            });
-
-            void reconnectEvmAsync({
-                connectors
-            })
-                .then(() => {
-                    setPreferredWalletId(
-                        snapshot.walletId
-                    );
-                    setEvmConnectedAt(
-                        Date.now()
-                    );
-                })
-                .catch(() => {
-                    clearActiveWalletSnapshot();
-                })
-                .finally(() => {
-                    setPendingWalletId(
-                        null
-                    );
-                });
-
-            return;
-        }
-
-        restoreAttemptedRef.current =
-            true;
-        queueMicrotask(() => {
-            setStatus('connecting');
-            setPendingWalletId(
-                snapshot.walletId
-            );
-        });
-
-        const restorePromise =
-            snapshot.family === 'solana'
-                ? restoreSolanaWallet(
-                      snapshot.walletId
-                  )
-                : snapshot.family === 'aptos'
-                    ? restoreAptosWallet(
-                          snapshot.walletId
-                      )
-                    : restoreStellarWallet(
-                          snapshot.walletId
-                      );
-
-        void restorePromise
-            .then((wallet) => {
                 if (!wallet) {
-                    clearActiveWalletSnapshot();
-                    return;
+                    clearLinkedWallet('sui');
+                    continue;
                 }
 
-                setPreferredWalletId(
-                    wallet.id
+                anyPending = true;
+                queueMicrotask(() =>
+                    setPendingWalletId(
+                        snapshot.walletId
+                    )
                 );
 
-                if (
-                    snapshot.family ===
-                    'solana'
-                ) {
-                    setSolanaSession(
-                        wallet
-                    );
-                } else if (
-                    snapshot.family ===
-                    'aptos'
-                ) {
-                    setAptosSession(
-                        wallet
-                    );
-                } else {
-                    setStellarSession(
-                        wallet
-                    );
-                }
-            })
-            .finally(() => {
+                void connectSuiAsync({
+                    wallet
+                })
+                    .then(() => {
+                        setSuiConnectedAt(
+                            Date.now()
+                        );
+                    })
+                    .catch(() => {
+                        clearLinkedWallet(
+                            'sui'
+                        );
+                    })
+                    .finally(() => {
+                        setPendingWalletId(
+                            null
+                        );
+                    });
+
+                continue;
+            }
+
+            if (family === 'evm') {
+                const connectorId =
+                    EVM_CONNECTOR_IDS[
+                        snapshot.walletId as keyof typeof EVM_CONNECTOR_IDS
+                    ];
+                const connectors =
+                    connectorId
+                        ? evmConnectors.filter(
+                              (
+                                  connector
+                              ) =>
+                                  connector.id ===
+                                  connectorId
+                          )
+                        : evmConnectors;
+
+                anyPending = true;
+                queueMicrotask(() =>
+                    setPendingWalletId(
+                        snapshot.walletId
+                    )
+                );
+
+                void reconnectEvmAsync({
+                    connectors
+                })
+                    .then(() => {
+                        setEvmConnectedAt(
+                            Date.now()
+                        );
+                    })
+                    .catch(() => {
+                        clearLinkedWallet(
+                            'evm'
+                        );
+                    })
+                    .finally(() => {
+                        setPendingWalletId(
+                            null
+                        );
+                    });
+
+                continue;
+            }
+
+            const restorePromise =
+                family === 'solana'
+                    ? restoreSolanaWallet(
+                          snapshot.walletId
+                      )
+                    : family === 'aptos'
+                        ? restoreAptosWallet(
+                              snapshot.walletId
+                          )
+                        : restoreStellarWallet(
+                              snapshot.walletId
+                          );
+
+            anyPending = true;
+            queueMicrotask(() =>
                 setPendingWalletId(
-                    null
-                );
+                    snapshot.walletId
+                )
+            );
+
+            void restorePromise
+                .then((wallet) => {
+                    if (!wallet) {
+                        clearLinkedWallet(
+                            family
+                        );
+                        return;
+                    }
+
+                    if (family === 'solana') {
+                        setSolanaSession(
+                            wallet
+                        );
+                    } else if (
+                        family === 'aptos'
+                    ) {
+                        setAptosSession(
+                            wallet
+                        );
+                    } else {
+                        setStellarSession(
+                            wallet
+                        );
+                    }
+                })
+                .finally(() => {
+                    setPendingWalletId(
+                        null
+                    );
+                });
+        }
+
+        if (anyPending) {
+            queueMicrotask(() => {
+                setStatus('connecting');
             });
+        }
+
+        if (restoredFamily) {
+            queueMicrotask(() =>
+                setActiveSignerFamilyState(
+                    restoredFamily
+                )
+            );
+        }
     }, [
         connectSuiAsync,
         evmConnectors,
@@ -809,9 +800,6 @@ export function WalletManagerProvider({
                         return;
                     }
 
-                    await disconnectFamiliesExcept(
-                        'evm'
-                    );
                     await connectEvmAsync({
                         connector,
                         chainId:
@@ -847,9 +835,6 @@ export function WalletManagerProvider({
                         return;
                     }
 
-                    await disconnectFamiliesExcept(
-                        'sui'
-                    );
                     await connectSuiAsync({
                         wallet
                     });
@@ -857,21 +842,21 @@ export function WalletManagerProvider({
                         Date.now()
                     );
                 } else if (descriptor.chainFamily === 'solana') {
-                    await disconnectFamiliesExcept('solana');
                     const wallet = await connectSolanaWallet(walletId);
                     setSolanaSession(wallet);
                 } else if (descriptor.chainFamily === 'aptos') {
-                    await disconnectFamiliesExcept('aptos');
                     const wallet = await connectAptosWallet(walletId);
                     setAptosSession(wallet);
                 } else {
-                    await disconnectFamiliesExcept('stellar');
                     const wallet = await connectStellarWallet(walletId);
                     setStellarSession(wallet);
                 }
 
                 setPreferredWalletId(
                     walletId
+                );
+                setActiveSigner(
+                    descriptor.chainFamily
                 );
                 persistRecentWallet(
                     walletId
@@ -897,7 +882,6 @@ export function WalletManagerProvider({
                           ? 'unsupported-chain'
                           : 'error'
                 );
-                clearActiveWalletSnapshot();
                 throw caughtError;
             } finally {
                 setPendingWalletId(
@@ -909,61 +893,97 @@ export function WalletManagerProvider({
             connectEvmAsync,
             connectSuiAsync,
             currentWallet?.id,
-            disconnectFamiliesExcept,
             evmConnectors,
+            setActiveSigner,
             suiWallets
         ]
     );
 
     const disconnect = useCallback(
-        async () => {
-            if (!currentWallet) {
-                clearActiveWalletSnapshot();
-                setStatus(
-                    'disconnected'
-                );
+        async (family?: WalletChainFamily) => {
+            const targetFamily =
+                family ||
+                currentWallet?.family;
+            const targetWallet =
+                targetFamily
+                    ? linkedWallets[
+                          targetFamily
+                      ]
+                    : null;
+
+            if (
+                !targetFamily ||
+                !targetWallet
+            ) {
                 return;
             }
 
             setError(null);
             setPendingWalletId(
-                currentWallet.id
+                targetWallet.id
             );
 
             try {
-                if (
-                    currentWallet.family ===
-                    'evm'
-                ) {
+                if (targetFamily === 'evm') {
                     await disconnectEvmAsync();
                 } else if (
-                    currentWallet.family ===
-                    'sui'
+                    targetFamily === 'sui'
                 ) {
                     await disconnectSuiAsync();
-                } else if (currentWallet.family === 'solana') {
-                    await disconnectSolanaWallet(currentWallet.id);
+                } else if (
+                    targetFamily === 'solana'
+                ) {
+                    await disconnectSolanaWallet(
+                        targetWallet.id
+                    );
                     setSolanaSession(null);
-                } else if (currentWallet.family === 'aptos') {
-                    await disconnectAptosWallet(currentWallet.id);
+                } else if (
+                    targetFamily === 'aptos'
+                ) {
+                    await disconnectAptosWallet(
+                        targetWallet.id
+                    );
                     setAptosSession(null);
                 } else {
                     setStellarSession(null);
                 }
             } finally {
-                clearActiveWalletSnapshot();
-                setPendingWalletId(
-                    null
+                clearLinkedWallet(
+                    targetFamily
                 );
-                setStatus(
-                    'disconnected'
-                );
+                setPendingWalletId(null);
+
+                if (
+                    activeSignerFamily ===
+                    targetFamily
+                ) {
+                    const remaining =
+                        Object.keys(
+                            linkedWallets
+                        ).filter(
+                            (key) =>
+                                key !==
+                                targetFamily
+                        ) as WalletChainFamily[];
+                    setActiveSignerFamilyState(
+                        remaining[0] || null
+                    );
+                }
+
+                if (
+                    Object.keys(linkedWallets)
+                        .length <= 1
+                ) {
+                    setStatus('disconnected');
+                }
             }
         },
         [
-            currentWallet,
+            activeSignerFamily,
+            currentWallet?.family,
             disconnectEvmAsync,
-            disconnectSuiAsync
+            disconnectSuiAsync,
+            linkedWallets
         ]
     );
 
@@ -1259,6 +1279,9 @@ export function WalletManagerProvider({
     >(
         () => ({
             currentWallet,
+            linkedWallets,
+            activeSignerFamily,
+            setActiveSigner,
             status,
             error,
             wallets,
@@ -1295,15 +1318,18 @@ export function WalletManagerProvider({
                 isWalletConnectConfigured
         }),
         [
+            activeSignerFamily,
             connect,
             currentWallet,
             disconnect,
             error,
             evmChains,
             isModalOpen,
+            linkedWallets,
             modalQuery,
             pendingWalletId,
             recentWalletIds,
+            setActiveSigner,
             status,
             switchEvmChain,
             wallets

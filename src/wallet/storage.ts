@@ -1,4 +1,5 @@
 import {
+    WalletChainFamily,
     WalletId,
     WalletSessionSnapshot
 } from './types';
@@ -7,6 +8,14 @@ const RECENT_WALLETS_KEY =
     'txio_recent_wallets';
 const ACTIVE_WALLET_KEY =
     'txio_active_wallet';
+const LINKED_WALLETS_KEY =
+    'txio_linked_wallets';
+const ACTIVE_SIGNER_KEY =
+    'txio_active_signer';
+
+type LinkedWalletsSnapshot = Partial<
+    Record<WalletChainFamily, WalletSessionSnapshot>
+>;
 
 const isBrowser = () =>
     typeof window !== 'undefined';
@@ -59,6 +68,7 @@ export const persistRecentWallet = (
     );
 };
 
+/** @deprecated single-wallet snapshot, superseded by readLinkedWallets/persistLinkedWallet */
 export const readActiveWalletSnapshot =
     () => {
         if (!isBrowser()) {
@@ -83,6 +93,7 @@ export const readActiveWalletSnapshot =
         }
     };
 
+/** @deprecated single-wallet snapshot, superseded by readLinkedWallets/persistLinkedWallet */
 export const persistActiveWalletSnapshot =
     (
         snapshot: WalletSessionSnapshot
@@ -97,6 +108,7 @@ export const persistActiveWalletSnapshot =
         );
     };
 
+/** @deprecated single-wallet snapshot, superseded by readLinkedWallets/persistLinkedWallet */
 export const clearActiveWalletSnapshot =
     () => {
         if (!isBrowser()) {
@@ -107,3 +119,92 @@ export const clearActiveWalletSnapshot =
             ACTIVE_WALLET_KEY
         );
     };
+
+export const readLinkedWallets = () => {
+    if (!isBrowser()) {
+        return {} as LinkedWalletsSnapshot;
+    }
+
+    try {
+        const raw = localStorage.getItem(
+            LINKED_WALLETS_KEY
+        );
+
+        if (!raw) {
+            return {} as LinkedWalletsSnapshot;
+        }
+
+        const parsed = JSON.parse(raw);
+        return (parsed &&
+            typeof parsed === 'object'
+            ? parsed
+            : {}) as LinkedWalletsSnapshot;
+    } catch {
+        return {} as LinkedWalletsSnapshot;
+    }
+};
+
+export const persistLinkedWallet = (
+    family: WalletChainFamily,
+    snapshot: WalletSessionSnapshot
+) => {
+    if (!isBrowser()) {
+        return;
+    }
+
+    const next: LinkedWalletsSnapshot = {
+        ...readLinkedWallets(),
+        [family]: snapshot
+    };
+
+    localStorage.setItem(
+        LINKED_WALLETS_KEY,
+        JSON.stringify(next)
+    );
+};
+
+export const clearLinkedWallet = (
+    family: WalletChainFamily
+) => {
+    if (!isBrowser()) {
+        return;
+    }
+
+    const next = {
+        ...readLinkedWallets()
+    };
+    delete next[family];
+
+    localStorage.setItem(
+        LINKED_WALLETS_KEY,
+        JSON.stringify(next)
+    );
+};
+
+export const readActiveSignerFamily = () => {
+    if (!isBrowser()) {
+        return null;
+    }
+
+    try {
+        const raw = localStorage.getItem(
+            ACTIVE_SIGNER_KEY
+        );
+        return (raw as WalletChainFamily) || null;
+    } catch {
+        return null;
+    }
+};
+
+export const persistActiveSignerFamily = (
+    family: WalletChainFamily
+) => {
+    if (!isBrowser()) {
+        return;
+    }
+
+    localStorage.setItem(
+        ACTIVE_SIGNER_KEY,
+        family
+    );
+};
