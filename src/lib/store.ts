@@ -886,7 +886,8 @@ export const appStore = {
                 {
                     id,
                     message,
-                    type
+                    type,
+                    timestamp: Date.now()
                 }
             ]
         };
@@ -903,6 +904,22 @@ export const appStore = {
 
             emit();
         }, 3000);
+    },
+
+    clearNotifications() {
+        state = {
+            ...state,
+            notifications: []
+        };
+        emit();
+    },
+
+    dismissNotification(id: string) {
+        state = {
+            ...state,
+            notifications: state.notifications.filter((n) => n.id !== id)
+        };
+        emit();
     },
 
     setCommandPalette(isOpen: boolean) {

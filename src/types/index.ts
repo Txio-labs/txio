@@ -98,6 +98,7 @@ export interface Notification {
   id: string;
   message: string;
   type: 'info' | 'success' | 'error';
+  timestamp: number;
 }
 
 // --- Assertions & Hooks ---
@@ -146,7 +147,28 @@ export interface SuiRpcResponse {
 
 export enum RequestType {
   RPC = 'RPC',
-  TRANSACTION = 'TRANSACTION'
+  TRANSACTION = 'TRANSACTION',
+  SWAP = 'SWAP'
+}
+
+// A cross-chain (or same-chain) swap/bridge via an aggregator (LI.FI).
+// Unlike TRANSACTION, which targets exactly one chain, a swap spans a
+// source and destination chain — execution synthesizes a per-leg
+// RequestItem from the selected route rather than carrying chain-native
+// params directly on this type.
+export interface SwapParams {
+  fromChain: ChainId;
+  toChain: ChainId;
+  // Token address or symbol, per the aggregator's convention.
+  fromToken: string;
+  toToken: string;
+  // Smallest unit (e.g. wei), as a string to stay bigint-safe.
+  fromAmount: string;
+  // e.g. 0.5 for 0.5%.
+  slippagePercent: number;
+  deadlineMinutes: number;
+  // Which of the compared routes the user picked, once chosen.
+  selectedRouteId?: string;
 }
 
 export type TransactionKind = 'MoveCall' | 'TransferSui' | 'TransferObject';
@@ -259,6 +281,8 @@ export interface RequestItem {
   solanaTxParams?: SolanaTxParams;
   evmTxParams?: EvmTxParams;
   stellarTxParams?: StellarTxParams;
+  // Present for RequestType.SWAP requests — see SwapParams.
+  swapParams?: SwapParams;
   isLoading?: boolean;
   status?: number;
   timestamp?: number;

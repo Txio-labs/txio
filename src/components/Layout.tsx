@@ -22,6 +22,7 @@ import {
     BookOpen,
     HelpCircle,
     Bell,
+    BellOff,
     CircleDot,
     Wallet,
     Activity,
@@ -29,6 +30,10 @@ import {
     ShieldCheck,
     Menu,
     KeyRound,
+    CheckCircle2,
+    XCircle,
+    Info,
+    X,
 } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { Tab } from './ui/Tabs';
@@ -82,6 +87,23 @@ const NAV_RAIL_BOTTOM: NavRailItem[] = [
 // Only rendered for accounts with the server-side is_admin flag; the backend
 // rejects /admin requests from anyone else regardless of what the UI shows.
 const ADMIN_NAV_ITEM: NavRailItem = { id: 'admin', label: 'Admin', icon: ShieldCheck };
+
+const NOTIF_META = {
+    success: { icon: CheckCircle2, className: 'text-emerald-500 bg-emerald-500/10' },
+    error: { icon: XCircle, className: 'text-red-500 bg-red-500/10' },
+    info: { icon: Info, className: 'text-sky-500 bg-sky-500/10' }
+} as const;
+
+function notifTimeAgo(ts: number): string {
+    const diffMs = Date.now() - ts;
+    const secs = Math.floor(diffMs / 1000);
+    if (secs < 5) return 'just now';
+    if (secs < 60) return `${secs}s ago`;
+    const mins = Math.floor(secs / 60);
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    return `${hrs}h ago`;
+}
 
 export const Layout: React.FC<LayoutProps> = ({
     workspace,
@@ -370,16 +392,51 @@ export const Layout: React.FC<LayoutProps> = ({
                                     )}
                                 </button>
                                 {isNotifOpen && (
-                                    <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
-                                        <div className="p-2 max-h-64 overflow-y-auto custom-scrollbar">
+                                    <div className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
+                                        <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-slate-200 dark:border-white/10">
+                                            <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200">Notifications</h3>
+                                            {notifications.length > 0 && (
+                                                <button
+                                                    onClick={() => appStore.clearNotifications()}
+                                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors"
+                                                >
+                                                    Clear all
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="max-h-80 overflow-y-auto custom-scrollbar">
                                             {notifications.length === 0 ? (
-                                                <p className="text-xs text-slate-500 text-center py-4">No notifications</p>
+                                                <div className="flex flex-col items-center justify-center gap-2 py-10 px-4">
+                                                    <BellOff size={22} className="text-slate-300 dark:text-slate-700" />
+                                                    <p className="text-xs text-slate-500">You're all caught up</p>
+                                                </div>
                                             ) : (
-                                                notifications.map((n) => (
-                                                    <div key={n.id} className="px-2 py-2 text-xs text-slate-600 dark:text-slate-300 border-b border-slate-100 dark:border-white/5 last:border-0">
-                                                        {n.message}
-                                                    </div>
-                                                ))
+                                                <div className="p-1.5 space-y-0.5">
+                                                    {notifications.slice().reverse().map((n) => {
+                                                        const meta = NOTIF_META[n.type];
+                                                        return (
+                                                            <div
+                                                                key={n.id}
+                                                                className="group flex items-start gap-2.5 px-2.5 py-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-white/[0.04] transition-colors"
+                                                            >
+                                                                <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${meta.className}`}>
+                                                                    <meta.icon size={13} />
+                                                                </div>
+                                                                <div className="min-w-0 flex-1">
+                                                                    <p className="text-xs text-slate-700 dark:text-slate-200 leading-snug">{n.message}</p>
+                                                                    <p className="text-[10px] text-slate-400 mt-0.5">{notifTimeAgo(n.timestamp)}</p>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => appStore.dismissNotification(n.id)}
+                                                                    className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-opacity shrink-0 mt-0.5"
+                                                                    aria-label="Dismiss"
+                                                                >
+                                                                    <X size={12} />
+                                                                </button>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
                                             )}
                                         </div>
                                     </div>
