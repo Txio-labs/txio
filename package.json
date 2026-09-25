@@ -13,8 +13,11 @@
   },
   "dependencies": {
     "@aptos-labs/ts-sdk": "^7.3.0",
+    "@creit.tech/xbull-wallet-connect": "^0.4.0",
     "@dicebear/collection": "^9.4.2",
     "@dicebear/core": "^9.3.0",
+    "@ledgerhq/hw-app-eth": "^6.42.0",
+    "@ledgerhq/hw-transport-webhid": "^6.29.0",
     "@lobstrco/signer-extension-api": "^2.0.0",
     "@metamask/connect-evm": "^2.1.1",
     "@mysten/dapp-kit": "^1.1.8",
@@ -30,8 +33,6 @@
     "next": "^16.2.11",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "@ledgerhq/hw-app-eth": "^6.42.0",
-    "@ledgerhq/hw-transport-webhid": "^6.29.0",
     "viem": "^2.55.0",
     "wagmi": "^3.7.3"
   },

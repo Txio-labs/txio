@@ -40,6 +40,7 @@ import {
     WALLET_DESCRIPTORS
 } from '../descriptors';
 import {
+    closeXBullBridge,
     connectStellarWallet,
     detectStellarWallets,
     restoreStellarWallet
@@ -968,6 +969,9 @@ export function WalletManagerProvider({
                     );
                     setAptosSession(null);
                 } else {
+                    if (targetWallet.id === 'xbull') {
+                        closeXBullBridge();
+                    }
                     setStellarSession(null);
                 }
             } finally {
@@ -1215,10 +1219,11 @@ export function WalletManagerProvider({
                                 : 'available';
                         break;
                     case 'xbull':
-                        availability =
-                            stellarAvailability.xbull
-                                ? 'installed'
-                                : 'not-installed';
+                        // xBull's connect SDK bridges via postMessage to the
+                        // extension when present, or opens the xBull webapp
+                        // otherwise — always usable, never gated on a
+                        // window.* injection check.
+                        availability = 'available';
                         break;
                     case 'rabet':
                         availability =

@@ -8,6 +8,7 @@ import {
     isConnected as isLobstrConnected,
     signTransaction as lobstrSignTransaction
 } from '@lobstrco/signer-extension-api';
+import { xBullWalletConnect } from '@creit.tech/xbull-wallet-connect';
 
 import type {
     ConnectedWallet,
@@ -127,22 +128,23 @@ type AlbedoApi = {
     }) => Promise<{ pubkey?: string; publicKey?: string }>;
 };
 
-type XBullApi = {
-    connect?: (opts?: Record<string, unknown>) => Promise<unknown>;
-    getPublicKeys?: () => Promise<
-        Array<string | { publicKey?: string; key?: string }>
-    >;
-    getAddress?: () => Promise<
-        string | { publicKey?: string; address?: string }
-    >;
-    getPublicKey?: () => Promise<string>;
-    // Official signing method — see
-    // https://creit.tech/docs/xBull-Signer/ — takes the unsigned XDR and an
-    // options object naming which network/account to sign with.
-    signXDR?: (
-        xdr: string,
-        opts?: { network?: string; publicKey?: string }
-    ) => Promise<string | { signedXDR?: string; result?: string }>;
+// xBull's official connect SDK (https://github.com/Creit-Tech/xBull-Wallet-Connect)
+// bridges to the extension via postMessage, and falls back to the xBull
+// webapp when the extension isn't installed — so, unlike the other Stellar
+// wallets here, xBull needs no window.* injection check at all. One bridge
+// is kept per session (a fresh keypair/session id per the library's own
+// guidance) and reused across connect() and later sign() calls, then closed
+// on disconnect.
+let xbullBridge: xBullWalletConnect | undefined;
+
+const getXBullBridge = (): xBullWalletConnect => {
+    xbullBridge ??= new xBullWalletConnect();
+    return xbullBridge;
+};
+
+export const closeXBullBridge = (): void => {
+    xbullBridge?.closeConnections();
+    xbullBridge = undefined;
 };
 
 type RabetApi = {
@@ -288,63 +290,21 @@ const connectAlbedo = async (): Promise<ConnectedWallet> => {
 };
 
 const connectXBull = async (): Promise<ConnectedWallet> => {
-    const xbull = getBrowserWindow()?.xBullSDK as
-        | XBullApi
-        | undefined;
+    // A fresh bridge per connect attempt: reusing one across a failed/retried
+    // connect can leave stale listeners from the abandoned attempt.
+    closeXBullBridge();
+    const bridge = getXBullBridge();
 
-    if (!xbull) {
-        throw new Error(
-            'xBull is not installed or did not inject window.xBullSDK.'
-        );
-    }
-
-    if (typeof xbull.connect === 'function') {
-        await withTimeout(
-            xbull.connect({
-                canRequestPublicKey: true,
-                canRequestSign: true
-            }),
-            'xBull connect'
-        );
-    }
-
-    if (typeof xbull.getPublicKeys === 'function') {
-        const keys = await withTimeout(
-            xbull.getPublicKeys(),
-            'xBull getPublicKeys'
-        );
-        const first = Array.isArray(keys) ? keys[0] : null;
-        const address = pickAddress(first);
-        if (address) {
-            return buildWallet('xbull', address);
-        }
-    }
-
-    if (typeof xbull.getAddress === 'function') {
-        const result = await withTimeout(
-            xbull.getAddress(),
-            'xBull getAddress'
-        );
-        const address = pickAddress(result);
-        if (address) {
-            return buildWallet('xbull', address);
-        }
-    }
-
-    if (typeof xbull.getPublicKey === 'function') {
-        const result = await withTimeout(
-            xbull.getPublicKey(),
-            'xBull getPublicKey'
-        );
-        const address = pickAddress(result);
-        if (address) {
-            return buildWallet('xbull', address);
-        }
-    }
-
-    throw new Error(
-        'xBull did not return a public key.'
+    const address = await withTimeout(
+        bridge.connect(),
+        'xBull connect'
     );
+
+    if (!address) {
+        throw new Error('xBull did not return a public key.');
+    }
+
+    return buildWallet('xbull', address);
 };
 
 const connectRabet = async (): Promise<ConnectedWallet> => {
@@ -471,9 +431,11 @@ export const detectStellarWallets =
             albedo: Boolean(
                 browserWindow?.albedo
             ),
-            xbull: Boolean(
-                browserWindow?.xBullSDK
-            ),
+            // xBull's connect SDK bridges to the extension when installed and
+            // otherwise opens the xBull webapp itself, so it's always usable
+            // — unlike the other wallets here, its availability isn't gated
+            // on a window.* injection.
+            xbull: true,
             rabet: Boolean(
                 browserWindow?.rabet
             ),
@@ -568,53 +530,11 @@ const restoreAlbedo =
 
 const restoreXBull =
     async (): Promise<ConnectedWallet | null> => {
-        const xbull = getBrowserWindow()?.xBullSDK as
-            | XBullApi
-            | undefined;
-        if (!xbull) return null;
-
-        try {
-            if (typeof xbull.getPublicKeys === 'function') {
-                const keys = await withTimeout(
-                    xbull.getPublicKeys(),
-                    'xBull restore',
-                    10_000
-                );
-                const address = pickAddress(
-                    Array.isArray(keys) ? keys[0] : null
-                );
-                if (address) {
-                    return buildWallet('xbull', address);
-                }
-            }
-
-            if (typeof xbull.getAddress === 'function') {
-                const result = await withTimeout(
-                    xbull.getAddress(),
-                    'xBull restore address',
-                    10_000
-                );
-                const address = pickAddress(result);
-                if (address) {
-                    return buildWallet('xbull', address);
-                }
-            }
-
-            if (typeof xbull.getPublicKey === 'function') {
-                const result = await withTimeout(
-                    xbull.getPublicKey(),
-                    'xBull restore key',
-                    10_000
-                );
-                const address = pickAddress(result);
-                if (address) {
-                    return buildWallet('xbull', address);
-                }
-            }
-        } catch {
-            return null;
-        }
-
+        // The xBull connect SDK has no silent "already authorized" check —
+        // bridge.connect() always opens a fresh popup/tab for the user to
+        // approve. Popping that on every page load would violate the
+        // no-surprise-auth-prompt rule the other wallets follow here, so
+        // xBull is never silently restored; the user reconnects explicitly.
         return null;
     };
 
@@ -821,19 +741,12 @@ export const signStellarTransaction = async (
         return signed;
     }
     if (walletId === 'xbull') {
-        const xbull = getBrowserWindow()?.xBullSDK as XBullApi | undefined;
-        if (!xbull?.signXDR) {
-            throw new Error('xBull is not installed or does not support signing.');
-        }
-        const result = await withTimeout(
-            xbull.signXDR(transactionXdr, { network: networkPassphrase, publicKey: address }),
+        const bridge = getXBullBridge();
+        const signedXdr = await withTimeout(
+            bridge.sign({ xdr: transactionXdr, publicKey: address, network: networkPassphrase }),
             'xBull sign',
             60_000
         );
-        const signedXdr =
-            typeof result === 'string'
-                ? result
-                : result?.signedXDR ?? result?.result;
         if (!signedXdr) {
             throw new Error('xBull declined to sign the transaction.');
         }
