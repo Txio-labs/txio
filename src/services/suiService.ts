@@ -715,3 +715,45 @@ export const signAndExecuteMoveCall = async (
         );
     }
 };
+
+/**
+ * Signs and executes a pre-built raw Sui transaction (base64-encoded BCS
+ * bytes) — the shape LI.FI's `advanced/stepTransaction` returns for a
+ * Sui-origin cross-chain send. Unlike `signAndExecuteMoveCall`, this does not
+ * construct the transaction from a Move call; it only deserializes, signs,
+ * and executes what the caller already has.
+ */
+export const signAndExecuteRawSuiTransaction = async (
+    network: Network,
+    transactionBase64: string,
+    signAndExecuteTransaction: (transactionBlock: any) => Promise<any>
+) => {
+    const { Transaction } = await import('@mysten/sui/transactions');
+    const txb = Transaction.from(transactionBase64);
+
+    try {
+        const result = await signAndExecuteTransaction({ transaction: txb, chain: `sui:${network}` });
+        return {
+            result: {
+                digest: result.digest,
+                transaction: result.transaction,
+                effects: result.effects,
+                confirmed: true,
+                executed: true
+            },
+            duration: 0,
+            status: 200
+        };
+    } catch (error: any) {
+        throw new SuiRpcError(
+            error instanceof Error && error.message.trim()
+                ? error.message
+                : 'Transaction signing or execution failed.',
+            {
+                status: 500,
+                endpoint: getActiveSuiRpcUrl(network),
+                duration: 0,
+            }
+        );
+    }
+};

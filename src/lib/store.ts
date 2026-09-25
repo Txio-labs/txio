@@ -1062,7 +1062,7 @@ export const appStore = {
                     break;
 
                 case 'swap':
-                    title = 'Swap';
+                    title = 'Send';
                     break;
 
                 case 'approvals':

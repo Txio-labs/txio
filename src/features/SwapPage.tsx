@@ -130,7 +130,7 @@ export const SwapPage: React.FC = () => {
             <div className="px-6 py-5 border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-dark-indigo-glow/50 shrink-0">
                 <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-3">
                     <Repeat size={22} className="text-electric-violet" />
-                    Swap
+                    Send
                 </h1>
                 <p className="text-xs text-slate-500 mt-1">
                     Compare routes across DEXs and bridges (via LI.FI) for a same-chain swap or cross-chain transfer.

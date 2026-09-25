@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import { AlertTriangle, ArrowRight, CheckCircle2, Loader2, Shield, X } from 'lucide-react';
+import { useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 
 import { useWallet } from '@/wallet';
 import { appStore } from '@/lib/store';
 import { EvmTxParams, RequestItem, RequestType } from '../types';
 import { LifiRoute, LifiStep, getStepTransaction } from '@/lib/lifi';
 import { executeTransaction, txExplorerUrl } from '@/services/transactionService';
+import { resolveChainRpcUrl, signAndExecuteRawSuiTransaction } from '@/services/suiService';
+import { signAndSubmitRawStellarTransaction } from '@/services/adapters/stellarAdapter';
+import { signAndSendRawSolanaTransaction } from '@/wallet/solana';
 import { VerificationBadge } from '@/components/ui/VerificationBadge';
 import { DEFAULT_MOVE_CALL } from '@/lib/constants';
 
@@ -51,7 +55,17 @@ const buildApprovalRequest = (
     };
 };
 
-/** Builds a TRANSACTION RequestItem from a resolved LI.FI step's transactionRequest (EVM only — the only chain LI.FI returns raw calldata for that maps directly onto EvmTxParams). */
+/**
+ * Builds a TRANSACTION RequestItem from a resolved LI.FI step's
+ * transactionRequest, for EVM only — the one chain whose transactionRequest
+ * has a `chainId` and calldata that map directly onto EvmTxParams.
+ * Non-EVM chains (Solana/Sui/Stellar) get a pre-built opaque transaction
+ * (base64 bytes or XDR) instead, which is signed directly via
+ * signAndSendRawSolanaTransaction/signAndExecuteRawSuiTransaction/
+ * signAndSubmitRawStellarTransaction rather than routed through this
+ * RequestItem/ChainAdapter path, which only knows how to build transactions
+ * from structured params.
+ */
 const buildStepRequest = (step: LifiStep): RequestItem | null => {
     const tx = step.transactionRequest;
     if (!tx || !tx.chainId) return null;
@@ -76,7 +90,8 @@ const buildStepRequest = (step: LifiStep): RequestItem | null => {
 };
 
 export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, request, route, onClose }) => {
-    const { currentWallet } = useWallet();
+    const { currentWallet, linkedWallets } = useWallet();
+    const { mutateAsync: suiSignAndExecute } = useSignAndExecuteTransaction();
     const [executing, setExecuting] = useState(false);
     const [legs, setLegs] = useState<SwapLegResult[]>([]);
     const [error, setError] = useState<string | null>(null);
@@ -87,6 +102,14 @@ export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, reques
     const firstStep = route.steps[0];
     const approvalAddress = firstStep?.estimate?.approvalAddress;
     const swapParams = request.swapParams;
+    // The swap's source chain may not be the active signer — look up the
+    // linked wallet for that specific chain family rather than assuming
+    // currentWallet matches. ChainId includes 'cardano', which has no wallet
+    // family (LI.FI doesn't support it either — lifiChainKeyFor throws first).
+    const sourceWallet =
+        swapParams && swapParams.fromChain !== 'cardano'
+            ? linkedWallets[swapParams.fromChain] ?? null
+            : currentWallet;
 
     const handleExecute = async () => {
         setExecuting(true);
@@ -103,7 +126,7 @@ export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, reques
                     firstStep.action.fromAmount,
                     firstStep.action.fromChainId
                 );
-                const approvalResult = await executeTransaction(approvalRequest, { network: 'mainnet', wallet: currentWallet });
+                const approvalResult = await executeTransaction(approvalRequest, { network: 'mainnet', wallet: sourceWallet });
                 completedLegs.push({
                     chain: swapParams?.fromChain ?? 'evm',
                     tool: 'approval',
@@ -115,13 +138,44 @@ export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, reques
 
             // 2. Resolve the step to a submittable transaction right before sending — quotes can go stale between comparison and execution.
             const resolvedStep = await getStepTransaction(firstStep);
-            const stepRequest = buildStepRequest(resolvedStep);
-            if (!stepRequest) {
-                throw new Error('This route’s transaction could not be prepared for execution. Only EVM legs are supported today.');
+            const tx = resolvedStep.transactionRequest;
+            if (!tx) {
+                throw new Error('This route’s transaction could not be prepared for execution.');
             }
 
-            const stepResult = await executeTransaction(stepRequest, { network: 'mainnet', wallet: currentWallet });
-            const hash = (stepResult.result as { hash?: string })?.hash;
+            let hash: string | undefined;
+            if (tx.chainId) {
+                // EVM: routed through the normal RequestItem/ChainAdapter path.
+                const stepRequest = buildStepRequest(resolvedStep);
+                if (!stepRequest) throw new Error('This route’s EVM transaction could not be prepared for execution.');
+                const stepResult = await executeTransaction(stepRequest, { network: 'mainnet', wallet: sourceWallet });
+                hash = (stepResult.result as { hash?: string })?.hash;
+            } else if (swapParams?.fromChain === 'solana') {
+                if (!sourceWallet || sourceWallet.family !== 'solana') {
+                    throw new Error('Connect a Solana wallet to sign this transaction.');
+                }
+                const { signature } = await signAndSendRawSolanaTransaction({
+                    walletId: sourceWallet.id,
+                    rpcUrl: resolveChainRpcUrl('solana', 'mainnet'),
+                    transactionBase64: tx.data
+                });
+                hash = signature;
+            } else if (swapParams?.fromChain === 'sui') {
+                if (!sourceWallet || sourceWallet.family !== 'sui') {
+                    throw new Error('Connect a Sui wallet to sign this transaction.');
+                }
+                const result = await signAndExecuteRawSuiTransaction('mainnet', tx.data, suiSignAndExecute);
+                hash = (result.result as { digest?: string })?.digest;
+            } else if (swapParams?.fromChain === 'stellar') {
+                if (!sourceWallet || sourceWallet.family !== 'stellar') {
+                    throw new Error('Connect a Stellar wallet to sign this transaction.');
+                }
+                const result = await signAndSubmitRawStellarTransaction(tx.data, sourceWallet, 'mainnet');
+                hash = (result.result as { hash?: string })?.hash;
+            } else {
+                throw new Error('This route’s transaction could not be prepared for execution. Unsupported source chain.');
+            }
+
             const explorerUrl = hash && swapParams
                 ? txExplorerUrl(swapParams.fromChain, 'mainnet', hash, firstStep.action.fromChainId as number)
                 : undefined;
@@ -144,9 +198,9 @@ export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, reques
             );
 
             setDone(true);
-            appStore.showToast('Swap submitted', 'success');
+            appStore.showToast('Send submitted', 'success');
         } catch (err) {
-            const message = err instanceof Error ? err.message : 'Swap failed.';
+            const message = err instanceof Error ? err.message : 'Send failed.';
             setError(message);
             appStore.showToast(message, 'error');
             appStore.addToHistory(
@@ -174,7 +228,7 @@ export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, reques
             <div className="bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
                 <div className="p-4 border-b border-slate-200 dark:border-white/5 flex justify-between items-center bg-white dark:bg-near-black">
                     <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        <Shield size={16} className="text-electric-violet" /> Review Swap
+                        <Shield size={16} className="text-electric-violet" /> Review Send
                     </h2>
                     <button onClick={handleClose} disabled={executing} className="text-slate-500 hover:text-slate-900 dark:hover:text-white disabled:opacity-40">
                         <X size={18} />
@@ -208,7 +262,7 @@ export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, reques
                     {approvalAddress && (
                         <div className="flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-900/30 bg-amber-50 dark:bg-amber-900/10 p-3 text-[11px] text-amber-700 dark:text-amber-400">
                             <AlertTriangle size={13} className="shrink-0 mt-0.5" />
-                            This route needs a spend approval first. It will run before the swap, as a separate transaction.
+                            This route needs a spend approval first. It will run before the send, as a separate transaction.
                         </div>
                     )}
 
@@ -242,11 +296,11 @@ export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, reques
                     {!done && (
                         <button
                             onClick={handleExecute}
-                            disabled={executing || !currentWallet}
+                            disabled={executing || !sourceWallet}
                             className="px-6 py-2 bg-slate-900 dark:bg-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white dark:text-near-black text-xs font-bold rounded shadow-lg flex items-center gap-2"
                         >
                             {executing ? <Loader2 size={14} className="animate-spin" /> : null}
-                            {executing ? 'Executing…' : 'Execute Swap'} {!executing && <ArrowRight size={14} />}
+                            {executing ? 'Executing…' : 'Execute Send'} {!executing && <ArrowRight size={14} />}
                         </button>
                     )}
                 </div>

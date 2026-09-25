@@ -127,6 +127,52 @@ const executeStellar = async (
     throw new Error(`Transaction ${sent.hash} was submitted but not confirmed within 30s.`);
 };
 
+/**
+ * Signs and submits a pre-built raw Stellar transaction (unsigned XDR
+ * envelope) — the shape LI.FI's `advanced/stepTransaction` returns for a
+ * Stellar-origin cross-chain send. Unlike `executeStellar`, this does not
+ * build the transaction from a Soroban contract call; it only signs and
+ * submits the XDR the caller already has.
+ */
+export const signAndSubmitRawStellarTransaction = async (
+    unsignedXdr: string,
+    wallet: ConnectedWallet,
+    network: Network,
+    onProgress?: (p: TxProgress) => void
+): Promise<TxResult> => {
+    const { rpc, TransactionBuilder } = await loadStellar();
+    const start = performance.now();
+    const networkPassphrase = await stellarPassphrase(network);
+    const server = new rpc.Server(resolveChainRpcUrl('stellar', network));
+
+    onProgress?.({ stage: 'awaiting-signature' });
+    const signedXdr = await signStellarTransaction(wallet.id, unsignedXdr, networkPassphrase, wallet.address);
+    const sent = await server.sendTransaction(TransactionBuilder.fromXDR(signedXdr, networkPassphrase));
+    if (sent.status === 'ERROR') {
+        throw new Error(`Submission rejected: ${JSON.stringify(toJsonSafe(sent.errorResult ?? sent.status))}`);
+    }
+    const explorerUrl = stellarExplorerUrl(network, sent.hash);
+    onProgress?.({ stage: 'submitted', hash: sent.hash, explorerUrl });
+
+    for (let attempt = 0; attempt < 30; attempt++) {
+        const got = await server.getTransaction(sent.hash);
+        if (got.status === rpc.Api.GetTransactionStatus.SUCCESS) {
+            onProgress?.({ stage: 'confirmed', hash: sent.hash, explorerUrl });
+            return {
+                result: toJsonSafe({ hash: sent.hash, explorerUrl, ledger: got.ledger }),
+                duration: Math.round(performance.now() - start),
+                status: 200
+            };
+        }
+        if (got.status === rpc.Api.GetTransactionStatus.FAILED) {
+            onProgress?.({ stage: 'failed', hash: sent.hash, explorerUrl });
+            throw new Error(`Transaction ${sent.hash} failed on-chain.`);
+        }
+        await new Promise((r) => setTimeout(r, 1000));
+    }
+    throw new Error(`Transaction ${sent.hash} was submitted but not confirmed within 30s.`);
+};
+
 export class StellarAdapter implements ChainAdapter {
     readonly chain = 'stellar' as const;
     readonly label = 'Stellar';

@@ -96,7 +96,7 @@ export const SwapResumeModal: React.FC<SwapResumeModalProps> = ({ isOpen, item, 
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/70 dark:bg-near-black/80 backdrop-blur-sm">
             <div className="bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
                 <div className="p-4 border-b border-slate-200 dark:border-white/5 flex justify-between items-center bg-white dark:bg-near-black">
-                    <h2 className="text-sm font-bold text-slate-900 dark:text-white">Resume Swap</h2>
+                    <h2 className="text-sm font-bold text-slate-900 dark:text-white">Resume Send</h2>
                     <button onClick={onClose} className="text-slate-500 hover:text-slate-900 dark:hover:text-white">
                         <X size={18} />
                     </button>

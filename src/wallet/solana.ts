@@ -432,6 +432,54 @@ export async function sendSolanaTransaction(params: {
     return { signature };
 }
 
+/**
+ * Signs and submits a pre-built raw Solana transaction (base64-encoded
+ * `VersionedTransaction` bytes) — the shape LI.FI's `advanced/stepTransaction`
+ * returns for a Solana-origin cross-chain send. Unlike `sendSolanaTransaction`,
+ * this does not construct the transaction from instruction params; it only
+ * deserializes, signs, and submits what the caller already has.
+ */
+export async function signAndSendRawSolanaTransaction(params: {
+    walletId: WalletId;
+    rpcUrl: string;
+    transactionBase64: string;
+}): Promise<{ signature: string }> {
+    const provider = getSolanaProviderById(params.walletId);
+    if (!provider) {
+        throw new Error('Wallet is not connected or does not support Solana.');
+    }
+    if (!provider.signTransaction && !provider.signAndSendTransaction) {
+        throw new Error('This wallet does not support signing transactions.');
+    }
+
+    const transaction = VersionedTransaction.deserialize(Buffer.from(params.transactionBase64, 'base64'));
+    const connection = new Connection(params.rpcUrl, 'confirmed');
+
+    if (!provider.signTransaction) {
+        const result = await withTimeout(
+            provider.signAndSendTransaction!(transaction),
+            'Sign and send transaction',
+            60_000
+        );
+        return { signature: result.signature };
+    }
+
+    const signed = (await withTimeout(
+        provider.signTransaction(transaction),
+        'Sign transaction',
+        60_000
+    )) as VersionedTransaction;
+
+    const { blockhash, lastValidBlockHeight } = await withTimeout(
+        connection.getLatestBlockhash('confirmed'),
+        'Fetch recent blockhash'
+    );
+    const signature = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: false });
+    await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, 'confirmed');
+
+    return { signature };
+}
+
 export const detectSolanaWallets = async () => {
     return {
         'phantom-solana': Boolean(getPhantomProvider()),
