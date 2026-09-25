@@ -113,7 +113,7 @@ export const SwapPage: React.FC = () => {
         setReviewRequest({
             id: `swap-${route.id}`,
             type: RequestType.SWAP,
-            name: `Swap ${fromToken.trim()} → ${toToken.trim()}`,
+            name: `Send ${fromToken.trim()} → ${toToken.trim()}`,
             rpcParams: { method: '', params: [], chain: fromChain },
             moveParams: { ...DEFAULT_MOVE_CALL },
             swapParams
