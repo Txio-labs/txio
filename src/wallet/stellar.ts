@@ -136,6 +136,13 @@ type XBullApi = {
         string | { publicKey?: string; address?: string }
     >;
     getPublicKey?: () => Promise<string>;
+    // Official signing method — see
+    // https://creit.tech/docs/xBull-Signer/ — takes the unsigned XDR and an
+    // options object naming which network/account to sign with.
+    signXDR?: (
+        xdr: string,
+        opts?: { network?: string; publicKey?: string }
+    ) => Promise<string | { signedXDR?: string; result?: string }>;
 };
 
 type RabetApi = {
@@ -812,6 +819,25 @@ export const signStellarTransaction = async (
             throw new Error('LOBSTR declined to sign the transaction.');
         }
         return signed;
+    }
+    if (walletId === 'xbull') {
+        const xbull = getBrowserWindow()?.xBullSDK as XBullApi | undefined;
+        if (!xbull?.signXDR) {
+            throw new Error('xBull is not installed or does not support signing.');
+        }
+        const result = await withTimeout(
+            xbull.signXDR(transactionXdr, { network: networkPassphrase, publicKey: address }),
+            'xBull sign',
+            60_000
+        );
+        const signedXdr =
+            typeof result === 'string'
+                ? result
+                : result?.signedXDR ?? result?.result;
+        if (!signedXdr) {
+            throw new Error('xBull declined to sign the transaction.');
+        }
+        return signedXdr;
     }
     throw new Error(`Stellar wallet "${walletId}" does not support signing here.`);
 };

@@ -12,7 +12,7 @@ vi.mock('@lobstrco/signer-extension-api', () => ({
 }));
 
 import { requestAccess } from '@stellar/freighter-api';
-import { connectStellarWallet } from './stellar';
+import { connectStellarWallet, signStellarTransaction } from './stellar';
 
 describe('connectStellarWallet', () => {
     beforeEach(() => {
@@ -127,5 +127,63 @@ describe('connectStellarWallet', () => {
         await vi.advanceTimersByTimeAsync(30_000);
         await expectation;
         expect(requestAccess).not.toHaveBeenCalled();
+    });
+});
+
+describe('signStellarTransaction (xBull)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        delete window.xBullSDK;
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it('signs via xBullSDK.signXDR and returns the signed XDR', async () => {
+        const signXDR = vi.fn().mockResolvedValue('SIGNED_XDR_STRING');
+        window.xBullSDK = { signXDR };
+
+        const signed = await signStellarTransaction(
+            'xbull',
+            'UNSIGNED_XDR',
+            'Test SDF Network ; September 2015',
+            'GXBULLPUBLICKEY'
+        );
+
+        expect(signXDR).toHaveBeenCalledWith('UNSIGNED_XDR', {
+            network: 'Test SDF Network ; September 2015',
+            publicKey: 'GXBULLPUBLICKEY'
+        });
+        expect(signed).toBe('SIGNED_XDR_STRING');
+    });
+
+    it('accepts a { signedXDR } response shape from xBullSDK.signXDR', async () => {
+        window.xBullSDK = {
+            signXDR: vi.fn().mockResolvedValue({ signedXDR: 'SIGNED_XDR_OBJECT' })
+        };
+
+        const signed = await signStellarTransaction('xbull', 'UNSIGNED_XDR', 'network', 'GADDR');
+        expect(signed).toBe('SIGNED_XDR_OBJECT');
+    });
+
+    it('throws when xBull declines to sign', async () => {
+        window.xBullSDK = { signXDR: vi.fn().mockResolvedValue(undefined) };
+
+        await expect(
+            signStellarTransaction('xbull', 'UNSIGNED_XDR', 'network', 'GADDR')
+        ).rejects.toThrow(/declined to sign/i);
+    });
+
+    it('throws when xBull is not installed', async () => {
+        await expect(
+            signStellarTransaction('xbull', 'UNSIGNED_XDR', 'network', 'GADDR')
+        ).rejects.toThrow(/not installed|does not support signing/i);
+    });
+
+    it('rejects wallets with no signing support', async () => {
+        await expect(
+            signStellarTransaction('albedo', 'UNSIGNED_XDR', 'network', 'GADDR')
+        ).rejects.toThrow(/does not support signing/i);
     });
 });

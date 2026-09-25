@@ -282,6 +282,29 @@ export function WalletManagerProvider({
         refreshAptosAvailability();
     }, [refreshStellarAvailability, refreshSolanaAvailability, refreshAptosAvailability]);
 
+    // Best-effort prefetch of the heavy, dynamically-imported chain SDKs
+    // (@mysten/sui/transactions, @stellar/stellar-sdk) during browser idle
+    // time, so the first real connect/sign call doesn't have to download
+    // them first. Never blocks or throws — a failed prefetch just means the
+    // first real call pays the cost it would have paid anyway.
+    useEffect(() => {
+        const idle =
+            typeof window !== 'undefined' && 'requestIdleCallback' in window
+                ? window.requestIdleCallback
+                : (cb: () => void) => setTimeout(cb, 1);
+
+        const handle = idle(() => {
+            import('@mysten/sui/transactions').catch(() => undefined);
+            import('@stellar/stellar-sdk').catch(() => undefined);
+        });
+
+        return () => {
+            if (typeof window !== 'undefined' && 'cancelIdleCallback' in window && typeof handle === 'number') {
+                window.cancelIdleCallback(handle);
+            }
+        };
+    }, []);
+
     useEffect(() => {
         if (isModalOpen) {
             refreshStellarAvailability();
