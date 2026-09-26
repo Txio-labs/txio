@@ -50,6 +50,15 @@ const walletConnectProjectId =
 export const isWalletConnectConfigured =
     Boolean(walletConnectProjectId);
 
+// WalletConnect checks metadata.url against the page's actual origin and
+// warns (some wallets refuse the pairing) on a mismatch, so this must track
+// wherever the app is actually served from rather than a single hardcoded
+// domain.
+const appUrl =
+    typeof window !== 'undefined'
+        ? window.location.origin
+        : 'https://txio.xyz';
+
 export const EVM_CONNECTOR_IDS = {
     metamask: 'metaMaskSDK',
     walletconnect: 'walletConnect',
@@ -78,8 +87,7 @@ const connectors = [
                       name: 'txio',
                       description:
                           'Multi-chain wallet session for txio workspace.',
-                      url:
-                          'https://txio.dev',
+                      url: appUrl,
                       icons: []
                   }
               })

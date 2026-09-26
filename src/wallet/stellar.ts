@@ -199,7 +199,7 @@ const getWcSignClient = async (): Promise<WcSignClient> => {
             name: 'txio',
             description:
                 'Multi-chain wallet session for txio workspace.',
-            url: 'https://txio.dev',
+            url: getBrowserWindow()?.location.origin ?? 'https://txio.xyz',
             icons: []
         }
     });
