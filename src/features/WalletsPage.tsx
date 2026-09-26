@@ -20,6 +20,7 @@ import { useAppStore } from '@/lib/store';
 import { useWallet, useWalletBalance } from '@/wallet';
 import { shortenAddress, getWalletExplorerUrl } from '@/wallet/utils';
 import type { WalletChainFamily } from '@/wallet/types';
+import { TransactionHistoryList } from '@/components/wallet/TransactionHistoryList';
 
 const CHAIN_META: Record<WalletChainFamily, { label: string; color: string }> = {
     sui: { label: 'Sui', color: '#6fbcf0' },
@@ -221,6 +222,19 @@ export const WalletsPage: React.FC = () => {
                                 </div>
                             )}
                         </div>
+
+                        {/* Transaction history */}
+                        {isConnected && currentWallet && (
+                            <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-dark-indigo-glow overflow-hidden">
+                                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-white/5">
+                                    <div>
+                                        <h2 className="text-sm font-bold text-slate-900 dark:text-white">Transaction History</h2>
+                                        <p className="text-xs text-slate-500 mt-0.5">Recent activity for the connected wallet.</p>
+                                    </div>
+                                </div>
+                                <TransactionHistoryList wallet={currentWallet} />
+                            </div>
+                        )}
                     </div>
 
                     {/* Right sidebar */}

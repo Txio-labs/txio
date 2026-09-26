@@ -18,6 +18,7 @@ import { RequestType, HistoryItem, ChainId } from '@/types';
 import { resolveChainRpcUrl } from '@/services/suiService';
 import { RPC_CHAINS } from '@/lib/constants';
 import { NetworkStatusWidget } from '@/components/NetworkStatusWidget';
+import { TransactionHistoryList } from '@/components/wallet/TransactionHistoryList';
 
 // Chains this build actually has RPC config + health checks for (see
 // lib/constants.ts NETWORKS/EVM_NETWORKS/STELLAR_NETWORKS/SOLANA_NETWORKS and
@@ -51,7 +52,7 @@ const timeAgo = (ts: number) => {
 
 export const Dashboard: React.FC = () => {
     const { history, currentWorkspaceId, user, activityLogs, workspaces } = useAppStore();
-    const { openModal } = useWallet();
+    const { openModal, currentWallet } = useWallet();
 
     const firstName = useMemo(() => {
         if (!user?.name) return 'there';
@@ -296,6 +297,15 @@ export const Dashboard: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {currentWallet && (
+                <div className="mt-5 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.02] overflow-hidden">
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-white/10">
+                        <h2 className="text-sm font-bold text-slate-700 dark:text-slate-200">Wallet Transaction History</h2>
+                    </div>
+                    <TransactionHistoryList wallet={currentWallet} />
+                </div>
+            )}
 
             <div className="mt-5">
                 <NetworkStatusWidget />
