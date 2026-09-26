@@ -64,12 +64,28 @@ const classifyParameter = (t: SuiMoveNormalizedType, index: number, typeParamNam
         };
     }
 
+    // std::string::String and std::ascii::String are Move structs under the
+    // hood (`{ bytes: vector<u8> }`), but they're passed by value as plain
+    // text, not selected as an on-chain object — without this check they'd
+    // fall into the generic Struct branch below and get offered as an
+    // object-ID selector instead of a text field.
+    const isReference = typeof t === 'object' && ('Reference' in t || 'MutableReference' in t);
+    const inner = typeof t === 'object' && 'MutableReference' in t ? t.MutableReference : typeof t === 'object' && 'Reference' in t ? t.Reference : t;
+    const isStringStruct =
+        !isReference &&
+        typeof inner === 'object' &&
+        'Struct' in inner &&
+        inner.Struct.address === '0x1' &&
+        inner.Struct.name === 'String' &&
+        (inner.Struct.module === 'string' || inner.Struct.module === 'ascii');
+    if (isStringStruct) {
+        return { name, type: typeStr, kind: 'primitive', required: true, resolution: 'user_input' };
+    }
+
     // Any other &Struct/&mut Struct is a plain object reference — Sui can't
     // tell us statically whether it's shared or owned (that's runtime
     // object metadata, resolved separately via sui_getObject), so it's
     // offered as a wallet-object selector rather than a raw ID text field.
-    const isReference = typeof t === 'object' && ('Reference' in t || 'MutableReference' in t);
-    const inner = typeof t === 'object' && 'MutableReference' in t ? t.MutableReference : typeof t === 'object' && 'Reference' in t ? t.Reference : t;
     if (typeof inner === 'object' && 'Struct' in inner) {
         const hasGeneric = inner.Struct.typeArguments.some((a) => typeof a === 'object' && 'TypeParameter' in a);
         return {
