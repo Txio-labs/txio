@@ -135,10 +135,16 @@ type AlbedoApi = {
 // is kept per session (a fresh keypair/session id per the library's own
 // guidance) and reused across connect() and later sign() calls, then closed
 // on disconnect.
+//
+// preferredTarget is forced to 'website' rather than the library's default
+// ('extension'): with 'extension' the SDK calls window.xBullSDK.getAddress()
+// whenever window.xBullSDK is truthy, and some installed versions of the
+// extension inject an object without that method, so connect() throws
+// "getAddress is not a function" instead of falling back to the popup flow.
 let xbullBridge: xBullWalletConnect | undefined;
 
 const getXBullBridge = (): xBullWalletConnect => {
-    xbullBridge ??= new xBullWalletConnect();
+    xbullBridge ??= new xBullWalletConnect({ preferredTarget: 'website' });
     return xbullBridge;
 };
 
