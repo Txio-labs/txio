@@ -26,6 +26,8 @@
     "@stellar/freighter-api": "^6.0.1",
     "@stellar/stellar-sdk": "^16.0.1",
     "@tanstack/react-query": "^5.101.3",
+    "@walletconnect/modal": "^2.7.0",
+    "@walletconnect/sign-client": "^2.25.0",
     "buffer": "^6.0.3",
     "framer-motion": "^12.42.2",
     "gsap": "^3.15.0",

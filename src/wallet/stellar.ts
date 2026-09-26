@@ -9,6 +9,9 @@ import {
     signTransaction as lobstrSignTransaction
 } from '@lobstrco/signer-extension-api';
 import { xBullWalletConnect } from '@creit.tech/xbull-wallet-connect';
+import { SignClient } from '@walletconnect/sign-client';
+import type { SessionTypes } from '@walletconnect/types';
+import { WalletConnectModal } from '@walletconnect/modal';
 
 import type {
     ConnectedWallet,
@@ -44,6 +47,10 @@ const STELLAR_WALLET_META: Partial<
     xbull: {
         name: 'xBull',
         connectorName: 'xBull SDK'
+    },
+    'stellar-walletconnect': {
+        name: 'WalletConnect',
+        connectorName: 'WalletConnect'
     },
     rabet: {
         name: 'Rabet',
@@ -151,6 +158,83 @@ const getXBullBridge = (): xBullWalletConnect => {
 export const closeXBullBridge = (): void => {
     xbullBridge?.closeConnections();
     xbullBridge = undefined;
+};
+
+const walletConnectProjectId =
+    process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
+
+export const isStellarWalletConnectConfigured = Boolean(
+    walletConnectProjectId
+);
+
+// Stellar's own WalletConnect namespace (https://docs.walletconnect.com/advanced/multichain/rpc-reference/stellar-rpc)
+// exposes stellar_signXDR as its sign method, scoped to CAIP-2 chain ids
+// stellar:pubnet / stellar:testnet.
+const STELLAR_WC_METHOD = 'stellar_signXDR';
+const getStellarWcChainId = () =>
+    stellarNetwork === 'testnet'
+        ? 'stellar:testnet'
+        : 'stellar:pubnet';
+
+type WcSignClient = InstanceType<typeof SignClient>;
+
+let wcSignClient: WcSignClient | undefined;
+let wcModal: WalletConnectModal | undefined;
+let wcSession: SessionTypes.Struct | undefined;
+
+const getWcSignClient = async (): Promise<WcSignClient> => {
+    if (!walletConnectProjectId) {
+        throw new Error(
+            'WalletConnect project ID is missing. Set NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID.'
+        );
+    }
+
+    wcSignClient ??= await SignClient.init({
+        projectId: walletConnectProjectId,
+        metadata: {
+            name: 'txio',
+            description:
+                'Multi-chain wallet session for txio workspace.',
+            url: 'https://txio.dev',
+            icons: []
+        }
+    });
+
+    return wcSignClient;
+};
+
+const getWcModal = (): WalletConnectModal => {
+    if (!walletConnectProjectId) {
+        throw new Error(
+            'WalletConnect project ID is missing. Set NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID.'
+        );
+    }
+
+    wcModal ??= new WalletConnectModal({
+        projectId: walletConnectProjectId
+    });
+
+    return wcModal;
+};
+
+export const closeStellarWalletConnect = async (): Promise<void> => {
+    wcModal?.closeModal();
+
+    if (wcSignClient && wcSession) {
+        try {
+            await wcSignClient.disconnect({
+                topic: wcSession.topic,
+                reason: {
+                    code: 6000,
+                    message: 'User disconnected'
+                }
+            });
+        } catch {
+            // Session may already be gone on the wallet's side.
+        }
+    }
+
+    wcSession = undefined;
 };
 
 type RabetApi = {
@@ -313,6 +397,49 @@ const connectXBull = async (): Promise<ConnectedWallet> => {
     return buildWallet('xbull', address);
 };
 
+const connectWalletConnectStellar = async (): Promise<ConnectedWallet> => {
+    const client = await getWcSignClient();
+    const modal = getWcModal();
+    const chainId = getStellarWcChainId();
+
+    const { uri, approval } = await client.connect({
+        requiredNamespaces: {
+            stellar: {
+                methods: [STELLAR_WC_METHOD],
+                chains: [chainId],
+                events: []
+            }
+        }
+    });
+
+    try {
+        if (uri) {
+            await modal.openModal({ uri });
+        }
+
+        const session = await withTimeout(
+            approval(),
+            'WalletConnect (Stellar) connect'
+        );
+
+        wcSession = session;
+
+        const account = session.namespaces.stellar?.accounts?.[0];
+        // CAIP-10 account id, e.g. "stellar:pubnet:G...".
+        const address = account?.split(':')[2];
+
+        if (!address) {
+            throw new Error(
+                'WalletConnect session did not return a Stellar address.'
+            );
+        }
+
+        return buildWallet('stellar-walletconnect', address);
+    } finally {
+        modal.closeModal();
+    }
+};
+
 const connectRabet = async (): Promise<ConnectedWallet> => {
     const rabet = getBrowserWindow()?.rabet as
         | RabetApi
@@ -464,6 +591,8 @@ export const connectStellarWallet =
                 return connectAlbedo();
             case 'xbull':
                 return connectXBull();
+            case 'stellar-walletconnect':
+                return connectWalletConnectStellar();
             case 'rabet':
                 return connectRabet();
             case 'hana-wallet':
@@ -541,6 +670,15 @@ const restoreXBull =
         // approve. Popping that on every page load would violate the
         // no-surprise-auth-prompt rule the other wallets follow here, so
         // xBull is never silently restored; the user reconnects explicitly.
+        return null;
+    };
+
+const restoreWalletConnectStellar =
+    async (): Promise<ConnectedWallet | null> => {
+        // Like xBull, WalletConnect has no silent "already authorized"
+        // check here — restoring a session automatically without user
+        // interaction would violate the no-surprise-auth-prompt rule the
+        // other wallets follow, so the user reconnects explicitly.
         return null;
     };
 
@@ -646,6 +784,8 @@ export const restoreStellarWallet =
                 return restoreAlbedo();
             case 'xbull':
                 return restoreXBull();
+            case 'stellar-walletconnect':
+                return restoreWalletConnectStellar();
             case 'rabet':
                 return restoreRabet();
             case 'hana-wallet':
@@ -757,6 +897,34 @@ export const signStellarTransaction = async (
             throw new Error('xBull declined to sign the transaction.');
         }
         return signedXdr;
+    }
+    if (walletId === 'stellar-walletconnect') {
+        if (!wcSignClient || !wcSession) {
+            throw new Error(
+                'WalletConnect session is not active. Reconnect the wallet.'
+            );
+        }
+
+        const result = await withTimeout(
+            wcSignClient.request<{ signedXDR: string }>({
+                topic: wcSession.topic,
+                chainId: getStellarWcChainId(),
+                request: {
+                    method: STELLAR_WC_METHOD,
+                    params: { xdr: transactionXdr }
+                }
+            }),
+            'WalletConnect (Stellar) sign',
+            60_000
+        );
+
+        if (!result?.signedXDR) {
+            throw new Error(
+                'WalletConnect wallet declined to sign the transaction.'
+            );
+        }
+
+        return result.signedXDR;
     }
     throw new Error(`Stellar wallet "${walletId}" does not support signing here.`);
 };

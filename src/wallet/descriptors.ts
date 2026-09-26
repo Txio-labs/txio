@@ -433,6 +433,25 @@ export const WALLET_DESCRIPTORS: WalletDescriptor[] =
             iconSeed: 'xbull'
         },
         {
+            id: 'stellar-walletconnect',
+            name: 'WalletConnect',
+            shortName: 'WC',
+            chainFamily: 'stellar',
+            methods: ['walletconnect', 'deeplink'],
+            tags: [
+                'stellar',
+                'qr',
+                'mobile',
+                'universal'
+            ],
+            description:
+                'QR and pairing-URI sessions for WalletConnect-compatible Stellar wallets.',
+            installUrl:
+                'https://walletconnect.network/',
+            badge: 'QR',
+            iconSeed: 'walletconnect'
+        },
+        {
             id: 'rabet',
             name: 'Rabet',
             shortName: 'RB',

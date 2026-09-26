@@ -51,6 +51,7 @@ export type WalletId =
     | 'freighter'
     | 'albedo'
     | 'xbull'
+    | 'stellar-walletconnect'
     | 'rabet'
     | 'hana-wallet'
     | 'phantom-solana'

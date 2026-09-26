@@ -40,9 +40,11 @@ import {
     WALLET_DESCRIPTORS
 } from '../descriptors';
 import {
+    closeStellarWalletConnect,
     closeXBullBridge,
     connectStellarWallet,
     detectStellarWallets,
+    isStellarWalletConnectConfigured,
     restoreStellarWallet
 } from '../stellar';
 import { connectSolanaWallet, detectSolanaWallets, restoreSolanaWallet, disconnectSolanaWallet } from '../solana';
@@ -872,6 +874,15 @@ export function WalletManagerProvider({
                     const wallet = await connectAptosWallet(walletId);
                     setAptosSession(wallet);
                 } else {
+                    if (
+                        walletId === 'stellar-walletconnect' &&
+                        !isStellarWalletConnectConfigured
+                    ) {
+                        throw new Error(
+                            'WalletConnect project ID is missing. Set NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID.'
+                        );
+                    }
+
                     const wallet = await connectStellarWallet(walletId);
                     setStellarSession(wallet);
                 }
@@ -971,6 +982,9 @@ export function WalletManagerProvider({
                 } else {
                     if (targetWallet.id === 'xbull') {
                         closeXBullBridge();
+                    }
+                    if (targetWallet.id === 'stellar-walletconnect') {
+                        await closeStellarWalletConnect();
                     }
                     setStellarSession(null);
                 }
@@ -1224,6 +1238,18 @@ export function WalletManagerProvider({
                         // otherwise — always usable, never gated on a
                         // window.* injection check.
                         availability = 'available';
+                        break;
+                    case 'stellar-walletconnect':
+                        availability =
+                            isStellarWalletConnectConfigured
+                                ? 'available'
+                                : 'coming-soon';
+                        if (
+                            !isStellarWalletConnectConfigured
+                        ) {
+                            helperText =
+                                'Set NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID to enable QR sessions.';
+                        }
                         break;
                     case 'rabet':
                         availability =

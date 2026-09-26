@@ -104,6 +104,10 @@ const GLYPH_STYLES: Record<
         ring: 'from-yellow-400/70 to-orange-300/40',
         fill: 'from-yellow-500 to-orange-400'
     },
+    'stellar-walletconnect': {
+        ring: 'from-blue-400/70 to-cyan-300/40',
+        fill: 'from-blue-500 to-cyan-400'
+    },
     rabet: {
         ring: 'from-teal-400/70 to-cyan-300/40',
         fill: 'from-teal-500 to-cyan-400'
