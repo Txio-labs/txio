@@ -3,7 +3,10 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import {
     CheckCircle2,
+    ChevronDown,
     ExternalLink,
+    HelpCircle,
+    Info,
     Loader2,
     Search,
     X
@@ -37,7 +40,7 @@ const CHAIN_FAMILY_COLOR: Record<WalletChainFamily, string> = {
     stellar: '#f5d060'
 };
 
-type CategoryId = 'popular' | WalletChainFamily;
+type CategoryId = 'all' | WalletChainFamily;
 
 export function WalletModal() {
     const {
@@ -53,7 +56,8 @@ export function WalletModal() {
         wallets
     } = useWallet();
 
-    const [activeCategory, setActiveCategory] = useState<CategoryId>('popular');
+    const [activeCategory, setActiveCategory] = useState<CategoryId>('all');
+    const [collapsedGroups, setCollapsedGroups] = useState<Set<WalletChainFamily>>(new Set());
 
     const deferredQuery =
         useDeferredValue(
@@ -76,14 +80,12 @@ export function WalletModal() {
         );
     }, [deferredQuery, wallets]);
 
-    // Category rail: "Popular" (featured wallets across every chain) plus one
-    // entry per chain family this app actually supports — a developer opening
-    // this modal already knows which chain they're calling, so the chain is
-    // the useful axis to browse by once they're past the popular shortlist.
+    // Category rail: "All Wallets" plus one entry per chain family this app
+    // actually supports — a developer opening this modal already knows which
+    // chain they're calling, so the chain is the useful axis to browse by.
     const categories = useMemo(() => {
-        const popularCount = wallets.filter((w) => w.isFeatured).length;
         return [
-            { id: 'popular' as CategoryId, label: 'Popular', color: null, count: popularCount },
+            { id: 'all' as CategoryId, label: 'All Wallets', color: null, count: wallets.length },
             ...CHAIN_FAMILY_ORDER.map((family) => ({
                 id: family as CategoryId,
                 label: getFamilyLabel(family) ?? family,
@@ -93,15 +95,37 @@ export function WalletModal() {
         ];
     }, [wallets]);
 
-    const categoryWallets = useMemo(() => {
-        const base = activeCategory === 'popular'
-            ? filtered.filter((w) => w.isFeatured)
-            : filtered.filter((w) => w.chainFamily === activeCategory);
+    // When browsing "All Wallets" the list is grouped into one section per
+    // chain family (mirrors how the picker reads when every chain is mixed
+    // together); picking a specific chain in the rail instead shows one flat,
+    // ungrouped list for that chain alone.
+    const groupedWallets = useMemo(() => {
+        const families = activeCategory === 'all' ? CHAIN_FAMILY_ORDER : [activeCategory as WalletChainFamily];
 
-        return base.sort((a, b) => Number(b.isFeatured) - Number(a.isFeatured));
+        return families
+            .map((family) => ({
+                family,
+                label: getFamilyLabel(family) ?? family,
+                color: CHAIN_FAMILY_COLOR[family],
+                items: filtered
+                    .filter((w) => w.chainFamily === family)
+                    .sort((a, b) => Number(b.isFeatured) - Number(a.isFeatured))
+            }))
+            .filter((group) => group.items.length > 0);
     }, [filtered, activeCategory]);
 
-    const activeAccent = activeCategory === 'popular' ? '#a5a8f7' : CHAIN_FAMILY_COLOR[activeCategory as WalletChainFamily];
+    const toggleGroup = (family: WalletChainFamily) => {
+        setCollapsedGroups((prev) => {
+            const next = new Set(prev);
+            if (next.has(family)) {
+                next.delete(family);
+            } else {
+                next.add(family);
+            }
+            return next;
+        });
+    };
+
     const activeCategoryLabel = categories.find((c) => c.id === activeCategory)?.label ?? '';
 
     return (
@@ -125,7 +149,7 @@ export function WalletModal() {
                         onClick={(event) => event.stopPropagation()}
                         role="dialog"
                         aria-label="Connect wallet"
-                        className="w-[min(680px,calc(100vw-2rem))] h-[min(560px,calc(100vh-2rem))] flex flex-col overflow-hidden rounded-2xl border border-slate-200 dark:border-white/5 bg-white dark:bg-[#18181b] shadow-2xl"
+                        className="w-[min(760px,calc(100vw-2rem))] h-[min(620px,calc(100vh-2rem))] flex flex-col overflow-hidden rounded-2xl border border-slate-200 dark:border-white/5 bg-white dark:bg-[#18181b] shadow-2xl"
                     >
                         <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 dark:border-white/10 shrink-0">
                             <div>
@@ -138,6 +162,13 @@ export function WalletModal() {
                             >
                                 <X size={16} />
                             </button>
+                        </div>
+
+                        <div className="mx-4 mt-3 flex items-start gap-2.5 rounded-xl border border-electric-violet/20 bg-electric-violet/5 px-3 py-2.5 shrink-0">
+                            <Info size={14} className="mt-0.5 shrink-0 text-electric-violet" />
+                            <p className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
+                                Make sure you have the wallet extension or app installed. We&apos;ll only request the permissions needed to connect — no private keys, ever.
+                            </p>
                         </div>
 
                         {currentWallet && (
@@ -175,35 +206,31 @@ export function WalletModal() {
 
                         <div className="flex-1 flex min-h-0 mt-3">
                             {/* Category rail */}
-                            <div className="w-44 shrink-0 border-r border-slate-200 dark:border-white/10 flex flex-col">
-                                <div className="px-3 pb-2">
-                                    <label className="relative block">
-                                        <Search size={12} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                        <input
-                                            value={modalQuery}
-                                            onChange={(event) => setModalQuery(event.target.value)}
-                                            placeholder="Search wallets..."
-                                            className="h-8 w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] pl-7 pr-2 text-[11px] text-slate-900 dark:text-white outline-none transition-colors placeholder:text-slate-400 focus:border-electric-violet/50"
-                                        />
-                                    </label>
-                                </div>
-                                <div className="flex-1 overflow-y-auto custom-scrollbar px-2 pb-2 space-y-0.5">
+                            <div className="w-48 shrink-0 border-r border-slate-200 dark:border-white/10 flex flex-col">
+                                <div className="flex-1 overflow-y-auto custom-scrollbar px-2 py-2 space-y-0.5">
                                     {categories.map((cat) => {
                                         const isActive = cat.id === activeCategory;
                                         return (
                                             <button
                                                 key={cat.id}
                                                 onClick={() => setActiveCategory(cat.id)}
-                                                className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-colors ${
+                                                className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium transition-colors ${
                                                     isActive
                                                         ? 'bg-electric-violet/10 text-slate-900 dark:text-white font-bold'
                                                         : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.04]'
                                                 }`}
                                             >
                                                 {cat.color ? (
-                                                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+                                                    <span
+                                                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[10px] font-black text-white"
+                                                        style={{ backgroundColor: cat.color }}
+                                                    >
+                                                        {cat.label.slice(0, 1)}
+                                                    </span>
                                                 ) : (
-                                                    <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-electric-violet" />
+                                                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-electric-violet text-[10px] font-black text-near-black">
+                                                        ●
+                                                    </span>
                                                 )}
                                                 <span className="truncate flex-1 text-left">{cat.label}</span>
                                                 <span className="text-[10px] text-slate-400 shrink-0">{cat.count}</span>
@@ -215,7 +242,7 @@ export function WalletModal() {
 
                             {/* Category detail */}
                             <div className="flex-1 min-w-0 flex flex-col">
-                                <div className="px-4 pb-2 shrink-0">
+                                <div className="px-4 pt-3 pb-2 shrink-0">
                                     <label className="relative block">
                                         <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                         <input
@@ -227,36 +254,71 @@ export function WalletModal() {
                                     </label>
                                 </div>
 
-                                <div className="flex items-center justify-between px-4 mb-1 shrink-0">
-                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                                        {activeCategory === 'popular' ? 'Recommended' : `${activeCategoryLabel} Wallets`}
-                                    </span>
-                                    {categoryWallets.length > 4 && (
-                                        <button className="text-[11px] font-bold text-electric-violet hover:opacity-80 transition-colors">
-                                            View all
-                                        </button>
-                                    )}
-                                </div>
+                                <div className="flex-1 overflow-y-auto custom-scrollbar px-4 pb-2 space-y-4">
+                                    {groupedWallets.map((group) => {
+                                        const isCollapsed = collapsedGroups.has(group.family);
+                                        return (
+                                            <div key={group.family}>
+                                                <button
+                                                    onClick={() => toggleGroup(group.family)}
+                                                    className="flex w-full items-center justify-between gap-2 pb-1.5"
+                                                >
+                                                    <span className="flex items-center gap-2">
+                                                        <span
+                                                            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[9px] font-black text-white"
+                                                            style={{ backgroundColor: group.color }}
+                                                        >
+                                                            {group.label.slice(0, 1)}
+                                                        </span>
+                                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                                                            {group.label} Wallets
+                                                        </span>
+                                                        <span className="text-[10px] text-slate-400">{group.items.length}</span>
+                                                    </span>
+                                                    <ChevronDown
+                                                        size={14}
+                                                        className={`text-slate-400 transition-transform ${isCollapsed ? '-rotate-90' : ''}`}
+                                                    />
+                                                </button>
 
-                                <div className="flex-1 overflow-y-auto custom-scrollbar px-4 pb-4 space-y-1">
-                                    {categoryWallets.map((wallet) => (
-                                        <WalletRow
-                                            key={wallet.id}
-                                            wallet={wallet}
-                                            isCurrent={currentWallet?.id === wallet.id}
-                                            isPending={pendingWalletId === wallet.id}
-                                            accentColor={activeCategory === 'popular' ? CHAIN_FAMILY_COLOR[wallet.chainFamily] : activeAccent}
-                                            onConnect={() => void connect(wallet.id).catch((err) => {
-                                                appStore.showToast(err instanceof Error ? err.message : 'Failed to connect wallet.', 'error');
-                                            })}
-                                        />
-                                    ))}
+                                                {!isCollapsed && (
+                                                    <div className="space-y-1">
+                                                        {group.items.map((wallet) => (
+                                                            <WalletRow
+                                                                key={wallet.id}
+                                                                wallet={wallet}
+                                                                isCurrent={currentWallet?.id === wallet.id}
+                                                                isPending={pendingWalletId === wallet.id}
+                                                                accentColor={group.color}
+                                                                onConnect={() => void connect(wallet.id).catch((err) => {
+                                                                    appStore.showToast(err instanceof Error ? err.message : 'Failed to connect wallet.', 'error');
+                                                                })}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
 
-                                    {categoryWallets.length === 0 && (
+                                    {groupedWallets.length === 0 && (
                                         <div className="py-10 text-center text-xs text-slate-500">
                                             {deferredQuery ? `No wallets match "${modalQuery}".` : 'No wallets in this category yet.'}
                                         </div>
                                     )}
+                                </div>
+
+                                <div className="flex items-center justify-between border-t border-slate-200 dark:border-white/10 px-4 py-3 shrink-0">
+                                    <span className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                                        <HelpCircle size={13} />
+                                        Need help?
+                                    </span>
+                                    <button
+                                        onClick={closeModal}
+                                        className="rounded-lg border border-slate-200 dark:border-white/10 px-3 py-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:border-slate-400 dark:hover:border-white/30 hover:text-slate-900 dark:hover:text-white transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
                                 </div>
                             </div>
                         </div>

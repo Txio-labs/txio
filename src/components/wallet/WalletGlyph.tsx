@@ -1,9 +1,49 @@
 import React from 'react';
+import {
+    WalletBackpack,
+    WalletCoinbase,
+    WalletGlow,
+    WalletLedger,
+    WalletMetamask,
+    WalletOkx,
+    WalletPhantom,
+    WalletRabby,
+    WalletRainbow,
+    WalletSolflare,
+    WalletTrust,
+    WalletWalletConnect,
+    WalletZerion
+} from '@web3icons/react';
 
 import type {
     WalletChainFamily,
     WalletId
 } from '@/wallet';
+
+// Only wallets @web3icons/react actually ships a brand icon for (mostly EVM +
+// a couple of Solana ones) — everything else, including every Stellar/Sui/
+// Aptos wallet in our catalog, falls back to the generated gradient glyph
+// below since no real logo is available.
+const BRAND_ICONS: Partial<
+    Record<
+        WalletId,
+        React.ComponentType<{ size?: number | string; className?: string }>
+    >
+> = {
+    metamask: WalletMetamask,
+    'coinbase-wallet': WalletCoinbase,
+    phantom: WalletPhantom,
+    'trust-wallet': WalletTrust,
+    rainbow: WalletRainbow,
+    'okx-wallet': WalletOkx,
+    rabby: WalletRabby,
+    zerion: WalletZerion,
+    ledger: WalletLedger,
+    walletconnect: WalletWalletConnect,
+    solflare: WalletSolflare,
+    backpack: WalletBackpack,
+    glow: WalletGlow
+};
 
 const GLYPH_STYLES: Record<
     WalletId,
@@ -188,6 +228,20 @@ export function WalletGlyph({
             : size === 'lg'
               ? 'h-14 w-14 text-base'
               : 'h-12 w-12 text-sm';
+
+    const BrandIcon = BRAND_ICONS[walletId];
+    if (BrandIcon) {
+        const iconSize =
+            size === 'sm' ? 24 : size === 'lg' ? 34 : 28;
+
+        return (
+            <div
+                className={`flex ${dimensions} shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white p-2 shadow-sm dark:border-white/10 dark:bg-white/[0.04]`}
+            >
+                <BrandIcon size={iconSize} />
+            </div>
+        );
+    }
 
     return (
         <div

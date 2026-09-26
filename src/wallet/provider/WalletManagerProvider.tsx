@@ -71,6 +71,7 @@ import {
     formatWalletError,
     isBrowser,
     isMobileDevice,
+    isXBullExtensionInstalled,
     matchSuiWalletId
 } from '../utils';
 
@@ -1261,6 +1262,16 @@ export function WalletManagerProvider({
                         ) {
                             helperText =
                                 'Set NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID to enable QR sessions.';
+                        } else if (isXBullExtensionInstalled()) {
+                            // xBull's extension globally intercepts any
+                            // WalletConnect pairing in the browser and
+                            // crashes parsing the Stellar namespace — a bug
+                            // in xBull's own code, reproducible regardless
+                            // of required vs optional namespace placement.
+                            // Steer these users to the "xBull" row's direct
+                            // SDK connection instead, which works.
+                            helperText =
+                                'The xBull extension intercepts WalletConnect pairings and cannot complete them — use the xBull option above instead.';
                         }
                         break;
                     case 'rabet':

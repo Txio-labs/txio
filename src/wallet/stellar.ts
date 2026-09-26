@@ -407,12 +407,24 @@ const connectXBull = async (): Promise<ConnectedWallet> => {
 };
 
 const connectWalletConnectStellar = async (): Promise<ConnectedWallet> => {
+    if (getBrowserWindow()?.xBullSDK) {
+        // xBull's extension globally intercepts any WalletConnect pairing
+        // proposal in the page and crashes parsing the Stellar namespace
+        // (confirmed reproducible with both requiredNamespaces and
+        // optionalNamespaces — the bug is in xBull's own bundle). Failing
+        // fast here avoids opening a QR/URI modal for a pairing that will
+        // never complete once xBull grabs it.
+        throw new Error(
+            'The xBull extension intercepts WalletConnect pairings and cannot complete them. Use the "xBull" option instead of WalletConnect to connect.'
+        );
+    }
+
     const client = await getWcSignClient();
     const modal = await getWcModal();
     const chainId = getStellarWcChainId();
 
     const { uri, approval } = await client.connect({
-        optionalNamespaces: {
+        requiredNamespaces: {
             stellar: {
                 methods: [STELLAR_WC_METHOD],
                 chains: [chainId],
