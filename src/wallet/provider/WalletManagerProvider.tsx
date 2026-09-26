@@ -780,6 +780,18 @@ export function WalletManagerProvider({
             setStatus('connecting');
             setPendingWalletId(walletId);
 
+            // WalletConnect flows (EVM's wagmi connector with showQrModal,
+            // and the Stellar SignClient + @walletconnect/modal path) pop up
+            // their own QR/URI modal on top of ours — close our picker right
+            // away instead of waiting for the whole connect promise to
+            // resolve, so the two modals don't stack.
+            if (
+                walletId === 'walletconnect' ||
+                walletId === 'stellar-walletconnect'
+            ) {
+                setIsModalOpen(false);
+            }
+
             try {
                 if (
                     descriptor.chainFamily ===

@@ -412,7 +412,7 @@ const connectWalletConnectStellar = async (): Promise<ConnectedWallet> => {
     const chainId = getStellarWcChainId();
 
     const { uri, approval } = await client.connect({
-        requiredNamespaces: {
+        optionalNamespaces: {
             stellar: {
                 methods: [STELLAR_WC_METHOD],
                 chains: [chainId],
