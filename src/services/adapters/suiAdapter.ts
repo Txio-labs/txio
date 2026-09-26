@@ -59,7 +59,15 @@ export class SuiAdapter implements ChainAdapter {
                 m.arguments
             );
         } catch (err) {
-            throw new ChainExecutionError(err instanceof Error ? err.message : 'Sui simulation failed.', {
+            const status = (err as { status?: number })?.status;
+            const message =
+                status === 429
+                    ? 'All configured Sui RPC endpoints are rate-limiting requests right now — wait a moment and try again, or add another endpoint in Settings.'
+                    : err instanceof Error
+                      ? err.message
+                      : 'Sui simulation failed.';
+
+            throw new ChainExecutionError(message, {
                 code: 'SIMULATION_FAILED',
                 chain: this.chain,
                 stage: 'simulate',

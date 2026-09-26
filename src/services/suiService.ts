@@ -628,25 +628,45 @@ export const simulateMoveCall = async (
     const resolvedSender = await resolveSuiAddress(network, sender);
     const txb = await buildMoveCallTransaction(packageId, module, func, typeArgs, args);
     txb.setSender(resolvedSender);
-    const endpoint = getActiveSuiRpcUrl(network);
     const { SuiJsonRpcClient } = await import('@mysten/sui/jsonRpc');
-    const client = new SuiJsonRpcClient({ url: endpoint, network });
 
+    const endpoints = resolveChainRpcUrls('sui', network);
     const startTime = performance.now();
-    try {
-        const transactionBlock = await txb.build({ client });
-        const result = await client.dryRunTransactionBlock({ transactionBlock });
-        const duration = Math.round(performance.now() - startTime);
-        const failed = result.effects?.status?.status === 'failure';
-        return { result, duration, status: failed ? 400 : 200 };
-    } catch (error) {
-        throw new SuiRpcError(
-            error instanceof Error && error.message.trim()
-                ? error.message
-                : 'Move call simulation failed.',
-            { status: 500, endpoint, duration: Math.round(performance.now() - startTime) }
-        );
+    let lastError: unknown = null;
+    let lastEndpoint = endpoints[0] ?? getActiveSuiRpcUrl(network);
+
+    for (const endpoint of endpoints.length ? endpoints : [getActiveSuiRpcUrl(network)]) {
+        lastEndpoint = endpoint;
+        const client = new SuiJsonRpcClient({ url: endpoint, network });
+
+        try {
+            const transactionBlock = await txb.build({ client });
+            const result = await client.dryRunTransactionBlock({ transactionBlock });
+            const duration = Math.round(performance.now() - startTime);
+            const failed = result.effects?.status?.status === 'failure';
+            return { result, duration, status: failed ? 400 : 200 };
+        } catch (error) {
+            lastError = error;
+            // The SDK's HTTP-status errors carry the real status; a 429
+            // (rate limited) or 5xx (endpoint-side failure) means THIS
+            // endpoint is unhealthy right now, not that the request itself
+            // is bad — worth trying the next configured endpoint rather
+            // than failing outright on the first overloaded RPC. Any other
+            // error (a real RPC/simulation error, a network failure with no
+            // status) is a genuine answer/dead-end and stops the loop.
+            const status = (error as { status?: number })?.status;
+            const isRetryable = typeof status === 'number' && (status === 429 || status >= 500);
+            if (!isRetryable) break;
+        }
     }
+
+    const status = (lastError as { status?: number })?.status ?? 500;
+    throw new SuiRpcError(
+        lastError instanceof Error && lastError.message.trim()
+            ? lastError.message
+            : 'Move call simulation failed.',
+        { status, endpoint: lastEndpoint, duration: Math.round(performance.now() - startTime) }
+    );
 };
 
 export const getOwnedObjects = async (network: Network, address: string) => {
