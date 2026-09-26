@@ -72,7 +72,7 @@ interface NavRailItem {
 const NAV_RAIL_TOP: NavRailItem[] = [
     { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
     { id: 'rpc', label: 'Requests', icon: Zap },
-    { id: 'swap', label: 'Send', icon: Repeat },
+    { id: 'send', label: 'Send', icon: Repeat },
     { id: 'history', label: 'History', icon: Activity },
     { id: 'collections', label: 'Collections', icon: FolderKanban },
     { id: 'workspace_overview', label: 'Workspaces', icon: Briefcase },

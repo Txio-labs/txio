@@ -62,7 +62,7 @@ const WorkspaceContent: React.FC = () => {
             return <AdminPage />;
         case 'approvals':
             return <ApprovalsPage />;
-        case 'swap':
+        case 'send':
             return <SwapPage />;
         case 'automation':
             return <AutomationPage />;
