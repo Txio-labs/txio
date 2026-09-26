@@ -41,7 +41,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
                 <SuiClientProvider
                     networks={networks}
-                    defaultNetwork={network}
+                    network={network}
                 >
                     <WalletProvider autoConnect={false}>
                         <WalletManagerProvider>
