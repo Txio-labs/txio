@@ -5,6 +5,7 @@ import {
 import { ledgerConnector } from './hardware/ledgerConnector';
 import {
     createConfig,
+    fallback,
     http
 } from 'wagmi';
 import {
@@ -69,7 +70,14 @@ export const wagmiConfig = createConfig({
     multiInjectedProviderDiscovery: true,
     syncConnectedChain: true,
     transports: {
-        [mainnet.id]: http(),
+        // eth.llamarpc.com alone was flaking with sporadic 525s and no
+        // fallback, spamming the console with retried CORS failures on
+        // every read — fall over to Cloudflare's public gateway instead of
+        // hammering a single dead endpoint.
+        [mainnet.id]: fallback([
+            http('https://eth.llamarpc.com'),
+            http('https://cloudflare-eth.com')
+        ]),
         [base.id]: http(),
         [polygon.id]: http(),
         [arbitrum.id]: http(),
