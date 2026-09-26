@@ -939,7 +939,7 @@ export const appStore = {
             'infrastructure',
             'partners',
             'admin',
-            'swap',
+            'send',
             'approvals',
             'automation',
             'developers'
@@ -1061,7 +1061,7 @@ export const appStore = {
                     title = 'Partners';
                     break;
 
-                case 'swap':
+                case 'send':
                     title = 'Send';
                     break;
 
