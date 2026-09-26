@@ -39,7 +39,12 @@ const Row: React.FC<{ label: string; children: React.ReactNode }> = ({ label, ch
 export const TxTracker: React.FC<TxTrackerProps> = ({ outcome, progress, isLoading }) => {
   if (!outcome && !progress && !isLoading) return null;
 
-  const result = (outcome?.result ?? {}) as Record<string, unknown>;
+  // outcome.result can be a primitive (e.g. a raw string/number returned by
+  // a simulate call) rather than an object — only treat it as a record when
+  // it actually is one, otherwise `'x' in result` below would throw.
+  const rawResult = outcome?.result;
+  const result: Record<string, unknown> =
+    rawResult !== null && typeof rawResult === 'object' ? (rawResult as Record<string, unknown>) : {};
   const explorerUrl = progress?.explorerUrl ?? (typeof result.explorerUrl === 'string' ? result.explorerUrl : undefined);
   const hash = progress?.hash ?? (typeof result.hash === 'string' ? result.hash : undefined);
   const failed = Boolean(outcome?.error) || progress?.stage === 'failed';
