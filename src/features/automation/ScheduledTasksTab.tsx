@@ -87,7 +87,7 @@ export const ScheduledTasksTab: React.FC = () => {
     };
 
     return (
-        <div className="p-6 max-w-2xl mx-auto space-y-5">
+        <div className="p-6 w-full space-y-5">
             <div className="flex items-center justify-between">
                 <p className="text-xs text-slate-500 max-w-md">
                     Recurring transactions, executed unattended via a session key. Every run goes through that key&apos;s

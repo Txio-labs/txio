@@ -131,7 +131,7 @@ export const SessionKeysTab: React.FC<SessionKeysTabProps> = ({ wallets }) => {
     };
 
     return (
-        <div className="p-6 max-w-2xl mx-auto space-y-5">
+        <div className="p-6 w-full space-y-5">
             <div className="flex items-center justify-between">
                 <p className="text-xs text-slate-500 max-w-md">
                     A session key lets automations sign on your behalf without your real wallet — scoped to a contract, an

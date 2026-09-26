@@ -105,7 +105,7 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({ wallet }) => {
     }
 
     return (
-        <div className="p-6 max-w-xl mx-auto space-y-5">
+        <div className="p-6 w-full space-y-5">
             <p className="text-xs text-slate-500">
                 Caps enforced before any transaction on this wallet executes — interactive or automated (scheduled tasks
                 always go through this check, since there&apos;s no human present to warn). Leave a field blank for no cap on
