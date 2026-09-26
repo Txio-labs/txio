@@ -11,7 +11,11 @@ import {
 import { xBullWalletConnect } from '@creit.tech/xbull-wallet-connect';
 import { SignClient } from '@walletconnect/sign-client';
 import type { SessionTypes } from '@walletconnect/types';
-import { WalletConnectModal } from '@walletconnect/modal';
+// Imported lazily inside getWcModal(), not at module scope: @walletconnect/modal
+// runs browser-detection code (window.matchMedia) as an import-time side
+// effect, which throws in non-browser environments like the Vitest/JSDOM
+// suite that otherwise never touches this Stellar WalletConnect path.
+import type { WalletConnectModal } from '@walletconnect/modal';
 
 import type {
     ConnectedWallet,
@@ -203,16 +207,21 @@ const getWcSignClient = async (): Promise<WcSignClient> => {
     return wcSignClient;
 };
 
-const getWcModal = (): WalletConnectModal => {
+const getWcModal = async (): Promise<WalletConnectModal> => {
     if (!walletConnectProjectId) {
         throw new Error(
             'WalletConnect project ID is missing. Set NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID.'
         );
     }
 
-    wcModal ??= new WalletConnectModal({
-        projectId: walletConnectProjectId
-    });
+    if (!wcModal) {
+        const { WalletConnectModal: Modal } = await import(
+            '@walletconnect/modal'
+        );
+        wcModal = new Modal({
+            projectId: walletConnectProjectId
+        });
+    }
 
     return wcModal;
 };
@@ -399,7 +408,7 @@ const connectXBull = async (): Promise<ConnectedWallet> => {
 
 const connectWalletConnectStellar = async (): Promise<ConnectedWallet> => {
     const client = await getWcSignClient();
-    const modal = getWcModal();
+    const modal = await getWcModal();
     const chainId = getStellarWcChainId();
 
     const { uri, approval } = await client.connect({

@@ -1130,7 +1130,7 @@ class ApiService {
                 )}`
             );
 
-        return Promise.all(
+        const nodes = await Promise.all(
             collections.map(
                 async (collection) => {
                     const id = extractId(
@@ -1156,6 +1156,22 @@ class ApiService {
                             requests
                         );
                     } catch (error) {
+                        // A 404 here means the collection was deleted
+                        // (e.g. from another tab) between the list call
+                        // above and this per-collection fetch — drop it
+                        // rather than showing an empty, permanently
+                        // broken collection that keeps refetching on
+                        // every load. Any other error still surfaces the
+                        // collection with no requests, since that's
+                        // likely transient (network blip, timeout).
+                        if (
+                            error instanceof
+                                ApiError &&
+                            error.status === 404
+                        ) {
+                            return null;
+                        }
+
                         console.error(
                             `Failed to load requests for collection ${id}:`,
                             error
@@ -1168,6 +1184,11 @@ class ApiService {
                     }
                 }
             )
+        );
+
+        return nodes.filter(
+            (node): node is CollectionNode =>
+                node !== null
         );
     }
 
