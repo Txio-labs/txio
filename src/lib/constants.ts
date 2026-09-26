@@ -280,8 +280,15 @@ export const RPC_METHOD_TEMPLATES: Readonly<Partial<Record<ChainId, Readonly<Rec
     getLatestLedger: [{}],
     getLedgerEntries: [{ keys: ['<base64 ledger key>'] }],
     getTransaction: [{ hash: '<tx hash>' }],
-    getTransactions: [{ startLedger: 0, pagination: { limit: 10 } }],
-    getEvents: [{ startLedger: 0, filters: [], pagination: { limit: 10 } }],
+    // startLedger can't have a static default — Soroban RPC nodes only
+    // retain a rolling recent-ledger window, so any fixed number here would
+    // eventually (often immediately) fall outside it and fail with "start
+    // ledger must be between the oldest ledger and the latest ledger".
+    // RPCBuilder resolves this to the real latest ledger via getLatestLedger
+    // right after inserting the template; this string is only what briefly
+    // shows before that resolves (or if it fails).
+    getTransactions: [{ startLedger: '<resolving latest ledger…>', pagination: { limit: 10 } }],
+    getEvents: [{ startLedger: '<resolving latest ledger…>', filters: [], pagination: { limit: 10 } }],
     getFeeStats: [{}],
     getVersionInfo: [{}],
     simulateTransaction: [{ transaction: '<base64 tx envelope>' }],

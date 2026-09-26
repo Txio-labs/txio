@@ -12,7 +12,7 @@ import {
 } from '@/lib/constants';
 import { useAppStore } from '@/lib/store';
 import { useWallet } from '@/wallet';
-import { looksLikeSuiNs, resolveSuiAddress, SuiRpcError } from '@/services/suiService';
+import { executeChainRpc, looksLikeSuiNs, resolveSuiAddress, SuiRpcError } from '@/services/suiService';
 import { ChainId } from '@/types';
 import { JsonEditor } from '../../ui/JsonEditor';
 import { Select } from '../../Select';
@@ -122,6 +122,62 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
   // template, so the auto-fill effect below doesn't fight manual edits.
   const lastAutofilledMethod = useRef<string | null>(null);
 
+  // Always-current request/rawJson for the async resolver below — onChange
+  // takes a plain object, not a functional updater, so the resolver needs a
+  // live read of state at the time getLatestLedger resolves rather than
+  // whatever was captured in its closure when it was kicked off.
+  const requestRef = useRef(request);
+  requestRef.current = request;
+  const rawJsonRef = useRef(rawJson);
+  rawJsonRef.current = rawJson;
+
+  // getTransactions/getEvents templates ship a placeholder startLedger
+  // (Soroban nodes only retain a rolling ledger window, so no static number
+  // stays valid) — resolve the real latest ledger right after inserting the
+  // template and patch it in, rather than leaving a value guaranteed to be
+  // rejected by the RPC.
+  const resolveStellarStartLedger = useCallback(
+    (method: string, insertedParams: unknown[]) => {
+      if (chain !== 'stellar' || (method !== 'getTransactions' && method !== 'getEvents')) return;
+      const placeholder = (insertedParams[0] as Record<string, unknown> | undefined)?.startLedger;
+
+      executeChainRpc('stellar', network, 'getLatestLedger', [{}])
+        .then(({ result }) => {
+          const latest = result?.sequence;
+          if (typeof latest !== 'number') return;
+
+          let currentParams: unknown;
+          try {
+            currentParams = rawJsonRef.current !== null ? JSON.parse(rawJsonRef.current) : insertedParams;
+          } catch {
+            return;
+          }
+          // Only patch if the placeholder is still there — don't clobber a
+          // value the user already edited in the meantime.
+          if (
+            !Array.isArray(currentParams) ||
+            typeof currentParams[0] !== 'object' ||
+            currentParams[0] === null ||
+            (currentParams[0] as Record<string, unknown>).startLedger !== placeholder
+          ) {
+            return;
+          }
+
+          const patched = [{ ...(currentParams[0] as Record<string, unknown>), startLedger: latest }, ...currentParams.slice(1)];
+          setRawJson(JSON.stringify(patched, null, 2));
+          onChange({
+            ...requestRef.current,
+            rpcParams: { ...requestRef.current.rpcParams, params: patched }
+          });
+        })
+        .catch(() => {
+          // Leave the placeholder in place — the user can still see it's
+          // unresolved and fill in a ledger number manually.
+        });
+    },
+    [chain, network, onChange]
+  );
+
   const selectMethod = useCallback(
     (method: string) => {
       const template = templatesForChain[method];
@@ -138,8 +194,9 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
       setRawJson(JSON.stringify(nextParams, null, 2));
       setJsonError(null);
       setIsMethodMenuOpen(false);
+      resolveStellarStartLedger(method, nextParams);
     },
-    [onChange, request, templatesForChain]
+    [onChange, request, templatesForChain, resolveStellarStartLedger]
   );
 
   const setChain = useCallback(
@@ -189,8 +246,9 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
         ...request,
         rpcParams: { ...request.rpcParams, params: nextParams },
       });
+      resolveStellarStartLedger(method, nextParams);
     },
-    [onChange, request, templatesForChain],
+    [onChange, request, templatesForChain, resolveStellarStartLedger],
   );
 
   const methodHasTemplate = useMemo(
