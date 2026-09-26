@@ -11,7 +11,6 @@ import {
     WalletRainbow,
     WalletSolflare,
     WalletTrust,
-    WalletWalletConnect,
     WalletZerion
 } from '@web3icons/react';
 
@@ -39,7 +38,6 @@ const BRAND_ICONS: Partial<
     rabby: WalletRabby,
     zerion: WalletZerion,
     ledger: WalletLedger,
-    walletconnect: WalletWalletConnect,
     solflare: WalletSolflare,
     backpack: WalletBackpack,
     glow: WalletGlow
@@ -55,10 +53,6 @@ const GLYPH_STYLES: Record<
     metamask: {
         ring: 'from-orange-400/70 to-amber-300/40',
         fill: 'from-orange-400 to-amber-300'
-    },
-    walletconnect: {
-        ring: 'from-blue-400/70 to-cyan-300/40',
-        fill: 'from-blue-500 to-cyan-300'
     },
     'coinbase-wallet': {
         ring: 'from-blue-500/70 to-indigo-300/40',
@@ -143,10 +137,6 @@ const GLYPH_STYLES: Record<
     xbull: {
         ring: 'from-yellow-400/70 to-orange-300/40',
         fill: 'from-yellow-500 to-orange-400'
-    },
-    'stellar-walletconnect': {
-        ring: 'from-blue-400/70 to-cyan-300/40',
-        fill: 'from-blue-500 to-cyan-400'
     },
     rabet: {
         ring: 'from-teal-400/70 to-cyan-300/40',

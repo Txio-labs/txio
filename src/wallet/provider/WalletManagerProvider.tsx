@@ -32,19 +32,16 @@ import { useAppStore } from '@/lib/store';
 
 import {
     DEFAULT_EVM_CHAIN_ID,
-    EVM_CONNECTOR_IDS,
-    isWalletConnectConfigured
+    EVM_CONNECTOR_IDS
 } from '../config';
 import {
     getWalletDescriptor,
     WALLET_DESCRIPTORS
 } from '../descriptors';
 import {
-    closeStellarWalletConnect,
     closeXBullBridge,
     connectStellarWallet,
     detectStellarWallets,
-    isStellarWalletConnectConfigured,
     restoreStellarWallet
 } from '../stellar';
 import { connectSolanaWallet, detectSolanaWallets, restoreSolanaWallet, disconnectSolanaWallet } from '../solana';
@@ -71,7 +68,6 @@ import {
     formatWalletError,
     isBrowser,
     isMobileDevice,
-    isXBullExtensionInstalled,
     matchSuiWalletId
 } from '../utils';
 
@@ -781,18 +777,6 @@ export function WalletManagerProvider({
             setStatus('connecting');
             setPendingWalletId(walletId);
 
-            // WalletConnect flows (EVM's wagmi connector with showQrModal,
-            // and the Stellar SignClient + @walletconnect/modal path) pop up
-            // their own QR/URI modal on top of ours — close our picker right
-            // away instead of waiting for the whole connect promise to
-            // resolve, so the two modals don't stack.
-            if (
-                walletId === 'walletconnect' ||
-                walletId === 'stellar-walletconnect'
-            ) {
-                setIsModalOpen(false);
-            }
-
             try {
                 if (
                     descriptor.chainFamily ===
@@ -802,16 +786,6 @@ export function WalletManagerProvider({
                         EVM_CONNECTOR_IDS[
                             walletId as keyof typeof EVM_CONNECTOR_IDS
                         ];
-
-                    if (
-                        walletId ===
-                            'walletconnect' &&
-                        !isWalletConnectConfigured
-                    ) {
-                        throw new Error(
-                            'WalletConnect project ID is missing. Set NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID.'
-                        );
-                    }
 
                     const connector =
                         evmConnectors.find(
@@ -887,15 +861,6 @@ export function WalletManagerProvider({
                     const wallet = await connectAptosWallet(walletId);
                     setAptosSession(wallet);
                 } else {
-                    if (
-                        walletId === 'stellar-walletconnect' &&
-                        !isStellarWalletConnectConfigured
-                    ) {
-                        throw new Error(
-                            'WalletConnect project ID is missing. Set NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID.'
-                        );
-                    }
-
                     const wallet = await connectStellarWallet(walletId);
                     setStellarSession(wallet);
                 }
@@ -995,9 +960,6 @@ export function WalletManagerProvider({
                 } else {
                     if (targetWallet.id === 'xbull') {
                         closeXBullBridge();
-                    }
-                    if (targetWallet.id === 'stellar-walletconnect') {
-                        await closeStellarWalletConnect();
                     }
                     setStellarSession(null);
                 }
@@ -1133,18 +1095,6 @@ export function WalletManagerProvider({
                                 ? 'installed'
                                 : 'available';
                         break;
-                    case 'walletconnect':
-                        availability =
-                            isWalletConnectConfigured
-                                ? 'available'
-                                : 'coming-soon';
-                        if (
-                            !isWalletConnectConfigured
-                        ) {
-                            helperText =
-                                'Set NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID to enable QR sessions.';
-                        }
-                        break;
                     case 'phantom':
                         availability =
                             injected.phantom ||
@@ -1251,28 +1201,6 @@ export function WalletManagerProvider({
                         // otherwise — always usable, never gated on a
                         // window.* injection check.
                         availability = 'available';
-                        break;
-                    case 'stellar-walletconnect':
-                        availability =
-                            isStellarWalletConnectConfigured
-                                ? 'available'
-                                : 'coming-soon';
-                        if (
-                            !isStellarWalletConnectConfigured
-                        ) {
-                            helperText =
-                                'Set NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID to enable QR sessions.';
-                        } else if (isXBullExtensionInstalled()) {
-                            // xBull's extension globally intercepts any
-                            // WalletConnect pairing in the browser and
-                            // crashes parsing the Stellar namespace — a bug
-                            // in xBull's own code, reproducible regardless
-                            // of required vs optional namespace placement.
-                            // Steer these users to the "xBull" row's direct
-                            // SDK connection instead, which works.
-                            helperText =
-                                'The xBull extension intercepts WalletConnect pairings and cannot complete them — use the xBull option above instead.';
-                        }
                         break;
                     case 'rabet':
                         availability =
@@ -1390,9 +1318,7 @@ export function WalletManagerProvider({
                     network: chain.name,
                     isSupported: true
                 })
-            ),
-            isWalletConnectReady:
-                isWalletConnectConfigured
+            )
         }),
         [
             activeSignerFamily,

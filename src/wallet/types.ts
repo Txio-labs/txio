@@ -29,7 +29,6 @@ export type WalletConnectionMethod =
 
 export type WalletId =
     | 'metamask'
-    | 'walletconnect'
     | 'coinbase-wallet'
     | 'phantom'
     | 'trust-wallet'
@@ -51,7 +50,6 @@ export type WalletId =
     | 'freighter'
     | 'albedo'
     | 'xbull'
-    | 'stellar-walletconnect'
     | 'rabet'
     | 'hana-wallet'
     | 'phantom-solana'
@@ -171,5 +169,4 @@ export interface WalletProviderContextValue {
         chainId: number
     ) => Promise<void>;
     evmChains: WalletChainInfo[];
-    isWalletConnectReady: boolean;
 }

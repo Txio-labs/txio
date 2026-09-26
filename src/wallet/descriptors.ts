@@ -25,26 +25,6 @@ export const WALLET_DESCRIPTORS: WalletDescriptor[] =
             isFeatured: true
         },
         {
-            id: 'walletconnect',
-            name: 'WalletConnect',
-            shortName: 'WC',
-            chainFamily: 'evm',
-            methods: ['walletconnect', 'deeplink'],
-            tags: [
-                'evm',
-                'qr',
-                'mobile',
-                'universal'
-            ],
-            description:
-                'QR and deep-link sessions for mobile and desktop wallets.',
-            installUrl:
-                'https://walletconnect.network/',
-            badge: 'QR',
-            iconSeed: 'walletconnect',
-            isFeatured: true
-        },
-        {
             id: 'coinbase-wallet',
             name: 'Coinbase Wallet',
             shortName: 'CB',
@@ -431,25 +411,6 @@ export const WALLET_DESCRIPTORS: WalletDescriptor[] =
             installUrl:
                 'https://xbull.app/',
             iconSeed: 'xbull'
-        },
-        {
-            id: 'stellar-walletconnect',
-            name: 'WalletConnect',
-            shortName: 'WC',
-            chainFamily: 'stellar',
-            methods: ['walletconnect', 'deeplink'],
-            tags: [
-                'stellar',
-                'qr',
-                'mobile',
-                'universal'
-            ],
-            description:
-                'QR and pairing-URI sessions for WalletConnect-compatible Stellar wallets.',
-            installUrl:
-                'https://walletconnect.network/',
-            badge: 'QR',
-            iconSeed: 'walletconnect'
         },
         {
             id: 'rabet',

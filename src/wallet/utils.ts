@@ -65,15 +65,6 @@ declare global {
 export const isBrowser = () =>
     typeof window !== 'undefined';
 
-// xBull's extension injects window.xBullSDK and, once present, intercepts
-// every WalletConnect pairing in the page — including ones meant for a
-// different Stellar wallet — and crashes parsing the Stellar namespace
-// (a bug in xBull's own bundle, not this app's WC payload). Used to warn
-// users away from the generic WalletConnect option toward xBull's own
-// working direct-SDK connection instead.
-export const isXBullExtensionInstalled = () =>
-    isBrowser() && Boolean(window.xBullSDK);
-
 export const isMobileDevice = () => {
     if (!isBrowser()) {
         return false;
@@ -184,18 +175,6 @@ export const formatWalletError = (
             message:
                 'The wallet is on an unsupported chain for this action.',
             recoverable: true
-        };
-    }
-
-    if (
-        /walletconnect project id/i.test(
-            message
-        )
-    ) {
-        return {
-            code: 'walletconnect-config',
-            message,
-            recoverable: false
         };
     }
 
