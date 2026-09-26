@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Terminal, X, Filter, Trash2, Command, Square, Copy, Check, Sparkles } from 'lucide-react';
+import { Terminal, X, Filter, Trash2, Command, Square, Copy, Check, Sparkles, ChevronDown, ChevronRight } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { apiService, CommandExecutionResponse } from '@/services/api';
 import { highlightJson, tryPrettyPrintJson } from '@/lib/jsonHighlight';
@@ -37,6 +37,23 @@ export const TerminalPanel: React.FC = () => {
     const [terminalHeight, setTerminalHeight] = useState<number>(getInitialTerminalHeight);
     const [isDragging, setIsDragging] = useState(false);
     const [copiedLogId, setCopiedLogId] = useState<string | null>(null);
+    // JSON bodies default collapsed — a busy terminal session accumulates a
+    // lot of response bodies, and most of the time only the summary line
+    // above each one (timestamp/type/user/target) matters for scanning.
+    // Tracking *expanded* ids (rather than collapsed) means a new log entry
+    // starts collapsed with no extra bookkeeping when it first appears.
+    const [expandedLogIds, setExpandedLogIds] = useState<Set<string>>(new Set());
+    const toggleLogExpanded = (id: string) => {
+        setExpandedLogIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+            return next;
+        });
+    };
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const executionIdRef = useRef<string | null>(null);
@@ -620,11 +637,32 @@ export const TerminalPanel: React.FC = () => {
                                         key={log.id}
                                         className="flex flex-col gap-1 group"
                                     >
-                                        <div className="flex items-center gap-3">
+                                        <div
+                                            className={`flex items-center gap-3 ${isJson ? 'cursor-pointer' : ''}`}
+                                            onClick={isJson ? () => toggleLogExpanded(log.id) : undefined}
+                                        >
+                                            {isJson && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        toggleLogExpanded(log.id);
+                                                    }}
+                                                    className="shrink-0 p-0.5 -ml-1 rounded text-slate-500 hover:text-slate-200 hover:bg-white/[0.05] transition-colors"
+                                                    title={expandedLogIds.has(log.id) ? 'Collapse' : 'Expand'}
+                                                >
+                                                    {expandedLogIds.has(log.id) ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                                                </button>
+                                            )}
                                             {timestamp}
                                             {typeBadge}
                                             <span className="text-slate-500 font-bold">{log.userName}</span>
                                             {log.target && <span className="text-electric-violet/60 italic text-[10px]">({log.target})</span>}
+                                            {isJson && !expandedLogIds.has(log.id) && (
+                                                <span className="text-slate-500 text-[10px] italic truncate">
+                                                    {prettyAction.replace(/\s+/g, ' ').slice(0, 80)}
+                                                    {prettyAction.length > 80 ? '…' : ''}
+                                                </span>
+                                            )}
                                             <div className="ml-auto flex items-center gap-1 shrink-0">
                                                 {log.type === 'error' && (
                                                     <button
@@ -652,10 +690,12 @@ export const TerminalPanel: React.FC = () => {
                                             </div>
                                         </div>
                                         {isJson ? (
-                                            <pre
-                                                className="text-slate-800 dark:text-white/90 whitespace-pre-wrap break-words ml-4 rounded-lg border border-slate-200 dark:border-white/5 bg-white dark:bg-white/[0.02] px-3 py-2.5 leading-relaxed"
-                                                dangerouslySetInnerHTML={{ __html: highlightJson(prettyAction) }}
-                                            />
+                                            expandedLogIds.has(log.id) && (
+                                                <pre
+                                                    className="text-slate-800 dark:text-white/90 whitespace-pre-wrap break-words ml-4 rounded-lg border border-slate-200 dark:border-white/5 bg-white dark:bg-white/[0.02] px-3 py-2.5 leading-relaxed"
+                                                    dangerouslySetInnerHTML={{ __html: highlightJson(prettyAction) }}
+                                                />
+                                            )
                                         ) : (
                                             <pre className="text-slate-800 dark:text-white/90 whitespace-pre-wrap break-words ml-4 border-l border-slate-200 dark:border-white/5 pl-3">
                                                 {log.action}
