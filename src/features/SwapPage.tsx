@@ -1,13 +1,16 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, ArrowDown, Loader2, Repeat, Zap } from 'lucide-react';
+import { AlertTriangle, ArrowDown, Banknote, Loader2, Repeat, Zap } from 'lucide-react';
 
 import { useWallet } from '@/wallet';
 import { appStore } from '@/lib/store';
 import { RPC_CHAINS, EVM_CHAINS, DEFAULT_EVM_CHAIN_ID } from '@/lib/constants';
 import { getRoutes, LifiError, LifiRoute } from '@/lib/lifi';
+import { sideshiftChainSlug, BridgeQuoteResponse, BridgeUnsupportedChainError } from '@/lib/bridge';
+import { apiService, ApiError } from '@/services/api';
 import { ChainId, RequestType, RequestItem, SwapParams } from '../types';
 import { DEFAULT_MOVE_CALL } from '@/lib/constants';
 import { SwapReviewModal } from '@/components/SwapReviewModal';
+import { OfframpPanel } from '@/components/OfframpPanel';
 
 const SLIPPAGE_PRESETS = [0.1, 0.5, 1];
 const DEFAULT_SLIPPAGE = 0.5;
@@ -30,6 +33,7 @@ const routeTimeLabel = (route: LifiRoute) => {
 
 export const SwapPage: React.FC = () => {
     const { linkedWallets } = useWallet();
+    const [tab, setTab] = useState<'swap' | 'offramp'>('swap');
 
     const [fromChain, setFromChain] = useState<ChainId>('evm');
     const [toChain, setToChain] = useState<ChainId>('evm');
@@ -44,6 +48,7 @@ export const SwapPage: React.FC = () => {
     const [gasTopUp, setGasTopUp] = useState(false);
 
     const [routes, setRoutes] = useState<LifiRoute[]>([]);
+    const [sideshiftQuote, setSideshiftQuote] = useState<BridgeQuoteResponse | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [selectedRoute, setSelectedRoute] = useState<LifiRoute | null>(null);
@@ -54,11 +59,45 @@ export const SwapPage: React.FC = () => {
 
     const canSearch = Boolean(fromAddress && fromToken.trim() && toToken.trim() && fromAmount.trim());
 
+    /**
+     * Falls back to txio-backend's bridge aggregator (which itself tries
+     * LI.FI then SideShift) when the client-side LI.FI call above finds
+     * nothing — this is what makes pairs like Sui <-> Stellar sendable,
+     * since LI.FI doesn't actually route them despite lib/lifi.ts mapping
+     * chain keys for both.
+     */
+    const tryBackendFallback = async () => {
+        if (!fromAddress) return;
+        try {
+            const quote = await apiService.getBridgeQuote({
+                from_chain: sideshiftChainSlug(fromChain),
+                from_token: fromToken.trim(),
+                to_chain: sideshiftChainSlug(toChain),
+                to_token: toToken.trim(),
+                amount: fromAmount.trim(),
+                from_address: fromAddress,
+                to_address: fromAddress
+            });
+            setSideshiftQuote(quote);
+            setError(null);
+            appStore.showToast('Route found via SideShift', 'success');
+        } catch (err) {
+            if (err instanceof BridgeUnsupportedChainError) {
+                setError('No route found for this pair/amount.');
+                return;
+            }
+            const message = err instanceof ApiError ? err.message : 'No route found for this pair/amount.';
+            setError(message);
+            appStore.showToast(message, 'error');
+        }
+    };
+
     const handleSearch = async () => {
         if (!fromAddress) return;
         setLoading(true);
         setError(null);
         setRoutes([]);
+        setSideshiftQuote(null);
         setSelectedRoute(null);
 
         try {
@@ -82,15 +121,18 @@ export const SwapPage: React.FC = () => {
             });
             setRoutes(found);
             if (found.length === 0) {
-                setError('No routes found for this pair/amount.');
-                appStore.showToast('No routes found for this pair/amount.', 'error');
+                await tryBackendFallback();
             } else {
                 appStore.showToast(`${found.length} route${found.length === 1 ? '' : 's'} found`, 'success');
             }
         } catch (err) {
-            const message = err instanceof LifiError ? err.message : 'Failed to fetch routes.';
-            setError(message);
-            appStore.showToast(message, 'error');
+            // LI.FI throws for chain pairs it doesn't support at all (e.g.
+            // sui -> stellar) rather than returning an empty route list —
+            // that's still a "try the fallback" case, not a hard failure.
+            await tryBackendFallback();
+            if (!(err instanceof LifiError)) {
+                appStore.showToast('Failed to fetch routes.', 'error');
+            }
         } finally {
             setLoading(false);
         }
@@ -120,6 +162,30 @@ export const SwapPage: React.FC = () => {
         });
     };
 
+    const handleSelectSideshiftQuote = () => {
+        if (!sideshiftQuote) return;
+
+        const swapParams: SwapParams = {
+            fromChain,
+            toChain,
+            fromToken: fromToken.trim(),
+            toToken: toToken.trim(),
+            fromAmount: fromAmount.trim(),
+            slippagePercent,
+            deadlineMinutes,
+            selectedRouteId: sideshiftQuote.id
+        };
+
+        setReviewRequest({
+            id: `swap-sideshift-${sideshiftQuote.id}`,
+            type: RequestType.SWAP,
+            name: `Send ${fromToken.trim()} → ${toToken.trim()}`,
+            rpcParams: { method: '', params: [], chain: fromChain },
+            moveParams: { ...DEFAULT_MOVE_CALL },
+            swapParams
+        });
+    };
+
     const effectiveSlippage = useMemo(() => {
         const custom = Number(customSlippage);
         return customSlippage.trim() && !Number.isNaN(custom) && custom > 0 ? custom : slippagePercent;
@@ -133,10 +199,37 @@ export const SwapPage: React.FC = () => {
                     Send
                 </h1>
                 <p className="text-xs text-slate-500 mt-1">
-                    Compare routes across DEXs and bridges (via LI.FI) for a same-chain swap or cross-chain transfer.
+                    Compare routes across DEXs and bridges (via LI.FI, with a SideShift fallback) for a swap or cross-chain transfer, or cash out USDC to fiat.
                 </p>
+                <div className="flex items-center gap-2 mt-3">
+                    <button
+                        onClick={() => setTab('swap')}
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-colors ${
+                            tab === 'swap'
+                                ? 'bg-electric-violet/10 text-electric-violet border border-electric-violet/30'
+                                : 'border border-slate-200 dark:border-white/10 text-slate-500 hover:bg-white dark:hover:bg-white/5'
+                        }`}
+                    >
+                        <Repeat size={12} /> Swap / Bridge
+                    </button>
+                    <button
+                        onClick={() => setTab('offramp')}
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-colors ${
+                            tab === 'offramp'
+                                ? 'bg-electric-violet/10 text-electric-violet border border-electric-violet/30'
+                                : 'border border-slate-200 dark:border-white/10 text-slate-500 hover:bg-white dark:hover:bg-white/5'
+                        }`}
+                    >
+                        <Banknote size={12} /> Cash out (USDC → fiat)
+                    </button>
+                </div>
             </div>
 
+            {tab === 'offramp' ? (
+                <div className="flex-1 p-6 w-full flex justify-center">
+                    <OfframpPanel />
+                </div>
+            ) : (
             <div className="flex-1 p-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             <div className="space-y-5 w-full">
                 {/* From */}
@@ -322,6 +415,26 @@ export const SwapPage: React.FC = () => {
                             ))}
                         </div>
                     </>
+                ) : sideshiftQuote ? (
+                    <>
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                            1 route found (via SideShift)
+                        </label>
+                        <button
+                            onClick={handleSelectSideshiftQuote}
+                            className="w-full text-left rounded-xl border border-electric-violet bg-electric-violet/5 p-4 transition-colors"
+                        >
+                            <div className="flex items-center justify-between gap-3">
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                    SideShift
+                                </span>
+                                <span className="text-[10px] text-slate-400 shrink-0">deposit-address flow</span>
+                            </div>
+                            <div className="mt-2 flex items-center gap-4 text-[11px] text-slate-500">
+                                <span>You receive ~{sideshiftQuote.to_amount_estimated} {sideshiftQuote.to.symbol}</span>
+                            </div>
+                        </button>
+                    </>
                 ) : (
                     <div className="hidden lg:flex flex-col items-center justify-center h-full min-h-[320px] rounded-xl border border-dashed border-slate-200 dark:border-white/10 text-center p-6">
                         <Zap size={24} className="text-slate-300 dark:text-slate-700 mb-3" />
@@ -330,12 +443,14 @@ export const SwapPage: React.FC = () => {
                 )}
             </div>
             </div>
+            )}
 
             <SwapReviewModal
                 isOpen={Boolean(reviewRequest)}
                 request={reviewRequest}
                 route={selectedRoute}
-                onClose={() => { setReviewRequest(null); setSelectedRoute(null); }}
+                sideshiftQuote={selectedRoute ? null : sideshiftQuote}
+                onClose={() => { setReviewRequest(null); setSelectedRoute(null); setSideshiftQuote(null); }}
             />
         </div>
     );

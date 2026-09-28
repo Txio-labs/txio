@@ -20,6 +20,15 @@ import {
 import { DEFAULT_MOVE_CALL } from '../lib/constants';
 import { normalizeNotificationPreferences } from '../lib/appConfig';
 import { getTxParamsForHistory } from './transactionService';
+import {
+    BridgeExecuteOrderRequest,
+    BridgeExecuteOrderResponse,
+    BridgeOrder,
+    BridgeQuoteRequest,
+    BridgeQuoteResponse,
+    OfframpQuoteRequest,
+    OfframpQuoteResponse
+} from '../lib/bridge';
 
 // NOTE: vercel.json's Content-Security-Policy connect-src is a static value
 // (Vercel parses vercel.json at deploy time and this app builds with
@@ -1776,6 +1785,32 @@ class ApiService {
 
     async deleteHistoryEntry(id: string): Promise<void> {
         await this.request<{ message: string }>(`/history/${id}`, { method: 'DELETE' });
+    }
+
+    // Bridge (swap/bridge aggregation + USDC -> fiat off-ramp)
+    async getBridgeQuote(req: BridgeQuoteRequest): Promise<BridgeQuoteResponse> {
+        return this.request<BridgeQuoteResponse>('/bridge/swap/quote', {
+            method: 'POST',
+            body: JSON.stringify(req)
+        });
+    }
+
+    async executeBridgeOrder(req: BridgeExecuteOrderRequest): Promise<BridgeExecuteOrderResponse> {
+        return this.request<BridgeExecuteOrderResponse>('/bridge/swap/orders', {
+            method: 'POST',
+            body: JSON.stringify(req)
+        });
+    }
+
+    async getBridgeOrderStatus(providerOrderId: string): Promise<BridgeOrder> {
+        return this.request<BridgeOrder>(`/bridge/swap/orders/${encodeURIComponent(providerOrderId)}`);
+    }
+
+    async getOfframpQuote(req: OfframpQuoteRequest): Promise<OfframpQuoteResponse> {
+        return this.request<OfframpQuoteResponse>('/bridge/offramp/quote', {
+            method: 'POST',
+            body: JSON.stringify(req)
+        });
     }
 }
 

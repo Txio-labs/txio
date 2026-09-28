@@ -1,17 +1,21 @@
-import React, { useState } from 'react';
-import { AlertTriangle, ArrowRight, CheckCircle2, Loader2, Shield, X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { AlertTriangle, ArrowRight, CheckCircle2, Clock, Copy, Loader2, Shield, X } from 'lucide-react';
 import { useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 
 import { useWallet } from '@/wallet';
 import { appStore } from '@/lib/store';
 import { EvmTxParams, RequestItem, RequestType } from '../types';
 import { LifiRoute, LifiStep, getStepTransaction } from '@/lib/lifi';
+import { BridgeOrder, BridgeQuoteResponse, sideshiftChainSlug, sideshiftNativeCoin } from '@/lib/bridge';
+import { apiService, ApiError } from '@/services/api';
 import { executeTransaction, txExplorerUrl } from '@/services/transactionService';
 import { resolveChainRpcUrl, signAndExecuteRawSuiTransaction } from '@/services/suiService';
 import { signAndSubmitRawStellarTransaction } from '@/services/adapters/stellarAdapter';
 import { signAndSendRawSolanaTransaction } from '@/wallet/solana';
 import { VerificationBadge } from '@/components/ui/VerificationBadge';
 import { DEFAULT_MOVE_CALL } from '@/lib/constants';
+
+const ORDER_POLL_INTERVAL_MS = 5000;
 
 interface SwapLegResult {
     chain: string;
@@ -26,6 +30,8 @@ interface SwapReviewModalProps {
     isOpen: boolean;
     request: RequestItem | null;
     route: LifiRoute | null;
+    /** Set instead of `route` when the pair was routed via the SideShift fallback (see SwapPage's tryBackendFallback). */
+    sideshiftQuote?: BridgeQuoteResponse | null;
     onClose: () => void;
 }
 
@@ -89,7 +95,7 @@ const buildStepRequest = (step: LifiStep): RequestItem | null => {
     };
 };
 
-export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, request, route, onClose }) => {
+export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, request, route, sideshiftQuote, onClose }) => {
     const { currentWallet, linkedWallets } = useWallet();
     const { mutateAsync: suiSignAndExecute } = useSignAndExecuteTransaction();
     const [executing, setExecuting] = useState(false);
@@ -97,9 +103,36 @@ export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, reques
     const [error, setError] = useState<string | null>(null);
     const [done, setDone] = useState(false);
 
-    if (!isOpen || !request || !route) return null;
+    const [sideshiftOrder, setSideshiftOrder] = useState<BridgeOrder | null>(null);
+    const [sideshiftDeposit, setSideshiftDeposit] = useState<{ address: string; memo?: string } | null>(null);
+    const [sideshiftCreating, setSideshiftCreating] = useState(false);
 
-    const firstStep = route.steps[0];
+    // Poll the deposit-address order until it settles — this is how the user
+    // finds out the shift completed, since there's no transaction to await
+    // (they signed nothing through this app; they sent funds to an address).
+    useEffect(() => {
+        if (!sideshiftOrder || sideshiftOrder.status === 'completed' || sideshiftOrder.status === 'failed'
+            || sideshiftOrder.status === 'refunded' || sideshiftOrder.status === 'expired') {
+            return;
+        }
+        const timer = setInterval(async () => {
+            try {
+                const updated = await apiService.getBridgeOrderStatus(sideshiftOrder.provider_order_id);
+                setSideshiftOrder(updated);
+                if (updated.status === 'completed') {
+                    appStore.showToast('Shift completed', 'success');
+                }
+            } catch {
+                // Transient polling failure — next tick retries; nothing to surface to the user yet.
+            }
+        }, ORDER_POLL_INTERVAL_MS);
+        return () => clearInterval(timer);
+    }, [sideshiftOrder]);
+
+    if (!isOpen || !request) return null;
+    if (!route && !sideshiftQuote) return null;
+
+    const firstStep = route?.steps[0];
     const approvalAddress = firstStep?.estimate?.approvalAddress;
     const swapParams = request.swapParams;
     // The swap's source chain may not be the active signer — look up the
@@ -111,7 +144,56 @@ export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, reques
             ? linkedWallets[swapParams.fromChain] ?? null
             : currentWallet;
 
+    const handleCreateSideshiftOrder = async () => {
+        if (!sideshiftQuote || !swapParams || !sourceWallet) return;
+        setSideshiftCreating(true);
+        setError(null);
+        try {
+            const quoteId = String(sideshiftQuote.execution_payload.sideshiftQuoteId ?? sideshiftQuote.id);
+            const { order, provider_response } = await apiService.executeBridgeOrder({
+                quote_id: quoteId,
+                provider: 'sideshift',
+                from_chain: sideshiftChainSlug(swapParams.fromChain),
+                from_token: swapParams.fromToken || sideshiftNativeCoin(swapParams.fromChain),
+                to_chain: sideshiftChainSlug(swapParams.toChain),
+                to_token: swapParams.toToken || sideshiftNativeCoin(swapParams.toChain),
+                from_address: sourceWallet.address,
+                to_address: sourceWallet.address
+            });
+            setSideshiftOrder(order);
+            setSideshiftDeposit({
+                address: String(provider_response.depositAddress ?? ''),
+                memo: provider_response.depositMemo ? String(provider_response.depositMemo) : undefined
+            });
+            appStore.addToHistory(
+                request,
+                200,
+                0,
+                { provider: 'sideshift', order },
+                { family: sourceWallet.family, address: sourceWallet.address }
+            );
+            appStore.showToast('Deposit address generated — send funds to continue', 'success');
+        } catch (err) {
+            const message = err instanceof ApiError ? err.message : 'Failed to create the SideShift order.';
+            setError(message);
+            appStore.showToast(message, 'error');
+        } finally {
+            setSideshiftCreating(false);
+        }
+    };
+
+    const copyDepositAddress = async () => {
+        if (!sideshiftDeposit) return;
+        try {
+            await navigator.clipboard.writeText(sideshiftDeposit.address);
+            appStore.showToast('Address copied', 'success');
+        } catch {
+            appStore.showToast('Could not copy address', 'error');
+        }
+    };
+
     const handleExecute = async () => {
+        if (!route || !firstStep) return;
         setExecuting(true);
         setError(null);
         const completedLegs: SwapLegResult[] = [];
@@ -216,12 +298,125 @@ export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, reques
     };
 
     const handleClose = () => {
-        if (executing) return;
+        if (executing || sideshiftCreating) return;
         setLegs([]);
         setError(null);
         setDone(false);
+        setSideshiftOrder(null);
+        setSideshiftDeposit(null);
         onClose();
     };
+
+    if (sideshiftQuote) {
+        const isSettled = sideshiftOrder?.status === 'completed';
+        const isDead = sideshiftOrder?.status === 'failed' || sideshiftOrder?.status === 'refunded' || sideshiftOrder?.status === 'expired';
+
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/70 dark:bg-near-black/80 backdrop-blur-sm">
+                <div className="bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+                    <div className="p-4 border-b border-slate-200 dark:border-white/5 flex justify-between items-center bg-white dark:bg-near-black">
+                        <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <Shield size={16} className="text-electric-violet" /> Review Send (SideShift)
+                        </h2>
+                        <button onClick={handleClose} disabled={executing || sideshiftCreating} className="text-slate-500 hover:text-slate-900 dark:hover:text-white disabled:opacity-40">
+                            <X size={18} />
+                        </button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                        <div className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black p-3 space-y-2">
+                            <div className="flex justify-between text-xs">
+                                <span className="text-slate-500">Provider</span>
+                                <span className="font-mono text-slate-700 dark:text-slate-300">SideShift</span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                                <span className="text-slate-500">You send</span>
+                                <span className="font-mono text-slate-700 dark:text-slate-300">{sideshiftQuote.from_amount} {sideshiftQuote.from.symbol}</span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                                <span className="text-slate-500">You receive (est.)</span>
+                                <span className="font-mono text-slate-700 dark:text-slate-300">{sideshiftQuote.to_amount_estimated} {sideshiftQuote.to.symbol}</span>
+                            </div>
+                        </div>
+
+                        {!sideshiftDeposit && (
+                            <div className="flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-900/30 bg-amber-50 dark:bg-amber-900/10 p-3 text-[11px] text-amber-700 dark:text-amber-400">
+                                <AlertTriangle size={13} className="shrink-0 mt-0.5" />
+                                SideShift doesn&apos;t produce a signable transaction — generating the order gives you a deposit address to send funds to from your own wallet. The shift settles once your deposit confirms.
+                            </div>
+                        )}
+
+                        {sideshiftDeposit && (
+                            <div className="rounded-lg border border-electric-violet/30 bg-electric-violet/5 p-3 space-y-3">
+                                <div>
+                                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Send exactly {sideshiftQuote.from_amount} {sideshiftQuote.from.symbol} to</label>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <code className="flex-1 min-w-0 truncate text-xs font-mono bg-white dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg px-2 py-1.5">
+                                            {sideshiftDeposit.address}
+                                        </code>
+                                        <button onClick={copyDepositAddress} className="p-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 hover:text-electric-violet shrink-0">
+                                            <Copy size={13} />
+                                        </button>
+                                    </div>
+                                </div>
+                                {sideshiftDeposit.memo && (
+                                    <div>
+                                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Memo / tag (required)</label>
+                                        <code className="block text-xs font-mono bg-white dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg px-2 py-1.5 mt-1">
+                                            {sideshiftDeposit.memo}
+                                        </code>
+                                    </div>
+                                )}
+                                <div className="flex items-center gap-2 text-[11px]">
+                                    {isSettled ? (
+                                        <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold">
+                                            <CheckCircle2 size={13} /> Completed{sideshiftOrder?.tx_hash ? ` — ${sideshiftOrder.tx_hash}` : ''}
+                                        </span>
+                                    ) : isDead ? (
+                                        <span className="flex items-center gap-1.5 text-red-600 dark:text-red-400 font-bold">
+                                            <AlertTriangle size={13} /> {sideshiftOrder?.status}
+                                        </span>
+                                    ) : (
+                                        <span className="flex items-center gap-1.5 text-slate-500">
+                                            <Clock size={13} className="animate-pulse" /> Waiting for your deposit ({sideshiftOrder?.status ?? 'awaiting_deposit'})…
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {error && (
+                            <div className="flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/10 px-3 py-2 text-[11px] text-red-600 dark:text-red-400">
+                                <AlertTriangle size={13} /> {error}
+                            </div>
+                        )}
+
+                        {!sourceWallet && (
+                            <p className="text-[11px] text-amber-600 dark:text-amber-400">Connect a {swapParams?.fromChain.toUpperCase()} wallet to continue.</p>
+                        )}
+                    </div>
+
+                    <div className="p-4 border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-dark-indigo-glow flex justify-end gap-3">
+                        <button onClick={handleClose} disabled={executing || sideshiftCreating} className="px-4 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-40">
+                            {isSettled ? 'Close' : 'Cancel'}
+                        </button>
+                        {!sideshiftDeposit && (
+                            <button
+                                onClick={handleCreateSideshiftOrder}
+                                disabled={sideshiftCreating || !sourceWallet}
+                                className="px-6 py-2 bg-slate-900 dark:bg-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white dark:text-near-black text-xs font-bold rounded shadow-lg flex items-center gap-2"
+                            >
+                                {sideshiftCreating ? <Loader2 size={14} className="animate-spin" /> : null}
+                                {sideshiftCreating ? 'Generating…' : 'Generate deposit address'} {!sideshiftCreating && <ArrowRight size={14} />}
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (!route) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/70 dark:bg-near-black/80 backdrop-blur-sm">
