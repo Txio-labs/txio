@@ -5,7 +5,7 @@ import { useWallet } from '@/wallet';
 import { appStore } from '@/lib/store';
 import { RPC_CHAINS, EVM_CHAINS, DEFAULT_EVM_CHAIN_ID } from '@/lib/constants';
 import { getRoutes, LifiError, LifiRoute } from '@/lib/lifi';
-import { sideshiftChainSlug, BridgeQuoteResponse, BridgeUnsupportedChainError } from '@/lib/bridge';
+import { sideshiftChainSlug, sideshiftNativeCoin, BridgeQuoteResponse, BridgeUnsupportedChainError } from '@/lib/bridge';
 import { apiService, ApiError } from '@/services/api';
 import { ChainId, RequestType, RequestItem, SwapParams } from '../types';
 import { DEFAULT_MOVE_CALL } from '@/lib/constants';
@@ -69,11 +69,24 @@ export const SwapPage: React.FC = () => {
     const tryBackendFallback = async () => {
         if (!fromAddress) return;
         try {
+            // SideShift has its own coin-symbol taxonomy, distinct from the
+            // LI.FI-style contract address/symbol the token fields hold
+            // (that's what LI.FI's own quote call above expects) — sending
+            // that raw value through gets "Invalid coin" from SideShift.
+            // Fall back to each chain's native coin unless the user typed
+            // something that already looks like a SideShift coin symbol.
+            const asSideshiftCoin = (raw: string, chain: ChainId) => {
+                const trimmed = raw.trim().toLowerCase();
+                return !trimmed || trimmed.startsWith('0x') || trimmed.includes('::')
+                    ? sideshiftNativeCoin(chain)
+                    : trimmed;
+            };
+
             const quote = await apiService.getBridgeQuote({
                 from_chain: sideshiftChainSlug(fromChain),
-                from_token: fromToken.trim(),
+                from_token: asSideshiftCoin(fromToken, fromChain),
                 to_chain: sideshiftChainSlug(toChain),
-                to_token: toToken.trim(),
+                to_token: asSideshiftCoin(toToken, toChain),
                 amount: fromAmount.trim(),
                 from_address: fromAddress,
                 to_address: fromAddress
