@@ -274,6 +274,15 @@ export const Layout: React.FC<LayoutProps> = ({
                     </div>
 
                     <div className="flex flex-col items-center gap-1 w-full px-2 mb-1">
+                        <button
+                            onClick={() => { openModal(); setIsMobileNavOpen(false); }}
+                            title={isConnected ? 'Open wallet manager' : 'Connect wallet'}
+                            aria-label={isConnected ? 'Open wallet manager' : 'Connect wallet'}
+                            className="w-full flex flex-col items-center gap-1 py-2 rounded-lg transition-all text-slate-500 hover:text-electric-violet hover:bg-electric-violet/10"
+                        >
+                            <Wallet size={15} />
+                            <span className="text-[9px] font-bold leading-none text-center">Wallet</span>
+                        </button>
                         {navRailBottom.map((item) => {
                             const isActive = activeTab?.type === item.id;
                             return (
@@ -455,17 +464,19 @@ export const Layout: React.FC<LayoutProps> = ({
                                         ? 'bg-white dark:bg-dark-indigo-glow border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-white/20'
                                         : 'bg-electric-violet/10 border-electric-violet/20 text-electric-violet hover:bg-electric-violet/20'
                                 }`}
-                                title={isConnected ? 'Wallet connected' : 'Connect a wallet'}
+                                aria-label={isConnected ? 'Open wallet manager' : 'Connect wallet'}
+                                title={isConnected ? 'Open wallet manager' : 'Connect wallet'}
                             >
                                 <Wallet size={11} />
                                 {isConnected && currentWallet ? (
                                     <>
-                                        <span className="font-mono">{shortenAddress(currentWallet.address)}</span>
+                                        <span>Wallets</span>
+                                        <span className="hidden md:inline font-mono text-slate-400">{shortenAddress(currentWallet.address)}</span>
                                         <CircleDot size={8} className="text-emerald-500 fill-emerald-500" />
                                         <ChevronDown size={10} className="text-slate-500 shrink-0" />
                                     </>
                                 ) : (
-                                    <span>Connect</span>
+                                    <span>Connect wallet</span>
                                 )}
                             </button>
 
