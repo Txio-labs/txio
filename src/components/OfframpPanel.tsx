@@ -65,91 +65,100 @@ export const OfframpPanel: React.FC = () => {
     };
 
     return (
-        <div className="space-y-5 w-full max-w-md">
-            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow p-4 space-y-3">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">From</label>
-                <select
-                    value={sourceChain}
-                    onChange={(e) => setSourceChain(e.target.value as ChainId)}
-                    className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-electric-violet"
+        <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <div className="space-y-5 w-full">
+                <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow p-4 space-y-3">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">From</label>
+                    <select
+                        value={sourceChain}
+                        onChange={(e) => setSourceChain(e.target.value as ChainId)}
+                        className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-electric-violet"
+                    >
+                        {RPC_CHAINS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+                    </select>
+                    <input
+                        value={amountUsdc}
+                        onChange={(e) => setAmountUsdc(e.target.value)}
+                        placeholder="Amount (USDC)"
+                        className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-electric-violet"
+                    />
+                    {!wallet && (
+                        <p className="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                            <AlertTriangle size={12} /> No {sourceChain.toUpperCase()} wallet linked.
+                        </p>
+                    )}
+                </div>
+
+                <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow p-4 space-y-3">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">To (fiat)</label>
+                    <div className="flex gap-2">
+                        <select
+                            value={fiatCurrency}
+                            onChange={(e) => setFiatCurrency(e.target.value)}
+                            className="h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-electric-violet"
+                        >
+                            {FIAT_CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                        <input
+                            value={country}
+                            onChange={(e) => setCountry(e.target.value.toUpperCase().slice(0, 2))}
+                            placeholder="Country (e.g. US)"
+                            maxLength={2}
+                            className="flex-1 min-w-0 h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-electric-violet"
+                        />
+                    </div>
+                </div>
+
+                <button
+                    onClick={handleGetQuote}
+                    disabled={!canQuote || loading}
+                    className="w-full h-11 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-near-black text-sm font-bold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity flex items-center justify-center gap-2"
                 >
-                    {RPC_CHAINS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-                </select>
-                <input
-                    value={amountUsdc}
-                    onChange={(e) => setAmountUsdc(e.target.value)}
-                    placeholder="Amount (USDC)"
-                    className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-electric-violet"
-                />
-                {!wallet && (
-                    <p className="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                        <AlertTriangle size={12} /> No {sourceChain.toUpperCase()} wallet linked.
-                    </p>
+                    {loading ? <Loader2 size={14} className="animate-spin" /> : <Banknote size={14} />}
+                    {loading ? 'Getting quote…' : 'Get off-ramp quote'}
+                </button>
+
+                {error && (
+                    <div className="flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/10 px-3 py-2 text-[11px] text-red-600 dark:text-red-400">
+                        <AlertTriangle size={13} /> {error}
+                    </div>
                 )}
             </div>
 
-            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow p-4 space-y-3">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">To (fiat)</label>
-                <div className="flex gap-2">
-                    <select
-                        value={fiatCurrency}
-                        onChange={(e) => setFiatCurrency(e.target.value)}
-                        className="h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-electric-violet"
-                    >
-                        {FIAT_CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                    <input
-                        value={country}
-                        onChange={(e) => setCountry(e.target.value.toUpperCase().slice(0, 2))}
-                        placeholder="Country (e.g. US)"
-                        maxLength={2}
-                        className="flex-1 min-w-0 h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-electric-violet"
-                    />
-                </div>
-            </div>
-
-            <button
-                onClick={handleGetQuote}
-                disabled={!canQuote || loading}
-                className="w-full h-11 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-near-black text-sm font-bold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity flex items-center justify-center gap-2"
-            >
-                {loading ? <Loader2 size={14} className="animate-spin" /> : <Banknote size={14} />}
-                {loading ? 'Getting quote…' : 'Get off-ramp quote'}
-            </button>
-
-            {error && (
-                <div className="flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/10 px-3 py-2 text-[11px] text-red-600 dark:text-red-400">
-                    <AlertTriangle size={13} /> {error}
-                </div>
-            )}
-
-            {quote && (
-                <div className="rounded-xl border border-electric-violet bg-electric-violet/5 p-4 space-y-3">
-                    <div className="flex justify-between text-xs">
-                        <span className="text-slate-500">Provider</span>
-                        <span className="font-mono text-slate-700 dark:text-slate-300">{quote.provider === 'bridgexyz' ? 'Bridge.xyz' : 'Transak'}</span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                        <span className="text-slate-500">You receive (est.)</span>
-                        <span className="font-mono text-slate-700 dark:text-slate-300">{quote.estimated_fiat_amount} {quote.fiat_currency}</span>
-                    </div>
-                    {quote.fee_usd_estimated != null && (
+            <div className="w-full">
+                {quote ? (
+                    <div className="rounded-xl border border-electric-violet bg-electric-violet/5 p-4 space-y-3">
                         <div className="flex justify-between text-xs">
-                            <span className="text-slate-500">Fee (est.)</span>
-                            <span className="font-mono text-slate-700 dark:text-slate-300">${quote.fee_usd_estimated.toFixed(2)}</span>
+                            <span className="text-slate-500">Provider</span>
+                            <span className="font-mono text-slate-700 dark:text-slate-300">{quote.provider === 'bridgexyz' ? 'Bridge.xyz' : 'Transak'}</span>
                         </div>
-                    )}
-                    <button
-                        onClick={handleContinue}
-                        className="w-full h-10 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-near-black text-xs font-bold hover:opacity-90 flex items-center justify-center gap-2"
-                    >
-                        Continue with {quote.provider === 'bridgexyz' ? 'Bridge.xyz' : 'Transak'} <ArrowUpRight size={13} />
-                    </button>
-                    <p className="text-[10px] text-slate-400">
-                        You&apos;ll complete KYC and bank details directly with {quote.provider === 'bridgexyz' ? 'Bridge.xyz' : 'Transak'} — txio never sees that information.
-                    </p>
-                </div>
-            )}
+                        <div className="flex justify-between text-xs">
+                            <span className="text-slate-500">You receive (est.)</span>
+                            <span className="font-mono text-slate-700 dark:text-slate-300">{quote.estimated_fiat_amount} {quote.fiat_currency}</span>
+                        </div>
+                        {quote.fee_usd_estimated != null && (
+                            <div className="flex justify-between text-xs">
+                                <span className="text-slate-500">Fee (est.)</span>
+                                <span className="font-mono text-slate-700 dark:text-slate-300">${quote.fee_usd_estimated.toFixed(2)}</span>
+                            </div>
+                        )}
+                        <button
+                            onClick={handleContinue}
+                            className="w-full h-10 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-near-black text-xs font-bold hover:opacity-90 flex items-center justify-center gap-2"
+                        >
+                            Continue with {quote.provider === 'bridgexyz' ? 'Bridge.xyz' : 'Transak'} <ArrowUpRight size={13} />
+                        </button>
+                        <p className="text-[10px] text-slate-400">
+                            You&apos;ll complete KYC and bank details directly with {quote.provider === 'bridgexyz' ? 'Bridge.xyz' : 'Transak'} — txio never sees that information.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="hidden lg:flex flex-col items-center justify-center h-full min-h-[320px] rounded-xl border border-dashed border-slate-200 dark:border-white/10 text-center p-6">
+                        <Banknote size={24} className="text-slate-300 dark:text-slate-700 mb-3" />
+                        <p className="text-xs text-slate-400">Your off-ramp quote will appear here.</p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

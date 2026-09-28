@@ -226,7 +226,7 @@ export const SwapPage: React.FC = () => {
             </div>
 
             {tab === 'offramp' ? (
-                <div className="flex-1 p-6 w-full flex justify-center">
+                <div className="flex-1 p-6 w-full">
                     <OfframpPanel />
                 </div>
             ) : (
