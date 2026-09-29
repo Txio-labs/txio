@@ -393,14 +393,32 @@ export const Layout: React.FC<LayoutProps> = ({
                                 </button>
                             </div>
 
-                            <button
-                                onClick={() => appStore.toggleInspector()}
-                                aria-label={isInspectorOpen ? 'Close inspector' : 'Open inspector'}
-                                title={isInspectorOpen ? 'Close inspector' : 'Open inspector'}
-                                className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-white/10 transition-colors shrink-0 text-slate-500 hover:text-electric-violet"
-                            >
-                                <PanelRight size={14} />
-                            </button>
+                            {isInspectorOpen ? (
+                                <button
+                                    onClick={() => appStore.toggleInspector()}
+                                    aria-label="Close inspector"
+                                    title="Close inspector"
+                                    className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-white/10 transition-colors shrink-0 text-slate-500 hover:text-electric-violet"
+                                >
+                                    <PanelRight size={14} />
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => appStore.toggleInspector()}
+                                    aria-label="Open wallet panel"
+                                    title="Open wallet panel"
+                                    className={`p-1.5 rounded transition-colors shrink-0 relative ${
+                                        isConnected
+                                            ? 'text-electric-violet hover:bg-electric-violet/10'
+                                            : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-electric-violet'
+                                    }`}
+                                >
+                                    <WalletIcon size={14} />
+                                    {isConnected && currentWallet && (
+                                        <CircleDot size={7} className="absolute -top-0.5 -right-0.5 text-emerald-500 fill-emerald-500" />
+                                    )}
+                                </button>
+                            )}
 
                             <div className="relative shrink-0" ref={notifRef}>
                                 <button
