@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
     Check,
     ChevronDown,
@@ -31,8 +32,16 @@ export const WalletTab: React.FC<
         useState(false);
     const [isSwitchOpen, setIsSwitchOpen] =
         useState(false);
-    const switchRef =
+    const switchTriggerRef =
+        useRef<HTMLButtonElement>(null);
+    const switchMenuRef =
         useRef<HTMLDivElement>(null);
+    // Rendered through a portal (see switchMenuRect below): a plain
+    // `absolute` menu gets clipped by the wallet card's `overflow-hidden`
+    // (used to clip its decorative background gradient) instead of
+    // floating above everything.
+    const [switchMenuRect, setSwitchMenuRect] =
+        useState<{ top: number; left: number; width: number } | null>(null);
     const {
         currentWallet,
         linkedWallets,
@@ -43,16 +52,39 @@ export const WalletTab: React.FC<
         status
     } = useWallet();
 
+    const updateSwitchMenuRect = useCallback(() => {
+        const el = switchTriggerRef.current;
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        setSwitchMenuRect({
+            top: rect.bottom + 4,
+            left: rect.left,
+            width: rect.width
+        });
+    }, []);
+
     useEffect(() => {
         if (!isSwitchOpen) return;
+        updateSwitchMenuRect();
+
         const handleClickOutside = (event: MouseEvent) => {
-            if (switchRef.current && !switchRef.current.contains(event.target as Node)) {
+            const target = event.target as Node;
+            if (
+                switchTriggerRef.current && !switchTriggerRef.current.contains(target) &&
+                switchMenuRef.current && !switchMenuRef.current.contains(target)
+            ) {
                 setIsSwitchOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isSwitchOpen]);
+        window.addEventListener('scroll', updateSwitchMenuRect, true);
+        window.addEventListener('resize', updateSwitchMenuRect);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            window.removeEventListener('scroll', updateSwitchMenuRect, true);
+            window.removeEventListener('resize', updateSwitchMenuRect);
+        };
+    }, [isSwitchOpen, updateSwitchMenuRect]);
 
     const otherLinkedWallets = Object.values(linkedWallets).filter(
         (wallet) => wallet && wallet.id !== currentWallet?.id
@@ -245,27 +277,43 @@ export const WalletTab: React.FC<
                     </div>
 
                     <div className="mt-4 grid grid-cols-2 gap-2">
-                        <div ref={switchRef} className="relative">
-                            <button
-                                onClick={() =>
-                                    otherLinkedWallets.length > 0
-                                        ? setIsSwitchOpen((open) => !open)
-                                        : openModal()
-                                }
-                                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 dark:border-white/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
-                            >
-                                <Wallet size={14} />
-                                Switch
-                                {otherLinkedWallets.length > 0 && (
-                                    <ChevronDown
-                                        size={12}
-                                        className={`transition-transform ${isSwitchOpen ? 'rotate-180' : ''}`}
-                                    />
-                                )}
-                            </button>
+                        <button
+                            ref={switchTriggerRef}
+                            onClick={() =>
+                                otherLinkedWallets.length > 0
+                                    ? setIsSwitchOpen((open) => !open)
+                                    : openModal()
+                            }
+                            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 dark:border-white/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
+                        >
+                            <Wallet size={14} />
+                            Switch
+                            {otherLinkedWallets.length > 0 && (
+                                <ChevronDown
+                                    size={12}
+                                    className={`transition-transform ${isSwitchOpen ? 'rotate-180' : ''}`}
+                                />
+                            )}
+                        </button>
 
-                            {isSwitchOpen && otherLinkedWallets.length > 0 && (
-                                <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] shadow-xl">
+                        {isSwitchOpen && otherLinkedWallets.length > 0 && switchMenuRect && createPortal(
+                            <>
+                                <button
+                                    className="fixed inset-0 z-[100] cursor-default"
+                                    onClick={() => setIsSwitchOpen(false)}
+                                    tabIndex={-1}
+                                    aria-hidden="true"
+                                />
+                                <div
+                                    ref={switchMenuRef}
+                                    style={{
+                                        position: 'fixed',
+                                        top: switchMenuRect.top,
+                                        left: switchMenuRect.left,
+                                        width: switchMenuRect.width
+                                    }}
+                                    className="z-[101] overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] shadow-2xl animate-in fade-in zoom-in-95 duration-100 origin-top"
+                                >
                                     {otherLinkedWallets.map((wallet) => (
                                         <button
                                             key={wallet.id}
@@ -295,8 +343,9 @@ export const WalletTab: React.FC<
                                         Connect another chain
                                     </button>
                                 </div>
-                            )}
-                        </div>
+                            </>,
+                            document.body
+                        )}
                         <button
                             onClick={() =>
                                 void disconnect()
