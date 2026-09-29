@@ -55,12 +55,30 @@ const STELLAR_WALLET_META: Partial<
     }
 };
 
-const stellarNetwork =
+// Mutable, not a one-time env-derived constant: the app's network switcher
+// (mainnet/testnet/devnet/localnet) must be able to change which Stellar
+// network wallet connect/restore/balance calls target. setStellarNetwork()
+// is called by the wallet provider whenever the app's network changes.
+// Falls back to 'public' at module load, matching the old env-var default,
+// until the provider sets it from the app's actual current network.
+let stellarNetwork: StellarNetworkName =
     process.env
         .NEXT_PUBLIC_STELLAR_NETWORK ===
     'testnet'
         ? 'testnet'
         : 'public';
+
+/** Maps the app's Network to Stellar's own public/testnet split — Stellar has no separate devnet/localnet, so anything but mainnet targets its testnet. */
+export const stellarNetworkFor = (
+    appNetwork: 'mainnet' | 'testnet' | 'devnet' | 'localnet'
+): StellarNetworkName =>
+    appNetwork === 'mainnet' ? 'public' : 'testnet';
+
+export const setStellarNetwork = (
+    network: StellarNetworkName
+) => {
+    stellarNetwork = network;
+};
 
 const STELLAR_NETWORKS: Record<
     StellarNetworkName,

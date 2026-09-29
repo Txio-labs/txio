@@ -42,7 +42,9 @@ import {
     closeXBullBridge,
     connectStellarWallet,
     detectStellarWallets,
-    restoreStellarWallet
+    restoreStellarWallet,
+    setStellarNetwork,
+    stellarNetworkFor
 } from '../stellar';
 import { connectSolanaWallet, detectSolanaWallets, restoreSolanaWallet, disconnectSolanaWallet } from '../solana';
 import { connectAptosWallet, detectAptosWallets, restoreAptosWallet, disconnectAptosWallet } from '../aptos';
@@ -194,6 +196,15 @@ export function WalletManagerProvider({
         useRef(false);
     const { network } =
         useAppStore();
+
+    // Stellar's wallet connect/restore/balance calls read a module-level
+    // network setting (see wallet/stellar.ts) rather than taking it as a
+    // parameter on every call site — keep it in sync with the app's actual
+    // network switcher instead of leaving it hardcoded to whatever
+    // NEXT_PUBLIC_STELLAR_NETWORK was at build time.
+    useEffect(() => {
+        setStellarNetwork(stellarNetworkFor(network));
+    }, [network]);
     // Stamped explicitly at the moment a connect/restore call resolves
     // (event-handler / promise-callback context), never read during render,
     // so that `connectedAt` never has to call Date.now() while computing
