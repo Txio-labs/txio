@@ -56,10 +56,17 @@ export const WalletTab: React.FC<
         const el = switchTriggerRef.current;
         if (!el) return;
         const rect = el.getBoundingClientRect();
+        // The trigger is only half-width (one of two buttons in a
+        // grid-cols-2 row), too narrow for wallet name/address/"Connect
+        // another chain" text to lay out cleanly — widen the menu and clamp
+        // it to the viewport instead of matching the trigger exactly.
+        const MIN_MENU_WIDTH = 220;
+        const width = Math.max(rect.width, MIN_MENU_WIDTH);
+        const left = Math.min(rect.left, window.innerWidth - width - 8);
         setSwitchMenuRect({
             top: rect.bottom + 4,
-            left: rect.left,
-            width: rect.width
+            left: Math.max(8, left),
+            width
         });
     }, []);
 
@@ -337,9 +344,9 @@ export const WalletTab: React.FC<
                                             setIsSwitchOpen(false);
                                             openModal();
                                         }}
-                                        className="flex w-full items-center gap-2.5 border-t border-slate-200 dark:border-white/10 px-3 py-2.5 text-left text-xs font-bold text-electric-violet transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
+                                        className="flex w-full items-center gap-2.5 whitespace-nowrap border-t border-slate-200 dark:border-white/10 px-3 py-2.5 text-left text-xs font-bold text-electric-violet transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
                                     >
-                                        <Wallet size={13} />
+                                        <Wallet size={13} className="shrink-0" />
                                         Connect another chain
                                     </button>
                                 </div>
