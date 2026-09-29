@@ -32,7 +32,7 @@ const buildRevokeRequest = (approval: EvmApproval, chainId: number): RequestItem
 };
 
 export const ApprovalsPage: React.FC = () => {
-    const { currentWallet, openModal } = useWallet();
+    const { linkedWallets, openModal } = useWallet();
     const [chainId, setChainId] = useState<number>(EVM_CHAINS[0].id);
     const [approvals, setApprovals] = useState<EvmApproval[]>([]);
     const [loading, setLoading] = useState(false);
@@ -40,8 +40,12 @@ export const ApprovalsPage: React.FC = () => {
     const [pendingRevoke, setPendingRevoke] = useState<EvmApproval | null>(null);
     const [revokingKey, setRevokingKey] = useState<string | null>(null);
 
-    const isEvmConnected = currentWallet?.family === 'evm';
-    const owner = isEvmConnected ? currentWallet!.address : null;
+    // Approvals only exist on EVM chains, so this page needs the EVM wallet
+    // specifically — not currentWallet, which could be any chain's wallet
+    // marked as the default signer while an EVM wallet is also linked.
+    const evmWallet = linkedWallets.evm ?? null;
+    const isEvmConnected = Boolean(evmWallet);
+    const owner = evmWallet?.address ?? null;
 
     const runScan = useCallback(() => {
         if (!owner) return;
@@ -67,7 +71,7 @@ export const ApprovalsPage: React.FC = () => {
         const key = `${pendingRevoke.tokenAddress}:${pendingRevoke.spender}`;
         setRevokingKey(key);
         try {
-            await executeTransaction(revokeRequest, { network: 'mainnet', wallet: currentWallet });
+            await executeTransaction(revokeRequest, { network: 'mainnet', wallet: evmWallet });
             appStore.showToast(`Revoked approval for ${pendingRevoke.tokenSymbol ?? 'token'}`, 'success');
             setPendingRevoke(null);
             runScan();
@@ -198,7 +202,7 @@ export const ApprovalsPage: React.FC = () => {
                 onClose={() => setPendingRevoke(null)}
                 onConfirm={() => {}}
                 onExecute={handleExecuteRevoke}
-                wallet={currentWallet}
+                wallet={evmWallet}
                 onRequestConnect={openModal}
                 request={revokeRequest}
                 network="mainnet"

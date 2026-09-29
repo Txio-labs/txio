@@ -47,6 +47,7 @@ export function WalletModal() {
         closeModal,
         connect,
         currentWallet,
+        linkedWallets,
         disconnect,
         error,
         isModalOpen,
@@ -55,6 +56,10 @@ export function WalletModal() {
         setModalQuery,
         wallets
     } = useWallet();
+
+    const linkedEntries = CHAIN_FAMILY_ORDER
+        .map((family) => linkedWallets[family])
+        .filter((wallet): wallet is NonNullable<typeof wallet> => Boolean(wallet));
 
     const [activeCategory, setActiveCategory] = useState<CategoryId>('all');
     const [collapsedGroups, setCollapsedGroups] = useState<Set<WalletChainFamily>>(new Set());
@@ -167,34 +172,51 @@ export function WalletModal() {
                         <div className="mx-4 mt-3 flex items-start gap-2.5 rounded-xl border border-electric-violet/20 bg-electric-violet/5 px-3 py-2.5 shrink-0">
                             <Info size={14} className="mt-0.5 shrink-0 text-electric-violet" />
                             <p className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
-                                Make sure you have the wallet extension or app installed. We&apos;ll only request the permissions needed to connect — no private keys, ever.
+                                {linkedEntries.length > 0
+                                    ? 'Connecting another chain adds a second wallet alongside this one — nothing gets disconnected. Only what you send funds through can sign, so no private keys, ever.'
+                                    : "Make sure you have the wallet extension or app installed. We'll only request the permissions needed to connect — no private keys, ever."}
                             </p>
                         </div>
 
-                        {currentWallet && (
-                            <div
-                                className="mx-4 mt-3 flex items-center gap-3 rounded-xl border p-3 shrink-0"
-                                style={{
-                                    borderColor: `${CHAIN_FAMILY_COLOR[currentWallet.family]}33`,
-                                    backgroundColor: `${CHAIN_FAMILY_COLOR[currentWallet.family]}0f`
-                                }}
-                            >
-                                <WalletGlyph
-                                    walletId={currentWallet.id}
-                                    family={currentWallet.family}
-                                    shortName={currentWallet.name.slice(0, 2).toUpperCase()}
-                                    size="sm"
-                                />
-                                <div className="min-w-0 flex-1">
-                                    <div className="text-xs font-bold text-slate-900 dark:text-white truncate">{currentWallet.name}</div>
-                                    <div className="text-[11px] font-mono text-slate-500 truncate">{shortenAddress(currentWallet.address, 6, 4)}</div>
-                                </div>
-                                <button
-                                    onClick={() => void disconnect()}
-                                    className="shrink-0 text-[11px] font-bold text-red-500 hover:opacity-80 transition-colors"
-                                >
-                                    Disconnect
-                                </button>
+                        {linkedEntries.length > 0 && (
+                            <div className="mx-4 mt-3 space-y-1.5 shrink-0">
+                                {linkedEntries.map((wallet) => (
+                                    <div
+                                        key={wallet.id}
+                                        className="flex items-center gap-3 rounded-xl border p-3"
+                                        style={{
+                                            borderColor: `${CHAIN_FAMILY_COLOR[wallet.family]}33`,
+                                            backgroundColor: `${CHAIN_FAMILY_COLOR[wallet.family]}0f`
+                                        }}
+                                    >
+                                        <WalletGlyph
+                                            walletId={wallet.id}
+                                            family={wallet.family}
+                                            shortName={wallet.name.slice(0, 2).toUpperCase()}
+                                            size="sm"
+                                        />
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{wallet.name}</span>
+                                                <span className="text-[9px] font-bold uppercase tracking-wide px-1 py-0.5 rounded bg-slate-200/60 dark:bg-white/10 text-slate-600 dark:text-slate-300 shrink-0">
+                                                    {getFamilyLabel(wallet.family) ?? wallet.family}
+                                                </span>
+                                                {currentWallet?.id === wallet.id && (
+                                                    <span className="text-[9px] font-bold uppercase tracking-wide px-1 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                                                        Default
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="text-[11px] font-mono text-slate-500 truncate">{shortenAddress(wallet.address, 6, 4)}</div>
+                                        </div>
+                                        <button
+                                            onClick={() => void disconnect(wallet.family)}
+                                            className="shrink-0 text-[11px] font-bold text-red-500 hover:opacity-80 transition-colors"
+                                        >
+                                            Disconnect
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
                         )}
 
@@ -287,7 +309,7 @@ export function WalletModal() {
                                                             <WalletRow
                                                                 key={wallet.id}
                                                                 wallet={wallet}
-                                                                isCurrent={currentWallet?.id === wallet.id}
+                                                                isCurrent={linkedWallets[wallet.chainFamily]?.id === wallet.id}
                                                                 isPending={pendingWalletId === wallet.id}
                                                                 accentColor={group.color}
                                                                 onConnect={() => void connect(wallet.id).catch((err) => {

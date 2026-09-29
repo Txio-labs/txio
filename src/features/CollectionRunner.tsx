@@ -54,8 +54,10 @@ interface CollectionRunnerProps {
 
 export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId }) => {
     const { collections, currentWorkspaceId, network, envVariables } = useAppStore();
-    const { currentWallet } = useWallet();
-    const connectedAddress = currentWallet?.family === 'sui' ? currentWallet.address : null;
+    const { linkedWallets } = useWallet();
+    // Sui-specific: use the linked Sui wallet regardless of which chain's
+    // wallet is currently the default signer.
+    const connectedAddress = linkedWallets.sui?.address ?? null;
     const [isRunning, setIsRunning] = useState(false);
     const [progress, setProgress] = useState(0);
     const [currentReqIndex, setCurrentReqIndex] = useState(-1);

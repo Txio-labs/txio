@@ -30,6 +30,7 @@ const { mockAppStore, mockWallet } = vi.hoisted(() => ({
   },
   mockWallet: {
     currentWallet: { family: 'sui', address: '0x123' },
+    linkedWallets: { sui: { family: 'sui', address: '0x123' } },
     openModal: vi.fn(),
   }
 }));

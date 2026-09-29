@@ -20,7 +20,8 @@ import {
     getTxChain,
     isMainnetExecution,
     signerAddressFor,
-    simulateTransaction
+    simulateTransaction,
+    walletFamilyForChain
 } from '../services/transactionService';
 import { sendSolanaTransaction } from '@/wallet';
 import { ADDRESS_FIRST_PARAM_METHODS } from '@/lib/constants';
@@ -107,14 +108,19 @@ export const RPCBuilder: React.FC = () => {
         network,
         envVariables,
     } = useAppStore();
-    const { currentWallet, openModal } = useWallet();
+    const { linkedWallets, openModal } = useWallet();
     const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
     const activeTab = tabs.find(t => t.id === activeTabId);
     const request = activeTab?.data as RequestItem;
-    // The signer is whichever connected wallet matches this request's chain.
-    const connectedAddress = request ? signerAddressFor(request, currentWallet) : null;
+    // The signer is whichever *linked* wallet matches this request's chain —
+    // not necessarily currentWallet, since a user can have wallets linked
+    // on several chains at once (e.g. Sui and Stellar) with only one of
+    // them marked as the default signer.
+    const requestChainFamily = request ? walletFamilyForChain(getTxChain(request)) : null;
+    const requestWallet = requestChainFamily ? linkedWallets[requestChainFamily] ?? null : null;
+    const connectedAddress = request ? signerAddressFor(request, requestWallet) : null;
     // Attached to history entries so the activity feed can filter/attribute by wallet.
-    const historyWallet = currentWallet ? { family: currentWallet.family, address: currentWallet.address } : null;
+    const historyWallet = requestWallet ? { family: requestWallet.family, address: requestWallet.address } : null;
 
     const [isLoading, setIsLoading] = useState(false);
     const [isSignModalOpen, setIsSignModalOpen] = useState(false);
@@ -229,20 +235,20 @@ export const RPCBuilder: React.FC = () => {
             if (resolved.type === RequestType.TRANSACTION) {
                 res = await simulateTransaction(resolved, {
                     network,
-                    wallet: currentWallet
+                    wallet: requestWallet
                 });
             } else if (
                 resolved.rpcParams.chain === 'solana' &&
                 resolved.solanaTxParams
             ) {
-                if (!currentWallet || currentWallet.family !== 'solana') {
+                if (!requestWallet || requestWallet.family !== 'solana') {
                     throw new Error('Connect a Solana wallet to sign this transaction.');
                 }
 
                 const startTime = performance.now();
                 const rpcUrl = resolveChainRpcUrl('solana', network);
                 const { signature } = await sendSolanaTransaction({
-                    walletId: currentWallet.id,
+                    walletId: requestWallet.id,
                     rpcUrl,
                     programId: resolved.solanaTxParams.programId,
                     accounts: resolved.solanaTxParams.accounts,
@@ -385,7 +391,7 @@ export const RPCBuilder: React.FC = () => {
             }
             res = await executeTransaction(resolved, {
                 network,
-                wallet: currentWallet,
+                wallet: requestWallet,
                 suiSignAndExecute: signAndExecuteTransaction,
                 onProgress: setTxProgress
             });
@@ -497,7 +503,7 @@ export const RPCBuilder: React.FC = () => {
                 onClose={() => setIsSignModalOpen(false)}
                 onConfirm={handleReviewSimulation}
                 onExecute={handleExecuteTransaction}
-                wallet={currentWallet}
+                wallet={requestWallet}
                 onRequestConnect={openModal}
                 request={request}
                 network={network}
