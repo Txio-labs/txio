@@ -84,19 +84,24 @@ export const resolveChainRpcUrls = (
 };
 
 /**
- * POSTs a JSON-RPC request to each endpoint in order, moving to the next
- * only on a network-level failure (timeout, DNS, connection refused) — not
- * on an RPC-level error response, since that's a real answer from a healthy
- * node and retrying elsewhere won't change it. This is the "automatic
- * failover across providers" primitive every chain's RPC call now goes
- * through, whether the endpoint list has one entry (the common case) or
- * several (once a user configures backup endpoints in Settings).
+ * POSTs a JSON-RPC request to each endpoint in order, moving to the next on
+ * a network-level failure (timeout, DNS, connection refused) or on a 429/5xx
+ * HTTP status — both mean *this endpoint* is unhealthy right now, not that
+ * the request itself is bad, so the next configured endpoint gets a chance
+ * instead of surfacing a rate-limit from the first one tried. A response
+ * that came back 2xx/4xx (other than 429) but carried an RPC-level error is
+ * a real answer from a healthy node and is NOT retried — the caller handles
+ * that. This is the "automatic failover across providers" primitive every
+ * chain's RPC call now goes through, whether the endpoint list has one
+ * entry (the common case) or several (once a user configures backup
+ * endpoints in Settings).
  */
 const postJsonRpcWithFailover = async (
   endpoints: string[],
   body: Record<string, unknown>
 ): Promise<{ response: Response; data: any; duration: number; url: string }> => {
   let lastNetworkError: unknown = null;
+  let lastResult: { response: Response; data: any; duration: number; url: string } | null = null;
   let lastUrl = endpoints[0];
 
   for (const url of endpoints) {
@@ -117,15 +122,29 @@ const postJsonRpcWithFailover = async (
 
       const data = await response.json();
       const duration = Math.round(performance.now() - startTime);
+      const result = { response, data, duration, url };
 
-      return { response, data, duration, url };
+      if (response.status === 429 || response.status >= 500) {
+        lastResult = result;
+        continue;
+      }
+
+      return result;
     } catch (error) {
       // AbortError (timeout) and network-level failures (fetch throws
       // before a response exists) both mean this endpoint is unusable —
-      // fall through to the next one. A response that parsed but carried
-      // an HTTP or RPC error is handled by the caller, not retried here.
+      // fall through to the next one.
       lastNetworkError = error;
     }
+  }
+
+  // Every endpoint was rate-limited/erroring — return the last one's actual
+  // response rather than throwing, so the caller's existing HTTP-status
+  // handling (which already turns a non-ok response into a clear error
+  // message) fires instead of a generic network-error message that would
+  // hide the real 429/5xx.
+  if (lastResult) {
+    return lastResult;
   }
 
   throw lastNetworkError;
