@@ -143,9 +143,15 @@ export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, reques
         swapParams && swapParams.fromChain !== 'cardano'
             ? linkedWallets[swapParams.fromChain] ?? null
             : currentWallet;
+    // A SideShift shift settles on the destination chain, so the settle
+    // address must be a wallet on swapParams.toChain — not the source
+    // wallet's address, which SideShift rejects as the wrong chain's
+    // address format ("Invalid address length"/"Invalid receiving address").
+    const destinationWallet =
+        swapParams && swapParams.toChain !== 'cardano' ? linkedWallets[swapParams.toChain] ?? null : null;
 
     const handleCreateSideshiftOrder = async () => {
-        if (!sideshiftQuote || !swapParams || !sourceWallet) return;
+        if (!sideshiftQuote || !swapParams || !sourceWallet || !destinationWallet) return;
         setSideshiftCreating(true);
         setError(null);
         try {
@@ -158,7 +164,7 @@ export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, reques
                 to_chain: sideshiftChainSlug(swapParams.toChain),
                 to_token: asSideshiftCoin(swapParams.toToken, swapParams.toChain),
                 from_address: sourceWallet.address,
-                to_address: sourceWallet.address
+                to_address: destinationWallet.address
             });
             setSideshiftOrder(order);
             setSideshiftDeposit({
@@ -394,6 +400,11 @@ export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, reques
                         {!sourceWallet && (
                             <p className="text-[11px] text-amber-600 dark:text-amber-400">Connect a {swapParams?.fromChain.toUpperCase()} wallet to continue.</p>
                         )}
+                        {sourceWallet && !destinationWallet && (
+                            <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                                Connect a {swapParams?.toChain.toUpperCase()} wallet — that&apos;s where the shift settles, so SideShift needs an address on that chain to send funds to.
+                            </p>
+                        )}
                     </div>
 
                     <div className="p-4 border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-dark-indigo-glow flex justify-end gap-3">
@@ -403,7 +414,7 @@ export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, reques
                         {!sideshiftDeposit && (
                             <button
                                 onClick={handleCreateSideshiftOrder}
-                                disabled={sideshiftCreating || !sourceWallet}
+                                disabled={sideshiftCreating || !sourceWallet || !destinationWallet}
                                 className="px-6 py-2 bg-slate-900 dark:bg-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white dark:text-near-black text-xs font-bold rounded shadow-lg flex items-center gap-2"
                             >
                                 {sideshiftCreating ? <Loader2 size={14} className="animate-spin" /> : null}
