@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     Check,
+    ChevronDown,
     Copy,
     ExternalLink,
     LogOut,
@@ -28,13 +29,34 @@ export const WalletTab: React.FC<
 > = ({ formatAddress }) => {
     const [copied, setCopied] =
         useState(false);
+    const [isSwitchOpen, setIsSwitchOpen] =
+        useState(false);
+    const switchRef =
+        useRef<HTMLDivElement>(null);
     const {
         currentWallet,
+        linkedWallets,
+        setActiveSigner,
         disconnect,
         openModal,
         error,
         status
     } = useWallet();
+
+    useEffect(() => {
+        if (!isSwitchOpen) return;
+        const handleClickOutside = (event: MouseEvent) => {
+            if (switchRef.current && !switchRef.current.contains(event.target as Node)) {
+                setIsSwitchOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isSwitchOpen]);
+
+    const otherLinkedWallets = Object.values(linkedWallets).filter(
+        (wallet) => wallet && wallet.id !== currentWallet?.id
+    ) as NonNullable<typeof currentWallet>[];
     const {
         balance,
         isLoading
@@ -223,13 +245,58 @@ export const WalletTab: React.FC<
                     </div>
 
                     <div className="mt-4 grid grid-cols-2 gap-2">
-                        <button
-                            onClick={openModal}
-                            className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 dark:border-white/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
-                        >
-                            <Wallet size={14} />
-                            Switch
-                        </button>
+                        <div ref={switchRef} className="relative">
+                            <button
+                                onClick={() =>
+                                    otherLinkedWallets.length > 0
+                                        ? setIsSwitchOpen((open) => !open)
+                                        : openModal()
+                                }
+                                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 dark:border-white/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
+                            >
+                                <Wallet size={14} />
+                                Switch
+                                {otherLinkedWallets.length > 0 && (
+                                    <ChevronDown
+                                        size={12}
+                                        className={`transition-transform ${isSwitchOpen ? 'rotate-180' : ''}`}
+                                    />
+                                )}
+                            </button>
+
+                            {isSwitchOpen && otherLinkedWallets.length > 0 && (
+                                <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] shadow-xl">
+                                    {otherLinkedWallets.map((wallet) => (
+                                        <button
+                                            key={wallet.id}
+                                            onClick={() => {
+                                                setActiveSigner(wallet.family);
+                                                setIsSwitchOpen(false);
+                                            }}
+                                            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
+                                        >
+                                            <Avatar size="xs" seed={wallet.address} />
+                                            <div className="min-w-0 flex-1">
+                                                <div className="truncate text-xs font-bold text-slate-900 dark:text-white">{wallet.name}</div>
+                                                <div className="text-[10px] text-slate-400">
+                                                    {getFamilyLabel(wallet.family)} · {formatAddress(wallet.address)}
+                                                </div>
+                                            </div>
+                                        </button>
+                                    ))}
+                                    <button
+                                        onClick={() => {
+                                            setIsSwitchOpen(false);
+                                            openModal();
+                                        }}
+                                        className="flex w-full items-center gap-2.5 border-t border-slate-200 dark:border-white/10 px-3 py-2.5 text-left text-xs font-bold text-electric-violet transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
+                                    >
+                                        <Wallet size={13} />
+                                        Connect another chain
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                         <button
                             onClick={() =>
                                 void disconnect()
