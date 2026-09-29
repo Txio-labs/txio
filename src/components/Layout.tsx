@@ -27,6 +27,7 @@ import {
     Wallet,
     Activity,
     MoreHorizontal,
+    PanelRight,
     ShieldCheck,
     Menu,
     Code2,
@@ -391,6 +392,15 @@ export const Layout: React.FC<LayoutProps> = ({
                                     </div>
                                 </button>
                             </div>
+
+                            <button
+                                onClick={() => appStore.toggleInspector()}
+                                aria-label={isInspectorOpen ? 'Close inspector' : 'Open inspector'}
+                                title={isInspectorOpen ? 'Close inspector' : 'Open inspector'}
+                                className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-white/10 transition-colors shrink-0 text-slate-500 hover:text-electric-violet"
+                            >
+                                <PanelRight size={14} />
+                            </button>
 
                             <div className="relative shrink-0" ref={notifRef}>
                                 <button
