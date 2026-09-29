@@ -56,6 +56,33 @@ export const sideshiftNativeCoin = (chain: ChainId): string => {
     return coin;
 };
 
+/**
+ * Resolves a free-text token field (LI.FI-style contract address or symbol)
+ * to the coin symbol SideShift's API expects. SideShift only recognizes a
+ * closed vocabulary of tickers, not contract addresses, so an unrecognized
+ * or address-shaped value falls back to the chain's native coin rather than
+ * being forwarded as-is (which SideShift rejects with "Invalid coin").
+ *
+ * This can't yet resolve a non-native token (e.g. USDC) from its contract
+ * address to SideShift's `usdc` ticker — anything address-shaped falls back
+ * to native. A user who wants to shift USDC specifically should type "usdc"
+ * directly rather than pasting the contract address.
+ */
+export const asSideshiftCoin = (raw: string, chain: ChainId): string => {
+    const trimmed = raw.trim().toLowerCase();
+    if (!trimmed) return sideshiftNativeCoin(chain);
+
+    // A real coin symbol is short and has no path/module separators; an
+    // address (EVM 0x..., Sui 0x...::module::Type, Stellar G..., Solana
+    // base58, etc.) is long or contains ':'. Anything else falls back to
+    // native rather than risking a symbol SideShift doesn't recognize.
+    const MAX_COIN_SYMBOL_LENGTH = 10;
+    if (trimmed.length > MAX_COIN_SYMBOL_LENGTH || trimmed.includes(':')) {
+        return sideshiftNativeCoin(chain);
+    }
+    return trimmed;
+};
+
 export interface BridgeChainAsset {
     chain: string;
     family: unknown;

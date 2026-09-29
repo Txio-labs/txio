@@ -6,7 +6,7 @@ import { useWallet } from '@/wallet';
 import { appStore } from '@/lib/store';
 import { EvmTxParams, RequestItem, RequestType } from '../types';
 import { LifiRoute, LifiStep, getStepTransaction } from '@/lib/lifi';
-import { BridgeOrder, BridgeQuoteResponse, sideshiftChainSlug, sideshiftNativeCoin } from '@/lib/bridge';
+import { BridgeOrder, BridgeQuoteResponse, sideshiftChainSlug, asSideshiftCoin } from '@/lib/bridge';
 import { apiService, ApiError } from '@/services/api';
 import { executeTransaction, txExplorerUrl } from '@/services/transactionService';
 import { resolveChainRpcUrl, signAndExecuteRawSuiTransaction } from '@/services/suiService';
@@ -154,9 +154,9 @@ export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, reques
                 quote_id: quoteId,
                 provider: 'sideshift',
                 from_chain: sideshiftChainSlug(swapParams.fromChain),
-                from_token: swapParams.fromToken || sideshiftNativeCoin(swapParams.fromChain),
+                from_token: asSideshiftCoin(swapParams.fromToken, swapParams.fromChain),
                 to_chain: sideshiftChainSlug(swapParams.toChain),
-                to_token: swapParams.toToken || sideshiftNativeCoin(swapParams.toChain),
+                to_token: asSideshiftCoin(swapParams.toToken, swapParams.toChain),
                 from_address: sourceWallet.address,
                 to_address: sourceWallet.address
             });
