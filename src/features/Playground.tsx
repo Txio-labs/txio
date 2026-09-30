@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
-    Zap, Terminal, Globe, Cpu, Database, 
+    Terminal, Globe, Cpu, Database, 
     Play, Shield, Search, Plus, Trash2, 
-    RefreshCcw, Code2, Layers, Sparkles, Loader2
+    RefreshCcw, Code2, Layers, Sparkles
 } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 
@@ -74,36 +74,29 @@ export const Playground: React.FC = () => {
     const selectedChain = CHAINS.find((c) => c.id === selectedChainId) ?? CHAINS[0];
 
     const [script, setScript] = useState(selectedChain.defaultScript);
-    const [isExecuting, setIsExecuting] = useState(false);
-    const [tps, setTps] = useState('297,102');
-    const [gas, setGas] = useState('0.00042');
-    const [output, setOutput] = useState('Playground terminal ready.');
+    // Nothing here is measured: the Playground has no chain runtime behind it yet.
+    const NOT_MEASURED = '—';
+    const READY = 'Playground terminal ready. Snippets are examples; nothing here runs against a chain yet.';
+    const [output, setOutput] = useState(READY);
 
     const handleSelectChain = (chain: ChainDef) => {
         setSelectedChainId(chain.id);
         setScript(chain.defaultScript);
-        setOutput('Playground terminal ready.');
-        setTps('0');
-        setGas('0.00000');
+        setOutput(READY);
     };
 
     const handleExecute = () => {
-        setIsExecuting(true);
-        setOutput('Executing script...');
-        // Simulated: real SDK execution or a WebWorker sandbox runs here per selected chain.
-        setTimeout(() => {
-            setIsExecuting(false);
-            setTps(Math.floor(Math.random() * 50000 + 250000).toLocaleString());
-            setGas((Math.random() * 0.001).toFixed(5));
-            setOutput(`[Success] Execution completed in 125ms on ${selectedChain.name}.\nResult: {\n  status: "success",\n  gasUsed: ${Math.floor(Math.random() * 1000)}\n}`);
-        }, 1500);
+        // Kept honest: no timers, no random numbers. Real execution belongs in a
+        // request (RPC or Transaction), which simulates natively and reviews first.
+        setOutput(
+            `Not run. The Playground has no ${selectedChain.name} runtime connected, so it reports nothing.\n` +
+            'To run this for real, create a request in your workspace: it simulates on the chain first.'
+        );
     };
 
     const handleRefresh = () => {
         setScript('');
-        setOutput('Playground terminal ready.');
-        setTps('0');
-        setGas('0.00000');
+        setOutput(READY);
     };
 
     return (
@@ -142,8 +135,8 @@ export const Playground: React.FC = () => {
                     <button onClick={handleRefresh} className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/5 text-slate-500' : 'hover:bg-slate-100 text-slate-400'}`}>
                         <RefreshCcw size={16} />
                     </button>
-                    <button onClick={handleExecute} disabled={isExecuting || !script.trim()} className="flex items-center gap-2 px-6 py-1.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-near-black text-[10px] font-black uppercase tracking-widest shadow-lg shadow-electric-violet/20 hover:opacity-90 transition-all disabled:opacity-50">
-                        {isExecuting ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />} Execute Snippet
+                    <button onClick={handleExecute} disabled={!script.trim()} className="flex items-center gap-2 px-6 py-1.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-near-black text-[10px] font-black uppercase tracking-widest shadow-lg shadow-electric-violet/20 hover:opacity-90 transition-all disabled:opacity-50">
+                        <Play size={14} /> How to run this
                     </button>
                 </div>
             </header>
@@ -171,22 +164,22 @@ export const Playground: React.FC = () => {
                             <div className={`p-6 rounded-3xl border space-y-4 ${isDark ? 'bg-white/[0.02] border-white/5' : 'bg-slate-50 border-slate-200'}`}>
                                 <div className="flex items-center justify-between">
                                     <div className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>State Watcher</div>
-                                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                    <div className="w-2 h-2 rounded-full bg-slate-400" />
                                 </div>
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-xs">
-                                        <span className="text-slate-500">TPS</span>
-                                        <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{tps}</span>
+                                        <span className="text-slate-500">TPS (not measured)</span>
+                                        <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{NOT_MEASURED}</span>
                                     </div>
                                     <div className={`w-full h-1 rounded-full overflow-hidden ${isDark ? 'bg-white/5' : 'bg-slate-200'}`}>
-                                        <div className="w-3/4 h-full" style={{ backgroundColor: selectedChain.color }} />
+                                        <div className="w-0 h-full" style={{ backgroundColor: selectedChain.color }} />
                                     </div>
                                 </div>
                             </div>
                             <div className={`p-6 rounded-3xl border space-y-4 ${isDark ? 'bg-white/[0.02] border-white/5' : 'bg-slate-50 border-slate-200'}`}>
-                                <div className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Gas Meter</div>
+                                <div className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Gas (not measured)</div>
                                 <div className="flex items-end gap-2">
-                                    <div className={`text-2xl font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>{gas}</div>
+                                    <div className={`text-2xl font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>{NOT_MEASURED}</div>
                                     <div className={`text-[10px] font-black uppercase tracking-widest mb-1 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{selectedChain.gasUnit}</div>
                                 </div>
                             </div>
@@ -219,14 +212,9 @@ export const Playground: React.FC = () => {
 
                     <div className="flex-1" />
 
-                    <div className="p-6 rounded-3xl bg-electric-violet/5 border border-electric-violet/10 space-y-4">
-                        <div className="w-10 h-10 rounded-xl bg-electric-violet/20 flex items-center justify-center text-electric-violet">
-                            <Zap size={20} />
-                        </div>
-                        <div className="space-y-1">
-                            <div className={`text-xs font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>Advanced Simulation</div>
-                            <p className="text-[10px] leading-relaxed text-slate-500">Run this snippet in a dedicated fork to prevent state contamination.</p>
-                        </div>
+                    <div className="p-4 rounded-2xl border border-dashed border-slate-300 dark:border-white/10 space-y-1">
+                        <div className={`text-xs font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>Examples only</div>
+                        <p className="text-[10px] leading-relaxed text-slate-500">Snippets are starting points. Run them as a request to get a real simulation.</p>
                     </div>
                 </aside>
             </div>

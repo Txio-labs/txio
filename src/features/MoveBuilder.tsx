@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
     Code2, Box, Cpu, Zap, Shield, Play, Save, Share2, 
-    ChevronRight, Search, Plus, Terminal, Layers, Database, Loader2, Check
+    ChevronRight, Search, Plus, Terminal, Layers, Database, Check, AlertTriangle
 } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 
@@ -12,10 +12,7 @@ export const MoveBuilder: React.FC = () => {
 
     const [contractName, setContractName] = useState('AssetBridge');
     const [code, setCode] = useState(`public entry fun initialize_market(admin: address) {\n    // Initialize the market configuration\n}\n\npublic fun mint_collection_token(amount: u64, treasury_cap: &mut TreasuryCap<T>): Coin<T> {\n    let token = coin::mint_balance(amount, treasury_cap);\n    return token\n}`);
-    const [isSaving, setIsSaving] = useState(false);
-    const [saveStatus, setSaveStatus] = useState<'idle' | 'success'>('idle');
-    const [isDeploying, setIsDeploying] = useState(false);
-    const [deployResult, setDeployResult] = useState('');
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'failed'>('idle');
 
     const modules = [
         { id: 'core', name: 'Standard Assets', icon: Box },
@@ -24,25 +21,17 @@ export const MoveBuilder: React.FC = () => {
         { id: 'social', name: 'Social Graph', icon: Share2 }
     ];
 
+    // Move compilation needs the Sui toolchain on a server, which does not exist
+    // yet. Until it does this page is an editor with a local draft, nothing more:
+    // no compile, no deploy, no made-up transaction hash.
     const handleSave = () => {
-        setIsSaving(true);
-        // Simulate save to backend/localStorage
-        setTimeout(() => {
-            setIsSaving(false);
+        try {
+            localStorage.setItem('txio_move_builder_draft', JSON.stringify({ contractName, code }));
             setSaveStatus('success');
-            setTimeout(() => setSaveStatus('idle'), 2000);
-        }, 800);
-    };
-
-    const handleDeploy = () => {
-        if (!code.trim() || !contractName.trim()) return;
-        setIsDeploying(true);
-        setDeployResult('');
-        // TODO: Replace simulated deploy with real backend compilation and execution
-        setTimeout(() => {
-            setIsDeploying(false);
-            setDeployResult('0x' + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join(''));
-        }, 2000);
+        } catch {
+            setSaveStatus('failed');
+        }
+        setTimeout(() => setSaveStatus('idle'), 2000);
     };
 
     return (
@@ -99,15 +88,17 @@ export const MoveBuilder: React.FC = () => {
                             <div className="w-2 h-2 rounded-full bg-electric-violet" />
                             <span className="text-sm font-black text-slate-900 dark:text-white">{contractName || 'Untitled_Contract'}.move</span>
                         </div>
-                        {saveStatus === 'success' && <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><Check size={12}/> Saved</span>}
+                        <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border border-amber-500/40 text-amber-500">Experimental</span>
+                        {saveStatus === 'success' && <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><Check size={12}/> Saved in this browser</span>}
+                        {saveStatus === 'failed' && <span className="text-xs font-bold text-rose-500">Could not save</span>}
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <button onClick={handleSave} disabled={isSaving} className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all disabled:opacity-50">
-                            {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save
+                        <button onClick={handleSave} className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all">
+                            <Save size={14} /> Save draft
                         </button>
-                        <button onClick={handleDeploy} disabled={isDeploying || !code.trim() || !contractName.trim()} className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-near-black text-xs font-bold shadow-lg shadow-electric-violet/20 hover:opacity-90 transition-all disabled:opacity-50">
-                            {isDeploying ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />} Deploy to Devnet
+                        <button disabled title="Compiling and deploying Move is not available yet" className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-near-black text-xs font-bold opacity-40 cursor-not-allowed">
+                            <Play size={14} /> Deploy
                         </button>
                     </div>
                 </header>
@@ -115,11 +106,10 @@ export const MoveBuilder: React.FC = () => {
                 {/* Canvas Content */}
                 <div className="flex-1 p-12 relative z-10 overflow-y-auto custom-scrollbar">
                     <div className="max-w-4xl mx-auto space-y-6">
-                        {deployResult && (
-                            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center gap-3 text-sm">
-                                <Check size={16} /> Successfully deployed! Transaction Hash: <span className="font-mono text-emerald-600 dark:text-emerald-300">{deployResult}</span>
-                            </motion.div>
-                        )}
+                        <div role="note" className="p-4 rounded-xl bg-slate-100 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 flex items-start gap-3 text-sm">
+                            <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-500" />
+                            <span>Compiling Move needs the Sui toolchain, which runs on a server. That service is not built yet, so nothing here is compiled or deployed. To publish a package today, use the Sui CLI.</span>
+                        </div>
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -166,13 +156,6 @@ export const MoveBuilder: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="pt-8 border-t border-slate-200 dark:border-white/5 space-y-4">
-                    <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Resource Leak Check</h3>
-                    <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 flex items-center gap-3">
-                        <Shield size={16} className="text-emerald-500" />
-                        <span className="text-xs font-bold text-emerald-500">No dangling resources detected.</span>
-                    </div>
-                </div>
             </aside>
         </div>
     );

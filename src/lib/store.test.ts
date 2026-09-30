@@ -32,7 +32,7 @@ vi.mock('../services/api', () => {
         apiService: {
             login: vi.fn(),
             register: vi.fn(),
-            setToken: vi.fn(),
+            logout: vi.fn(),
             getProfile: vi.fn(),
             getWorkspaces: vi.fn(),
             getCollections: vi.fn(),
@@ -104,8 +104,8 @@ describe('appStore auth and session state', () => {
 
     it('starts in app mode when a token is already stored', async () => {
         localStorage.setItem(
-            'txio_token',
-            'cached-token'
+            'txio_session_hint',
+            '1'
         );
 
         const { appStore } = await loadStore();
@@ -137,9 +137,7 @@ describe('appStore auth and session state', () => {
             'correct-horse'
         );
 
-        expect(
-            apiService.setToken
-        ).toHaveBeenCalledWith('session-token');
+        expect(localStorage.getItem('txio_session_hint')).toBe('1');
         expect(
             apiService.getCollections
         ).toHaveBeenCalledWith('workspace-1');
@@ -153,8 +151,8 @@ describe('appStore auth and session state', () => {
             hasHydratedWorkspaces: true
         });
         expect(
-            localStorage.getItem('txio_token')
-        ).toBe('session-token');
+            localStorage.getItem('txio_session_hint')
+        ).toBe('1');
         expect(
             localStorage.getItem('txio_viewMode')
         ).toBe('app');
@@ -226,8 +224,8 @@ describe('appStore auth and session state', () => {
         appStore.logout();
 
         expect(
-            apiService.setToken
-        ).toHaveBeenLastCalledWith(null);
+            localStorage.getItem('txio_session_hint')
+        ).toBeNull();
         expect(
             appStore.getSnapshot()
         ).toMatchObject({
@@ -241,7 +239,7 @@ describe('appStore auth and session state', () => {
             hasHydratedWorkspaces: false
         });
         expect(
-            localStorage.getItem('txio_token')
+            localStorage.getItem('txio_session_hint')
         ).toBeNull();
         expect(
             localStorage.getItem('txio_user')
@@ -258,8 +256,8 @@ describe('appStore auth and session state', () => {
 
     it('clears an invalid stored session during initialization', async () => {
         localStorage.setItem(
-            'txio_token',
-            'expired-token'
+            'txio_session_hint',
+            '1'
         );
         localStorage.setItem(
             'txio_user',
@@ -299,14 +297,8 @@ describe('appStore auth and session state', () => {
         await appStore.initialize();
 
         expect(
-            apiService.setToken
-        ).toHaveBeenNthCalledWith(
-            1,
-            'expired-token'
-        );
-        expect(
-            apiService.setToken
-        ).toHaveBeenLastCalledWith(null);
+            localStorage.getItem('txio_session_hint')
+        ).toBeNull();
         expect(
             appStore.getSnapshot()
         ).toMatchObject({
@@ -318,7 +310,7 @@ describe('appStore auth and session state', () => {
             hasHydratedWorkspaces: false
         });
         expect(
-            localStorage.getItem('txio_token')
+            localStorage.getItem('txio_session_hint')
         ).toBeNull();
         expect(
             localStorage.getItem('txio_user')
@@ -335,8 +327,8 @@ describe('appStore auth and session state', () => {
 
     it('starts profile and workspace loading in parallel during initialization', async () => {
         localStorage.setItem(
-            'txio_token',
-            'cached-token'
+            'txio_session_hint',
+            '1'
         );
         localStorage.setItem(
             'txio_user',
@@ -397,8 +389,8 @@ describe('appStore auth and session state', () => {
 
     it('keeps a cached user when profile refresh fails without an auth error', async () => {
         localStorage.setItem(
-            'txio_token',
-            'cached-token'
+            'txio_session_hint',
+            '1'
         );
         localStorage.setItem(
             'txio_user',
@@ -420,10 +412,8 @@ describe('appStore auth and session state', () => {
         await appStore.initialize();
 
         expect(
-            apiService.setToken
-        ).toHaveBeenLastCalledWith(
-            'cached-token'
-        );
+            localStorage.getItem('txio_session_hint')
+        ).toBe('1');
         expect(
             appStore.getSnapshot()
         ).toMatchObject({
@@ -433,8 +423,8 @@ describe('appStore auth and session state', () => {
             hasHydratedWorkspaces: true
         });
         expect(
-            localStorage.getItem('txio_token')
-        ).toBe('cached-token');
+            localStorage.getItem('txio_session_hint')
+        ).toBe('1');
         expect(
             JSON.parse(
                 localStorage.getItem(
@@ -455,7 +445,7 @@ describe('appStore comments persistence', () => {
     });
 
     it('persists posted comments to localStorage and restores them on load', async () => {
-        localStorage.setItem('txio_token', 'cached-token');
+        localStorage.setItem('txio_session_hint', '1');
         localStorage.setItem('txio_user', JSON.stringify(user));
 
         const { appStore, apiService } = await loadStore();
@@ -505,7 +495,7 @@ describe('appStore.addToHistory transaction params round-trip', () => {
     };
 
     it('sends the active chain params and the execution result to the backend', async () => {
-        localStorage.setItem('txio_token', 'cached-token');
+        localStorage.setItem('txio_session_hint', '1');
         localStorage.setItem('txio_user', JSON.stringify(user));
 
         const { appStore, apiService } = await loadStore();
@@ -539,7 +529,7 @@ describe('appStore.addToHistory transaction params round-trip', () => {
     });
 
     it('omits txParams/result for a plain RPC request', async () => {
-        localStorage.setItem('txio_token', 'cached-token');
+        localStorage.setItem('txio_session_hint', '1');
         localStorage.setItem('txio_user', JSON.stringify(user));
 
         const { appStore, apiService } = await loadStore();
@@ -572,7 +562,7 @@ describe('appStore.fetchHistory chain-specific params read-back', () => {
     });
 
     it('routes a stored tx_params entry back into the field matching its chain, and carries the result', async () => {
-        localStorage.setItem('txio_token', 'cached-token');
+        localStorage.setItem('txio_session_hint', '1');
         localStorage.setItem('txio_user', JSON.stringify(user));
 
         const { appStore, apiService } = await loadStore();
@@ -608,7 +598,7 @@ describe('appStore.fetchHistory chain-specific params read-back', () => {
     });
 
     it('falls back to empty defaults for entries saved before tx_params existed', async () => {
-        localStorage.setItem('txio_token', 'cached-token');
+        localStorage.setItem('txio_session_hint', '1');
         localStorage.setItem('txio_user', JSON.stringify(user));
 
         const { appStore, apiService } = await loadStore();

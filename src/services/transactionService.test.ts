@@ -11,6 +11,7 @@ import {
     getTxParamsForHistory,
     isMainnetExecution,
     signerAddressFor,
+    summarizeSimulation,
     toStellarScVal,
     txExplorerUrl,
     validateTransaction,
@@ -197,5 +198,36 @@ describe('toStellarScVal', () => {
         expect(scValToNative(await toStellarScVal({ id: '5', type: 'symbol', value: 'hello' }))).toBe('hello');
         await expect(toStellarScVal({ id: '6', type: 'u64', value: '1.5' })).rejects.toThrow(/whole number/);
         await expect(toStellarScVal({ id: '7', type: 'bytes', value: '0xabc' })).rejects.toThrow(/hex/);
+    });
+});
+
+describe('summarizeSimulation', () => {
+    it('extracts fee, touched objects and events from a Sui dry run', () => {
+        const request = withTxChain(txRequest(), 'sui');
+        const summary = summarizeSimulation(request, {
+            status: 200,
+            duration: 1,
+            result: {
+                balanceChanges: [{ coinType: '0x2::sui::SUI', amount: '-1500000000' }],
+                objectChanges: [{ type: 'created', objectType: '0x2::coin::Coin', objectId: '0xabc' }],
+                events: [{ type: '0x2::pkg::Minted' }],
+                effects: { gasUsed: { computationCost: '1000000', storageCost: '2000000', storageRebate: '500000' } }
+            }
+        });
+        expect(summary.fee).toBe('0.0025 SUI');
+        expect(summary.balanceChanges[0]).toMatchObject({ direction: 'out', amount: '1500000000' });
+        expect(summary.touched).toHaveLength(1);
+        expect(summary.events).toEqual(['0x2::pkg::Minted']);
+    });
+
+    it('reports Solana compute units and logs', () => {
+        const request = withTxChain(txRequest(), 'solana');
+        const summary = summarizeSimulation(request, {
+            status: 200,
+            duration: 1,
+            result: { err: null, logs: ['Program log: hi'], unitsConsumed: 450 }
+        });
+        expect(summary.fee).toBe('450 compute units');
+        expect(summary.events).toEqual(['Program log: hi']);
     });
 });

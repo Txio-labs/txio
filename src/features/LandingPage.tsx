@@ -122,7 +122,6 @@ export const LandingPage: React.FC = () => {
         { title: 'Transactions, visualized', desc: 'Compose transactions and watch dependencies resolve before you sign. Simulate first, send second.', icon: Layers },
         { title: 'Secrets stay secret', desc: 'API keys and signing keys live in a vault — not your dotfiles, not your git history.', icon: Shield },
         { title: 'Real-time everything', desc: 'Sub-millisecond latency tracking, streamed live. Watch the network breathe.', icon: Zap },
-        { title: 'AI that actually helps', desc: 'Plain-English error explanations and contract audits — the kind you wish Stack Overflow gave you.', icon: Cpu },
         { title: 'A terminal that talks back', desc: 'Web and shell, same workflow. Run a command, see the result in either place.', icon: Terminal },
     ];
 

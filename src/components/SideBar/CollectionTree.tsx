@@ -10,6 +10,8 @@ interface CollectionTreeProps {
   onToggleExpand: (nodeId: string) => void;
   onSelectCollectionRequest: (node: CollectionNode) => void;
   onCreateCollection: (name: string) => void;
+  /** Hides the controls that create requests; the server enforces the same rule. */
+  readOnly?: boolean;
 }
 
 const nodeMatchesQuery = (node: CollectionNode, query: string) => {
@@ -55,7 +57,8 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
   activeTabId,
   onToggleExpand,
   onSelectCollectionRequest,
-  onCreateCollection
+  onCreateCollection,
+  readOnly = false
 }) => {
   const isFiltering = filterQuery.trim().length > 0;
   const visibleCollections = filterCollectionTree(collections, filterQuery);
@@ -111,6 +114,7 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
                     <Play size={10} />
                   </button>
                 )}
+                {!readOnly && (
                 <button 
                   onClick={(e) => { e.stopPropagation(); appStore.openTab('new_request', { collectionId: node.id }); }} 
                   className="p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded text-slate-500 hover:text-slate-900 dark:text-white transition-colors"
@@ -118,7 +122,8 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
                 >
                   <Plus size={10} />
                 </button>
-                {node.type === 'collection' && (
+                )}
+                {node.type === 'collection' && !readOnly && (
                   <button
                     onClick={(e) => {
                       // Confirm before deleting, since this permanently

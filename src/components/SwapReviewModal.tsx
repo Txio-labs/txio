@@ -137,18 +137,14 @@ export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, reques
     const swapParams = request.swapParams;
     // The swap's source chain may not be the active signer — look up the
     // linked wallet for that specific chain family rather than assuming
-    // currentWallet matches. ChainId includes 'cardano', which has no wallet
-    // family (LI.FI doesn't support it either — lifiChainKeyFor throws first).
-    const sourceWallet =
-        swapParams && swapParams.fromChain !== 'cardano'
-            ? linkedWallets[swapParams.fromChain] ?? null
-            : currentWallet;
+    // currentWallet matches.
+    const sourceWallet = swapParams ? linkedWallets[swapParams.fromChain] ?? null : currentWallet;
     // A SideShift shift settles on the destination chain, so the settle
     // address must be a wallet on swapParams.toChain — not the source
     // wallet's address, which SideShift rejects as the wrong chain's
     // address format ("Invalid address length"/"Invalid receiving address").
     const destinationWallet =
-        swapParams && swapParams.toChain !== 'cardano' ? linkedWallets[swapParams.toChain] ?? null : null;
+        swapParams ? linkedWallets[swapParams.toChain] ?? null : null;
 
     const handleCreateSideshiftOrder = async () => {
         if (!sideshiftQuote || !swapParams || !sourceWallet || !destinationWallet) return;

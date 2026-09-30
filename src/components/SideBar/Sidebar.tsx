@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RequestItem, EnvironmentVariable, HistoryItem, CollectionNode, Workspace } from '../../types';
+import { RequestItem, EnvironmentVariable, HistoryItem, CollectionNode, Workspace, canEditWorkspace } from '../../types';
+import { MembersPanel } from '../MembersPanel';
 import { appStore } from '@/lib/store';
 import { SidebarNav } from './SidebarNav';
 import { WorkspaceHeader } from './WorkspaceHeader';
@@ -50,6 +51,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [isWsDropdownOpen, setIsWsDropdownOpen] = useState(false);
   const [isCollectionFilterOpen, setIsCollectionFilterOpen] = useState(false);
   const [collectionFilter, setCollectionFilter] = useState('');
+  const [isMembersOpen, setIsMembersOpen] = useState(false);
+  // Viewers can read and simulate but not create or change anything.
+  const canEdit = canEditWorkspace(currentWorkspace);
 
   const handleOpenFullHistory = () => {
     appStore.openTab('history');
@@ -90,13 +94,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onToggleDropdown={() => setIsWsDropdownOpen(!isWsDropdownOpen)}
           onSwitchWorkspace={onSwitchWorkspace}
           onCreateWorkspace={onCreateWorkspace}
+          onOpenMembers={() => setIsMembersOpen(true)}
         />
+        {!canEdit && (
+          <div className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200 dark:border-white/[0.06]">
+            View only
+          </div>
+        )}
 
         {/* Context Toolbar (Explorer section removed for collections mode) */}
         {mode !== 'collections' && (
           <ContextToolbar
             mode={mode}
-            onAddCollection={handleAddCollection}
+            onAddCollection={canEdit ? handleAddCollection : undefined}
             onAddEnvVar={handleAddEnvVar}
             filterQuery={collectionFilter}
             isFilterOpen={isCollectionFilterOpen}
@@ -125,6 +135,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onToggleExpand={onToggleExpand}
                   onSelectCollectionRequest={onSelectCollectionRequest}
                   onCreateCollection={onCreateCollection}
+                  readOnly={!canEdit}
                 />
               </motion.div>
             )}
@@ -167,6 +178,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </AnimatePresence>
         </div>
       </div>
+      {isMembersOpen && <MembersPanel workspace={currentWorkspace} onClose={() => setIsMembersOpen(false)} />}
     </div>
   );
 };

@@ -319,15 +319,97 @@ const buildSolanaInstruction = (params: SolanaInstructionParams): TransactionIns
     return instruction;
 };
 
+const TOKEN_PROGRAM_IDS = new Set([
+    'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+    'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'
+]);
+/** Size of a base SPL token account; the mint, owner and amount live in its first 72 bytes. */
+const SPL_TOKEN_ACCOUNT_MIN_LEN = 165;
+const SPL_MINT_DECIMALS_OFFSET = 44;
+
+export interface SolanaAccountSnapshot {
+    lamports: number;
+    owner: string;
+    data: Uint8Array;
+}
+
+export interface SolanaBalanceDiffEntry {
+    /** Wallet that owns the balance (the token account's owner for SPL tokens). */
+    account: string;
+    /** 'SOL' for lamports, otherwise the SPL token mint. */
+    asset: string;
+    /** Signed change in base units (lamports or token base units). */
+    delta: string;
+    decimals: number | null;
+}
+
+/** Reads (mint, owner, amount) from a base SPL token account, or null when the account is not one. */
+const readSplTokenAccount = (snapshot: SolanaAccountSnapshot | null): { mint: string; owner: string; amount: bigint } | null => {
+    if (!snapshot || !TOKEN_PROGRAM_IDS.has(snapshot.owner) || snapshot.data.length < SPL_TOKEN_ACCOUNT_MIN_LEN) return null;
+    const bytes = snapshot.data;
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    return {
+        mint: new PublicKey(bytes.slice(0, 32)).toBase58(),
+        owner: new PublicKey(bytes.slice(32, 64)).toBase58(),
+        amount: view.getBigUint64(64, true)
+    };
+};
+
+/**
+ * Diffs account state before and after a simulation. Only accounts present in
+ * both snapshots are compared; an account missing from either side (for
+ * example one the simulation created) is skipped rather than guessed at.
+ */
+export const computeSolanaBalanceDiff = (
+    addresses: string[],
+    pre: (SolanaAccountSnapshot | null)[],
+    post: (SolanaAccountSnapshot | null)[],
+    mintDecimals: Record<string, number | null> = {}
+): SolanaBalanceDiffEntry[] => {
+    const entries: SolanaBalanceDiffEntry[] = [];
+    addresses.forEach((address, i) => {
+        const before = pre[i];
+        const after = post[i];
+        if (!before || !after) return;
+
+        const lamportDelta = BigInt(after.lamports) - BigInt(before.lamports);
+        if (lamportDelta !== BigInt(0)) {
+            entries.push({ account: address, asset: 'SOL', delta: lamportDelta.toString(), decimals: 9 });
+        }
+
+        const tokenBefore = readSplTokenAccount(before);
+        const tokenAfter = readSplTokenAccount(after);
+        if (tokenBefore && tokenAfter && tokenBefore.mint === tokenAfter.mint) {
+            const tokenDelta = tokenAfter.amount - tokenBefore.amount;
+            if (tokenDelta !== BigInt(0)) {
+                entries.push({
+                    account: tokenAfter.owner,
+                    asset: tokenAfter.mint,
+                    delta: tokenDelta.toString(),
+                    decimals: mintDecimals[tokenAfter.mint] ?? null
+                });
+            }
+        }
+    });
+    return entries;
+};
+
+const snapshotFromInfo = (info: { lamports: number; owner: PublicKey; data: Uint8Array } | null): SolanaAccountSnapshot | null =>
+    info ? { lamports: info.lamports, owner: info.owner.toBase58(), data: info.data } : null;
+
 /**
  * Simulates a single-instruction transaction against the RPC without
  * signing it. The fee payer must be an existing, funded account — the
  * connected wallet when there is one.
+ *
+ * `balanceDiff` is present only when the RPC returned post-simulation states
+ * for the requested accounts and their pre-states could be read; otherwise it
+ * is left out and the review hides the balance section.
  */
 export async function simulateSolanaTransaction(params: SolanaInstructionParams & {
     rpcUrl: string;
     feePayer: string;
-}): Promise<{ err: unknown; logs: string[] | null; unitsConsumed: number | null }> {
+}): Promise<{ err: unknown; logs: string[] | null; unitsConsumed: number | null; balanceDiff?: SolanaBalanceDiffEntry[] }> {
     const instruction = buildSolanaInstruction(params);
     let payerKey: PublicKey;
     try {
@@ -347,17 +429,73 @@ export async function simulateSolanaTransaction(params: SolanaInstructionParams 
         instructions: [instruction]
     }).compileToV0Message();
 
+    // Accounts whose value could change: the payer and every writable account.
+    const watched = [...new Set([payerKey.toBase58(), ...params.accounts.filter((a) => a.isWritable).map((a) => a.pubkey.trim())])]
+        .filter((address) => {
+            try {
+                new PublicKey(address);
+                return true;
+            } catch {
+                return false;
+            }
+        })
+        .slice(0, 20);
+
+    let preInfos: ({ lamports: number; owner: PublicKey; data: Uint8Array } | null)[] | null = null;
+    try {
+        preInfos = await withTimeout(
+            connection.getMultipleAccountsInfo(watched.map((a) => new PublicKey(a)), 'confirmed'),
+            'Read account states'
+        );
+    } catch {
+        preInfos = null; // No pre-state, so no diff; the rest of the simulation still runs.
+    }
+
     const { value } = await withTimeout(
         connection.simulateTransaction(new VersionedTransaction(message), {
             sigVerify: false,
-            replaceRecentBlockhash: true
+            replaceRecentBlockhash: true,
+            accounts: { encoding: 'base64', addresses: watched }
         }),
         'Simulate transaction'
     );
+
+    let balanceDiff: SolanaBalanceDiffEntry[] | undefined;
+    if (!value.err && preInfos && value.accounts && value.accounts.length === watched.length) {
+        const post: (SolanaAccountSnapshot | null)[] = value.accounts.map((account) =>
+            account && Array.isArray(account.data)
+                ? { lamports: account.lamports, owner: account.owner, data: Uint8Array.from(Buffer.from(account.data[0], 'base64')) }
+                : null
+        );
+        const pre = preInfos.map(snapshotFromInfo);
+        const mints = new Set<string>();
+        for (const snapshot of [...pre, ...post]) {
+            const token = readSplTokenAccount(snapshot);
+            if (token) mints.add(token.mint);
+        }
+        const mintDecimals: Record<string, number | null> = {};
+        if (mints.size > 0) {
+            try {
+                const mintList = [...mints];
+                const infos = await withTimeout(
+                    connection.getMultipleAccountsInfo(mintList.map((m) => new PublicKey(m)), 'confirmed'),
+                    'Read token decimals'
+                );
+                infos.forEach((info, i) => {
+                    mintDecimals[mintList[i]] = info && info.data.length > SPL_MINT_DECIMALS_OFFSET ? info.data[SPL_MINT_DECIMALS_OFFSET] : null;
+                });
+            } catch {
+                /* decimals stay unknown; amounts are shown in base units */
+            }
+        }
+        balanceDiff = computeSolanaBalanceDiff(watched, pre, post, mintDecimals);
+    }
+
     return {
         err: value.err ?? null,
         logs: value.logs ?? null,
-        unitsConsumed: value.unitsConsumed ?? null
+        unitsConsumed: value.unitsConsumed ?? null,
+        ...(balanceDiff ? { balanceDiff } : {})
     };
 }
 

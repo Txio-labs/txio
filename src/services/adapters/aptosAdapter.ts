@@ -43,7 +43,10 @@ const buildAptosClient = async (network: Network) => {
  * `typeArguments`/simulation, so this mostly just parses user-typed strings
  * into the right JS primitive.
  */
-const coerceAptosArg = (arg: BuilderArg): unknown => {
+const INT_BITS: Record<string, bigint> = { u8: 8n, u16: 16n, u32: 32n, u64: 64n, u128: 128n, u256: 256n };
+const APTOS_ADDRESS_RE = /^0x[0-9a-fA-F]{1,64}$/;
+
+export const coerceAptosArg = (arg: BuilderArg): unknown => {
     const value = arg.value.trim();
     const type: MoveParamType = arg.type;
     switch (type) {
@@ -53,34 +56,44 @@ const coerceAptosArg = (arg: BuilderArg): unknown => {
         case 'u8':
         case 'u16':
         case 'u32':
-            if (!/^\d+$/.test(value)) throw new Error(`"${arg.value}" is not a whole number for ${type}.`);
-            return Number(value);
         case 'u64':
         case 'u128':
-        case 'u256':
+        case 'u256': {
             if (!/^\d+$/.test(value)) throw new Error(`"${arg.value}" is not a whole number for ${type}.`);
-            return value; // SDK accepts numeric strings for large ints.
+            if (BigInt(value) >= 1n << INT_BITS[type]) throw new Error(`"${arg.value}" is too large for ${type}.`);
+            // Small ints go in as numbers; the SDK accepts numeric strings for the wide ones.
+            return type === 'u8' || type === 'u16' || type === 'u32' ? Number(value) : value;
+        }
         case 'address':
+        case 'object':
+            if (!APTOS_ADDRESS_RE.test(value)) throw new Error(`"${arg.value}" is not a valid address (expected 0x followed by up to 64 hex digits).`);
             return value;
         case 'string':
-            return value;
-        case 'object':
-            return value;
+            return arg.value;
         case 'vector<u8>':
-            try {
-                return JSON.parse(value);
-            } catch {
-                throw new Error(`vector<u8> must be a JSON array, e.g. [1,2,3]. Got "${arg.value}".`);
-            }
+            if (/^0x[0-9a-fA-F]*$/.test(value) && value.length % 2 === 0) return value;
+            return parseJsonArray(value, 'vector<u8>', 'a JSON array like [1,2,3] or a 0x hex string');
         case 'vector<address>':
+            return parseJsonArray(value, 'vector<address>', 'a JSON array of addresses');
+        case 'json':
             try {
                 return JSON.parse(value);
             } catch {
-                throw new Error(`vector<address> must be a JSON array of addresses. Got "${arg.value}".`);
+                throw new Error(`Value must be valid JSON. Got "${arg.value}".`);
             }
         default:
             return value;
     }
+};
+
+const parseJsonArray = (value: string, type: string, expected: string): unknown[] => {
+    try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) return parsed;
+    } catch {
+        /* fall through */
+    }
+    throw new Error(`${type} must be ${expected}. Got "${value}".`);
 };
 
 const buildEntryFunctionData = (p: AptosTxParams): import('@aptos-labs/ts-sdk').InputEntryFunctionData => ({

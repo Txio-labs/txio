@@ -66,8 +66,7 @@ const NAV_GROUPS: NavGroup[] = [
         title: 'Guides',
         items: [
             { id: 'guide-resolution', label: 'Name resolution' },
-            { id: 'guide-ai', label: 'AI console' },
-            { id: 'guide-ptb', label: 'PTB builder' },
+                        { id: 'guide-ptb', label: 'PTB builder' },
             { id: 'guide-collections', label: 'Collections & contexts' },
         ],
     },
@@ -460,13 +459,11 @@ export const DocsPage: React.FC<DocsPageProps> = ({ embedded = false }) => {
                             </div>
 
                             <Callout tone="warn">
-                                <strong className="text-[#7a2e1c] dark:text-[#e6e8eb]">Before you deploy this anywhere but localhost:</strong> the backend
-                                has two open critical vulnerabilities — unauthenticated user-management endpoints and an
-                                unauthenticated remote-execution path. See{' '}
+                                <strong className="text-[#7a2e1c] dark:text-[#e6e8eb]">Pre-1.0, not security audited.</strong> Read{' '}
                                 <button type="button" onClick={() => scrollToSection('security-status')} className="text-electric-violet underline">
                                     Security &amp; hardening
-                                </button>
-                                . Do not expose a production deployment to an untrusted network until these are closed.
+                                </button>{' '}
+                                for what has been checked and what is still open before you expose a deployment to an untrusted network.
                             </Callout>
                         </Section>
 
@@ -692,16 +689,6 @@ cargo run -- sui balance aliphatic.sui`}
                                 a flat match would miss it. Every occurrence, at any nesting depth, is resolved before the call goes out.
                             </P>
 
-                            <H2 id="guide-ai">Guide: AI console</H2>
-                            <P>
-                                The AI console can manipulate your workspace via function calling — create_rpc_request opens a
-                                pre-filled RPC tab, create_ptb opens a Transaction Builder — rather than just answering in a side panel.
-                            </P>
-                            <Callout tone="info">
-                                The console runs on a single model provider. Requests to the AI proxy require an authenticated session
-                                and are rate-limited per user, to prevent unthrottled cost exposure against the configured provider key.
-                            </Callout>
-
                             <H2 id="guide-ptb">Guide: PTB builder</H2>
                             <P>
                                 A node-based, infinite-canvas editor for Programmable Transaction Blocks. Current node types: Object
@@ -720,18 +707,20 @@ cargo run -- sui balance aliphatic.sui`}
 
                         <Section id="security-status">
                             <H2>Security &amp; hardening status</H2>
-                            <P>Feature work is intentionally paused behind closing these out.</P>
+                            <P>
+                                State of each item, checked against the code and covered by tests where noted. Nothing here is
+                                a claim that txio is production-hardened; open items are listed as open.
+                            </P>
                             <DocsTable
-                                head={['Issue', 'Severity']}
+                                head={['Item', 'Status']}
                                 rows={[
-                                    ['Unauthenticated user-management endpoints (account takeover)', <span key="1" className="rounded border border-[#f0654d]/30 bg-[#f0654d]/10 px-2 py-0.5 font-mono text-[10.5px] text-[#f0654d]">critical</span>],
-                                    ['Unauthenticated remote command execution (removed, see below)', <span key="2" className="rounded border border-[#f0654d]/30 bg-[#f0654d]/10 px-2 py-0.5 font-mono text-[10.5px] text-[#f0654d]">critical</span>],
-                                    ['Duplicate email registration not rejected', 'high'],
-                                    ['OTP flow has no rate limiting', 'high'],
-                                    ['SSRF via user-controlled rpc_url on saved requests', 'high'],
-                                    ['JWT stored in localStorage', 'high'],
-                                    ['Backend container runs as root', 'medium'],
-                                    ['OTP records have no TTL index', 'medium'],
+                                    ['Account endpoints require a session', 'Every route except sign-in, OTP, password reset and OAuth needs one; a test fails the build if a new handler forgets. Changing email or deleting the account also needs a one-time code.'],
+                                    ['Session storage', 'HttpOnly cookie for the browser (script cannot read it), CSRF header on writes, and logout, revoke and account delete end the session on the server. CLI and SDK use API keys. Needs COOKIE_* settings that match your domains.'],
+                                    ['OTP', 'Stored hashed; 5-minute validity enforced in code (10-minute Mongo TTL is cleanup); 60-second resend cooldown per email; locks after 5 wrong codes; per-IP limits. No hourly cap per email yet.'],
+                                    ['SSRF via custom rpc_url and webhooks', 'One shared guard blocks non-HTTPS, loopback, private, link-local, CGNAT and IPv4-in-IPv6, resolves DNS, and redirects are not followed. Open: DNS rebinding between check and connect (needs an egress proxy), so this is mitigated, not closed.'],
+                                    ['Backend container', 'Runs as a non-root user. The CLI is now built from a pinned commit (build arg TXIO_CLI_REF).'],
+                                    ['Public API', 'Scoped keys, per-key rate limits, signed webhooks with durable retries. Server-side simulation is not available (answers 501).'],
+                                    ['Open', 'No third-party security review. Rate limits are per instance (in memory). Spend-policy checks on API execute use a USD value of 0, so limits in USD do not apply there yet.'],
                                 ]}
                             />
                         </Section>

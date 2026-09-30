@@ -63,6 +63,61 @@ const buildStellarTx = async (p: StellarTxParams, source: string, network: Netwo
     return { server, tx, networkPassphrase };
 };
 
+/** Minimal view of a Soroban diagnostic event, so extraction can be tested without XDR fixtures. */
+export interface SorobanEventLike {
+    event(): {
+        type(): { name: string };
+        contractId(): Uint8Array | null | undefined;
+        body(): { v0(): { topics(): unknown[]; data(): unknown } };
+    };
+}
+
+export interface SorobanTransfer {
+    contract: string;
+    from: string;
+    to: string;
+    /** Token base units. */
+    amount: string;
+    /** The asset name a Stellar Asset Contract emits as a 4th topic ("native", "USDC:G…"), when present. */
+    asset?: string;
+}
+
+/**
+ * Pulls SEP-41 / Stellar Asset Contract `transfer` events out of a
+ * simulation's diagnostic events. Anything that does not look exactly like a
+ * transfer is ignored, so an unfamiliar contract yields no entries, not wrong ones.
+ */
+export const extractSorobanTransfers = (
+    events: SorobanEventLike[],
+    toNative: (value: never) => unknown,
+    contractIdToString: (id: Uint8Array) => string
+): SorobanTransfer[] => {
+    const transfers: SorobanTransfer[] = [];
+    for (const diagnostic of events) {
+        try {
+            const event = diagnostic.event();
+            if (event.type().name !== 'contract') continue;
+            const body = event.body().v0();
+            const topics = body.topics().map((t) => toNative(t as never));
+            if (topics.length < 3 || topics[0] !== 'transfer') continue;
+            const data = toNative(body.data() as never);
+            const raw = data && typeof data === 'object' && 'amount' in (data as object) ? (data as { amount: unknown }).amount : data;
+            if (typeof raw !== 'bigint' && typeof raw !== 'number' && typeof raw !== 'string') continue;
+            const id = event.contractId();
+            transfers.push({
+                contract: id ? contractIdToString(id) : '',
+                from: String(topics[1]),
+                to: String(topics[2]),
+                amount: BigInt(raw).toString(),
+                ...(typeof topics[3] === 'string' ? { asset: topics[3] } : {})
+            });
+        } catch {
+            /* not a transfer event we understand */
+        }
+    }
+    return transfers;
+};
+
 const simulateStellar = async (p: StellarTxParams, source: string, network: Network): Promise<TxResult> => {
     const { rpc, scValToNative } = await loadStellar();
     const start = performance.now();
@@ -72,11 +127,20 @@ const simulateStellar = async (p: StellarTxParams, source: string, network: Netw
         throw new Error(`Simulation failed: ${sim.error}`);
     }
     const retval = sim.result?.retval;
+    const { StrKey } = await loadStellar();
+    const transfers = extractSorobanTransfers(
+        sim.events as unknown as SorobanEventLike[],
+        scValToNative as (value: never) => unknown,
+        (id) => StrKey.encodeContract(Buffer.from(id))
+    );
     return {
         result: toJsonSafe({
             returnValue: retval ? scValToNative(retval) : null,
             minResourceFee: sim.minResourceFee,
-            latestLedger: sim.latestLedger
+            latestLedger: sim.latestLedger,
+            source,
+            // Present only when the simulation emitted transfer events.
+            ...(transfers.length > 0 ? { transfers } : {})
         }),
         duration: Math.round(performance.now() - start),
         status: 200

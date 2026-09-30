@@ -1,3 +1,4 @@
+import { collectEvmSimulationExtras } from './evmSimulation';
 import {
     decodeFunctionResult,
     encodeFunctionData,
@@ -140,7 +141,8 @@ const simulateEvm = async (p: EvmTxParams, from: string | null): Promise<TxResul
     const value = parseEther(p.value.trim() || '0');
     const call = {
         account: (from ?? undefined) as Hex | undefined,
-        to: p.to.trim() as Hex,
+        // A deployment has no recipient: the node runs the creation code.
+        to: (p.deploy ? undefined : p.to.trim()) as Hex | undefined,
         data,
         value
     };
@@ -161,6 +163,14 @@ const simulateEvm = async (p: EvmTxParams, from: string | null): Promise<TxResul
         // result above is still meaningful without it.
     }
 
+    // Logs and a state diff exist only on nodes that support eth_simulateV1 /
+    // debug_traceCall; on other nodes they are simply absent from the result.
+    const extras = await collectEvmSimulationExtras(
+        client as unknown as Parameters<typeof collectEvmSimulationExtras>[0],
+        p.chainId,
+        { from: from ?? undefined, to: p.deploy ? undefined : p.to.trim(), data, value }
+    );
+
     let decoded: unknown;
     if (fn && fn.outputs.length && returnData && returnData !== '0x') {
         try {
@@ -177,7 +187,8 @@ const simulateEvm = async (p: EvmTxParams, from: string | null): Promise<TxResul
             to: p.to,
             returnData: returnData ?? '0x',
             ...(decoded !== undefined ? { decoded } : {}),
-            gasEstimate
+            gasEstimate,
+            ...extras
         }),
         duration: Math.round(performance.now() - start),
         status: 200
@@ -200,7 +211,7 @@ const executeEvm = async (p: EvmTxParams, network: Network, onProgress?: (p: TxP
     onProgress?.({ stage: 'awaiting-signature' });
     const hash = await sendTransaction(wagmiConfig, {
         chainId: p.chainId as never,
-        to: p.to.trim() as Hex,
+        to: p.deploy ? undefined : (p.to.trim() as Hex),
         data,
         value
     });
@@ -222,6 +233,7 @@ const executeEvm = async (p: EvmTxParams, network: Network, onProgress?: (p: TxP
     const result = toJsonSafe({
         hash,
         status: receipt.status,
+        ...(p.deploy && receipt.contractAddress ? { contractAddress: receipt.contractAddress } : {}),
         blockNumber: receipt.blockNumber,
         gasUsed: receipt.gasUsed,
         gasPaid: `${formatEther(gasPaid)} ${net?.nativeCurrency.symbol ?? ''}`.trim(),
@@ -252,7 +264,12 @@ export class EvmAdapter implements ChainAdapter {
         const p = request.evmTxParams;
         if (!p) return 'Transaction details are missing.';
         if (!getEvmTxChain(p.chainId)) return `Unsupported EVM chain ${p.chainId}.`;
-        if (!isAddress(p.to.trim())) return 'Enter a valid "to" address (0x…).';
+        if (p.deploy) {
+            const creation = p.data.trim();
+            if (!isHex(creation) || creation.length <= 2) return 'Contract creation needs compiled bytecode (0x…).';
+        } else if (!isAddress(p.to.trim())) {
+            return 'Enter a valid "to" address (0x…).';
+        }
         if (p.value.trim() && !/^\d*\.?\d+$/.test(p.value.trim())) return 'Value must be a decimal amount, e.g. 0.01.';
         if (!p.functionSignature.trim() && p.data.trim() && !isHex(p.data.trim())) {
             return 'Calldata must be hex (0x…).';
@@ -266,6 +283,7 @@ export class EvmAdapter implements ChainAdapter {
     }
 
     targetAddress(request: RequestItem): string | null {
+        if (request.evmTxParams?.deploy) return null; // the address does not exist yet
         return request.evmTxParams?.to?.trim() || null;
     }
 
@@ -274,8 +292,8 @@ export class EvmAdapter implements ChainAdapter {
         const net = getEvmTxChain(p.chainId);
         return {
             chain: this.chain,
-            kind: p.functionSignature.trim() ? 'Contract call' : p.data.trim() ? 'Raw calldata' : 'Transfer',
-            target: p.functionSignature.trim() ? `${p.to} · ${p.functionSignature}` : p.to,
+            kind: p.deploy ? 'Contract deployment' : p.functionSignature.trim() ? 'Contract call' : p.data.trim() ? 'Raw calldata' : 'Transfer',
+            target: p.deploy ? `New contract (${Math.max(0, (p.data.trim().length - 2) / 2)} bytes of creation code)` : p.functionSignature.trim() ? `${p.to} · ${p.functionSignature}` : p.to,
             details: [
                 ['Network', net ? net.name : `Chain ${p.chainId}`],
                 ['Value', `${p.value || '0'} ${net?.nativeCurrency.symbol ?? ''}`.trim()]

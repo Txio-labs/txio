@@ -24,14 +24,9 @@ export const isNetwork = (
 
 // Chains the RPC Method Builder can target. Kept in sync with
 // `WalletChainFamily` (wallet/types.ts), which the wallet layer already uses.
-// 'cardano' has no adapter implementation yet — see CardanoAdapter in
-// services/adapters/cardanoAdapter.ts, which explicitly reports
-// "not yet supported" from every method rather than being silently absent
-// from the type. It's excluded from RPC_CHAINS (lib/constants.ts) so it
-// doesn't appear as a selectable chain in the UI until it has one.
-export type ChainId = 'sui' | 'evm' | 'stellar' | 'solana' | 'aptos' | 'cardano';
+export type ChainId = 'sui' | 'evm' | 'stellar' | 'solana' | 'aptos';
 
-export type FeatureId = 'dashboard' | 'rpc' | 'ptb' | 'move' | 'playground' | 'workspace_overview' | 'history' | 'settings' | 'new_request' | 'new_collection' | 'profile' | 'account' | 'ai_chat' | 'runner' | 'collections' | 'docs' | 'ecosystem' | 'features' | 'help' | 'integrations' | 'infrastructure' | 'partners' | 'admin' | 'approvals' | 'send' | 'automation' | 'developers';
+export type FeatureId = 'dashboard' | 'rpc' | 'ptb' | 'move' | 'playground' | 'workspace_overview' | 'history' | 'settings' | 'new_request' | 'new_collection' | 'profile' | 'account' | 'runner' | 'collections' | 'docs' | 'ecosystem' | 'features' | 'help' | 'integrations' | 'infrastructure' | 'partners' | 'admin' | 'approvals' | 'send' | 'automation' | 'developers';
 
 
 export interface TabItem {
@@ -43,12 +38,52 @@ export interface TabItem {
   workspaceId?: string; // Added for workspace persistence
 }
 
+export type WorkspaceRole = 'owner' | 'editor' | 'viewer';
+
 export interface Workspace {
   id: string;
   name: string;
   type: 'Personal' | 'Team';
   activeEnvId: string;
+  /** What the signed-in user may do here. Absent means owner (a workspace from before roles existed). */
+  role?: WorkspaceRole;
 }
+
+/** A person in a workspace, or a pending invitation to it. */
+export interface WorkspaceMember {
+  /** Absent for the owner, who is not a membership row. */
+  id: string | null;
+  email: string;
+  role: WorkspaceRole;
+  status: 'owner' | 'active' | 'pending';
+  expiresAt: string | null;
+}
+
+export interface WorkspaceInvite {
+  member: WorkspaceMember;
+  /** False when the email could not be sent; the owner can share `acceptLink` instead. */
+  emailSent: boolean;
+  acceptLink: string;
+}
+
+export interface WorkspaceInvitePreview {
+  workspaceName: string;
+  invitedEmail: string;
+  role: WorkspaceRole;
+}
+
+export interface SharedComment {
+  id: string;
+  targetId: string;
+  authorEmail: string;
+  body: string;
+  createdAt: string;
+  canDelete: boolean;
+}
+
+/** True when the user may create, edit and delete in the workspace. */
+export const canEditWorkspace = (workspace: Pick<Workspace, 'role'> | null | undefined): boolean =>
+  !workspace?.role || workspace.role === 'owner' || workspace.role === 'editor';
 
 export interface EnvironmentVariable {
   key: string;
@@ -178,7 +213,7 @@ export interface SwapParams {
 
 export type TransactionKind = 'MoveCall' | 'TransferSui' | 'TransferObject';
 
-export type MoveParamType = 'u8' | 'u16' | 'u32' | 'u64' | 'u128' | 'u256' | 'bool' | 'address' | 'string' | 'object' | 'vector<u8>' | 'vector<address>';
+export type MoveParamType = 'u8' | 'u16' | 'u32' | 'u64' | 'u128' | 'u256' | 'bool' | 'address' | 'string' | 'object' | 'vector<u8>' | 'vector<address>' | 'json';
 
 export interface BuilderArg {
     id: string;
@@ -244,6 +279,9 @@ export interface EvmTxParams {
   // Per-argument unit for uint inputs: decimals to scale by (18 = ether,
   // 9 = gwei, token decimals, ...). Absent/0 means the value is in base units.
   argDecimals?: (number | null)[];
+  // Contract creation: `data` is the creation bytecode (plus encoded
+  // constructor arguments) and there is no `to`. Set by the Contract Builder.
+  deploy?: boolean;
 }
 
 export type StellarArgType =
@@ -279,15 +317,6 @@ export interface AptosTxParams {
   gasUnitPrice?: string;
 }
 
-// Cardano has no adapter implementation yet (see CardanoAdapter) — this
-// shape is a placeholder so RequestItem/withTxChain compile against a real
-// type rather than `unknown`, not a claim that Cardano's UTxO/script/datum/
-// redeemer transaction model is represented here. It intentionally does NOT
-// pretend Cardano is a contract-address+function chain.
-export interface CardanoTxParams {
-  note?: string;
-}
-
 export interface RequestItem {
   id: string;
   type: RequestType;
@@ -312,7 +341,6 @@ export interface RequestItem {
   evmTxParams?: EvmTxParams;
   stellarTxParams?: StellarTxParams;
   aptosTxParams?: AptosTxParams;
-  cardanoTxParams?: CardanoTxParams;
   // Present for RequestType.SWAP requests — see SwapParams.
   swapParams?: SwapParams;
   isLoading?: boolean;
@@ -464,6 +492,11 @@ export interface GitHubAccount {
   login: string;
 }
 
+export interface XAccount {
+  id: string;
+  username: string;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -472,6 +505,7 @@ export interface UserProfile {
   bannerUrl?: string;
   notificationPreferences?: NotificationPreferences;
   githubAccount?: GitHubAccount;
+  xAccount?: XAccount;
   googleLinked?: boolean;
   isAdmin?: boolean;
 }

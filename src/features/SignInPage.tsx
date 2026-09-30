@@ -15,23 +15,22 @@ import { Github, XLogo } from '@/components/icons/BrandIcons';
 
 import { appStore, useAppStore } from '@/lib/store';
 import { API_BASE, apiService } from '@/services/api';
+import { useOAuthProviders } from '@/lib/useOAuthProviders';
 import logoDark from '../assets/txio2.png';
 
 
-// Read and clear the short-lived OAuth token the backend hands off via a URL
-// fragment. A cookie can't be used: the backend and frontend are different
-// sites, so a cookie the backend's redirect response sets is never visible
-// to document.cookie on the frontend's origin.
-function consumeOAuthFragmentToken(): string | null {
-    if (typeof window === 'undefined') return null;
+// The OAuth callback sets the HttpOnly session cookie on its own redirect
+// response and returns here with `#oauth=success`. There is no token in the
+// URL. Read the marker once and strip it from the address bar.
+function consumeOAuthSuccess(): boolean {
+    if (typeof window === 'undefined') return false;
     const hash = window.location.hash;
-    const match = hash.match(/(?:^#|&)token=([^&]+)/);
-    if (!match) return null;
-    const remainingHash = hash.replace(/(?:^#|&)token=[^&]+/, '').replace(/^#&/, '#');
+    if (!/(?:^#|&)oauth=success/.test(hash)) return false;
+    const remainingHash = hash.replace(/(?:^#|&)oauth=success/, '').replace(/^#&/, '#');
     const url = new URL(window.location.href);
     url.hash = remainingHash === '#' ? '' : remainingHash;
     window.history.replaceState({}, '', url.toString());
-    return decodeURIComponent(match[1]);
+    return true;
 }
 
 export const SignInPage: React.FC = () => {
@@ -40,6 +39,7 @@ export const SignInPage: React.FC = () => {
 
     const [isLoading, setIsLoading] = useState(false);
     const [socialLoading, setSocialLoading] = useState<string | null>(null);
+    const oauthProviders = useOAuthProviders();
     const [authChecking, setAuthChecking] = useState(true);
     const [formData, setFormData] = useState({
         email: '',
@@ -59,27 +59,15 @@ export const SignInPage: React.FC = () => {
     useEffect(() => {
         const initializeAuth = async () => {
             try {
-                // Read OAuth token from the URL fragment (backend appends it on
-                // OAuth callback redirect).
-                const fragmentToken = consumeOAuthFragmentToken();
+                const oauthSucceeded = consumeOAuthSuccess();
 
-                // Read token from localStorage
-                const storedToken = localStorage.getItem('txio_token');
-
-                // Prefer the freshly-issued OAuth token over a stored one
-                const token = fragmentToken || storedToken;
-
-                // No token
-                if (!token) {
+                // No session hint and no OAuth handoff: nothing to restore.
+                if (!oauthSucceeded && !apiService.hasSessionHint()) {
                     setAuthChecking(false);
                     return;
                 }
 
-                // Save token
-                localStorage.setItem('txio_token', token);
-
-                // Set token in API service
-                apiService.setToken(token);
+                apiService.setSessionHint(true);
 
                 // IMPORTANT:
                 // Switch app mode BEFORE profile request
@@ -118,9 +106,9 @@ export const SignInPage: React.FC = () => {
                     }
 
                     // Success toast only after OAuth redirect (token arrived via fragment)
-                    if (fragmentToken) {
+                    if (oauthSucceeded) {
                         appStore.showToast(
-                            'Successfully signed in with Google',
+                            'Signed in successfully',
                             'success'
                         );
                     }
@@ -130,9 +118,7 @@ export const SignInPage: React.FC = () => {
                     console.error('Profile fetch failed:', profileError);
 
                     // Invalid token/session cleanup
-                    localStorage.removeItem('txio_token');
-
-                    apiService.setToken(null);
+                    apiService.setSessionHint(false);
 
                     appStore.updateUser(null);
 
@@ -146,9 +132,7 @@ export const SignInPage: React.FC = () => {
             } catch (error) {
                 console.error('Auth initialization failed:', error);
 
-                localStorage.removeItem('txio_token');
-
-                apiService.setToken(null);
+                apiService.setSessionHint(false);
 
                 appStore.updateUser(null);
 
@@ -183,14 +167,19 @@ export const SignInPage: React.FC = () => {
     };
 
     const handleSocialLogin = (provider: string) => {
-        if (provider !== 'Google') {
-            appStore.showToast(`${provider} sign-in is coming soon`, 'info');
+        const path = provider === 'Google' ? 'google' : provider === 'GitHub' ? 'github' : provider === 'X' ? 'x' : null;
+        if (!path || !oauthProviders[path]) {
+            appStore.showToast(
+                path
+                    ? `${provider} sign-in is not available right now`
+                    : `${provider} sign-in is not available yet`,
+                'info'
+            );
             return;
         }
 
         setSocialLoading(provider);
-        appStore.showToast(`Connecting to ${provider}...`, 'info');
-        window.location.href = `${API_BASE}/auth/google/login`;
+        window.location.href = `${API_BASE}/auth/${path}/login`;
     };
 
     const handleForgotPasswordEmailSubmit = async (e: React.FormEvent) => {

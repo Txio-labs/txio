@@ -5,6 +5,7 @@ import {
     Mail, Lock, User, ArrowRight, ArrowLeft, Rocket, Globe, Zap
 } from 'lucide-react';
 import { Github, XLogo } from '@/components/icons/BrandIcons';
+import { useOAuthProviders } from '@/lib/useOAuthProviders';
 import { appStore, useAppStore } from '@/lib/store';
 import { API_BASE, apiService } from '@/services/api';
 import logoDark from '../assets/txio2.png';
@@ -14,6 +15,7 @@ export const GetStartedPage: React.FC = () => {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [socialLoading, setSocialLoading] = useState<string | null>(null);
+    const oauthProviders = useOAuthProviders();
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -42,14 +44,19 @@ export const GetStartedPage: React.FC = () => {
     };
 
     const handleSocialLogin = (provider: string) => {
-        if (provider !== 'Google') {
-            appStore.showToast(`${provider} sign-in is coming soon`, 'info');
+        const path = provider === 'Google' ? 'google' : provider === 'GitHub' ? 'github' : provider === 'X' ? 'x' : null;
+        if (!path || !oauthProviders[path]) {
+            appStore.showToast(
+                path
+                    ? `${provider} sign-in is not available right now`
+                    : `${provider} sign-in is not available yet`,
+                'info'
+            );
             return;
         }
 
         setSocialLoading(provider);
-        appStore.showToast(`Connecting to ${provider}...`, 'info');
-        window.location.href = `${API_BASE}/auth/google/login`;
+        window.location.href = `${API_BASE}/auth/${path}/login`;
     };
 
     return (

@@ -40,3 +40,6 @@ lint_output.txt
 
 # test coverage output
 coverage/
+
+# Copied from node_modules/solc by scripts/copy-solc.mjs
+public/vendor/

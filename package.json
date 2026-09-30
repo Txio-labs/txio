@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/copy-solc.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/copy-solc.mjs",
     "build": "next build",
     "start": "serve out",
     "lint": "eslint .",
@@ -34,6 +36,7 @@
     "next": "^16.2.11",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "solc": "^0.8.28",
     "viem": "^2.55.0",
     "wagmi": "^3.7.3"
   },

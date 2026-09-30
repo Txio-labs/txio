@@ -7,7 +7,7 @@ import { ChainId } from '../types';
  * prototype, so this calls the API directly from the browser rather than
  * proxying through the backend. If rate limits become a real problem,
  * move this behind a new txio-backend lifi_service.rs (mirroring
- * ai_service.rs's Groq client) without changing this module's exports.
+ * a backend-side client) without changing this module's exports.
  */
 
 const LIFI_API_BASE = 'https://li.quest/v1';
@@ -25,7 +25,7 @@ export class LifiError extends Error {
 /**
  * Maps Txio's ChainId to the LI.FI chain key it expects in requests.
  * Partial (not `Record<ChainId, string>`) because LI.FI doesn't bridge every
- * chain Txio knows about — Aptos and Cardano have no LI.FI coverage, and
+ * chain Txio knows about — Aptos has no LI.FI coverage, and
  * `lifiChainKeyFor` throws a clear error for those rather than sending
  * `undefined` into a request.
  */

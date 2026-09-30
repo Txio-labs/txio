@@ -63,6 +63,17 @@ export const WebhooksTab: React.FC = () => {
         }
     };
 
+    const handleRotate = async (id: string | undefined) => {
+        if (!id) return;
+        try {
+            const { secret } = await apiService.rotateWebhookSecret(id);
+            setRevealedSecret(secret);
+            load();
+        } catch (err) {
+            appStore.showToast(err instanceof ApiError ? err.message : 'Failed to rotate the secret.', 'error');
+        }
+    };
+
     return (
         <div className="p-6 w-full space-y-5">
             <div className="flex items-center justify-between">
@@ -167,6 +178,15 @@ export const WebhooksTab: React.FC = () => {
                                     {sub.last_delivery_error ? ` · last error: ${sub.last_delivery_error}` : ''}
                                 </div>
                             </div>
+                            {sub.can_sign === false && (
+                                <button
+                                    onClick={() => handleRotate(sub.id?.toString())}
+                                    className="px-2 py-1 mr-2 text-[10px] font-bold rounded border border-amber-300 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/10 shrink-0"
+                                    title="This webhook was created before secrets could be used for signing. Rotate the secret to receive verifiable signatures."
+                                >
+                                    Rotate secret
+                                </button>
+                            )}
                             <button onClick={() => handleDelete(sub.id?.toString())} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg shrink-0" title="Delete">
                                 <X size={14} />
                             </button>

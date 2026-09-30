@@ -1,5 +1,7 @@
 'use client';
 
+import { captureInviteFromHash } from '@/lib/pendingInvite';
+import { hasSessionHint } from '@/lib/sessionHint';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAppStore, appStore } from '@/lib/store';
@@ -13,28 +15,26 @@ import { FeatureId } from '@/types';
 // to document.cookie here. A fragment is never sent to any server (this
 // one included) and is stripped from Referer headers, so it's read once
 // on load and immediately stripped from the URL.
-function consumeOAuthFragmentToken(): string | null {
-    if (typeof window === 'undefined') return null;
+function consumeOAuthFragmentSuccess(): boolean {
+    if (typeof window === 'undefined') return false;
     const hash = window.location.hash;
-    const match = hash.match(/(?:^#|&)token=([^&]+)/);
-    if (!match) return null;
-    const remainingHash = hash.replace(/(?:^#|&)token=[^&]+/, '').replace(/^#&/, '#');
+    if (!/(?:^#|&)oauth=success/.test(hash)) return false;
+    const remainingHash = hash.replace(/(?:^#|&)oauth=success/, '').replace(/^#&/, '#');
     const url = new URL(window.location.href);
     url.hash = remainingHash === '#' ? '' : remainingHash;
     window.history.replaceState({}, '', url.toString());
-    return decodeURIComponent(match[1]);
+    return true;
 }
 
-// Same handoff mechanism as the token above, but for OAuth failures (state
-// mismatch, account already exists under a different provider, etc.) — the
-// backend redirects here with `#error=` instead of leaving the user on a
-// bare JSON response at its own domain.
+// OAuth failures (state mismatch, account already linked elsewhere, provider
+// not configured, ...) come back as `#oauth_error=<message>` so the user lands
+// in the app instead of on a bare backend response.
 function consumeOAuthFragmentError(): string | null {
     if (typeof window === 'undefined') return null;
     const hash = window.location.hash;
-    const match = hash.match(/(?:^#|&)error=([^&]+)/);
+    const match = hash.match(/(?:^#|&)oauth_error=([^&]+)/);
     if (!match) return null;
-    const remainingHash = hash.replace(/(?:^#|&)error=[^&]+/, '').replace(/^#&/, '#');
+    const remainingHash = hash.replace(/(?:^#|&)oauth_error=[^&]+/, '').replace(/^#&/, '#');
     const url = new URL(window.location.href);
     url.hash = remainingHash === '#' ? '' : remainingHash;
     window.history.replaceState({}, '', url.toString());
@@ -105,6 +105,13 @@ export function RedirectManager() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pathname, initialized]);
 
+    // An invitation link's token is parked before any redirect can drop it.
+    useEffect(() => {
+        if (captureInviteFromHash() && !hasSessionHint()) {
+            appStore.showToast('Sign in with the invited email address to accept the workspace invitation.', 'info');
+        }
+    }, []);
+
     // Surface an OAuth failure (state mismatch, account-linking conflict,
     // provider not configured, etc.) as a toast instead of leaving the user
     // on a bare backend response with no way back into the app.
@@ -114,49 +121,21 @@ export function RedirectManager() {
         appStore.showToast(error, 'error');
     }, []);
 
-    // Clean up URL if there are any query params left over
+    // OAuth callback: the session cookie was set on the redirect response.
+    // Hydrate the user from the server (initialize fetches /auth/profile).
     useEffect(() => {
-        const token = consumeOAuthFragmentToken();
-        if (!token) return;
+        if (!consumeOAuthFragmentSuccess()) return;
 
-        // OAuth callback: treat this as the source of truth and
-        // prevent generic viewMode redirects from taking over.
-        apiService.setToken(token);
-        void appStore.initialize().catch((e) => {
-            console.error('Post-token session initialization failed', e);
-        });
-
-        try {
-            const payloadSegment = token
-                .split('.')[1]
-                ?.replace(/-/g, '+')
-                .replace(/_/g, '/');
-            const normalizedPayload =
-                (payloadSegment || '').padEnd(
-                    Math.ceil(
-                        (payloadSegment || '')
-                            .length / 4
-                    ) * 4,
-                    '='
-                );
-            const payload = JSON.parse(
-                atob(normalizedPayload)
-            );
-            appStore.updateUser({
-                id: payload.sub,
-                email: payload.email,
-                name: payload.email.split('@')[0]
+        apiService.setSessionHint(true);
+        void appStore
+            .initialize()
+            .then(() => {
+                appStore.setViewMode('app');
+                appStore.showToast('Authentication successful!', 'success');
+            })
+            .catch((e) => {
+                console.error('Post-OAuth session initialization failed', e);
             });
-
-            appStore.setViewMode('app');
-            appStore.showToast('Authentication successful!', 'success');
-
-            const url = new URL(window.location.href);
-            url.search = '';
-            window.history.replaceState({}, '', url.toString());
-        } catch (e) {
-            console.error('Failed to parse token', e);
-        }
     }, [initialized]);
 
     // Auth-driven redirects. These key off `user` and `pathname` directly

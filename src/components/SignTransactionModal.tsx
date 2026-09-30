@@ -205,33 +205,83 @@ export const SignTransactionModal: React.FC<SignTransactionModalProps> = ({
                                 </div>
                             ) : preview.summary ? (
                                 <div className="p-3 space-y-2">
-                                    {preview.summary.balanceChanges.length === 0 && preview.summary.warnings.length === 0 ? (
-                                        <p className="text-xs text-slate-500">No balance changes detected. This call doesn&apos;t appear to move funds.</p>
-                                    ) : (
-                                        <>
-                                            {preview.summary.balanceChanges.map((change, i) => (
-                                                <div key={i} className="flex items-center justify-between text-xs gap-4">
-                                                    <span className="flex items-center gap-1.5 text-slate-500">
-                                                        {change.direction === 'out' ? (
-                                                            <ArrowUpRight size={12} className="text-red-500" />
-                                                        ) : (
-                                                            <ArrowDownRight size={12} className="text-emerald-500" />
-                                                        )}
-                                                        {change.direction === 'out' ? 'Sends' : 'Receives'}
-                                                    </span>
-                                                    <span className="font-mono text-slate-700 dark:text-slate-300 truncate max-w-[220px]" title={change.asset}>
-                                                        {change.amount} {change.asset}
-                                                    </span>
-                                                </div>
+                                    {preview.summary.resolvedNames && preview.summary.resolvedNames.length > 0 && (
+                                        <ul className="space-y-0.5 text-[11px] font-mono text-slate-600 dark:text-slate-400 break-all">
+                                            {preview.summary.resolvedNames.map((r) => (
+                                                <li key={r.name}>{r.name} → {r.address}</li>
                                             ))}
-                                            {preview.summary.warnings.map((warning, i) => (
-                                                <div key={i} className="flex gap-2 text-xs text-amber-600 dark:text-amber-500">
-                                                    <AlertTriangle size={13} className="shrink-0 mt-0.5" />
-                                                    <span>{warning}</span>
-                                                </div>
-                                            ))}
-                                        </>
+                                        </ul>
                                     )}
+                                    {preview.summary.balanceChanges && preview.summary.balanceChanges.length === 0 && (
+                                        <p className="text-xs text-slate-500">
+                                            No balance changes reported by the {chainLabel} simulation.
+                                        </p>
+                                    )}
+                                    {preview.summary.balanceChanges?.map((change, i) => (
+                                        <div key={i} className="flex items-center justify-between text-xs gap-4">
+                                            <span className="flex items-center gap-1.5 text-slate-500">
+                                                {change.direction === 'out' ? (
+                                                    <ArrowUpRight size={12} className="text-red-500" />
+                                                ) : (
+                                                    <ArrowDownRight size={12} className="text-emerald-500" />
+                                                )}
+                                                {change.direction === 'out' ? 'Sends' : 'Receives'}
+                                                {change.account && (
+                                                    <span className="font-mono text-[10px]" title={change.account}>
+                                                        {change.account.length > 14 ? `${change.account.slice(0, 6)}…${change.account.slice(-4)}` : change.account}
+                                                    </span>
+                                                )}
+                                            </span>
+                                            <span className="font-mono text-slate-700 dark:text-slate-300 truncate max-w-[220px]" title={change.asset}>
+                                                {change.amount} {change.asset}
+                                            </span>
+                                        </div>
+                                    ))}
+                                    {preview.summary.sources.balanceChanges && (
+                                        <p className="text-[10px] text-slate-500">Source: {preview.summary.sources.balanceChanges}</p>
+                                    )}
+                                    {preview.summary.fee && (
+                                        <div className="flex justify-between text-xs gap-4">
+                                            <span className="text-slate-500">Estimated fee</span>
+                                            <span className="font-mono text-slate-700 dark:text-slate-300">{preview.summary.fee}</span>
+                                        </div>
+                                    )}
+                                    {preview.summary.warnings.map((warning, i) => (
+                                        <div key={i} className="flex gap-2 text-xs text-amber-600 dark:text-amber-500">
+                                            <AlertTriangle size={13} className="shrink-0 mt-0.5" />
+                                            <span>{warning}</span>
+                                        </div>
+                                    ))}
+                                    {preview.summary.touched.length > 0 && (
+                                        <details className="text-xs">
+                                            <summary className="cursor-pointer text-slate-500">Touched ({preview.summary.touched.length})</summary>
+                                            <ul className="mt-1 space-y-0.5 font-mono text-[10px] text-slate-600 dark:text-slate-400 break-all">
+                                                {preview.summary.touched.map((line, i) => <li key={i}>{line}</li>)}
+                                            </ul>
+                                        </details>
+                                    )}
+                                    {preview.summary.stateDiff && preview.summary.stateDiff.length > 0 && (
+                                        <details className="text-xs">
+                                            <summary className="cursor-pointer text-slate-500">State diff ({preview.summary.stateDiff.length})</summary>
+                                            <ul className="mt-1 space-y-0.5 font-mono text-[10px] text-slate-600 dark:text-slate-400 break-all">
+                                                {preview.summary.stateDiff.map((line, i) => <li key={i}>{line}</li>)}
+                                            </ul>
+                                        </details>
+                                    )}
+                                    {preview.summary.events.length > 0 && (
+                                        <details className="text-xs">
+                                            <summary className="cursor-pointer text-slate-500">Events / logs ({preview.summary.events.length})</summary>
+                                            <ul className="mt-1 space-y-0.5 font-mono text-[10px] text-slate-600 dark:text-slate-400 break-all">
+                                                {preview.summary.events.map((line, i) => <li key={i}>{line}</li>)}
+                                            </ul>
+                                        </details>
+                                    )}
+                                    <details className="text-xs">
+                                        <summary className="cursor-pointer text-slate-500">Raw response</summary>
+                                        <pre className="mt-1 max-h-48 overflow-auto font-mono text-[10px] text-slate-600 dark:text-slate-400">
+                                            {JSON.stringify(preview.summary.raw, null, 2)}
+                                        </pre>
+                                    </details>
                                 </div>
                             ) : (
                                 <p className="p-3 text-xs text-slate-500">—</p>

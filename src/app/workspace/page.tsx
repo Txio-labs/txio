@@ -15,7 +15,6 @@ import { NewRequestPage } from "@/features/NewRequestPage";
 import { WalletsPage } from "@/features/WalletsPage";
 import { ProfilePage } from "@/features/ProfilePage";
 import { SettingsPage } from "@/features/SettingsPage";
-import { AIChat } from "@/features/AIChat";
 import { CollectionRunner } from "@/features/CollectionRunner";
 import { MoveBuilder } from "@/features/MoveBuilder";
 import { Playground } from "@/features/Playground";
@@ -35,6 +34,8 @@ import { ApprovalsPage } from "@/features/ApprovalsPage";
 import { SwapPage } from "@/features/SwapPage";
 import { AutomationPage } from "@/features/AutomationPage";
 import { DevelopersPage } from "@/features/DevelopersPage";
+import { InviteBanner } from "@/components/InviteBanner";
+import { useSharedComments } from "@/lib/useSharedComments";
 
 const MOCK_TEAM: TeamMember[] = [];
 
@@ -72,8 +73,6 @@ const WorkspaceContent: React.FC = () => {
             return <WalletsPage />;
         case 'account':
             return <ProfilePage />;
-        case 'ai_chat':
-            return <AIChat />;
         case 'new_request':
             return <NewRequestPage tabId={activeTab.id} initialData={activeTab.data} />;
         case 'collections':
@@ -123,6 +122,8 @@ export default function WorkspacePage() {
 
     const currentWorkspace =
         workspaces.find((w) => w.id === currentWorkspaceId) || workspaces[0];
+    // Comments live on the server and are visible to the workspace's members.
+    const shared = useSharedComments(currentWorkspace?.id, activeTabId);
     const needsWorkspaceSetup =
         Boolean(user) &&
         hasHydratedWorkspaces &&
@@ -166,19 +167,9 @@ export default function WorkspacePage() {
                         <RightPanel
                             network={network}
                             activityLogs={activityLogs}
-                            comments={
-                                activeTabId
-                                    ? comments[activeTabId] || []
-                                    : []
-                            }
+                            comments={shared.comments}
                             activeRequestId={activeTabId || ""}
-                            onPostComment={(content) =>
-                                activeTabId &&
-                                appStore.postComment(
-                                    activeTabId,
-                                    content
-                                )
-                            }
+                            onPostComment={(content) => void shared.post(content)}
                             onClose={() =>
                                 appStore.toggleInspector()
                             }
@@ -195,6 +186,8 @@ export default function WorkspacePage() {
                 />
                 ) : null}
             </div>
+
+            {user && <InviteBanner />}
 
             <AuthModal
                 isOpen={isAuthModalOpen}
