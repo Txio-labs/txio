@@ -181,7 +181,7 @@ export const HelpPage: React.FC = () => {
                     </div>
 
                     {/* Support chat */}
-                    <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow overflow-hidden flex flex-col h-[560px]">
+                    <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow overflow-hidden flex flex-col h-[70vh] max-h-[560px]">
                         <div className="flex items-center gap-2.5 px-4 py-3.5 border-b border-slate-200 dark:border-white/5 shrink-0">
                             <div className="w-8 h-8 rounded-lg bg-electric-violet/10 flex items-center justify-center text-electric-violet shrink-0">
                                 <LifeBuoy size={15} />

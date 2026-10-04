@@ -431,7 +431,7 @@ export const ContractBuilder: React.FC = () => {
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="p-1 rounded-[1.5rem] bg-[#18181b] border border-white/10 shadow-2xl relative group h-[480px] flex flex-col"
+                            className="p-1 rounded-[1.5rem] bg-[#18181b] border border-white/10 shadow-2xl relative group h-[70vh] max-h-[480px] flex flex-col"
                         >
                             <div className="flex items-center gap-2 px-6 py-4 border-b border-white/5">
                                 <Code2 size={18} className="text-slate-500"/>
