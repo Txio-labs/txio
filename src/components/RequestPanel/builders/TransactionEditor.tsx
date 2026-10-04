@@ -8,6 +8,7 @@ import { TransactionBuilder } from './TransactionBuilder';
 import { EvmTransactionBuilder } from './EvmTransactionBuilder';
 import { SolanaTransactionBuilder } from './SolanaTransactionBuilder';
 import { StellarTransactionBuilder } from './StellarTransactionBuilder';
+import { AptosTransactionBuilder } from './AptosTransactionBuilder';
 import { TxTracker } from '../response/TxTracker';
 import { RequestOutcome, TxProgress } from '../response/types';
 
@@ -44,13 +45,8 @@ export const TransactionEditor: React.FC<TransactionEditorProps> = ({
 }) => {
   const chain = getTxChain(request);
 
-  // Aptos and Cardano have no transaction-builder form yet (Aptos has a
-  // working adapter but no UI component; Cardano has neither) — keep them
-  // out of this selector so switching a TRANSACTION request's chain here
-  // can't land on a chain with nothing to render. They still work as RPC
-  // requests via RPC_CHAINS in the Params tab, and Aptos transactions can
-  // already be built via the API/collections once its builder ships.
-  const TX_BUILDER_CHAINS = RPC_CHAINS.filter((c) => c.id !== 'aptos' && c.id !== 'cardano');
+  // Every chain in RPC_CHAINS has a ChainAdapter and a builder form below.
+  const TX_BUILDER_CHAINS = RPC_CHAINS;
 
   const form = (() => {
     switch (chain) {
@@ -60,6 +56,8 @@ export const TransactionEditor: React.FC<TransactionEditorProps> = ({
         return <SolanaTransactionBuilder request={request} activeAddress={activeAddress} onChange={onChange} />;
       case 'stellar':
         return <StellarTransactionBuilder request={request} activeAddress={activeAddress} isReadOnly={isReadOnly} onChange={onChange} />;
+      case 'aptos':
+        return <AptosTransactionBuilder request={request} activeAddress={activeAddress} network={network} isReadOnly={isReadOnly} onChange={onChange} />;
       case 'sui':
         return (
           <TransactionBuilder
@@ -72,10 +70,10 @@ export const TransactionEditor: React.FC<TransactionEditorProps> = ({
           />
         );
       default:
-        // Aptos/Cardano: no builder form yet — surfaced via the disabled
+        // Aptos: no builder form yet — surfaced via the disabled
         // "Transaction" option in NewRequestPage rather than reachable here
         // in normal use, but handled explicitly in case an older saved
-        // request already has one of these chains.
+        // request already has this chain.
         return (
           <div className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-white/10 text-center text-xs text-slate-500">
             Transaction building isn't available for {chain} yet.

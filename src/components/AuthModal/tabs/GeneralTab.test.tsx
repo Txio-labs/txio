@@ -18,7 +18,9 @@ vi.mock('../../../lib/store', () => ({
 
 vi.mock('../../../services/api', () => ({
     API_BASE: 'https://api.example.com/api/v1',
-    apiService: { getToken: () => null },
+    apiService: {
+        startOAuthLink: vi.fn(async (provider: string) => `https://provider.example/${provider}/authorize`),
+    },
 }));
 
 import { GeneralTab } from './GeneralTab';
@@ -47,7 +49,7 @@ describe('GeneralTab', () => {
     });
 
     describe('GitHub connect button', () => {
-        it('github_connect_shows_coming_soon_without_navigating', () => {
+        it('github_connect_starts_the_link_flow_and_navigates_to_the_provider', async () => {
             const mockLocation = { href: '' };
             const originalLocation = window.location;
             Object.defineProperty(window, 'location', { value: mockLocation, configurable: true });
@@ -55,8 +57,10 @@ describe('GeneralTab', () => {
             render(<GeneralTab user={mockUser} onLogout={mockLogout} />);
             fireEvent.click(screen.getByRole('button', { name: 'Connect GitHub' }));
 
-            expect(showToast).toHaveBeenCalledWith('GitHub linking is coming soon', 'info');
-            expect(mockLocation.href).toBe('');
+            await waitFor(() => {
+                expect(mockLocation.href).toBe('https://provider.example/github/authorize');
+            });
+            expect(showToast).not.toHaveBeenCalled();
 
             Object.defineProperty(window, 'location', { value: originalLocation, configurable: true });
         });

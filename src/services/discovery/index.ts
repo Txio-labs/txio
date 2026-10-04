@@ -2,6 +2,7 @@ import type { ChainId, Network } from '../../types';
 import type { ChainDiscoveryAdapter, DiscoveredPackage } from './types';
 import { DiscoveryError } from './types';
 import { suiDiscoveryAdapter } from './suiDiscovery';
+import { aptosDiscoveryAdapter } from './aptosDiscovery';
 import { getCachedPackage, setCachedPackage } from './cache';
 
 export type {
@@ -22,7 +23,8 @@ export { DiscoveryError } from './types';
  * clearly rather than the caller silently getting `undefined` back.
  */
 const DISCOVERY_ADAPTERS: Partial<Record<ChainId, ChainDiscoveryAdapter>> = {
-    sui: suiDiscoveryAdapter
+    sui: suiDiscoveryAdapter,
+    aptos: aptosDiscoveryAdapter
 };
 
 export const getDiscoveryAdapter = (chain: ChainId): ChainDiscoveryAdapter => {

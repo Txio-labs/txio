@@ -74,6 +74,7 @@ export const ContextToolbar: React.FC<ContextToolbarProps> = ({
             >
               <Filter size={14}/>
             </button>
+            {onAddCollection && (
             <button 
               onClick={onAddCollection} 
               className="p-2 text-slate-500 hover:text-electric-violet rounded-xl hover:bg-slate-100 dark:hover:bg-white/[0.05] transition-all border border-transparent hover:border-slate-200 dark:hover:border-white/5" 
@@ -81,6 +82,7 @@ export const ContextToolbar: React.FC<ContextToolbarProps> = ({
             >
               <FolderPlus size={16}/>
             </button>
+            )}
           </>
         )}
         {mode === 'env' && (

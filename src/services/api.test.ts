@@ -28,13 +28,13 @@ const jsonResponse = (
 
 describe('apiService', () => {
     beforeEach(() => {
-        apiService.setToken(null);
+        apiService.setSessionHint(false);
         fetchMock.mockReset();
         vi.stubGlobal('fetch', fetchMock);
     });
 
     afterEach(() => {
-        apiService.setToken(null);
+        apiService.setSessionHint(false);
         vi.unstubAllGlobals();
     });
 
@@ -95,12 +95,11 @@ describe('apiService', () => {
             }
         });
         expect(
-            localStorage.getItem('txio_token')
-        ).toBe('session-token');
+            localStorage.getItem('txio_session_hint')
+        ).toBe('1');
     });
 
-    it('adds the bearer token to authenticated requests', async () => {
-        apiService.setToken('session-token');
+    it('sends cookies and the CSRF header instead of a bearer token', async () => {
         fetchMock.mockResolvedValue(
             jsonResponse({
                 id: 'user-1',
@@ -117,9 +116,16 @@ describe('apiService', () => {
             options?.headers
         );
 
-        expect(
-            headers.get('Authorization')
-        ).toBe('Bearer session-token');
+        expect(options?.credentials).toBe('include');
+        expect(headers.get('X-Requested-With')).toBe('txio');
+        expect(headers.get('Authorization')).toBeNull();
+    });
+
+    it('deletes a legacy localStorage JWT on construction', async () => {
+        localStorage.setItem('txio_token', 'old.jwt.value');
+        vi.resetModules();
+        await import('./api');
+        expect(localStorage.getItem('txio_token')).toBeNull();
     });
 
     it('converts JSON error responses into ApiError instances', async () => {

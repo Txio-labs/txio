@@ -664,19 +664,6 @@ export const TerminalPanel: React.FC = () => {
                                                 </span>
                                             )}
                                             <div className="ml-auto flex items-center gap-1 shrink-0">
-                                                {log.type === 'error' && (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            appStore.setPendingAiPrompt(`Explain this terminal error:\n\n${log.action}`);
-                                                            appStore.openTab('ai_chat');
-                                                        }}
-                                                        className="p-1 rounded text-slate-600 hover:text-electric-violet opacity-0 group-hover:opacity-100 transition-opacity"
-                                                        title="Ask AI to explain this error"
-                                                    >
-                                                        <Sparkles size={12} />
-                                                    </button>
-                                                )}
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
@@ -720,19 +707,6 @@ export const TerminalPanel: React.FC = () => {
                                         <span className="text-slate-800 dark:text-white/90 whitespace-pre-wrap break-words">{log.action}</span>
                                         {log.target && <span className="ml-2 text-electric-violet/60 italic">({log.target})</span>}
                                     </span>
-                                    {log.type === 'error' && (
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                appStore.setPendingAiPrompt(`Explain this terminal error:\n\n${log.action}`);
-                                                appStore.openTab('ai_chat');
-                                            }}
-                                            className="shrink-0 p-1 rounded text-slate-600 hover:text-electric-violet opacity-0 group-hover:opacity-100 transition-opacity"
-                                            title="Ask AI to explain this error"
-                                        >
-                                            <Sparkles size={12} />
-                                        </button>
-                                    )}
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();

@@ -234,6 +234,29 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
   const toInvalid = params.to.trim() !== '' && !isAddress(params.to.trim());
   const listed = groups ? (tab === 'read' ? groups.read : groups.write) : [];
 
+  if (params.deploy) {
+    // A contract creation has no recipient and no function to pick: show what
+    // will be created. Simulate, review and sign work the same as any transaction.
+    const bytes = Math.max(0, (params.data.trim().length - 2) / 2);
+    return (
+      <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black/40 space-y-3">
+        <div className="text-sm font-bold text-slate-700 dark:text-slate-200">Contract deployment</div>
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs text-slate-500">
+          <dt>Network</dt>
+          <dd className="font-mono text-slate-700 dark:text-slate-300">{wagmiConfig.chains.find((c) => c.id === params.chainId)?.name ?? `Chain ${params.chainId}`}</dd>
+          <dt>Creation code</dt>
+          <dd className="font-mono text-slate-700 dark:text-slate-300">{bytes} bytes</dd>
+          <dt>Value</dt>
+          <dd className="font-mono text-slate-700 dark:text-slate-300">{params.value || '0'}</dd>
+        </dl>
+        <p className="text-[11px] text-slate-500">
+          Made by the Contract Builder from your compiled source. Use Simulate to run the creation code on the
+          chain, then sign with your wallet. To change it, recompile in the Contract Builder.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black/40 space-y-5">
       <div className="flex items-center justify-between">

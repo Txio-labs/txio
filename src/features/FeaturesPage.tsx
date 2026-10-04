@@ -2,8 +2,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { 
-    Zap, Shield, Globe, Cpu, Layers, Terminal, 
-    Database, Activity, Lock, ArrowRight, CheckCircle2,
+    Shield, Globe, Cpu, Layers, Terminal, 
+    Database, Activity, ArrowRight, CheckCircle2,
     BarChart3, MousePointer2, Share2, Rocket
 } from 'lucide-react';
 import { appStore, useAppStore } from '@/lib/store';
@@ -86,23 +86,15 @@ export const FeaturesPage: React.FC<
             icon: Cpu,
             color: "text-emerald-400",
             bg: "bg-emerald-400/10"
-        },
-        {
-            title: "Always-on connections",
-            desc: "Persistent WebSockets to fullnodes around the world. Events stream in, blocks confirm without you refreshing anything.",
-            icon: Zap,
-            color: "text-amber-400",
-            bg: "bg-amber-400/10"
         }
     ];
 
     const gridFeatures = [
         { title: "Object Explorer", desc: "Inspect on-chain state and ownership as it changes.", icon: Database },
-        { title: "Privacy Proxy", desc: "IP masking for the RPC providers that don't need to know who you are.", icon: Lock },
         { title: "Atomic Batching", desc: "Compose multiple operations into one transaction.", icon: Layers },
-        { title: "Team Sync", desc: "Shared workspaces and collections — your team works on one source of truth.", icon: Share2 },
+        { title: "Team Sync", desc: "Shared collections with comments.", icon: Share2 },
         { title: "Live Metrics", desc: "Node health and throughput, updating in real time.", icon: Activity },
-        { title: "Multi-Chain IDE", desc: "Sui, Solana, EVM — one click between them.", icon: Globe }
+        { title: "Multi-Chain IDE", desc: "Sui, Ethereum/EVM, Solana, Aptos, Soroban — one workflow across all of them.", icon: Globe }
     ];
 
     return (

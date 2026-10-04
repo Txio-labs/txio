@@ -19,6 +19,8 @@ export interface TxResult {
     result: unknown;
     duration: number;
     status: number;
+    /** Names replaced by addresses before this ran, so the review can show "name → address". */
+    resolvedNames?: { name: string; address: string }[];
 }
 
 export interface TxContext {

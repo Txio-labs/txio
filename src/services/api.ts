@@ -15,7 +15,12 @@ import {
     AdminRpcLog,
     AdminEndpointStats,
     NotificationPreferences,
-    Workspace
+    Workspace,
+    WorkspaceRole,
+    WorkspaceMember,
+    WorkspaceInvite,
+    WorkspaceInvitePreview,
+    SharedComment
 } from '../types';
 import { DEFAULT_MOVE_CALL } from '../lib/constants';
 import { normalizeNotificationPreferences } from '../lib/appConfig';
@@ -29,6 +34,7 @@ import {
     OfframpQuoteRequest,
     OfframpQuoteResponse
 } from '../lib/bridge';
+import { hasSessionHint, setSessionHint } from '@/lib/sessionHint';
 
 // NOTE: vercel.json's Content-Security-Policy connect-src is a static value
 // (Vercel parses vercel.json at deploy time and this app builds with
@@ -115,6 +121,8 @@ interface BackendUserProfile {
     notificationPreferences?: BackendNotificationPreferences | null;
     github_account?: BackendGitHubAccount | null;
     githubAccount?: BackendGitHubAccount | null;
+    x_account?: { id: string; username: string } | null;
+    xAccount?: { id: string; username: string } | null;
     google_linked?: boolean;
     googleLinked?: boolean;
     is_admin?: boolean;
@@ -186,6 +194,8 @@ export interface BackendWebhookSubscription {
     url: string;
     events: string[];
     is_active: boolean;
+    /** False for a subscription whose secret cannot be recovered: rotate it to get verifiable signatures. */
+    can_sign?: boolean;
     last_delivered_at?: string | null;
     last_delivery_error?: string | null;
     created_at: string;
@@ -228,6 +238,7 @@ interface BackendWorkspace {
     type?: 'Personal' | 'Team' | null;
     active_env_id?: string | null;
     activeEnvId?: string | null;
+    role?: 'owner' | 'editor' | 'viewer' | null;
 }
 
 interface BackendRecipeTemplate {
@@ -284,22 +295,6 @@ export interface CommandExecutionResponse {
     stderr?: string | null;
     exitCode?: number | null;
     durationMs?: number | null;
-}
-
-export interface AiChatMessage {
-    role: 'user' | 'model';
-    text: string;
-}
-
-export interface AiToolCall {
-    name: string;
-    args: Record<string, unknown>;
-}
-
-export interface AiChatResponse {
-    role: 'model';
-    text: string;
-    toolCall?: AiToolCall | null;
 }
 
 export class ApiError extends Error {
@@ -387,6 +382,7 @@ const normalizeUserProfile = (
                 )
             ),
         githubAccount: user.githubAccount || user.github_account || undefined,
+        xAccount: user.xAccount || user.x_account || undefined,
         googleLinked: Boolean(user.googleLinked ?? user.google_linked),
         isAdmin: Boolean(user.isAdmin ?? user.is_admin)
     };
@@ -547,9 +543,44 @@ const normalizeWorkspace = (
         activeEnvId:
             workspace.activeEnvId ||
             workspace.active_env_id ||
-            ''
+            '',
+        ...(workspace.role ? { role: workspace.role } : {})
     };
 };
+
+interface BackendMember {
+    id?: string | null;
+    email: string;
+    role: WorkspaceRole;
+    status: 'owner' | 'active' | 'pending';
+    expires_at?: string | null;
+}
+
+const normalizeMember = (m: BackendMember): WorkspaceMember => ({
+    id: m.id ?? null,
+    email: m.email,
+    role: m.role,
+    status: m.status,
+    expiresAt: m.expires_at ?? null
+});
+
+interface BackendComment {
+    id: string;
+    target_id: string;
+    author_email: string;
+    body: string;
+    created_at: string;
+    can_delete: boolean;
+}
+
+const normalizeComment = (c: BackendComment): SharedComment => ({
+    id: c.id,
+    targetId: c.target_id,
+    authorEmail: c.author_email,
+    body: c.body,
+    createdAt: c.created_at,
+    canDelete: c.can_delete
+});
 
 const isCommandExecutionState = (
     value: unknown
@@ -610,82 +641,63 @@ const isCommandExecutionResponse = (
     );
 };
 
-const isAiToolCall = (
-    value: unknown
-): value is AiToolCall => {
-    if (!value || typeof value !== 'object') {
-        return false;
-    }
-
-    const toolCall =
-        value as Record<string, unknown>;
-
-    return (
-        typeof toolCall.name === 'string' &&
-        !!toolCall.args &&
-        typeof toolCall.args === 'object' &&
-        !Array.isArray(toolCall.args)
-    );
-};
-
-const isAiChatResponse = (
-    value: unknown
-): value is AiChatResponse => {
-    if (!value || typeof value !== 'object') {
-        return false;
-    }
-
-    const response =
-        value as Record<string, unknown>;
-    const toolCall =
-        response.toolCall ??
-        response.tool_call;
-
-    return (
-        response.role === 'model' &&
-        typeof response.text === 'string' &&
-        (typeof toolCall === 'undefined' ||
-            toolCall === null ||
-            isAiToolCall(toolCall))
-    );
-};
-
 const sleep = (ms: number) =>
     new Promise((resolve) =>
         setTimeout(resolve, ms)
     );
 
 class ApiService {
-    private token: string | null =
-        typeof window !==
-        'undefined'
-            ? localStorage.getItem(
-                  'txio_token'
-              )
-            : null;
-
-    setToken(token: string | null) {
-        this.token = token;
-
-        if (
-            typeof window !==
-            'undefined'
-        ) {
-            if (token) {
-                localStorage.setItem(
-                    'txio_token',
-                    token
-                );
-            } else {
-                localStorage.removeItem(
-                    'txio_token'
-                );
+    // The session itself is an HttpOnly cookie set by the backend; script
+    // never sees the JWT. This flag only records "a session probably exists"
+    // so the app can pick the right first screen before the profile request
+    // returns. It is not a credential.
+    constructor() {
+        if (typeof window !== 'undefined') {
+            try {
+                // A JWT stored by earlier versions is readable by any XSS:
+                // delete it rather than keep using it.
+                localStorage.removeItem('txio_token');
+            } catch {
+                /* storage unavailable */
             }
         }
     }
 
-    getToken(): string | null {
-        return this.token;
+    hasSessionHint(): boolean {
+        return hasSessionHint();
+    }
+
+    setSessionHint(active: boolean) {
+        setSessionHint(active);
+    }
+
+    /** Ends the server-side session (deletes it, clears the cookie). */
+    async logout(): Promise<void> {
+        try {
+            await this.request<unknown>('/auth/logout', { method: 'POST' });
+        } catch {
+            // Local sign-out proceeds even if the server is unreachable.
+        } finally {
+            this.setSessionHint(false);
+        }
+    }
+
+    /** Starts a provider "connect" flow for the signed-in user; returns the provider URL. */
+    async startOAuthLink(provider: 'google' | 'github' | 'x'): Promise<string> {
+        const data = await this.request<{ url: string }>(
+            `/auth/${provider}/link/start`,
+            { method: 'POST' }
+        );
+        return data.url;
+    }
+
+    async getOAuthProviders(): Promise<{ google: boolean; github: boolean; x: boolean }> {
+        try {
+            const data = await this.request<{ google: boolean; github: boolean; x?: boolean }>('/auth/providers');
+            return { google: data.google, github: data.github, x: Boolean(data.x) };
+        } catch {
+            return { google: false, github: false, x: false };
+        }
     }
 
     private async request<T>(
@@ -696,12 +708,9 @@ class ApiService {
             options.headers || {}
         );
 
-        if (this.token) {
-            headers.set(
-                'Authorization',
-                `Bearer ${this.token}`
-            );
-        }
+        // Cookie auth: the browser attaches the session cookie; the custom
+        // header is the CSRF check the backend requires on unsafe methods.
+        headers.set('X-Requested-With', 'txio');
 
         if (
             options.body &&
@@ -722,7 +731,8 @@ class ApiService {
                 `${API_BASE}${path}`,
                 {
                     ...options,
-                    headers
+                    headers,
+                    credentials: 'include'
                 }
             );
         } catch (error) {
@@ -836,7 +846,7 @@ class ApiService {
                 }
             );
 
-        this.setToken(data.token);
+        this.setSessionHint(true);
 
         return {
             token: data.token,
@@ -863,7 +873,7 @@ class ApiService {
                 }
             );
 
-        this.setToken(data.token);
+        this.setSessionHint(true);
 
         return {
             token: data.token,
@@ -956,6 +966,10 @@ class ApiService {
         );
     }
 
+    async unlinkX(): Promise<BackendMessageResponse> {
+        return this.request<BackendMessageResponse>('/auth/x/unlink', { method: 'POST' });
+    }
+
     async unlinkGithub(): Promise<BackendMessageResponse> {
         return this.request<BackendMessageResponse>(
             '/auth/github/unlink',
@@ -963,8 +977,10 @@ class ApiService {
         );
     }
 
+    /** `otp` is the code sent to `newEmail` via requestOtp(newEmail). Ends all sessions on success. */
     async updateEmail(
-        newEmail: string
+        newEmail: string,
+        otp: string
     ): Promise<UserProfile> {
         const data =
             await this.request<BackendWrappedUserResponse>(
@@ -973,7 +989,8 @@ class ApiService {
                     method: 'POST',
                     body: JSON.stringify({
                         new_email:
-                            newEmail
+                            newEmail,
+                        otp
                     })
                 }
             );
@@ -1041,12 +1058,14 @@ class ApiService {
         return normalizeUserProfile(data.user);
     }
 
-    async deleteUser(): Promise<UserProfile> {
+    /** `otp` is the code sent to the account email via requestOtp(email). */
+    async deleteUser(otp: string): Promise<UserProfile> {
         const data =
             await this.request<BackendWrappedUserResponse>(
                 '/auth/delete-user',
                 {
-                    method: 'POST'
+                    method: 'POST',
+                    body: JSON.stringify({ otp })
                 }
             );
 
@@ -1358,56 +1377,6 @@ class ApiService {
         return normalizeSavedRequest(data, collectionId);
     }
 
-    async sendAiChat(
-        messages: AiChatMessage[],
-        options: {
-            signal?: AbortSignal;
-        } = {}
-    ): Promise<AiChatResponse> {
-        let response: unknown;
-
-        try {
-            response =
-                await this.request<unknown>(
-                    '/ai/chat',
-                    {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            messages
-                        }),
-                        signal: options.signal
-                    }
-                );
-        } catch (error) {
-            if (
-                error instanceof ApiError &&
-                error.status === 404
-            ) {
-                throw new ApiError(
-                    'AI endpoint not found. Restart the backend so /api/v1/ai/chat is available.',
-                    404
-                );
-            }
-
-            throw error;
-        }
-
-        if (!isAiChatResponse(response)) {
-            throw new ApiError(
-                'AI response was malformed.',
-                502
-            );
-        }
-
-        return {
-            role: 'model',
-            text: response.text,
-            toolCall:
-                response.toolCall ??
-                null
-        };
-    }
-
     // Terminal
     async startCommandExecution(
         command: string,
@@ -1636,6 +1605,70 @@ class ApiService {
         await this.request(`/scheduled-tasks/${id}/cancel`, { method: 'POST' });
     }
 
+    // Workspace members, invitations and shared comments
+    async getWorkspaceMembers(workspaceId: string): Promise<WorkspaceMember[]> {
+        const data = await this.request<BackendMember[]>(`/workspaces/${workspaceId}/members`);
+        return data.map(normalizeMember);
+    }
+
+    async inviteWorkspaceMember(workspaceId: string, email: string, role: 'viewer' | 'editor'): Promise<WorkspaceInvite> {
+        const data = await this.request<{ member: BackendMember; email_sent: boolean; accept_link: string }>(
+            `/workspaces/${workspaceId}/members/invite`,
+            { method: 'POST', body: JSON.stringify({ email, role }) }
+        );
+        return { member: normalizeMember(data.member), emailSent: data.email_sent, acceptLink: data.accept_link };
+    }
+
+    async updateWorkspaceMemberRole(workspaceId: string, memberId: string, role: 'viewer' | 'editor'): Promise<void> {
+        await this.request(`/workspaces/${workspaceId}/members/${memberId}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ role })
+        });
+    }
+
+    async removeWorkspaceMember(workspaceId: string, memberId: string): Promise<void> {
+        await this.request(`/workspaces/${workspaceId}/members/${memberId}`, { method: 'DELETE' });
+    }
+
+    async leaveWorkspace(workspaceId: string): Promise<void> {
+        await this.request(`/workspaces/${workspaceId}/leave`, { method: 'POST' });
+    }
+
+    /** Works without a session: the invitee may not have an account yet. */
+    async previewWorkspaceInvite(token: string): Promise<WorkspaceInvitePreview> {
+        const data = await this.request<{ workspace_name: string; invited_email: string; role: WorkspaceRole }>(
+            `/workspaces/invites/preview?token=${encodeURIComponent(token)}`
+        );
+        return { workspaceName: data.workspace_name, invitedEmail: data.invited_email, role: data.role };
+    }
+
+    async acceptWorkspaceInvite(token: string): Promise<Workspace> {
+        const data = await this.request<BackendWorkspace>('/workspaces/invites/accept', {
+            method: 'POST',
+            body: JSON.stringify({ token })
+        });
+        return normalizeWorkspace(data);
+    }
+
+    async getSharedComments(workspaceId: string, targetId: string): Promise<SharedComment[]> {
+        const data = await this.request<BackendComment[]>(
+            `/workspaces/${workspaceId}/comments?target=${encodeURIComponent(targetId)}`
+        );
+        return data.map(normalizeComment);
+    }
+
+    async addSharedComment(workspaceId: string, targetId: string, body: string): Promise<SharedComment> {
+        const data = await this.request<BackendComment>(`/workspaces/${workspaceId}/comments`, {
+            method: 'POST',
+            body: JSON.stringify({ target_id: targetId, body })
+        });
+        return normalizeComment(data);
+    }
+
+    async deleteSharedComment(workspaceId: string, commentId: string): Promise<void> {
+        await this.request(`/workspaces/${workspaceId}/comments/${commentId}`, { method: 'DELETE' });
+    }
+
     // Webhooks
     async createWebhook(url: string, events: string[]): Promise<{ id: string; url: string; events: string[]; secret: string }> {
         return this.request('/webhooks', {
@@ -1646,6 +1679,11 @@ class ApiService {
 
     async listWebhooks(): Promise<BackendWebhookSubscription[]> {
         return this.request<BackendWebhookSubscription[]>('/webhooks');
+    }
+
+    /** Issues a new signing secret (returned once); the previous one stops working. */
+    async rotateWebhookSecret(id: string): Promise<{ secret: string }> {
+        return this.request(`/webhooks/${id}/rotate-secret`, { method: 'POST' });
     }
 
     async deleteWebhook(id: string): Promise<void> {

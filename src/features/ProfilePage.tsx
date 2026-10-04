@@ -17,10 +17,11 @@ import {
     LogOut,
     Loader2,
 } from 'lucide-react';
-import { Github } from '@/components/icons/BrandIcons';
+import { Github, XLogo } from '@/components/icons/BrandIcons';
 import { useAppStore, appStore } from '@/lib/store';
 import { normalizeNotificationPreferences } from '@/lib/appConfig';
 import { apiService } from '@/services/api';
+import { connectProvider } from '@/lib/connectProvider';
 import { Avatar } from '../components/ui/Avatar';
 import type { ActiveSession, NotificationPreferences, UserProfile } from '../types';
 
@@ -546,15 +547,16 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
     const { state: sessionsState, revokingId, retry: retrySessions, revoke: revokeSession } =
         useActiveSessions();
 
-    // After the GitHub "Connect" OAuth round trip, the backend redirects back
-    // here with #github_connected=1 (a fragment, not a query param, so it
-    // never reaches server logs). Refetch the profile so the newly linked
-    // account shows up without requiring a manual reload.
+    // After a "Connect" OAuth round trip (GitHub, Google or X) the backend
+    // redirects back here with #<provider>_connected=1 (a fragment, so it never
+    // reaches server logs). Refetch the profile so the new link shows up.
     useEffect(() => {
         if (typeof window === 'undefined') return;
-        if (!window.location.hash.includes('github_connected=1')) return;
+        const match = window.location.hash.match(/(?:^#|&)(github|google|x)_connected=1/);
+        if (!match) return;
+        const label = { github: 'GitHub', google: 'Google', x: 'X' }[match[1] as 'github' | 'google' | 'x'];
 
-        const remainingHash = window.location.hash.replace(/#?github_connected=1&?/, '');
+        const remainingHash = window.location.hash.replace(/(?:^#|&)(github|google|x)_connected=1/, '').replace(/^#&/, '#');
         const url = new URL(window.location.href);
         url.hash = remainingHash && remainingHash !== '#' ? remainingHash : '';
         window.history.replaceState({}, '', url.toString());
@@ -562,7 +564,7 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
         apiService.getProfile()
             .then((refreshed) => {
                 appStore.updateUser(refreshed);
-                appStore.showToast('GitHub account connected', 'success');
+                appStore.showToast(`${label} account connected`, 'success');
             })
             .catch(() => {
                 appStore.showToast('Connected, but failed to refresh profile — reload to see it', 'error');
@@ -761,7 +763,7 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
                                             {!user.githubAccount && (
                                                 <button
                                                     type="button"
-                                                    onClick={() => appStore.showToast('GitHub linking is coming soon', 'info')}
+                                                    onClick={() => void connectProvider('github')}
                                                     className="ml-auto text-[11px] text-electric-violet hover:opacity-80 font-medium transition-colors"
                                                 >
                                                     Connect →
@@ -788,6 +790,39 @@ const ProfilePageContent: React.FC<ProfilePageContentProps> = ({ user, historyCo
                                             </button>
                                         </div>
                                     )}
+                                    <Field label="X" hint="Sign in with X. X shares no email, so it can only sign in this account.">
+                                        <div className={`${readonlyInputClass} flex items-center gap-2`}>
+                                            <XLogo size={14} className={user.xAccount ? "text-slate-800 dark:text-slate-200 shrink-0" : "text-slate-400 shrink-0"} />
+                                            <span className={user.xAccount ? "truncate text-slate-800 dark:text-slate-200" : "truncate text-slate-500"}>
+                                                {user.xAccount ? `@${user.xAccount.username}` : "Not connected"}
+                                            </span>
+                                            {!user.xAccount ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => void connectProvider('x')}
+                                                    className="ml-auto text-[11px] text-electric-violet hover:opacity-80 font-medium transition-colors"
+                                                >
+                                                    Connect →
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    onClick={async () => {
+                                                        try {
+                                                            await apiService.unlinkX();
+                                                            appStore.updateUser({ xAccount: undefined });
+                                                            appStore.showToast("X unlinked", "success");
+                                                        } catch {
+                                                            appStore.showToast("Failed to unlink X", "error");
+                                                        }
+                                                    }}
+                                                    className="ml-auto text-[11px] text-rose-400 hover:text-rose-300 transition-colors"
+                                                >
+                                                    Unlink
+                                                </button>
+                                            )}
+                                        </div>
+                                    </Field>
                                     <Field label="Timezone" hint="Detected from your browser." htmlFor="profile-tz">
                                         <input
                                             id="profile-tz"

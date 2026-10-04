@@ -524,7 +524,7 @@ export const Layout: React.FC<LayoutProps> = ({
                                             onSelect={() => onSelectTab && onSelectTab(tab.id)}
                                             onClose={() => onCloseTab && onCloseTab(tab.id)}
                                             onRename={(newTitle) => onRenameTab && onRenameTab(tab.id, newTitle)}
-                                            icon={tab.type === 'ptb' || (tab.type === 'rpc' && tab.data?.type === RequestType.TRANSACTION) ? <Layers size={12}/> : tab.type === 'rpc' ? <Command size={12}/> : tab.type === 'ai_chat' ? <Sparkles size={12} className="text-electric-violet"/> : undefined}
+                                            icon={tab.type === 'ptb' || (tab.type === 'rpc' && tab.data?.type === RequestType.TRANSACTION) ? <Layers size={12}/> : tab.type === 'rpc' ? <Command size={12}/> : undefined}
                                         />
                                     ))}
                                 </div>

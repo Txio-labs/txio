@@ -140,7 +140,7 @@ export const getEvmChain = (id: number | undefined): EvmChainInfo =>
 // RPC method suggestions, keyed by chain. Partial (not `Record<ChainId, ...>`)
 // because not every ChainId speaks JSON-RPC with known methods — Aptos
 // exposes a REST API rather than JSON-RPC (see APTOS_NETWORKS above) and
-// Cardano has no adapter yet, so both are intentionally absent. Callers
+// is intentionally absent. Callers
 // (RPCBuilder.tsx, RawEditor.tsx, CommandPalette.tsx) fall back to an empty
 // list rather than crashing on the missing entry.
 export const COMMON_RPC_METHODS: Partial<Record<ChainId, string[]>> = {
@@ -218,8 +218,8 @@ export const ADDRESS_FIRST_PARAM_METHODS: ReadonlySet<string> = new Set([
 
 // Pre-filled parameter templates for known RPC methods, keyed by chain.
 // Used when the user picks a method with empty params and via the "Insert template" action.
-// Partial for the same reason as COMMON_RPC_METHODS above — Aptos/Cardano
-// have no entry here yet.
+// Partial for the same reason as COMMON_RPC_METHODS above — Aptos
+// has no entry here yet.
 export const RPC_METHOD_TEMPLATES: Readonly<Partial<Record<ChainId, Readonly<Record<string, ReadonlyArray<unknown>>>>>> = {
   sui: {
     suix_getOwnedObjects: [

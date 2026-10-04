@@ -1,4 +1,5 @@
 
+import { NAME_RESOLUTION_FAILED, resolveRequestNames } from '@/services/nameResolution';
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAppStore, appStore } from '@/lib/store';
@@ -213,6 +214,19 @@ export const RPCBuilder: React.FC = () => {
                         ? err.message
                         : `Could not resolve ${originalName}`;
                 appStore.pushLog(`SuiNS resolution failed: ${message}`, 'cli', 'error');
+                setIsLoading(false);
+                return;
+            }
+        }
+
+        // ENS / Aptos Names / federation names in RPC params, for their own chain only.
+        if (resolved.type === RequestType.RPC && resolved.rpcParams.chain && resolved.rpcParams.chain !== 'sui') {
+            try {
+                const named = await resolveRequestNames(resolved, network, resolved.rpcParams.chain);
+                resolved.rpcParams = named.request.rpcParams;
+            } catch (err) {
+                const message = err instanceof Error && err.message.trim() ? err.message : 'Name resolution failed';
+                appStore.pushLog(`Name resolution failed (${NAME_RESOLUTION_FAILED}): ${message}`, 'cli', 'error');
                 setIsLoading(false);
                 return;
             }

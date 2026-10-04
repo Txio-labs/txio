@@ -1,3 +1,4 @@
+import { hasSessionHint, setSessionHint } from '@/lib/sessionHint';
 import {
     TabItem,
     Workspace,
@@ -593,71 +594,6 @@ const hydrateWorkspaceState = async (
     return workspaces;
 };
 
-const decodeStoredTokenClaims = (
-    token: string
-) => {
-    if (typeof window === 'undefined') {
-        return null;
-    }
-
-    try {
-        const payload = token.split('.')[1];
-
-        if (!payload) {
-            return null;
-        }
-
-        const normalizedPayload =
-            payload
-                .replace(/-/g, '+')
-                .replace(/_/g, '/')
-                .padEnd(
-                    Math.ceil(
-                        payload.length / 4
-                    ) * 4,
-                    '='
-                );
-
-        return JSON.parse(
-            window.atob(
-                normalizedPayload
-            )
-        ) as {
-            sub?: string;
-            email?: string;
-        };
-    } catch {
-        return null;
-    }
-};
-
-const buildUserFromToken = (
-    token: string
-): UserProfile | null => {
-    const claims =
-        decodeStoredTokenClaims(token);
-    const email =
-        typeof claims?.email === 'string'
-            ? claims.email
-            : '';
-    const id =
-        typeof claims?.sub === 'string'
-            ? claims.sub
-            : '';
-
-    if (!email && !id) {
-        return null;
-    }
-
-    return {
-        id: id || email,
-        email,
-        name:
-            email.split('@')[0]?.trim() ||
-            'user'
-    };
-};
-
 const isAuthFailure = (
     error: unknown
 ) => {
@@ -742,7 +678,6 @@ interface AppState {
         | 'infrastructure'
         | 'partners';
 
-    pendingAiPrompt: string | null;
 
     pendingSignup: {
         name: string;
@@ -753,9 +688,7 @@ interface AppState {
 
 // --- INITIAL STATE ---
 
-const hasToken =
-    typeof window !== 'undefined' &&
-    !!localStorage.getItem('txio_token');
+const hasToken = hasSessionHint();
 const initialSettings =
     readStoredSettings();
 const initialNetwork =
@@ -822,7 +755,6 @@ let state: AppState = {
     // restore app mode if token exists
     viewMode: hasToken ? 'app' : 'landing',
 
-    pendingAiPrompt: null,
 
     pendingSignup: null
 };
@@ -931,7 +863,6 @@ export const appStore = {
         const singletonFeatures = [
             'settings',
             'profile',
-            'ai_chat',
             'docs',
             'ecosystem',
             'features',
@@ -995,10 +926,6 @@ export const appStore = {
 
                 case 'account':
                     title = 'Profile';
-                    break;
-
-                case 'ai_chat':
-                    title = 'AI Chat';
                     break;
 
                 case 'settings':
@@ -2056,17 +1983,12 @@ export const appStore = {
                 typeof window !== 'undefined'
             ) {
                 localStorage.setItem(
-                    'txio_token',
-                    token
-                );
-
-                localStorage.setItem(
                     'txio_viewMode',
                     'app'
                 );
             }
 
-            apiService.setToken(token);
+            setSessionHint(true);
 
             const hydratedUser =
                 applyUserProfileOverrides(
@@ -2115,17 +2037,12 @@ export const appStore = {
                 typeof window !== 'undefined'
             ) {
                 localStorage.setItem(
-                    'txio_token',
-                    token
-                );
-
-                localStorage.setItem(
                     'txio_viewMode',
                     'app'
                 );
             }
 
-            apiService.setToken(token);
+            setSessionHint(true);
 
             const hydratedUser =
                 applyUserProfileOverrides(
@@ -2202,13 +2119,10 @@ export const appStore = {
     },
 
     logout() {
-        apiService.setToken(null);
+        setSessionHint(false);
+        void apiService.logout();
 
         if (typeof window !== 'undefined') {
-            localStorage.removeItem(
-                'txio_token'
-            );
-
             localStorage.removeItem(
                 'txio_viewMode'
             );
@@ -2392,15 +2306,9 @@ export const appStore = {
         if (typeof window === 'undefined')
             return;
 
-        const token =
-            localStorage.getItem(
-                'txio_token'
-            );
-
-        if (token) {
+        if (hasSessionHint()) {
             const restoredUser =
-                readStoredUser() ||
-                buildUserFromToken(token);
+                readStoredUser();
             const hydratedRestoredUser =
                 restoredUser
                     ? applyUserProfileOverrides(
@@ -2413,8 +2321,6 @@ export const appStore = {
                     hydratedRestoredUser
                 );
             }
-
-            apiService.setToken(token);
 
             state = {
                 ...state,
@@ -2486,13 +2392,7 @@ export const appStore = {
                         'Stored session is no longer valid'
                     );
 
-                    apiService.setToken(
-                        null
-                    );
-
-                    localStorage.removeItem(
-                        'txio_token'
-                    );
+                    setSessionHint(false);
 
                     localStorage.removeItem(
                         'txio_viewMode'
@@ -2711,15 +2611,6 @@ export const appStore = {
         };
 
         persistComments(newComments);
-        emit();
-    },
-
-    setPendingAiPrompt(prompt: string | null) {
-        state = {
-            ...state,
-            pendingAiPrompt: prompt
-        };
-
         emit();
     },
 

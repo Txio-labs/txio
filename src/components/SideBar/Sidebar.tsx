@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RequestItem, EnvironmentVariable, HistoryItem, CollectionNode, Workspace } from '../../types';
+import { RequestItem, EnvironmentVariable, HistoryItem, CollectionNode, Workspace, canEditWorkspace } from '../../types';
+import { MembersPanel } from '../MembersPanel';
 import { appStore } from '@/lib/store';
+import { Menu, X } from 'lucide-react';
 import { SidebarNav } from './SidebarNav';
 import { WorkspaceHeader } from './WorkspaceHeader';
 import { ContextToolbar } from './ContextToolbar';
@@ -50,6 +52,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [isWsDropdownOpen, setIsWsDropdownOpen] = useState(false);
   const [isCollectionFilterOpen, setIsCollectionFilterOpen] = useState(false);
   const [collectionFilter, setCollectionFilter] = useState('');
+  const [isMembersOpen, setIsMembersOpen] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  // Viewers can read and simulate but not create or change anything.
+  const canEdit = canEditWorkspace(currentWorkspace);
 
   const handleOpenFullHistory = () => {
     appStore.openTab('history');
@@ -72,31 +78,66 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <div className="flex h-full bg-slate-50 dark:bg-near-black border-r border-slate-200 dark:border-white/[0.06] font-sans select-none">
-      {/* Navigation Rail */}
-      <SidebarNav 
-        activeMode={mode}
-        onModeChange={(m) => setMode(m as SidebarMode)}
-        activeTabType={activeTabType}
-      />
+    <div className="relative flex h-full font-sans select-none">
+      {/* Mobile trigger: opens the explorer as an off-canvas drawer below md */}
+      <button
+        onClick={() => setIsMobileOpen(true)}
+        aria-label="Open sidebar"
+        className="md:hidden absolute top-2 left-2 z-20 p-1.5 rounded-lg bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-900 dark:hover:text-white"
+      >
+        <Menu size={16} />
+      </button>
 
-      {/* Main Content Panel */}
-      <div className="flex-1 flex flex-col min-w-0 bg-transparent relative">
-        {/* Workspace Header */}
-        <WorkspaceHeader 
-          currentWorkspace={currentWorkspace}
-          workspaces={workspaces}
-          isDropdownOpen={isWsDropdownOpen}
-          onToggleDropdown={() => setIsWsDropdownOpen(!isWsDropdownOpen)}
-          onSwitchWorkspace={onSwitchWorkspace}
-          onCreateWorkspace={onCreateWorkspace}
+      {isMobileOpen && (
+        <button
+          onClick={() => setIsMobileOpen(false)}
+          aria-label="Close sidebar"
+          className="md:hidden fixed inset-0 z-30 bg-near-black/50 animate-in fade-in duration-150"
         />
+      )}
+
+      <div
+        className={`fixed inset-y-0 left-0 z-40 md:static md:z-auto w-[280px] md:w-auto max-w-[85vw] md:max-w-none flex h-full bg-slate-50 dark:bg-near-black border-r border-slate-200 dark:border-white/[0.06] transition-transform duration-200 md:translate-x-0 ${
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {/* Navigation Rail */}
+        <SidebarNav
+          activeMode={mode}
+          onModeChange={(m) => setMode(m as SidebarMode)}
+          activeTabType={activeTabType}
+        />
+
+        {/* Main Content Panel */}
+        <div className="flex-1 flex flex-col min-w-0 bg-transparent relative">
+          <button
+            onClick={() => setIsMobileOpen(false)}
+            aria-label="Close sidebar"
+            className="md:hidden absolute top-2 right-2 z-20 p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white"
+          >
+            <X size={16} />
+          </button>
+          {/* Workspace Header */}
+          <WorkspaceHeader
+            currentWorkspace={currentWorkspace}
+            workspaces={workspaces}
+            isDropdownOpen={isWsDropdownOpen}
+            onToggleDropdown={() => setIsWsDropdownOpen(!isWsDropdownOpen)}
+            onSwitchWorkspace={onSwitchWorkspace}
+            onCreateWorkspace={onCreateWorkspace}
+            onOpenMembers={() => setIsMembersOpen(true)}
+          />
+        {!canEdit && (
+          <div className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200 dark:border-white/[0.06]">
+            View only
+          </div>
+        )}
 
         {/* Context Toolbar (Explorer section removed for collections mode) */}
         {mode !== 'collections' && (
           <ContextToolbar
             mode={mode}
-            onAddCollection={handleAddCollection}
+            onAddCollection={canEdit ? handleAddCollection : undefined}
             onAddEnvVar={handleAddEnvVar}
             filterQuery={collectionFilter}
             isFilterOpen={isCollectionFilterOpen}
@@ -125,6 +166,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onToggleExpand={onToggleExpand}
                   onSelectCollectionRequest={onSelectCollectionRequest}
                   onCreateCollection={onCreateCollection}
+                  readOnly={!canEdit}
                 />
               </motion.div>
             )}
@@ -166,7 +208,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
           </AnimatePresence>
         </div>
+        </div>
       </div>
+      {isMembersOpen && <MembersPanel workspace={currentWorkspace} onClose={() => setIsMembersOpen(false)} />}
     </div>
   );
 };

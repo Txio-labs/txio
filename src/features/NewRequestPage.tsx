@@ -11,13 +11,14 @@ import { withTxChain } from '@/services/transactionService';
 // Each chain builds transactions in its own native shape; the label says
 // what the user will actually get. Partial (not `Record<ChainId, ...>`)
 // because the TRANSACTION request type needs a ChainAdapter to build/sign —
-// Aptos and Cardano have none yet, so they're deliberately absent here and
-// the "Transaction" option is disabled for them below (RPC still works).
+// A chain without one is deliberately absent here and its
+// "Transaction" option is disabled (RPC still works).
 export const TRANSACTION_OPTIONS: Partial<Record<ChainId, { title: string; subtitle: string }>> = {
   sui: { title: 'Sui Transaction', subtitle: 'Move call, simulated then signed with your wallet' },
   evm: { title: 'EVM Contract Call', subtitle: 'Read or write a contract, or send a transfer' },
   solana: { title: 'Solana Transaction', subtitle: 'Program instruction, simulated then signed' },
   stellar: { title: 'Stellar Transaction', subtitle: 'Soroban contract call, simulated then signed' },
+  aptos: { title: 'Aptos Transaction', subtitle: 'Entry function, simulated then signed' },
 };
 
 const LAST_CHAIN_KEY = 'txio_newRequestChain';

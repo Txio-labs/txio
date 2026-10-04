@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, Check, Plus } from 'lucide-react';
+import { ChevronDown, Check, Plus, Users } from 'lucide-react';
 import { Workspace } from '../../types';
 
 const typeDot: Record<Workspace['type'], string> = {
@@ -14,6 +14,7 @@ interface WorkspaceHeaderProps {
   onToggleDropdown: () => void;
   onSwitchWorkspace: (ws: Workspace) => void;
   onCreateWorkspace: (name: string) => void;
+  onOpenMembers?: () => void;
 }
 
 export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
@@ -22,7 +23,8 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
   isDropdownOpen,
   onToggleDropdown,
   onSwitchWorkspace,
-  onCreateWorkspace
+  onCreateWorkspace,
+  onOpenMembers
 }) => {
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [newWsName, setNewWsName] = useState('');
@@ -110,7 +112,7 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
                       {ws.name}
                     </div>
                     <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-slate-400 dark:text-slate-600">
-                      {ws.type}
+                      {ws.type}{ws.role && ws.role !== 'owner' ? ` · ${ws.role}` : ''}
                     </div>
                   </div>
 
@@ -121,6 +123,15 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
           </div>
 
           <div className="p-1.5 bg-slate-50 dark:bg-white/[0.015] border-t border-slate-200 dark:border-white/[0.06]">
+            {onOpenMembers && !isCreatingWorkspace && (
+              <button
+                onClick={() => { onOpenMembers(); onToggleDropdown(); }}
+                className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm font-medium text-slate-500 dark:text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-white/[0.04] hover:text-slate-900 dark:hover:text-white"
+              >
+                <Users size={14} />
+                Members
+              </button>
+            )}
             {isCreatingWorkspace ? (
               <div className="flex items-center gap-1.5">
                 <input

@@ -4,6 +4,7 @@ import { Github, Google } from '@/components/icons/BrandIcons';
 
 import { appStore, useAppStore } from '@/lib/store';
 import { API_BASE, apiService } from '@/services/api';
+import { connectProvider } from '@/lib/connectProvider';
 import { CollectionNode } from '@/types';
 import { TabProps } from './types';
 
@@ -163,7 +164,7 @@ export const GeneralTab: React.FC<TabProps & { onLogout: () => void }> = ({ user
                                 {!user.githubAccount && (
                                     <button
                                         type="button"
-                                        onClick={() => appStore.showToast('GitHub linking is coming soon', 'info')}
+                                        onClick={() => void connectProvider('github')}
                                         aria-label="Connect GitHub"
                                         className="ml-auto text-[11px] text-electric-violet hover:opacity-80 font-medium transition-colors"
                                     >
@@ -182,13 +183,7 @@ export const GeneralTab: React.FC<TabProps & { onLogout: () => void }> = ({ user
                                 {!user.googleLinked && (
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            const linkToken = apiService.getToken();
-                                            const url = linkToken
-                                                ? `${API_BASE}/auth/google/login?link_token=${encodeURIComponent(linkToken)}`
-                                                : `${API_BASE}/auth/google/login`;
-                                            window.location.href = url;
-                                        }}
+                                        onClick={() => void connectProvider('google')}
                                         aria-label="Connect Google"
                                         className="ml-auto text-[11px] text-electric-violet hover:opacity-80 font-medium transition-colors"
                                     >
