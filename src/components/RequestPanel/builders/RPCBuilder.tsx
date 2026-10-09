@@ -516,6 +516,7 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
         <SolanaTransactionBuilder
           request={request}
           activeAddress={solanaAddress}
+          network={network}
           onChange={onChange}
         />
       ) : (

@@ -3,10 +3,13 @@ import type { ChainDiscoveryAdapter, DiscoveredPackage } from './types';
 import { DiscoveryError } from './types';
 import { suiDiscoveryAdapter } from './suiDiscovery';
 import { aptosDiscoveryAdapter } from './aptosDiscovery';
+import { solanaDiscoveryAdapter } from './solanaDiscovery';
+import { stellarDiscoveryAdapter } from './stellarDiscovery';
 import { getCachedPackage, setCachedPackage } from './cache';
 
 export type {
     ChainDiscoveryAdapter,
+    DiscoveredAccount,
     DiscoveredFunction,
     DiscoveredModule,
     DiscoveredPackage,
@@ -24,7 +27,9 @@ export { DiscoveryError } from './types';
  */
 const DISCOVERY_ADAPTERS: Partial<Record<ChainId, ChainDiscoveryAdapter>> = {
     sui: suiDiscoveryAdapter,
-    aptos: aptosDiscoveryAdapter
+    aptos: aptosDiscoveryAdapter,
+    solana: solanaDiscoveryAdapter,
+    stellar: stellarDiscoveryAdapter
 };
 
 export const getDiscoveryAdapter = (chain: ChainId): ChainDiscoveryAdapter => {

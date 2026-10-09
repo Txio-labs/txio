@@ -53,9 +53,9 @@ export const TransactionEditor: React.FC<TransactionEditorProps> = ({
       case 'evm':
         return <EvmTransactionBuilder request={request} activeAddress={activeAddress} isReadOnly={isReadOnly} onChange={onChange} />;
       case 'solana':
-        return <SolanaTransactionBuilder request={request} activeAddress={activeAddress} onChange={onChange} />;
+        return <SolanaTransactionBuilder request={request} activeAddress={activeAddress} network={network} isReadOnly={isReadOnly} onChange={onChange} />;
       case 'stellar':
-        return <StellarTransactionBuilder request={request} activeAddress={activeAddress} isReadOnly={isReadOnly} onChange={onChange} />;
+        return <StellarTransactionBuilder request={request} activeAddress={activeAddress} network={network} isReadOnly={isReadOnly} onChange={onChange} />;
       case 'aptos':
         return <AptosTransactionBuilder request={request} activeAddress={activeAddress} network={network} isReadOnly={isReadOnly} onChange={onChange} />;
       case 'sui':
@@ -76,7 +76,7 @@ export const TransactionEditor: React.FC<TransactionEditorProps> = ({
         // request already has this chain.
         return (
           <div className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-white/10 text-center text-xs text-slate-500">
-            Transaction building isn't available for {chain} yet.
+            Transaction building isn&apos;t available for {chain} yet.
           </div>
         );
     }

@@ -45,6 +45,16 @@ export interface DiscoveredTypeParameter {
     constraints: string[];
 }
 
+/** An account an instruction touches (Solana). Other chains leave `accounts` unset. */
+export interface DiscoveredAccount {
+    name: string;
+    isSigner: boolean;
+    isWritable: boolean;
+    /** Fixed address declared by the program's IDL (e.g. the System Program), when known. */
+    address?: string;
+    optional?: boolean;
+}
+
 export interface DiscoveredFunction {
     name: string;
     module: string;
@@ -53,6 +63,10 @@ export interface DiscoveredFunction {
     typeParameters: DiscoveredTypeParameter[];
     parameters: DiscoveredParameter[];
     returnTypes: string[];
+    /** Solana only: the accounts this instruction expects, in order. */
+    accounts?: DiscoveredAccount[];
+    /** Solana only: the instruction's leading data bytes (Anchor's 8-byte discriminator). */
+    discriminator?: number[];
 }
 
 export interface DiscoveredModule {
