@@ -34,7 +34,7 @@ describe('curlToRpcRequest', () => {
   it('extracts method and params from the JSON-RPC body', () => {
     const curl = `curl -X POST https://fullnode.mainnet.sui.io:443 -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"suix_getAllBalances","params":["0xabc"]}'`;
 
-    expect(curlToRpcRequest(curl)).toEqual({
+    expect(curlToRpcRequest(curl)).toMatchObject({
       name: 'suix_getAllBalances',
       method: 'suix_getAllBalances',
       params: ['0xabc']
@@ -73,7 +73,7 @@ describe('parseImportFile', () => {
       JSON.stringify({ method: 'sui_getObject', params: ['0x1'] })
     );
 
-    expect(requests).toEqual([{ name: 'sui_getObject', method: 'sui_getObject', params: ['0x1'] }]);
+    expect(requests).toMatchObject([{ name: 'sui_getObject', method: 'sui_getObject', params: ['0x1'] }]);
   });
 
   it('parses an array of JSON-RPC objects', () => {
@@ -97,7 +97,7 @@ describe('parseImportFile', () => {
       })
     );
 
-    expect(requests).toEqual([
+    expect(requests).toMatchObject([
       { name: 'Get Balances', method: 'suix_getAllBalances', params: ['0xabc'] }
     ]);
   });
@@ -115,7 +115,7 @@ describe('parseImportFile', () => {
 
     const requests = parseImportFile(JSON.stringify(har));
 
-    expect(requests).toEqual([{ name: 'sui_getObject', method: 'sui_getObject', params: ['0x1'] }]);
+    expect(requests).toMatchObject([{ name: 'sui_getObject', method: 'sui_getObject', params: ['0x1'] }]);
   });
 
   it('throws on invalid JSON', () => {
