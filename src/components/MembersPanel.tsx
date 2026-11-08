@@ -1,8 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Select } from '@/components/Select';
 import { Copy, Loader2, Trash2, UserPlus, X } from 'lucide-react';
 import { apiService, ApiError } from '@/services/api';
 import { appStore } from '@/lib/store';
 import type { Workspace, WorkspaceMember } from '@/types';
+
+const ROLE_OPTIONS = [
+  { label: 'Editor', value: 'editor' },
+  { label: 'Viewer', value: 'viewer' }
+];
 
 interface MembersPanelProps {
   workspace: Workspace;
@@ -94,17 +100,17 @@ export const MembersPanel: React.FC<MembersPanelProps> = ({ workspace, onClose }
   };
 
   const fieldClass =
-    'bg-white dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:border-electric-violet focus:outline-none';
+    'bg-surface border border-line rounded-lg px-3 py-2 text-xs text-fg focus:border-line-strong focus:outline-none';
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-label={`Members of ${workspace.name}`}>
-      <div className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] shadow-2xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-white/10">
+      <div className="w-full max-w-lg rounded-card border border-line bg-elevated shadow-card">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-line">
           <div>
-            <h2 className="text-sm font-bold text-slate-900 dark:text-white">Members</h2>
-            <p className="text-[11px] text-slate-500 truncate max-w-[22rem]">{workspace.name}</p>
+            <h2 className="text-sm font-semibold text-fg">Members</h2>
+            <p className="text-[12px] text-fg-subtle truncate max-w-[22rem]">{workspace.name}</p>
           </div>
-          <button onClick={onClose} aria-label="Close" className="p-1.5 text-slate-500 hover:text-slate-900 dark:hover:text-white">
+          <button onClick={onClose} aria-label="Close" className="p-1.5 text-fg-subtle hover:text-fg">
             <X size={16} />
           </button>
         </div>
@@ -112,7 +118,7 @@ export const MembersPanel: React.FC<MembersPanelProps> = ({ workspace, onClose }
         <div className="p-5 space-y-5 max-h-[70vh] overflow-y-auto">
           {isOwner && (
             <form onSubmit={invite} className="space-y-2">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-500" htmlFor="invite-email">
+              <label className="block text-[12px] font-semibold text-fg-subtle" htmlFor="invite-email">
                 Invite by email
               </label>
               <div className="flex gap-2">
@@ -125,35 +131,35 @@ export const MembersPanel: React.FC<MembersPanelProps> = ({ workspace, onClose }
                   placeholder="name@company.com"
                   className={`${fieldClass} flex-1 min-w-0`}
                 />
-                <select
-                  aria-label="Role"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as 'viewer' | 'editor')}
-                  className={fieldClass}
-                >
-                  <option value="editor">Editor</option>
-                  <option value="viewer">Viewer</option>
-                </select>
+                <div className="w-28 shrink-0">
+                  <Select
+                    ariaLabel="Role"
+                    value={role}
+                    options={ROLE_OPTIONS}
+                    onChange={(v) => setRole(v as 'viewer' | 'editor')}
+                    fullWidth
+                  />
+                </div>
                 <button
                   type="submit"
                   disabled={busy || !email.trim()}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg bg-slate-900 dark:bg-white text-white dark:text-near-black disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-inverse text-on-inverse disabled:opacity-50"
                 >
                   {busy ? <Loader2 size={13} className="animate-spin" /> : <UserPlus size={13} />} Invite
                 </button>
               </div>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[12px] text-fg-subtle">
                 Editors can create and change collections and requests. Viewers can read, simulate and comment. The
                 invitee must sign in with this exact email address.
               </p>
               {fallbackLink && (
                 <div className="flex items-center gap-2 rounded-lg border border-amber-300/50 bg-amber-50 dark:bg-amber-900/10 p-2">
-                  <code className="flex-1 truncate text-[10px] font-mono">{fallbackLink}</code>
+                  <code className="flex-1 truncate text-[12px] font-mono">{fallbackLink}</code>
                   <button
                     type="button"
                     onClick={() => void navigator.clipboard.writeText(fallbackLink)}
                     aria-label="Copy invitation link"
-                    className="p-1 text-slate-600 hover:text-slate-900 dark:hover:text-white"
+                    className="p-1 text-fg-muted hover:text-fg"
                   >
                     <Copy size={13} />
                   </button>
@@ -164,20 +170,20 @@ export const MembersPanel: React.FC<MembersPanelProps> = ({ workspace, onClose }
 
           <div>
             {members === null && !loadError && (
-              <div className="flex items-center gap-2 text-xs text-slate-500">
+              <div className="flex items-center gap-2 text-xs text-fg-subtle">
                 <Loader2 size={13} className="animate-spin" /> Loading members…
               </div>
             )}
             {loadError && <p role="alert" className="text-xs text-rose-500">{loadError}</p>}
             {members && members.length === 1 && (
-              <p className="text-xs text-slate-500 mb-3">Only you are in this workspace. Invite someone by email.</p>
+              <p className="text-xs text-fg-subtle mb-3">Only you are in this workspace. Invite someone by email.</p>
             )}
-            <ul className="divide-y divide-slate-200 dark:divide-white/10">
+            <ul className="divide-y divide-line">
               {members?.map((m) => (
                 <li key={m.id ?? 'owner'} className="flex items-center gap-3 py-2.5">
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-xs font-medium text-slate-800 dark:text-slate-200">{m.email}</div>
-                    <div className="text-[10px] text-slate-500">
+                    <div className="truncate text-xs font-medium text-fg">{m.email}</div>
+                    <div className="text-[12px] text-fg-subtle">
                       {m.status === 'pending'
                         ? `Invited${m.expiresAt ? ` · expires ${new Date(m.expiresAt).toLocaleDateString()}` : ''}`
                         : m.status === 'owner'
@@ -187,25 +193,26 @@ export const MembersPanel: React.FC<MembersPanelProps> = ({ workspace, onClose }
                   </div>
                   {isOwner && m.status !== 'owner' ? (
                     <>
-                      <select
-                        aria-label={`Role for ${m.email}`}
-                        value={m.role}
-                        onChange={(e) => void changeRole(m, e.target.value as 'viewer' | 'editor')}
-                        className={fieldClass}
-                      >
-                        <option value="editor">Editor</option>
-                        <option value="viewer">Viewer</option>
-                      </select>
+                      <div className="w-28 shrink-0">
+                        <Select
+                          ariaLabel={`Role for ${m.email}`}
+                          value={m.role}
+                          options={ROLE_OPTIONS}
+                          onChange={(v) => void changeRole(m, v as 'viewer' | 'editor')}
+                          size="sm"
+                          fullWidth
+                        />
+                      </div>
                       <button
                         onClick={() => void remove(m)}
                         aria-label={m.status === 'pending' ? `Cancel invitation for ${m.email}` : `Remove ${m.email}`}
-                        className="p-1.5 text-slate-500 hover:text-rose-500"
+                        className="p-1.5 text-fg-subtle hover:text-rose-500"
                       >
                         <Trash2 size={14} />
                       </button>
                     </>
                   ) : (
-                    <span className="text-[11px] font-mono text-slate-500">{roleLabel[m.role]}</span>
+                    <span className="text-[12px] font-mono text-fg-subtle">{roleLabel[m.role]}</span>
                   )}
                 </li>
               ))}
@@ -213,7 +220,7 @@ export const MembersPanel: React.FC<MembersPanelProps> = ({ workspace, onClose }
           </div>
 
           {!isOwner && (
-            <button onClick={() => void leave()} className="text-xs font-bold text-rose-500 hover:underline">
+            <button onClick={() => void leave()} className="text-xs font-semibold text-rose-500 hover:underline">
               Leave this workspace
             </button>
           )}

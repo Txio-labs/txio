@@ -7,11 +7,52 @@
 // not replaying arbitrary HTTP requests (headers, auth, etc. are parsed
 // where useful but otherwise discarded).
 
+import type { ChainId } from '../types';
+
 export interface ImportedRpcRequest {
   name: string;
   method: string;
   params: any[];
+  /** Best guess at the chain, from the method name, params shape or endpoint host. */
+  chain?: ChainId;
 }
+
+const SOLANA_ONLY = new Set([
+  'getAccountInfo', 'getSignaturesForAddress', 'getTokenAccountsByOwner', 'getBlockHeight', 'getLatestBlockhash',
+  'getEpochInfo', 'getSupply', 'getSlot', 'getVersion', 'getProgramAccounts', 'getMultipleAccounts',
+  'getTokenAccountBalance', 'getRecentPrioritizedFees', 'getMinimumBalanceForRentExemption'
+]);
+const STELLAR_ONLY = new Set([
+  'getLatestLedger', 'getLedgerEntries', 'getEvents', 'getNetwork', 'getFeeStats', 'getVersionInfo', 'getTransactions'
+]);
+
+/** Guesses which chain a JSON-RPC call targets. Undefined when nothing is conclusive. */
+export function inferChain(method: string, params?: unknown, url?: string): ChainId | undefined {
+  if (/^(sui|suix|unsafe)_/.test(method)) return 'sui';
+  if (/^(eth|net|web3|debug|trace|txpool)_/.test(method)) return 'evm';
+  if (STELLAR_ONLY.has(method)) return 'stellar';
+  if (SOLANA_ONLY.has(method)) return 'solana';
+  // Soroban RPC is the only supported chain that takes a params object.
+  if (params && typeof params === 'object' && !Array.isArray(params)) return 'stellar';
+
+  let host = '';
+  try {
+    host = url ? new URL(url).hostname.toLowerCase() : '';
+  } catch {
+    host = '';
+  }
+  if (!host) return undefined;
+  if (host.includes('sui')) return 'sui';
+  if (host.includes('solana')) return 'solana';
+  if (host.includes('soroban') || host.includes('stellar')) return 'stellar';
+  if (host.includes('aptos')) return 'aptos';
+  if (/(ethereum|infura|alchemy|llamarpc|base\.org|arbitrum|optimism|polygon|bnbchain|avax|linea|scroll|zksync|blast|mantle|gnosis|celo|cronos)/.test(host)) return 'evm';
+  return undefined;
+}
+
+/** Soroban sends one params object; the app stores it as a single-element array. */
+const normalizeParams = (params: unknown): any[] =>
+  Array.isArray(params) ? params : params && typeof params === 'object' ? [params] : [];
 
 export interface ParsedCurl {
   url?: string;
@@ -118,7 +159,7 @@ export function parseCurl(input: string): ParsedCurl {
   return result;
 }
 
-export function extractRpcPayload(bodyText: string): { method: string; params: any[] } {
+export function extractRpcPayload(bodyText: string): { method: string; params: any[]; rawParams: unknown } {
   let parsed: unknown;
 
   try {
@@ -139,7 +180,8 @@ export function extractRpcPayload(bodyText: string): { method: string; params: a
 
   return {
     method: candidate.method,
-    params: Array.isArray(candidate.params) ? candidate.params : []
+    params: normalizeParams(candidate.params),
+    rawParams: candidate.params
   };
 }
 
@@ -154,9 +196,9 @@ export function curlToRpcRequest(curlText: string): ImportedRpcRequest {
     throw new Error('No request body (-d/--data) found in the cURL command');
   }
 
-  const { method, params } = extractRpcPayload(parsed.body);
+  const { method, params, rawParams } = extractRpcPayload(parsed.body);
 
-  return { name: method, method, params };
+  return { name: method, method, params, chain: inferChain(method, rawParams, parsed.url) };
 }
 
 function requestFromCandidate(item: any): ImportedRpcRequest | null {
@@ -171,10 +213,12 @@ function requestFromCandidate(item: any): ImportedRpcRequest | null {
     return null;
   }
 
+  const knownChain = typeof source.chain === 'string' ? (source.chain as ChainId) : undefined;
   return {
     name: typeof item?.name === 'string' && item.name.trim() ? item.name : source.method,
     method: source.method,
-    params: Array.isArray(source.params) ? source.params : []
+    params: normalizeParams(source.params),
+    chain: knownChain ?? inferChain(source.method, source.params)
   };
 }
 
@@ -187,8 +231,13 @@ function parseHarFile(har: any): ImportedRpcRequest[] {
     if (typeof text !== 'string') return;
 
     try {
-      const { method, params } = extractRpcPayload(text);
-      results.push({ name: method || `Imported Request ${index + 1}`, method, params });
+      const { method, params, rawParams } = extractRpcPayload(text);
+      results.push({
+        name: method || `Imported Request ${index + 1}`,
+        method,
+        params,
+        chain: inferChain(method, rawParams, entry?.request?.url)
+      });
     } catch {
       // Not every HAR entry is a JSON-RPC call (analytics beacons, asset
       // requests, etc.) — skip anything that doesn't parse as one.

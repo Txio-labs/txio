@@ -32,6 +32,8 @@ describe('saveCurrentTab + finalizeRequest dirty flag', () => {
         localStorage.clear();
     });
 
+    // Imports ./store cold: transforming its module graph can exceed the
+    // default 5s when the whole suite runs in parallel.
     it('marks dirty on finalizeRequest and clears on saveCurrentTab', async () => {
         vi.doMock('../services/api', () => ({
             ApiError: class extends Error {
@@ -104,7 +106,7 @@ describe('saveCurrentTab + finalizeRequest dirty flag', () => {
         expect(
             appStore.getSnapshot().savedTabs.filter((t) => t.id === tabId)
         ).toHaveLength(1);
-    });
+    }, 30_000);
 
     it('updateSettings toggles all three flags', async () => {
         vi.doMock('../services/api', () => ({

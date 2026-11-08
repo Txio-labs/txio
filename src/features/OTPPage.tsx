@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { AuthLayout } from '@/components/auth/AuthLayout';
 import { useRouter } from 'next/navigation';
 import {
     ShieldCheck, ArrowLeft, RefreshCw, CheckCircle2,
@@ -157,72 +158,39 @@ export const OTPPage: React.FC = () => {
     };
 
     return (
-        <div className={`min-h-screen flex selection:bg-electric-violet/30 ${
-            theme === 'dark' ? 'bg-near-black text-white' : 'bg-slate-50 text-slate-900'
-        }`}>
-            {/* Ambient Background Elements */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-electric-violet/10 blur-[120px] rounded-full"></div>
-                <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-electric-violet/5 blur-[100px] rounded-full"></div>
-                <div className="absolute inset-0 opacity-[0.03]" style={{
-                    backgroundImage: `radial-gradient(circle at 2px 2px, ${isDark ? '#fff' : '#000'} 1px, transparent 0)`,
-                    backgroundSize: '32px 32px'
-                }}></div>
-            </div>
-
-            <div className="flex-1 flex flex-col justify-center items-center p-6 relative z-10">
-                {/* Back Button */}
-                <button
-                    onClick={() => {
-                        appStore.setPendingSignup(null);
-                        router.push('/signup');
-                    }}
-                    className={`absolute top-8 left-8 flex items-center gap-2 text-sm font-medium transition-colors ${
-                        theme === 'dark' ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-900'
-                    }`}
-                >
-                    <ArrowLeft size={18} />
-                    Back to Sign Up
-                </button>
-
-                <div className="absolute top-8 right-8">
-                    <ThemeToggle />
-                </div>
-
-                <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`w-full max-w-xl p-12 rounded-[3rem] border shadow-2xl relative overflow-hidden ${
-                        theme === 'dark' 
-                        ? 'bg-white/[0.04] border-white/20 backdrop-blur-xl' 
-                        : 'bg-white border-slate-200'
-                    }`}
-                >
+        <AuthLayout
+            onBack={() => {
+                appStore.setPendingSignup(null);
+                router.push('/signup');
+            }}
+            panelTitle={<>Check your inbox.<br /><span className="text-fg-subtle">One code and you&apos;re in.</span></>}
+            panelBody="We emailed you a 6-digit code to confirm the address belongs to you. It expires shortly, so use it soon."
+        >
                     {/* Header Decoration */}
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-electric-violet to-transparent opacity-50"></div>
+                    
 
-                    <div className="text-center mb-12 otp-header">
+                    <div className="mb-8 otp-header">
                         <motion.div 
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             transition={{ type: 'spring', damping: 12 }}
-                            className="inline-flex items-center justify-center w-20 h-20 rounded-[2rem] bg-electric-violet/10 mb-8 relative"
+                            className="inline-flex items-center justify-center w-10 h-10 rounded-[10px] border border-line bg-sunken mb-5 relative"
                         >
-                            <div className="absolute inset-0 bg-electric-violet/20 blur-2xl rounded-full animate-pulse"></div>
+                            
                             {isVerified ? (
-                                <CheckCircle2 className="text-emerald-400 relative z-10" size={40} />
+                                <CheckCircle2 className="text-emerald-600 dark:text-emerald-400 relative z-10" size={18} />
                             ) : (
-                                <ShieldCheck className="text-electric-violet relative z-10" size={40} />
+                                <ShieldCheck className="text-fg relative z-10" size={18} />
                             )}
                         </motion.div>
                         
-                        <h2 className={`text-4xl font-bold tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        <h2 className="text-[28px] font-semibold tracking-[-0.035em] mb-1.5 text-fg">
                             Check your inbox.
                         </h2>
                         <p className={`text-base max-w-sm mx-auto leading-relaxed ${
-                            theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                            theme === 'dark' ? 'text-fg-subtle' : 'text-fg-subtle'
                         }`}>
-                            We sent a 6-digit code to <span className={`font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{pendingSignup ? maskEmail(pendingSignup.email) : 'your email'}</span>. Drop it in below.
+                            We sent a 6-digit code to <span className={`font-medium text-fg`}>{pendingSignup ? maskEmail(pendingSignup.email) : 'your email'}</span>. Drop it in below.
                         </p>
                     </div>
 
@@ -240,12 +208,12 @@ export const OTPPage: React.FC = () => {
                                         value={digit}
                                         onChange={(e) => handleChange(index, e.target.value)}
                                         onKeyDown={(e) => handleKeyDown(index, e)}
-                                        className={`w-full aspect-square text-center text-3xl font-bold rounded-2xl border-2 outline-none transition-all duration-300 ${
+                                        className={`w-full aspect-square text-center text-3xl font-semibold rounded-card border-2 outline-none transition-all duration-300 ${
                                             digit 
-                                                ? 'border-electric-violet bg-electric-violet/5 shadow-[0_0_20px_rgba(163,163,163,0.2)]' 
+                                                ? 'border-fg/40 bg-hover shadow-[0_0_20px_rgba(163,163,163,0.2)]' 
                                                 : theme === 'dark'
-                                                    ? 'bg-white/[0.03] border-white/10 focus:border-electric-violet/50'
-                                                    : 'bg-slate-50 border-slate-200 focus:border-electric-violet/30'
+                                                    ? 'bg-hover border-line focus:border-line-strong'
+                                                    : 'bg-sunken border-line focus:border-line-strong'
                                         }`}
                                     />
                                 </motion.div>
@@ -256,7 +224,7 @@ export const OTPPage: React.FC = () => {
                             <button 
                                 type="submit"
                                 disabled={isLoading || isVerified}
-                                className="w-full py-5 bg-slate-900 dark:bg-white text-white dark:text-near-black rounded-2xl font-bold text-xl hover:opacity-90 transition-all shadow-[0_0_30px_rgba(163,163,163,0.3)] flex items-center justify-center gap-3 group disabled:opacity-50 relative overflow-hidden"
+                                className="w-full py-5 bg-inverse text-on-inverse rounded-[10px] font-semibold text-xl hover:opacity-90 transition-all flex items-center justify-center gap-3 group disabled:opacity-50 relative overflow-hidden"
                             >
                                 <AnimatePresence mode="wait">
                                     {isLoading ? (
@@ -265,7 +233,7 @@ export const OTPPage: React.FC = () => {
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             exit={{ opacity: 0 }}
-                                            className="w-7 h-7 border-3 border-white/30 border-t-white rounded-full animate-spin"
+                                            className="w-7 h-7 border-3 border-current/30 border-t-current rounded-full animate-spin"
                                         />
                                     ) : isVerified ? (
                                         <motion.div 
@@ -292,7 +260,7 @@ export const OTPPage: React.FC = () => {
 
                             <div className="flex flex-col items-center gap-4">
                                 <p className={`text-sm font-medium ${
-                                    theme === 'dark' ? 'text-slate-500' : 'text-slate-400'
+                                    theme === 'dark' ? 'text-fg-subtle' : 'text-fg-subtle'
                                 }`}>
                                     Code didn&apos;t show up?
                                 </p>
@@ -300,10 +268,10 @@ export const OTPPage: React.FC = () => {
                                     type="button"
                                     onClick={handleResend}
                                     disabled={timer > 0 || isLoading}
-                                    className={`flex items-center gap-2 text-sm font-bold transition-all px-6 py-2 rounded-full border ${
+                                    className={`flex items-center gap-2 text-sm font-semibold transition-all px-6 py-2 rounded-full border ${
                                         timer > 0
-                                            ? `text-slate-600 cursor-not-allowed ${isDark ? 'border-white/5' : 'border-slate-200'}`
-                                            : 'text-electric-violet border-electric-violet/20 hover:bg-electric-violet/10'
+                                            ? `text-fg-muted cursor-not-allowed ${isDark ? 'border-line' : 'border-line'}`
+                                            : 'text-fg border-line hover:bg-hover'
                                     }`}
                                 >
                                     <RefreshCw size={16} className={timer === 0 ? 'animate-spin-slow' : ''} />
@@ -314,28 +282,20 @@ export const OTPPage: React.FC = () => {
                     </form>
 
                     {/* Footer Info */}
-                    <div className={`mt-12 flex justify-center gap-8 pt-8 border-t ${isDark ? 'border-white/5' : 'border-slate-200'}`}>
-                        <div className="flex items-center gap-2 text-slate-500 otp-footer-item">
+                    <div className={`mt-12 flex justify-center gap-8 pt-8 border-t ${isDark ? 'border-line' : 'border-line'}`}>
+                        <div className="flex items-center gap-2 text-fg-subtle otp-footer-item">
                             <Smartphone size={16} />
-                            <span className="text-[10px] font-bold uppercase tracking-widest">Mobile Push</span>
+                            <span className="text-[12px] font-semibold">Mobile Push</span>
                         </div>
-                        <div className="flex items-center gap-2 text-slate-500 otp-footer-item">
+                        <div className="flex items-center gap-2 text-fg-subtle otp-footer-item">
                             <Mail size={16} />
-                            <span className="text-[10px] font-bold uppercase tracking-widest">Email Alert</span>
+                            <span className="text-[12px] font-semibold">Email Alert</span>
                         </div>
-                        <div className="flex items-center gap-2 text-slate-500 otp-footer-item">
+                        <div className="flex items-center gap-2 text-fg-subtle otp-footer-item">
                             <Lock size={16} />
-                            <span className="text-[10px] font-bold uppercase tracking-widest">End-to-End</span>
+                            <span className="text-[12px] font-semibold">End-to-End</span>
                         </div>
                     </div>
-                </motion.div>
-
-                <footer className={`mt-12 text-[10px] font-bold uppercase tracking-[0.5em] text-center ${
-                    theme === 'dark' ? 'text-slate-700' : 'text-slate-400'
-                }`}>
-                    txio · sign-up verification
-                </footer>
-            </div>
-        </div>
+        </AuthLayout>
     );
 };

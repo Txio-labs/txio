@@ -72,7 +72,7 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
         <div key={node.id} className="relative select-none">
           {depth > 0 && (
             <div 
-              className="absolute left-0 w-px bg-white/10"
+              className="absolute left-0 w-px bg-active"
               style={{ left: `${(depth * 12) + 7}px`, top: '-4px', height: isLast ? '18px' : '100%' }}
             />
           )}
@@ -80,8 +80,8 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
           <button 
             className={`
               group flex items-center gap-2 px-2 py-1.5 cursor-pointer rounded-lg transition-all duration-200 text-left w-full
-              ${node.type !== 'request' ? 'hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 hover:text-slate-700 dark:text-slate-200' : 
-                isActive ? 'bg-electric-violet/20 text-electric-violet shadow-[inset_2px_0_0_0_#a3a3a3]' : 'hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 hover:text-slate-700 dark:text-slate-200'}
+              ${node.type !== 'request' ? 'hover:bg-hover text-fg-subtle hover:text-fg' : 
+                isActive ? 'bg-active text-fg shadow-[inset_2px_0_0_0_#a3a3a3]' : 'hover:bg-hover text-fg-subtle hover:text-fg'}
             `}
             style={{ paddingLeft: `${depth * 12 + 4}px` }}
             onClick={() => node.type !== 'request' ? onToggleExpand(node.id) : onSelectCollectionRequest(node)}
@@ -89,17 +89,17 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
             <div className="shrink-0 flex items-center justify-center w-4 h-4">
               {node.type === 'collection' || node.type === 'folder' ? (
                 node.children && node.children.length > 0 ? (
-                  node.isExpanded ? <ChevronDown size={10} className="text-slate-500 group-hover:text-slate-400" /> : <ChevronRight size={10} className="text-slate-500 group-hover:text-slate-400" />
+                  node.isExpanded ? <ChevronDown size={10} className="text-fg-subtle group-hover:text-slate-400" /> : <ChevronRight size={10} className="text-fg-subtle group-hover:text-slate-400" />
                 ) : <div className="w-1 h-1 rounded-full bg-slate-700" />
               ) : (
                 <div className={`w-1.5 h-1.5 rounded-full ${node.name.includes('RPC') ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.4)]' : 'bg-amber-500 shadow-[0_0_5px_rgba(245,158,11,0.4)]'}`} />
               )}
             </div>
 
-            {node.type === 'collection' && <Folder size={13} className={`${node.isShared ? 'text-blue-400' : 'text-amber-500/80'} fill-current opacity-90`} />}
-            {node.type === 'folder' && <Folder size={13} className="text-slate-600 fill-white/5" />}
+            {node.type === 'collection' && <Folder size={13} className={`${node.isShared ? 'text-blue-600 dark:text-blue-400' : 'text-amber-500/80'} fill-current opacity-90`} />}
+            {node.type === 'folder' && <Folder size={13} className="text-fg-muted fill-white/5" />}
 
-            <span className={`truncate flex-1 font-sans text-[11px] font-medium leading-none pt-0.5 ${isActive ? 'font-bold' : ''}`}>
+            <span className={`truncate flex-1 font-sans text-[12px] font-medium leading-none pt-0.5 ${isActive ? 'font-semibold' : ''}`}>
               {node.name}
             </span>
 
@@ -108,7 +108,7 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
                 {node.type === 'collection' && (
                   <button
                     onClick={(e) => { e.stopPropagation(); appStore.openTab('runner', { collectionId: node.id }); }}
-                    className="p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded text-slate-500 hover:text-green-400 transition-colors"
+                    className="p-1 hover:bg-hover rounded text-fg-subtle hover:text-green-400 transition-colors"
                     title="Run Collection"
                   >
                     <Play size={10} />
@@ -117,7 +117,7 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
                 {!readOnly && (
                 <button 
                   onClick={(e) => { e.stopPropagation(); appStore.openTab('new_request', { collectionId: node.id }); }} 
-                  className="p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded text-slate-500 hover:text-slate-900 dark:text-white transition-colors"
+                  className="p-1 hover:bg-hover rounded text-fg-subtle hover:text-fg transition-colors"
                   title="Add Request"
                 >
                   <Plus size={10} />
@@ -133,7 +133,7 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
                         appStore.deleteCollection(node.id);
                       }
                     }}
-                    className="p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded text-slate-500 hover:text-red-400 transition-colors"
+                    className="p-1 hover:bg-hover rounded text-fg-subtle hover:text-red-400 transition-colors"
                     title="Delete Collection"
                   >
                     <Trash2 size={10} />
@@ -159,7 +159,7 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
         {visibleCollections.length > 0 ? (
           renderTree(visibleCollections)
         ) : isFiltering ? (
-          <p className="px-3 py-6 text-center text-[11px] text-slate-600">
+          <p className="px-3 py-6 text-center text-[12px] text-fg-muted">
             No collections or requests match &ldquo;{filterQuery.trim()}&rdquo;.
           </p>
         ) : null}

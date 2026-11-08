@@ -18,15 +18,11 @@ export const RequestTabs: React.FC<RequestTabsProps> = ({
   testSummary,
   onTabChange
 }) => {
-  // Screenshot framing (Params/Headers/Auth/Body/Transaction/Advanced) mapped onto
-  // the existing builder: Params -> 'builder' (method + params form), Body -> 'raw'
-  // (full JSON envelope). Headers/Auth/Advanced are new tabs — JSON-RPC calls in
-  // this app have no HTTP header/auth concept, so those render an explanatory
-  // empty state rather than fabricated data. Tests/Hooks/Code are kept as-is.
+  // Params -> 'builder' (method + params form), Body -> 'raw' (full JSON
+  // envelope). JSON-RPC calls here carry no per-request headers or auth, so
+  // there are no tabs for them.
   const tabs: { id: ActiveTab; label: string; icon?: React.ReactNode }[] = [
     { id: 'builder', label: 'Params' },
-    { id: 'headers', label: 'Headers' },
-    { id: 'auth', label: 'Auth' },
     { id: 'raw', label: 'Body' },
     { id: 'transaction', label: 'Transaction' },
     { id: 'advanced', label: 'Advanced' },
@@ -38,56 +34,57 @@ export const RequestTabs: React.FC<RequestTabsProps> = ({
   const isReadOnly = requestType === RequestType.RPC;
 
   return (
-    <div className="border-b border-slate-200 dark:border-white/10 px-4 flex justify-between items-center h-10 bg-slate-50 dark:bg-near-black shrink-0 overflow-x-auto no-scrollbar">
-      <div className="flex gap-6 h-full">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => onTabChange(tab.id)}
-            className={`h-full text-[10px] font-bold uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 shrink-0 ${
-              activeTab === tab.id
-                ? 'border-electric-violet text-electric-violet'
-                : 'border-transparent text-slate-500 hover:text-slate-600 dark:text-slate-300'
-            }`}
-          >
-            {tab.icon}
-            {tab.label}
-            {tab.id === 'tests' && (
-              testSummary ? (
-                <span
-                  className={`rounded px-1 ${
-                    testSummary.passed === testSummary.total
-                      ? 'bg-emerald-900/30 text-emerald-400'
-                      : 'bg-red-900/30 text-red-400'
-                  }`}
-                >
-                  {testSummary.passed}/{testSummary.total}
-                </span>
-              ) : (
-                <span className="bg-white/10 text-slate-500 rounded px-1">
-                  {testsCount}
-                </span>
-              )
-            )}
-          </button>
-        ))}
+    <div className="border-b border-line px-4 flex justify-between items-end h-9 shrink-0 overflow-x-auto no-scrollbar">
+      <div role="tablist" className="flex gap-1 h-full">
+        {tabs.map((tab) => {
+          const active = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              role="tab"
+              aria-selected={active}
+              onClick={() => onTabChange(tab.id)}
+              className={`relative h-full px-2 text-[14px] transition-colors flex items-center gap-1.5 shrink-0 ${
+                active ? 'text-fg font-medium' : 'text-fg-subtle hover:text-fg'
+              }`}
+            >
+              {tab.icon}
+              {tab.label}
+              {tab.id === 'tests' &&
+                (testSummary ? (
+                  <span
+                    className={`rounded-[5px] px-1 text-[12px] font-mono ${
+                      testSummary.passed === testSummary.total
+                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                        : 'bg-red-500/15 text-red-600 dark:text-red-400'
+                    }`}
+                  >
+                    {testSummary.passed}/{testSummary.total}
+                  </span>
+                ) : (
+                  <span className="bg-active text-fg-subtle rounded-[5px] px-1 text-[12px] font-mono">{testsCount}</span>
+                ))}
+              {active && <span className="absolute left-2 right-2 -bottom-px h-[2px] rounded-full bg-fg" />}
+            </button>
+          );
+        })}
       </div>
 
-      <div className="hidden md:flex items-center gap-2 pl-4 shrink-0">
+      <div className="hidden md:flex items-center gap-1.5 pl-4 shrink-0 self-center">
         {isReadOnly && (
           <span
-            className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 dark:text-emerald-400 text-[9px] font-bold uppercase tracking-widest"
+            className="inline-flex items-center gap-1.5 h-6 px-2 rounded-md text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 text-[12px] font-medium"
             title="This request only reads chain state — it cannot mutate anything."
           >
-            <ShieldCheck size={11} /> Read-only request
+            <ShieldCheck size={12} /> Read-only request
           </span>
         )}
         {isReadOnly && (
           <span
-            className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 text-[9px] font-bold uppercase tracking-widest"
+            className="inline-flex items-center gap-1.5 h-6 px-2 rounded-md bg-hover text-fg-muted text-[12px] font-medium"
             title="No wallet connection is needed to send this request."
           >
-            <WalletCards size={11} /> No wallet required
+            <WalletCards size={12} /> No wallet required
           </span>
         )}
       </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Select } from '@/components/Select';
 import { AlertTriangle, ArrowUpRight, Banknote, Loader2 } from 'lucide-react';
 
 import { useWallet } from '@/wallet';
@@ -67,44 +68,44 @@ export const OfframpPanel: React.FC = () => {
     return (
         <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             <div className="space-y-5 w-full">
-                <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow p-4 space-y-3">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">From</label>
-                    <select
+                <div className="rounded-[10px] border border-line bg-sunken p-4 space-y-3">
+                    <label className="text-[12px] font-semibold text-fg-subtle">From</label>
+                    <Select
                         value={sourceChain}
-                        onChange={(e) => setSourceChain(e.target.value as ChainId)}
-                        className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-electric-violet"
-                    >
-                        {RPC_CHAINS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-                    </select>
+                        options={RPC_CHAINS.map((c) => ({ label: c.label, value: c.id }))}
+                        onChange={(v) => setSourceChain(v as ChainId)}
+                        fullWidth
+                    />
                     <input
                         value={amountUsdc}
                         onChange={(e) => setAmountUsdc(e.target.value)}
                         placeholder="Amount (USDC)"
-                        className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-electric-violet"
+                        className="w-full h-9 rounded-lg border border-line bg-surface px-3 text-xs font-mono text-fg outline-none focus:border-line-strong"
                     />
                     {!wallet && (
-                        <p className="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                            <AlertTriangle size={12} /> No {sourceChain.toUpperCase()} wallet linked.
+                        <p className="text-[12px] text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                            <AlertTriangle size={12} /> No {RPC_CHAINS.find((c) => c.id === sourceChain)?.label ?? sourceChain} wallet linked.
                         </p>
                     )}
                 </div>
 
-                <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow p-4 space-y-3">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">To (fiat)</label>
+                <div className="rounded-[10px] border border-line bg-sunken p-4 space-y-3">
+                    <label className="text-[12px] font-semibold text-fg-subtle">To (fiat)</label>
                     <div className="flex gap-2">
-                        <select
-                            value={fiatCurrency}
-                            onChange={(e) => setFiatCurrency(e.target.value)}
-                            className="h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-electric-violet"
-                        >
-                            {FIAT_CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                        </select>
+                        <div className="w-28 shrink-0">
+                            <Select
+                                value={fiatCurrency}
+                                options={FIAT_CURRENCIES.map((c) => ({ label: c, value: c }))}
+                                onChange={setFiatCurrency}
+                                fullWidth
+                            />
+                        </div>
                         <input
                             value={country}
                             onChange={(e) => setCountry(e.target.value.toUpperCase().slice(0, 2))}
                             placeholder="Country (e.g. US)"
                             maxLength={2}
-                            className="flex-1 min-w-0 h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-electric-violet"
+                            className="flex-1 min-w-0 h-9 rounded-lg border border-line bg-surface px-3 text-xs font-mono text-fg outline-none focus:border-line-strong"
                         />
                     </div>
                 </div>
@@ -112,14 +113,14 @@ export const OfframpPanel: React.FC = () => {
                 <button
                     onClick={handleGetQuote}
                     disabled={!canQuote || loading}
-                    className="w-full h-11 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-near-black text-sm font-bold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity flex items-center justify-center gap-2"
+                    className="w-full h-11 rounded-[10px] bg-inverse text-on-inverse text-sm font-semibold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity flex items-center justify-center gap-2"
                 >
                     {loading ? <Loader2 size={14} className="animate-spin" /> : <Banknote size={14} />}
                     {loading ? 'Getting quote…' : 'Get off-ramp quote'}
                 </button>
 
                 {error && (
-                    <div className="flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/10 px-3 py-2 text-[11px] text-red-600 dark:text-red-400">
+                    <div className="flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/10 px-3 py-2 text-[12px] text-red-600 dark:text-red-400">
                         <AlertTriangle size={13} /> {error}
                     </div>
                 )}
@@ -127,35 +128,35 @@ export const OfframpPanel: React.FC = () => {
 
             <div className="w-full">
                 {quote ? (
-                    <div className="rounded-xl border border-electric-violet bg-electric-violet/5 p-4 space-y-3">
+                    <div className="rounded-[10px] border border-fg/40 bg-hover p-4 space-y-3">
                         <div className="flex justify-between text-xs">
-                            <span className="text-slate-500">Provider</span>
-                            <span className="font-mono text-slate-700 dark:text-slate-300">{quote.provider === 'bridgexyz' ? 'Bridge.xyz' : 'Transak'}</span>
+                            <span className="text-fg-subtle">Provider</span>
+                            <span className="font-mono text-fg-muted">{quote.provider === 'bridgexyz' ? 'Bridge.xyz' : 'Transak'}</span>
                         </div>
                         <div className="flex justify-between text-xs">
-                            <span className="text-slate-500">You receive (est.)</span>
-                            <span className="font-mono text-slate-700 dark:text-slate-300">{quote.estimated_fiat_amount} {quote.fiat_currency}</span>
+                            <span className="text-fg-subtle">You receive (est.)</span>
+                            <span className="font-mono text-fg-muted">{quote.estimated_fiat_amount} {quote.fiat_currency}</span>
                         </div>
                         {quote.fee_usd_estimated != null && (
                             <div className="flex justify-between text-xs">
-                                <span className="text-slate-500">Fee (est.)</span>
-                                <span className="font-mono text-slate-700 dark:text-slate-300">${quote.fee_usd_estimated.toFixed(2)}</span>
+                                <span className="text-fg-subtle">Fee (est.)</span>
+                                <span className="font-mono text-fg-muted">${quote.fee_usd_estimated.toFixed(2)}</span>
                             </div>
                         )}
                         <button
                             onClick={handleContinue}
-                            className="w-full h-10 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-near-black text-xs font-bold hover:opacity-90 flex items-center justify-center gap-2"
+                            className="w-full h-10 rounded-lg bg-inverse text-on-inverse text-xs font-semibold hover:opacity-90 flex items-center justify-center gap-2"
                         >
                             Continue with {quote.provider === 'bridgexyz' ? 'Bridge.xyz' : 'Transak'} <ArrowUpRight size={13} />
                         </button>
-                        <p className="text-[10px] text-slate-400">
+                        <p className="text-[12px] text-fg-subtle">
                             You&apos;ll complete KYC and bank details directly with {quote.provider === 'bridgexyz' ? 'Bridge.xyz' : 'Transak'} — txio never sees that information.
                         </p>
                     </div>
                 ) : (
-                    <div className="hidden lg:flex flex-col items-center justify-center h-full min-h-[320px] rounded-xl border border-dashed border-slate-200 dark:border-white/10 text-center p-6">
-                        <Banknote size={24} className="text-slate-300 dark:text-slate-700 mb-3" />
-                        <p className="text-xs text-slate-400">Your off-ramp quote will appear here.</p>
+                    <div className="hidden lg:flex flex-col items-center justify-center h-full min-h-[320px] rounded-[10px] border border-dashed border-line text-center p-6">
+                        <Banknote size={24} className="text-fg-subtle mb-3" />
+                        <p className="text-xs text-fg-subtle">Your off-ramp quote will appear here.</p>
                     </div>
                 )}
             </div>

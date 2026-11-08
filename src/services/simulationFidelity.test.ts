@@ -265,3 +265,16 @@ describe('EVM simulation capability detection', () => {
         expect(isMethodUnsupported(new Error('execution reverted'))).toBe(false);
     });
 });
+
+describe('summarizeSimulation: gas used in the chain unit', () => {
+    it('reports gasUsed where the simulation does, and leaves it out where it does not', () => {
+        expect(summarizeSimulation(req('solana'), ok({ err: null, logs: [], unitsConsumed: 150 })).gasUsed).toBe(150);
+        expect(summarizeSimulation(req('aptos'), ok({ gas_used: '12', gas_unit_price: '100', events: [] })).gasUsed).toBe(12);
+        expect(summarizeSimulation(req('evm'), ok({ gasEstimate: BigInt(21000) })).gasUsed).toBe(21000);
+        expect(
+            summarizeSimulation(req('sui'), ok({ effects: { gasUsed: { computationCost: '1000', storageCost: '500', storageRebate: '200' } } })).gasUsed
+        ).toBe(1300);
+        expect(summarizeSimulation(req('stellar'), ok({ minResourceFee: '100' })).gasUsed).toBeUndefined();
+        expect(summarizeSimulation(req('evm'), ok({})).gasUsed).toBeUndefined();
+    });
+});

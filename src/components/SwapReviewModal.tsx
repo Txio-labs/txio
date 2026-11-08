@@ -314,72 +314,72 @@ export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, reques
         const isDead = sideshiftOrder?.status === 'failed' || sideshiftOrder?.status === 'refunded' || sideshiftOrder?.status === 'expired';
 
         return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/70 dark:bg-near-black/80 backdrop-blur-sm">
-                <div className="bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-                    <div className="p-4 border-b border-slate-200 dark:border-white/5 flex justify-between items-center bg-white dark:bg-near-black">
-                        <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                            <Shield size={16} className="text-electric-violet" /> Review Send (SideShift)
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface/80 backdrop-blur-sm">
+                <div className="bg-elevated border border-line rounded-[10px] shadow-card w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+                    <div className="p-4 border-b border-line flex justify-between items-center bg-surface">
+                        <h2 className="text-sm font-semibold text-fg flex items-center gap-2">
+                            <Shield size={16} className="text-fg" /> Review Send (SideShift)
                         </h2>
-                        <button onClick={handleClose} disabled={executing || sideshiftCreating} className="text-slate-500 hover:text-slate-900 dark:hover:text-white disabled:opacity-40">
+                        <button onClick={handleClose} disabled={executing || sideshiftCreating} className="text-fg-subtle hover:text-fg disabled:opacity-40">
                             <X size={18} />
                         </button>
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                        <div className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black p-3 space-y-2">
+                        <div className="rounded-lg border border-line bg-surface p-3 space-y-2">
                             <div className="flex justify-between text-xs">
-                                <span className="text-slate-500">Provider</span>
-                                <span className="font-mono text-slate-700 dark:text-slate-300">SideShift</span>
+                                <span className="text-fg-subtle">Provider</span>
+                                <span className="font-mono text-fg-muted">SideShift</span>
                             </div>
                             <div className="flex justify-between text-xs">
-                                <span className="text-slate-500">You send</span>
-                                <span className="font-mono text-slate-700 dark:text-slate-300">{sideshiftQuote.from_amount} {sideshiftQuote.from.symbol}</span>
+                                <span className="text-fg-subtle">You send</span>
+                                <span className="font-mono text-fg-muted">{sideshiftQuote.from_amount} {sideshiftQuote.from.symbol}</span>
                             </div>
                             <div className="flex justify-between text-xs">
-                                <span className="text-slate-500">You receive (est.)</span>
-                                <span className="font-mono text-slate-700 dark:text-slate-300">{sideshiftQuote.to_amount_estimated} {sideshiftQuote.to.symbol}</span>
+                                <span className="text-fg-subtle">You receive (est.)</span>
+                                <span className="font-mono text-fg-muted">{sideshiftQuote.to_amount_estimated} {sideshiftQuote.to.symbol}</span>
                             </div>
                         </div>
 
                         {!sideshiftDeposit && (
-                            <div className="flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-900/30 bg-amber-50 dark:bg-amber-900/10 p-3 text-[11px] text-amber-700 dark:text-amber-400">
+                            <div className="flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-900/30 bg-amber-50 dark:bg-amber-900/10 p-3 text-[12px] text-amber-700 dark:text-amber-400">
                                 <AlertTriangle size={13} className="shrink-0 mt-0.5" />
                                 SideShift doesn&apos;t produce a signable transaction — generating the order gives you a deposit address to send funds to from your own wallet. The shift settles once your deposit confirms.
                             </div>
                         )}
 
                         {sideshiftDeposit && (
-                            <div className="rounded-lg border border-electric-violet/30 bg-electric-violet/5 p-3 space-y-3">
+                            <div className="rounded-lg border border-line-strong bg-hover p-3 space-y-3">
                                 <div>
-                                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Send exactly {sideshiftQuote.from_amount} {sideshiftQuote.from.symbol} to</label>
+                                    <label className="text-[12px] font-semibold text-fg-subtle">Send exactly {sideshiftQuote.from_amount} {sideshiftQuote.from.symbol} to</label>
                                     <div className="flex items-center gap-2 mt-1">
-                                        <code className="flex-1 min-w-0 truncate text-xs font-mono bg-white dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg px-2 py-1.5">
+                                        <code className="flex-1 min-w-0 truncate text-xs font-mono bg-surface border border-line rounded-lg px-2 py-1.5">
                                             {sideshiftDeposit.address}
                                         </code>
-                                        <button onClick={copyDepositAddress} className="p-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 hover:text-electric-violet shrink-0">
+                                        <button onClick={copyDepositAddress} className="p-1.5 rounded-lg border border-line text-fg-subtle hover:text-fg shrink-0">
                                             <Copy size={13} />
                                         </button>
                                     </div>
                                 </div>
                                 {sideshiftDeposit.memo && (
                                     <div>
-                                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Memo / tag (required)</label>
-                                        <code className="block text-xs font-mono bg-white dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg px-2 py-1.5 mt-1">
+                                        <label className="text-[12px] font-semibold text-fg-subtle">Memo / tag (required)</label>
+                                        <code className="block text-xs font-mono bg-surface border border-line rounded-lg px-2 py-1.5 mt-1">
                                             {sideshiftDeposit.memo}
                                         </code>
                                     </div>
                                 )}
-                                <div className="flex items-center gap-2 text-[11px]">
+                                <div className="flex items-center gap-2 text-[12px]">
                                     {isSettled ? (
-                                        <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold">
+                                        <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
                                             <CheckCircle2 size={13} /> Completed{sideshiftOrder?.tx_hash ? ` — ${sideshiftOrder.tx_hash}` : ''}
                                         </span>
                                     ) : isDead ? (
-                                        <span className="flex items-center gap-1.5 text-red-600 dark:text-red-400 font-bold">
+                                        <span className="flex items-center gap-1.5 text-red-600 dark:text-red-400 font-semibold">
                                             <AlertTriangle size={13} /> {sideshiftOrder?.status}
                                         </span>
                                     ) : (
-                                        <span className="flex items-center gap-1.5 text-slate-500">
+                                        <span className="flex items-center gap-1.5 text-fg-subtle">
                                             <Clock size={13} className="animate-pulse" /> Waiting for your deposit ({sideshiftOrder?.status ?? 'awaiting_deposit'})…
                                         </span>
                                     )}
@@ -388,30 +388,30 @@ export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, reques
                         )}
 
                         {error && (
-                            <div className="flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/10 px-3 py-2 text-[11px] text-red-600 dark:text-red-400">
+                            <div className="flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/10 px-3 py-2 text-[12px] text-red-600 dark:text-red-400">
                                 <AlertTriangle size={13} /> {error}
                             </div>
                         )}
 
                         {!sourceWallet && (
-                            <p className="text-[11px] text-amber-600 dark:text-amber-400">Connect a {swapParams?.fromChain.toUpperCase()} wallet to continue.</p>
+                            <p className="text-[12px] text-amber-600 dark:text-amber-400">Connect a {swapParams?.fromChain.toUpperCase()} wallet to continue.</p>
                         )}
                         {sourceWallet && !destinationWallet && (
-                            <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                            <p className="text-[12px] text-amber-600 dark:text-amber-400">
                                 Connect a {swapParams?.toChain.toUpperCase()} wallet — that&apos;s where the shift settles, so SideShift needs an address on that chain to send funds to.
                             </p>
                         )}
                     </div>
 
-                    <div className="p-4 border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-dark-indigo-glow flex justify-end gap-3">
-                        <button onClick={handleClose} disabled={executing || sideshiftCreating} className="px-4 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-40">
+                    <div className="p-4 border-t border-line bg-sunken flex justify-end gap-3">
+                        <button onClick={handleClose} disabled={executing || sideshiftCreating} className="px-4 py-2 text-xs font-semibold text-fg-muted hover:text-fg disabled:opacity-40">
                             {isSettled ? 'Close' : 'Cancel'}
                         </button>
                         {!sideshiftDeposit && (
                             <button
                                 onClick={handleCreateSideshiftOrder}
                                 disabled={sideshiftCreating || !sourceWallet || !destinationWallet}
-                                className="px-6 py-2 bg-slate-900 dark:bg-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white dark:text-near-black text-xs font-bold rounded shadow-lg flex items-center gap-2"
+                                className="px-6 py-2 bg-inverse hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-on-inverse text-xs font-semibold rounded shadow-card flex items-center gap-2"
                             >
                                 {sideshiftCreating ? <Loader2 size={14} className="animate-spin" /> : null}
                                 {sideshiftCreating ? 'Generating…' : 'Generate deposit address'} {!sideshiftCreating && <ArrowRight size={14} />}
@@ -426,43 +426,43 @@ export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, reques
     if (!route) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/70 dark:bg-near-black/80 backdrop-blur-sm">
-            <div className="bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-                <div className="p-4 border-b border-slate-200 dark:border-white/5 flex justify-between items-center bg-white dark:bg-near-black">
-                    <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        <Shield size={16} className="text-electric-violet" /> Review Send
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface/80 backdrop-blur-sm">
+            <div className="bg-elevated border border-line rounded-[10px] shadow-card w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+                <div className="p-4 border-b border-line flex justify-between items-center bg-surface">
+                    <h2 className="text-sm font-semibold text-fg flex items-center gap-2">
+                        <Shield size={16} className="text-fg" /> Review Send
                     </h2>
-                    <button onClick={handleClose} disabled={executing} className="text-slate-500 hover:text-slate-900 dark:hover:text-white disabled:opacity-40">
+                    <button onClick={handleClose} disabled={executing} className="text-fg-subtle hover:text-fg disabled:opacity-40">
                         <X size={18} />
                     </button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                    <div className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black p-3 space-y-2">
+                    <div className="rounded-lg border border-line bg-surface p-3 space-y-2">
                         <div className="flex justify-between text-xs">
-                            <span className="text-slate-500">Route</span>
-                            <span className="font-mono text-slate-700 dark:text-slate-300">{route.steps.map((s) => s.tool).join(' → ')}</span>
+                            <span className="text-fg-subtle">Route</span>
+                            <span className="font-mono text-fg-muted">{route.steps.map((s) => s.tool).join(' → ')}</span>
                         </div>
                         <div className="flex justify-between text-xs">
-                            <span className="text-slate-500">You receive (min)</span>
-                            <span className="font-mono text-slate-700 dark:text-slate-300">{route.toAmountMin}</span>
+                            <span className="text-fg-subtle">You receive (min)</span>
+                            <span className="font-mono text-fg-muted">{route.toAmountMin}</span>
                         </div>
                         {swapParams && (
                             <div className="flex justify-between text-xs">
-                                <span className="text-slate-500">Slippage</span>
-                                <span className="font-mono text-slate-700 dark:text-slate-300">{swapParams.slippagePercent}%</span>
+                                <span className="text-fg-subtle">Slippage</span>
+                                <span className="font-mono text-fg-muted">{swapParams.slippagePercent}%</span>
                             </div>
                         )}
                         {firstStep && (
                             <div className="flex justify-between items-center text-xs">
-                                <span className="text-slate-500">Target contract</span>
+                                <span className="text-fg-subtle">Target contract</span>
                                 <VerificationBadge chain={swapParams?.fromChain ?? 'evm'} address={firstStep.action.toToken.address} evmChainId={firstStep.action.fromChainId as number} />
                             </div>
                         )}
                     </div>
 
                     {approvalAddress && (
-                        <div className="flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-900/30 bg-amber-50 dark:bg-amber-900/10 p-3 text-[11px] text-amber-700 dark:text-amber-400">
+                        <div className="flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-900/30 bg-amber-50 dark:bg-amber-900/10 p-3 text-[12px] text-amber-700 dark:text-amber-400">
                             <AlertTriangle size={13} className="shrink-0 mt-0.5" />
                             This route needs a spend approval first. It will run before the send, as a separate transaction.
                         </div>
@@ -472,10 +472,10 @@ export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, reques
                         <div className="space-y-1.5">
                             {legs.map((leg, i) => (
                                 <div key={i} className="flex items-center gap-2 text-xs">
-                                    {leg.status === 'done' ? <CheckCircle2 size={13} className="text-emerald-500" /> : <Loader2 size={13} className="animate-spin text-slate-400" />}
-                                    <span className="font-bold text-slate-700 dark:text-slate-300">{leg.tool}</span>
+                                    {leg.status === 'done' ? <CheckCircle2 size={13} className="text-emerald-500" /> : <Loader2 size={13} className="animate-spin text-fg-subtle" />}
+                                    <span className="font-semibold text-fg-muted">{leg.tool}</span>
                                     {leg.explorerUrl && (
-                                        <a href={leg.explorerUrl} target="_blank" rel="noopener noreferrer" className="text-electric-violet hover:underline">
+                                        <a href={leg.explorerUrl} target="_blank" rel="noopener noreferrer" className="text-fg hover:underline">
                                             View
                                         </a>
                                     )}
@@ -485,21 +485,21 @@ export const SwapReviewModal: React.FC<SwapReviewModalProps> = ({ isOpen, reques
                     )}
 
                     {error && (
-                        <div className="flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/10 px-3 py-2 text-[11px] text-red-600 dark:text-red-400">
+                        <div className="flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/10 px-3 py-2 text-[12px] text-red-600 dark:text-red-400">
                             <AlertTriangle size={13} /> {error}
                         </div>
                     )}
                 </div>
 
-                <div className="p-4 border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-dark-indigo-glow flex justify-end gap-3">
-                    <button onClick={handleClose} disabled={executing} className="px-4 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-40">
+                <div className="p-4 border-t border-line bg-sunken flex justify-end gap-3">
+                    <button onClick={handleClose} disabled={executing} className="px-4 py-2 text-xs font-semibold text-fg-muted hover:text-fg disabled:opacity-40">
                         {done ? 'Close' : 'Cancel'}
                     </button>
                     {!done && (
                         <button
                             onClick={handleExecute}
                             disabled={executing || !sourceWallet}
-                            className="px-6 py-2 bg-slate-900 dark:bg-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white dark:text-near-black text-xs font-bold rounded shadow-lg flex items-center gap-2"
+                            className="px-6 py-2 bg-inverse hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-on-inverse text-xs font-semibold rounded shadow-card flex items-center gap-2"
                         >
                             {executing ? <Loader2 size={14} className="animate-spin" /> : null}
                             {executing ? 'Executing…' : 'Execute Send'} {!executing && <ArrowRight size={14} />}

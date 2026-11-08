@@ -26,8 +26,8 @@ interface DecodedEvent {
 
 const Row: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <div className="flex justify-between gap-4 text-xs">
-    <span className="text-slate-500 shrink-0">{label}</span>
-    <span className="font-mono text-slate-800 dark:text-slate-200 text-right break-all">{children}</span>
+    <span className="text-fg-subtle shrink-0">{label}</span>
+    <span className="font-mono text-fg text-right break-all">{children}</span>
   </div>
 );
 
@@ -53,7 +53,7 @@ export const TxTracker: React.FC<TxTrackerProps> = ({ outcome, progress, isLoadi
   if (!progress) {
     if (isLoading) {
       return (
-        <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 px-4 py-3 text-xs text-slate-500">
+        <div className="flex items-center gap-2 rounded-[10px] border border-line px-4 py-3 text-xs text-fg-subtle">
           <Loader2 size={14} className="animate-spin" /> Simulating against current chain state…
         </div>
       );
@@ -61,7 +61,7 @@ export const TxTracker: React.FC<TxTrackerProps> = ({ outcome, progress, isLoadi
     if (!outcome) return null;
     const ok = !outcome.error && outcome.status < 400;
     return (
-      <div className="rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden" role="status">
+      <div className="rounded-[10px] border border-line overflow-hidden" role="status">
         <div
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold ${
             ok ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
@@ -80,8 +80,8 @@ export const TxTracker: React.FC<TxTrackerProps> = ({ outcome, progress, isLoadi
           {'minResourceFee' in result && <Row label="Resource fee">{toText(result.minResourceFee)} stroops</Row>}
           {Array.isArray(result.logs) && result.logs.length > 0 && (
             <details className="text-xs">
-              <summary className="cursor-pointer text-slate-500">Program logs ({result.logs.length})</summary>
-              <pre className="mt-2 max-h-48 overflow-auto rounded bg-slate-50 dark:bg-near-black p-2 text-[11px] text-slate-600 dark:text-slate-400">
+              <summary className="cursor-pointer text-fg-subtle">Program logs ({result.logs.length})</summary>
+              <pre className="mt-2 max-h-48 overflow-auto rounded bg-surface p-2 text-[12px] text-fg-muted">
                 {(result.logs as string[]).join('\n')}
               </pre>
             </details>
@@ -96,12 +96,12 @@ export const TxTracker: React.FC<TxTrackerProps> = ({ outcome, progress, isLoadi
   const events = Array.isArray(result.events) ? (result.events as DecodedEvent[]) : [];
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden" role="status">
-      <div className="px-4 py-3 border-b border-slate-200 dark:border-white/10 flex items-center gap-2">
-        <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Transaction</span>
+    <div className="rounded-[10px] border border-line overflow-hidden" role="status">
+      <div className="px-4 py-3 border-b border-line flex items-center gap-2">
+        <span className="text-xs font-semibold text-fg-subtle">Transaction</span>
         {outcome && !isLoading && (
           <span
-            className={`ml-auto rounded px-2 py-0.5 text-[10px] font-bold ${
+            className={`ml-auto rounded px-2 py-0.5 text-[12px] font-semibold ${
               failed ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
             }`}
           >
@@ -122,18 +122,18 @@ export const TxTracker: React.FC<TxTrackerProps> = ({ outcome, progress, isLoadi
               ) : done ? (
                 <Check size={14} className="text-emerald-500" />
               ) : active ? (
-                <Loader2 size={14} className="animate-spin text-electric-violet" />
+                <Loader2 size={14} className="animate-spin text-fg" />
               ) : (
-                <Circle size={14} className="text-slate-300 dark:text-slate-700" />
+                <Circle size={14} className="text-fg-subtle" />
               )}
-              <span className={done || active ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400'}>{stage.label}</span>
+              <span className={done || active ? 'text-fg' : 'text-fg-subtle'}>{stage.label}</span>
             </li>
           );
         })}
       </ol>
 
       {(hash || outcome) && (
-        <div className="px-4 pb-4 space-y-2 border-t border-slate-200 dark:border-white/10 pt-3">
+        <div className="px-4 pb-4 space-y-2 border-t border-line pt-3">
           {outcome?.error && <p className="text-xs text-rose-600 dark:text-rose-400 break-words">{outcome.error}</p>}
           {hash && <Row label="Hash">{hash}</Row>}
           {'blockNumber' in result && <Row label="Block">{toText(result.blockNumber)}</Row>}
@@ -142,11 +142,11 @@ export const TxTracker: React.FC<TxTrackerProps> = ({ outcome, progress, isLoadi
           {'returnValue' in result && result.returnValue != null && <Row label="Return value">{toText(result.returnValue)}</Row>}
           {events.length > 0 && (
             <div className="space-y-1.5 pt-1">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Events ({events.length})</div>
+              <div className="text-[12px] font-semibold text-fg-subtle">Events ({events.length})</div>
               {events.map((e, i) => (
-                <div key={i} className="rounded-lg bg-slate-50 dark:bg-near-black px-3 py-2 text-[11px] font-mono text-slate-700 dark:text-slate-300 break-all">
-                  <span className="font-semibold text-slate-900 dark:text-white">{e.event ?? `Log from ${e.address}`}</span>
-                  {e.args && <span className="text-slate-500"> {toText(e.args)}</span>}
+                <div key={i} className="rounded-lg bg-surface px-3 py-2 text-[12px] font-mono text-fg-muted break-all">
+                  <span className="font-semibold text-fg">{e.event ?? `Log from ${e.address}`}</span>
+                  {e.args && <span className="text-fg-subtle"> {toText(e.args)}</span>}
                 </div>
               ))}
             </div>
@@ -156,7 +156,7 @@ export const TxTracker: React.FC<TxTrackerProps> = ({ outcome, progress, isLoadi
               href={explorerUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-electric-violet hover:underline"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-fg hover:underline"
             >
               View on explorer <ExternalLink size={11} />
             </a>

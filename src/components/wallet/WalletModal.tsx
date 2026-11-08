@@ -63,6 +63,7 @@ export function WalletModal() {
 
     const [activeCategory, setActiveCategory] = useState<CategoryId>('all');
     const [collapsedGroups, setCollapsedGroups] = useState<Set<WalletChainFamily>>(new Set());
+    const [installedOnly, setInstalledOnly] = useState(false);
 
     const deferredQuery =
         useDeferredValue(
@@ -70,20 +71,24 @@ export function WalletModal() {
         );
 
     const filtered = useMemo(() => {
-        if (!deferredQuery) return wallets;
+        const byQuery = deferredQuery
+            ? wallets.filter((wallet) =>
+                  [
+                      wallet.name,
+                      wallet.description,
+                      wallet.chainFamily,
+                      ...wallet.tags
+                  ]
+                      .join(' ')
+                      .toLowerCase()
+                      .includes(deferredQuery)
+              )
+            : wallets;
 
-        return wallets.filter((wallet) =>
-            [
-                wallet.name,
-                wallet.description,
-                wallet.chainFamily,
-                ...wallet.tags
-            ]
-                .join(' ')
-                .toLowerCase()
-                .includes(deferredQuery)
-        );
-    }, [deferredQuery, wallets]);
+        return installedOnly
+            ? byQuery.filter((wallet) => wallet.availability === 'installed')
+            : byQuery;
+    }, [deferredQuery, wallets, installedOnly]);
 
     // Category rail: "All Wallets" plus one entry per chain family this app
     // actually supports — a developer opening this modal already knows which
@@ -140,7 +145,7 @@ export function WalletModal() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[100] bg-white/70 dark:bg-near-black/60 backdrop-blur-md flex items-center justify-center p-4"
+                    className="fixed inset-0 z-[100] bg-surface/80 backdrop-blur-md flex items-center justify-center p-4"
                     onClick={closeModal}
                     role="button"
                     tabIndex={-1}
@@ -154,24 +159,24 @@ export function WalletModal() {
                         onClick={(event) => event.stopPropagation()}
                         role="dialog"
                         aria-label="Connect wallet"
-                        className="w-[min(760px,calc(100vw-2rem))] h-[min(620px,calc(100vh-2rem))] flex flex-col overflow-hidden rounded-2xl border border-slate-200 dark:border-white/5 bg-white dark:bg-[#18181b] shadow-2xl"
+                        className="w-[min(760px,calc(100vw-2rem))] h-[min(620px,calc(100vh-2rem))] flex flex-col overflow-hidden rounded-card border border-line bg-elevated shadow-card"
                     >
-                        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 dark:border-white/10 shrink-0">
+                        <div className="flex items-center justify-between px-5 py-3.5 border-b border-line shrink-0">
                             <div>
-                                <h2 className="text-sm font-bold text-slate-900 dark:text-white">Connect Wallet</h2>
-                                <p className="text-[11px] text-slate-500">Choose a wallet to connect to your account.</p>
+                                <h2 className="text-sm font-semibold text-fg">Connect Wallet</h2>
+                                <p className="text-[12px] text-fg-subtle">Choose a wallet to connect to your account.</p>
                             </div>
                             <button
                                 onClick={closeModal}
-                                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                                className="p-1 rounded-lg text-fg-subtle hover:text-fg hover:bg-hover transition-colors"
                             >
                                 <X size={16} />
                             </button>
                         </div>
 
-                        <div className="mx-4 mt-3 flex items-start gap-2.5 rounded-xl border border-electric-violet/20 bg-electric-violet/5 px-3 py-2.5 shrink-0">
-                            <Info size={14} className="mt-0.5 shrink-0 text-electric-violet" />
-                            <p className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
+                        <div className="mx-4 mt-3 flex items-start gap-2.5 rounded-[10px] border border-line bg-hover px-3 py-2.5 shrink-0">
+                            <Info size={14} className="mt-0.5 shrink-0 text-fg" />
+                            <p className="text-[12px] leading-relaxed text-fg-muted">
                                 {linkedEntries.length > 0
                                     ? 'Connecting another chain adds a second wallet alongside this one — nothing gets disconnected. Only what you send funds through can sign, so no private keys, ever.'
                                     : "Make sure you have the wallet extension or app installed. We'll only request the permissions needed to connect — no private keys, ever."}
@@ -183,7 +188,7 @@ export function WalletModal() {
                                 {linkedEntries.map((wallet) => (
                                     <div
                                         key={wallet.id}
-                                        className="flex items-center gap-3 rounded-xl border p-3"
+                                        className="flex items-center gap-3 rounded-[10px] border p-3"
                                         style={{
                                             borderColor: `${CHAIN_FAMILY_COLOR[wallet.family]}33`,
                                             backgroundColor: `${CHAIN_FAMILY_COLOR[wallet.family]}0f`
@@ -197,21 +202,21 @@ export function WalletModal() {
                                         />
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center gap-1.5">
-                                                <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{wallet.name}</span>
-                                                <span className="text-[9px] font-bold uppercase tracking-wide px-1 py-0.5 rounded bg-slate-200/60 dark:bg-white/10 text-slate-600 dark:text-slate-300 shrink-0">
+                                                <span className="text-xs font-semibold text-fg truncate">{wallet.name}</span>
+                                                <span className="text-[12px] font-semibold uppercase tracking-wide px-1 py-0.5 rounded bg-slate-200/60 dark:bg-white/10 text-fg-muted shrink-0">
                                                     {getFamilyLabel(wallet.family) ?? wallet.family}
                                                 </span>
                                                 {currentWallet?.id === wallet.id && (
-                                                    <span className="text-[9px] font-bold uppercase tracking-wide px-1 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                                                    <span className="text-[12px] font-semibold uppercase tracking-wide px-1 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
                                                         Default
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className="text-[11px] font-mono text-slate-500 truncate">{shortenAddress(wallet.address, 6, 4)}</div>
+                                            <div className="text-[12px] font-mono text-fg-subtle truncate">{shortenAddress(wallet.address, 6, 4)}</div>
                                         </div>
                                         <button
                                             onClick={() => void disconnect(wallet.family)}
-                                            className="shrink-0 text-[11px] font-bold text-red-500 hover:opacity-80 transition-colors"
+                                            className="shrink-0 text-[12px] font-semibold text-red-500 hover:opacity-80 transition-colors"
                                         >
                                             Disconnect
                                         </button>
@@ -221,14 +226,14 @@ export function WalletModal() {
                         )}
 
                         {error ? (
-                            <div className="mx-4 mt-3 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-[11px] text-red-500 shrink-0">
+                            <div className="mx-4 mt-3 rounded-[10px] border border-red-500/20 bg-red-500/10 px-3 py-2 text-[12px] text-red-500 shrink-0">
                                 {error.message}
                             </div>
                         ) : null}
 
                         <div className="flex-1 flex min-h-0 mt-3">
                             {/* Category rail */}
-                            <div className="w-48 shrink-0 border-r border-slate-200 dark:border-white/10 flex flex-col">
+                            <div className="w-48 shrink-0 border-r border-line flex flex-col">
                                 <div className="flex-1 overflow-y-auto custom-scrollbar px-2 py-2 space-y-0.5">
                                     {categories.map((cat) => {
                                         const isActive = cat.id === activeCategory;
@@ -236,26 +241,26 @@ export function WalletModal() {
                                             <button
                                                 key={cat.id}
                                                 onClick={() => setActiveCategory(cat.id)}
-                                                className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium transition-colors ${
+                                                className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[10px] text-xs font-medium transition-colors ${
                                                     isActive
-                                                        ? 'bg-electric-violet/10 text-slate-900 dark:text-white font-bold'
-                                                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.04]'
+                                                        ? 'bg-hover text-fg font-semibold'
+                                                        : 'text-fg-muted hover:bg-hover'
                                                 }`}
                                             >
                                                 {cat.color ? (
                                                     <span
-                                                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[10px] font-black text-white"
+                                                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[12px] font-semibold text-white"
                                                         style={{ backgroundColor: cat.color }}
                                                     >
                                                         {cat.label.slice(0, 1)}
                                                     </span>
                                                 ) : (
-                                                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-electric-violet text-[10px] font-black text-near-black">
+                                                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-inverse text-[12px] font-semibold text-on-inverse">
                                                         ●
                                                     </span>
                                                 )}
                                                 <span className="truncate flex-1 text-left">{cat.label}</span>
-                                                <span className="text-[10px] text-slate-400 shrink-0">{cat.count}</span>
+                                                <span className="text-[12px] text-fg-subtle shrink-0">{cat.count}</span>
                                             </button>
                                         );
                                     })}
@@ -264,16 +269,28 @@ export function WalletModal() {
 
                             {/* Category detail */}
                             <div className="flex-1 min-w-0 flex flex-col">
-                                <div className="px-4 pt-3 pb-2 shrink-0">
-                                    <label className="relative block">
-                                        <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <div className="px-4 pt-3 pb-2 shrink-0 flex items-center gap-2">
+                                    <label className="relative block flex-1">
+                                        <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle" />
                                         <input
                                             value={modalQuery}
                                             onChange={(event) => setModalQuery(event.target.value)}
-                                            placeholder={`Search ${activeCategoryLabel.toLowerCase()} wallets...`}
-                                            className="h-9 w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] pl-9 pr-3 text-xs text-slate-900 dark:text-white outline-none transition-colors placeholder:text-slate-400 focus:border-electric-violet/50"
+                                            placeholder={activeCategory === 'all' ? 'Search wallets...' : `Search ${activeCategoryLabel} wallets...`}
+                                            className="h-9 w-full rounded-lg border border-line bg-sunken pl-9 pr-3 text-xs text-fg outline-none transition-colors placeholder:text-fg-subtle focus:border-line-strong"
                                         />
                                     </label>
+                                    <button
+                                        onClick={() => setInstalledOnly((v) => !v)}
+                                        aria-pressed={installedOnly}
+                                        className={`h-9 shrink-0 flex items-center gap-1.5 rounded-lg border px-3 text-xs font-semibold transition-colors ${
+                                            installedOnly
+                                                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500'
+                                                : 'border-line text-fg-subtle hover:border-line-strong hover:text-fg'
+                                        }`}
+                                    >
+                                        <CheckCircle2 size={13} />
+                                        Installed
+                                    </button>
                                 </div>
 
                                 <div className="flex-1 overflow-y-auto custom-scrollbar px-4 pb-2 space-y-4">
@@ -287,19 +304,19 @@ export function WalletModal() {
                                                 >
                                                     <span className="flex items-center gap-2">
                                                         <span
-                                                            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[9px] font-black text-white"
+                                                            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[12px] font-semibold text-white"
                                                             style={{ backgroundColor: group.color }}
                                                         >
                                                             {group.label.slice(0, 1)}
                                                         </span>
-                                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                                                        <span className="text-xs font-semibold text-fg">
                                                             {group.label} Wallets
                                                         </span>
-                                                        <span className="text-[10px] text-slate-400">{group.items.length}</span>
+                                                        <span className="text-[12px] text-fg-subtle">{group.items.length}</span>
                                                     </span>
                                                     <ChevronDown
                                                         size={14}
-                                                        className={`text-slate-400 transition-transform ${isCollapsed ? '-rotate-90' : ''}`}
+                                                        className={`text-fg-subtle transition-transform ${isCollapsed ? '-rotate-90' : ''}`}
                                                     />
                                                 </button>
 
@@ -324,20 +341,24 @@ export function WalletModal() {
                                     })}
 
                                     {groupedWallets.length === 0 && (
-                                        <div className="py-10 text-center text-xs text-slate-500">
-                                            {deferredQuery ? `No wallets match "${modalQuery}".` : 'No wallets in this category yet.'}
+                                        <div className="py-10 text-center text-xs text-fg-subtle">
+                                            {deferredQuery
+                                                ? `No wallets match "${modalQuery}".`
+                                                : installedOnly
+                                                    ? 'No installed wallets detected in this category.'
+                                                    : 'No wallets in this category yet.'}
                                         </div>
                                     )}
                                 </div>
 
-                                <div className="flex items-center justify-between border-t border-slate-200 dark:border-white/10 px-4 py-3 shrink-0">
-                                    <span className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                                <div className="flex items-center justify-between border-t border-line px-4 py-3 shrink-0">
+                                    <span className="flex items-center gap-1.5 text-[12px] text-fg-subtle">
                                         <HelpCircle size={13} />
                                         Need help?
                                     </span>
                                     <button
                                         onClick={closeModal}
-                                        className="rounded-lg border border-slate-200 dark:border-white/10 px-3 py-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:border-slate-400 dark:hover:border-white/30 hover:text-slate-900 dark:hover:text-white transition-colors"
+                                        className="rounded-lg border border-line px-3 py-1.5 text-[12px] font-semibold text-fg-muted hover:border-line-strong hover:text-fg transition-colors"
                                     >
                                         Cancel
                                     </button>
@@ -368,7 +389,7 @@ function WalletRow({
     const isComingSoon = wallet.availability === 'coming-soon';
 
     return (
-        <div className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors">
+        <div className="flex items-center gap-3 p-2.5 rounded-[10px] hover:bg-hover transition-colors">
             <WalletGlyph
                 walletId={wallet.id}
                 family={wallet.chainFamily}
@@ -376,20 +397,20 @@ function WalletRow({
                 size="sm"
             />
             <div className="min-w-0 flex-1">
-                <div className="text-xs font-bold text-slate-900 dark:text-white truncate">{wallet.name}</div>
-                <div className="text-[11px] text-slate-500 truncate">
+                <div className="text-xs font-semibold text-fg truncate">{wallet.name}</div>
+                <div className="text-[12px] text-fg-subtle truncate">
                     {getFamilyLabel(wallet.chainFamily) ?? wallet.chainFamily} · {wallet.description}
                 </div>
             </div>
 
             {isCurrent ? (
-                <span className="shrink-0 text-[10px] font-bold" style={{ color: accentColor }}>Connected</span>
+                <span className="shrink-0 text-[12px] font-semibold" style={{ color: accentColor }}>Connected</span>
             ) : isInstalled ? (
                 <button
                     onClick={onConnect}
                     disabled={isPending || isComingSoon}
                     title="Installed — click to connect"
-                    className="shrink-0 flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-2.5 py-1 text-[10px] font-bold hover:bg-emerald-500/15 transition-colors disabled:opacity-50"
+                    className="shrink-0 flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-2.5 py-1 text-[12px] font-semibold hover:bg-emerald-500/15 transition-colors disabled:opacity-50"
                 >
                     {isPending ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle2 size={11} />}
                     {isPending ? 'Connecting' : 'Connect'}
@@ -399,7 +420,7 @@ function WalletRow({
                     href={wallet.installUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="shrink-0 flex items-center gap-1 rounded-full border border-slate-200 dark:border-white/10 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:text-slate-300 hover:border-slate-400 dark:hover:border-white/30 hover:text-slate-900 dark:hover:text-white transition-colors"
+                    className="shrink-0 flex items-center gap-1 rounded-full border border-line px-2.5 py-1 text-[12px] font-semibold text-fg-muted hover:border-line-strong hover:text-fg transition-colors"
                 >
                     Install <ExternalLink size={10} />
                 </a>
@@ -407,7 +428,7 @@ function WalletRow({
                 <button
                     onClick={onConnect}
                     disabled={isComingSoon}
-                    className="shrink-0 rounded-full border border-slate-200 dark:border-white/10 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:text-slate-300 hover:border-slate-400 dark:hover:border-white/30 hover:text-slate-900 dark:hover:text-white transition-colors disabled:opacity-50"
+                    className="shrink-0 rounded-full border border-line px-2.5 py-1 text-[12px] font-semibold text-fg-muted hover:border-line-strong hover:text-fg transition-colors disabled:opacity-50"
                 >
                     {isComingSoon ? 'Soon' : 'Connect'}
                 </button>

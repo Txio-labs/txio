@@ -3,9 +3,9 @@ import React, { useState, useMemo, useRef } from 'react';
 import { Play, Pause, RotateCcw, CheckCircle2, XCircle, Clock, Square, Download, MinusCircle } from 'lucide-react';
 import { appStore, useAppStore } from '@/lib/store';
 import { useWallet } from '@/wallet';
-import { CollectionNode, Network, RequestItem, RequestType, ALL_NETWORKS } from '../types';
+import { ChainId, CollectionNode, Network, RequestItem, RequestType, ALL_NETWORKS } from '../types';
 import { executeChainRpc, simulateMoveCall } from '../services/suiService';
-import { simulateTransaction } from '../services/transactionService';
+import { simulateTransaction, summarizeSimulation, type SimulationSummary } from '../services/transactionService';
 import {
     DEFAULT_CONCURRENCY, MAX_CONCURRENCY, MIN_CONCURRENCY, buildReport, clampConcurrency, errorCodeFor, planCells, reportToMarkdown, requestChain, runCells, toCliCollection,
     type CellOutcome, type PlannedCell, type RunConfig, type RunMode, type RunReport, type RunCellResult
@@ -146,6 +146,7 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
             let status: number;
             let duration: number;
             let sender: string | undefined;
+            let summary: SimulationSummary | undefined;
 
             if (resolved.type === RequestType.TRANSACTION) {
                 if (chain === 'sui') {
@@ -154,7 +155,9 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                     ({ result, status, duration } = await simulateMoveCall(cell.network, sender, packageId, module, func, typeArguments, args));
                 } else {
                     const wallet = linkedWallets[chain] ?? null;
-                    ({ result, status, duration } = await simulateTransaction(resolved, { network: cell.network, wallet }));
+                    const simulated = await simulateTransaction(resolved, { network: cell.network, wallet });
+                    ({ result, status, duration } = simulated);
+                    summary = summarizeSimulation(resolved, simulated);
                 }
             } else {
                 ({ result, status, duration } = await executeChainRpc(
@@ -165,7 +168,7 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
             return {
                 durationMs: duration,
                 httpStatus: status,
-                assertions: evaluateAssertions(req.tests, { requestType: resolved.type, httpStatus: status, duration, result, sender })
+                assertions: evaluateAssertions(req.tests, { requestType: resolved.type, httpStatus: status, duration, result, sender, summary })
             };
         } catch (error) {
             const durationMs = Math.round(performance.now() - startTime);
@@ -238,40 +241,41 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
     const skippedCount = Object.values(results).filter((r) => r.status === 'skipped').length;
 
     if (!targetCollection && !collectionId && workspaceCollections.length === 0) {
-         return <div className="p-10 text-slate-500">No collections found in this workspace. Create one in the sidebar to start running.</div>;
+         return <div className="p-10 text-fg-subtle">No collections found in this workspace. Create one in the sidebar to start running.</div>;
     }
 
     const chipClass = (active: boolean) =>
-        `px-2.5 py-1 rounded text-[11px] font-bold border transition-colors disabled:opacity-50 ${
+        `px-2.5 py-1 rounded text-[12px] font-semibold border transition-colors disabled:opacity-50 ${
             active
-                ? 'bg-slate-900 dark:bg-white text-white dark:text-near-black border-transparent'
-                : 'bg-transparent text-slate-500 border-slate-300 dark:border-white/10 hover:text-slate-700 dark:hover:text-slate-300'
+                ? 'bg-inverse text-on-inverse border-transparent'
+                : 'bg-transparent text-fg-subtle border-line-strong hover:text-fg'
         }`;
 
     return (
-        <div className="h-full bg-white dark:bg-near-black flex flex-col font-sans">
+        <div className="h-full bg-surface flex flex-col font-sans">
              {/* Header */}
-            <div className="border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-dark-indigo-glow/50 p-6">
+            <div className="border-b border-line bg-sunken p-6">
                 <div className="flex justify-between items-center mb-6">
                     <div>
-                        <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
-                             <Play size={20} className="text-electric-violet"/> Collection Runner
+                        <h1 className="text-[22px] font-semibold tracking-[-0.03em] text-fg flex items-center gap-3">
+<span className="h-9 w-9 rounded-[9px] border border-line bg-surface shadow-card flex items-center justify-center text-fg-muted shrink-0"><Play size={16} /></span>
+Collection Runner
                         </h1>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Executing sequence: <span className="text-slate-900 dark:text-white font-bold">{collectionName}</span></p>
+                        <p className="text-xs text-fg-muted">Executing sequence: <span className="text-fg font-semibold">{collectionName}</span></p>
                     </div>
                     <div className="flex gap-3">
                         {isRunning && (
-                            <button onClick={handleStop} className="px-4 py-2 bg-red-900/30 hover:bg-red-900/50 text-red-400 text-xs font-bold rounded flex items-center gap-2 transition-colors border border-red-900/30">
+                            <button onClick={handleStop} className="px-4 py-2 bg-red-900/30 hover:bg-red-900/50 text-red-600 dark:text-red-400 text-xs font-semibold rounded flex items-center gap-2 transition-colors border border-red-900/30">
                                 <Square size={14}/> Stop
                             </button>
                         )}
-                        <button onClick={handleReset} className="px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded flex items-center gap-2 transition-colors">
+                        <button onClick={handleReset} className="px-4 py-2 bg-active hover:bg-slate-300 dark:hover:bg-slate-700 text-fg-muted text-xs font-semibold rounded flex items-center gap-2 transition-colors">
                             <RotateCcw size={14}/> Reset
                         </button>
                         <button
                             onClick={handleRun}
                             disabled={isRunning || plan.length === 0}
-                            className={`px-6 py-2 bg-slate-900 dark:bg-white hover:opacity-90 text-white dark:text-near-black text-xs font-bold rounded shadow-lg flex items-center gap-2 transition-all ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`px-6 py-2 bg-inverse hover:opacity-90 text-on-inverse text-xs font-semibold rounded shadow-pop flex items-center gap-2 transition-all ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                             {isRunning ? <Pause size={14}/> : <Play size={14}/>}
                             {isRunning ? 'Running...' : 'Run Collection'}
@@ -282,14 +286,14 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                 {/* Run options */}
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-3 mb-5">
                     <div className="flex items-center gap-2" role="group" aria-label="Run mode">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Mode</span>
+                        <span className="text-[12px] font-semibold text-fg-subtle">Mode</span>
                         {(['sequential', 'parallel'] as RunMode[]).map((m) => (
                             <button key={m} type="button" disabled={isRunning} onClick={() => setMode(m)} aria-pressed={mode === m} className={chipClass(mode === m)}>
                                 {m === 'sequential' ? 'Sequential' : 'Parallel'}
                             </button>
                         ))}
                         {mode === 'parallel' && (
-                            <label className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                            <label className="flex items-center gap-1.5 text-[12px] text-fg-subtle">
                                 Concurrency
                                 <input
                                     type="number"
@@ -298,60 +302,67 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                                     value={concurrency}
                                     disabled={isRunning}
                                     onChange={(e) => setConcurrency(Number(e.target.value))}
-                                    className="w-14 bg-white dark:bg-near-black border border-slate-300 dark:border-white/10 rounded px-1.5 py-0.5 text-xs font-mono text-slate-700 dark:text-slate-200"
+                                    className="w-14 bg-surface border border-line-strong rounded px-1.5 py-0.5 text-xs font-mono text-fg"
                                 />
                             </label>
                         )}
                     </div>
                     <div className="flex items-center gap-2" role="group" aria-label="Networks">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Networks</span>
+                        <span className="text-[12px] font-semibold text-fg-subtle">Networks</span>
                         {ALL_NETWORKS.map((n) => (
                             <button key={n} type="button" disabled={isRunning} onClick={() => toggleNetwork(n)} aria-pressed={selectedNetworks.includes(n)} className={chipClass(selectedNetworks.includes(n))}>
                                 {n}
                             </button>
                         ))}
                     </div>
-                    <span className="text-[10px] text-slate-500">Dry runs only: nothing is signed or sent.</span>
+                    <span className="text-[12px] text-fg-subtle">Dry runs only: nothing is signed or sent.</span>
                 </div>
 
                 {/* Progress Bar */}
-                <div className="h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mb-2">
+                <div className="h-2 bg-active rounded-full overflow-hidden mb-2">
                     <div
-                        className="h-full bg-electric-violet transition-all duration-300 ease-out relative"
+                        className="h-full bg-inverse transition-all duration-300 ease-out relative"
                         style={{ width: `${progress}%` }}
                     >
                          <div className="absolute right-0 top-0 bottom-0 w-2 bg-white/50 animate-pulse"></div>
                     </div>
                 </div>
-                <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                <div className="flex justify-between items-center text-[12px] font-semibold text-fg-subtle">
                     <span>
                         {passCount} / {plan.length} Passed
-                        {failedCount > 0 && <span className="text-red-400 ml-2">· {failedCount} Failed</span>}
+                        {failedCount > 0 && <span className="text-red-600 dark:text-red-400 ml-2">· {failedCount} Failed</span>}
                         {skippedCount > 0 && <span className="ml-2">· {skippedCount} Skipped</span>}
                     </span>
                     <span className="flex items-center gap-3">
                         {requests.length > 0 && (
                             <button
                                 type="button"
-                                title="A file for `txio run`, to run this collection from CI. Transactions are left out."
+                                title="A file for `txio run`, to run this collection from CI. EVM, Aptos and Solana transactions become dry runs; Sui and Soroban transactions are left out."
                                 onClick={() => {
-                                    const { file, skipped } = toCliCollection(collectionName, requests);
+                                    const senders = Object.fromEntries(
+                                        Object.entries(linkedWallets).flatMap(([chain, w]) => (w?.address ? [[chain, w.address]] : []))
+                                    ) as Partial<Record<ChainId, string>>;
+                                    const { file, skipped, dropped } = toCliCollection(collectionName, requests, senders);
                                     downloadText(`${safeName(collectionName)}.txio.json`, JSON.stringify(file, null, 2), 'application/json');
+                                    const list = (items: string[]) => `${items.slice(0, 3).join('; ')}${items.length > 3 ? '…' : ''}`;
                                     if (skipped.length > 0) {
-                                        appStore.showToast(`Left out ${skipped.length} request${skipped.length === 1 ? '' : 's'} the CLI runner cannot run: ${skipped.slice(0, 3).join(', ')}${skipped.length > 3 ? '…' : ''}`, 'info');
+                                        appStore.showToast(`Left out ${skipped.length} request${skipped.length === 1 ? '' : 's'} the CLI cannot run: ${list(skipped)}`, 'info');
+                                    }
+                                    if (dropped.length > 0) {
+                                        appStore.showToast(`Left out ${dropped.length} check${dropped.length === 1 ? '' : 's'} the CLI cannot express: ${list(dropped)}`, 'info');
                                     }
                                 }}
-                                className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-300 hover:text-electric-violet"
+                                className="inline-flex items-center gap-1 text-fg-muted hover:text-fg"
                             >
                                 <Download size={12}/> CLI file
                             </button>
                         )}
                         {report && (
                             <>
-                                <button type="button" onClick={() => downloadText(`${safeName(collectionName)}-run.json`, JSON.stringify(report, null, 2), 'application/json')} className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-300 hover:text-electric-violet">
+                                <button type="button" onClick={() => downloadText(`${safeName(collectionName)}-run.json`, JSON.stringify(report, null, 2), 'application/json')} className="inline-flex items-center gap-1 text-fg-muted hover:text-fg">
                                     <Download size={12}/> JSON
                                 </button>
-                                <button type="button" onClick={() => downloadText(`${safeName(collectionName)}-run.md`, reportToMarkdown(report), 'text/markdown')} className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-300 hover:text-electric-violet">
+                                <button type="button" onClick={() => downloadText(`${safeName(collectionName)}-run.md`, reportToMarkdown(report), 'text/markdown')} className="inline-flex items-center gap-1 text-fg-muted hover:text-fg">
                                     <Download size={12}/> Markdown
                                 </button>
                             </>
@@ -363,9 +374,9 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
 
             {/* List */}
             <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-                <div className="border border-slate-200 dark:border-white/5 rounded-xl bg-slate-50 dark:bg-dark-indigo-glow overflow-hidden shadow-xl">
+                <div className="border border-line rounded-[10px] bg-sunken overflow-hidden shadow-card">
                     <table className="w-full text-left">
-                        <thead className="bg-slate-100 dark:bg-near-black text-[10px] font-black uppercase text-slate-500 tracking-widest border-b border-slate-200 dark:border-white/5">
+                        <thead className="bg-hover text-[12px] font-semibold text-fg-subtle border-b border-line">
                             <tr>
                                 <th className="px-6 py-3 w-12">#</th>
                                 <th className="px-6 py-3">Request Name</th>
@@ -382,55 +393,55 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                                 const req = cell.request;
                                 const running = runningCells.has(i);
                                 return (
-                                    <tr key={i} className={`transition-colors ${running ? 'bg-electric-violet/10' : 'hover:bg-slate-100 dark:hover:bg-white/5'}`}>
-                                        <td className="px-6 py-4 text-slate-500 dark:text-slate-600 font-mono text-xs">{cell.requestIndex + 1}</td>
-                                        <td className="px-6 py-4 font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                    <tr key={i} className={`transition-colors ${running ? 'bg-hover' : 'hover:bg-hover'}`}>
+                                        <td className="px-6 py-4 text-fg-subtle font-mono text-xs">{cell.requestIndex + 1}</td>
+                                        <td className="px-6 py-4 font-semibold text-fg-muted flex items-center gap-2">
                                             {req.name}
                                         </td>
-                                        {multiNetwork && <td className="px-6 py-4 font-mono text-xs text-slate-500">{cell.network}</td>}
-                                        <td className="px-6 py-4 font-mono text-xs text-slate-500">{req.rpcParams?.method || req.txType || 'Transaction'}</td>
+                                        {multiNetwork && <td className="px-6 py-4 font-mono text-xs text-fg-subtle">{cell.network}</td>}
+                                        <td className="px-6 py-4 font-mono text-xs text-fg-subtle">{req.rpcParams?.method || req.txType || 'Transaction'}</td>
                                         <td className="px-6 py-4">
                                             {r?.status === 'error' ? (
-                                                <span className="inline-flex items-center gap-1.5 text-red-400 text-xs font-bold bg-red-900/10 px-2 py-1 rounded border border-red-900/20" title={r.error?.message}>
+                                                <span className="inline-flex items-center gap-1.5 text-red-600 dark:text-red-400 text-xs font-semibold bg-red-900/10 px-2 py-1 rounded border border-red-900/20" title={r.error?.message}>
                                                     <XCircle size={14}/> {r.error?.code ?? 'ERR'}
                                                 </span>
                                             ) : r?.status === 'fail' ? (
-                                                <span className="inline-flex items-center gap-1.5 text-red-400 text-xs font-bold bg-red-900/10 px-2 py-1 rounded border border-red-900/20">
+                                                <span className="inline-flex items-center gap-1.5 text-red-600 dark:text-red-400 text-xs font-semibold bg-red-900/10 px-2 py-1 rounded border border-red-900/20">
                                                     <XCircle size={14}/> {r.httpStatus || 200} Failed
                                                 </span>
                                             ) : r?.status === 'pass' ? (
-                                                <span className="inline-flex items-center gap-1.5 text-emerald-400 text-xs font-bold bg-emerald-900/10 px-2 py-1 rounded border border-emerald-900/20">
+                                                <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 text-xs font-semibold bg-emerald-900/10 px-2 py-1 rounded border border-emerald-900/20">
                                                     <CheckCircle2 size={14}/> {r.httpStatus || 200} OK
                                                 </span>
                                             ) : r?.status === 'skipped' ? (
-                                                <span className="inline-flex items-center gap-1.5 text-slate-500 text-xs font-bold" title={r.skipReason}>
+                                                <span className="inline-flex items-center gap-1.5 text-fg-subtle text-xs font-semibold" title={r.skipReason}>
                                                     <MinusCircle size={14}/> Skipped
                                                 </span>
                                             ) : running ? (
-                                                <span className="inline-flex items-center gap-1.5 text-amber-400 text-xs font-bold bg-amber-900/10 px-2 py-1 rounded border border-amber-900/20">
+                                                <span className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400 text-xs font-semibold bg-amber-900/10 px-2 py-1 rounded border border-amber-900/20">
                                                     <Clock size={14} className="animate-spin"/> Running
                                                 </span>
                                             ) : (
-                                                <span className="text-slate-500 dark:text-slate-600 text-xs italic flex items-center gap-1"><Clock size={12}/> Pending</span>
+                                                <span className="text-fg-subtle text-xs italic flex items-center gap-1"><Clock size={12}/> Pending</span>
                                             )}
                                         </td>
                                         <td className="px-6 py-4">
                                             {r && r.assertions.length > 0 ? (
                                                 <span
-                                                    className={`inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded border ${
+                                                    className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded border ${
                                                         r.assertions.every((a) => a.passed)
-                                                            ? 'text-emerald-400 bg-emerald-900/10 border-emerald-900/20'
-                                                            : 'text-red-400 bg-red-900/10 border-red-900/20'
+                                                            ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-900/10 border-emerald-900/20'
+                                                            : 'text-red-600 dark:text-red-400 bg-red-900/10 border-red-900/20'
                                                     }`}
                                                     title={r.assertions.map((a) => a.message ?? a.name).join('\n')}
                                                 >
                                                     {r.assertions.filter((a) => a.passed).length}/{r.assertions.length}
                                                 </span>
                                             ) : (
-                                                <span className="text-slate-500 dark:text-slate-600 text-xs italic">—</span>
+                                                <span className="text-fg-subtle text-xs italic">—</span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4 font-mono text-xs text-slate-500 dark:text-slate-400">
+                                        <td className="px-6 py-4 font-mono text-xs text-fg-muted">
                                             {r && r.durationMs > 0 ? `${r.durationMs}ms` : '-'}
                                         </td>
                                     </tr>
@@ -439,7 +450,7 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
                         </tbody>
                     </table>
                      {plan.length === 0 && (
-                        <div className="p-8 text-center text-slate-500 text-sm italic">
+                        <div className="p-8 text-center text-fg-subtle text-sm italic">
                             Empty collection. Add requests to &quot;{collectionName}&quot; to see them here.
                         </div>
                     )}

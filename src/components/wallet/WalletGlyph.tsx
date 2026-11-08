@@ -35,6 +35,8 @@ const BRAND_ICONS: Partial<
     'trust-wallet': WalletTrust,
     rainbow: WalletRainbow,
     'okx-wallet': WalletOkx,
+    'okx-wallet-sui': WalletOkx,
+    'phantom-solana': WalletPhantom,
     rabby: WalletRabby,
     zerion: WalletZerion,
     ledger: WalletLedger,
@@ -99,12 +101,12 @@ const GLYPH_STYLES: Record<
         fill: 'from-slate-900 to-slate-700'
     },
     'sui-wallet': {
-        ring: 'from-electric-violet/80 to-electric-violet/40',
-        fill: 'from-electric-violet to-slate-700'
+        ring: 'from-fg-subtle to-fg-subtle',
+        fill: 'from-fg-subtle to-slate-700'
     },
     suiet: {
-        ring: 'from-cyan-400/70 to-electric-violet/40',
-        fill: 'from-cyan-400 to-electric-violet'
+        ring: 'from-cyan-400/70 to-fg-subtle',
+        fill: 'from-cyan-400 to-fg-subtle'
     },
     ethos: {
         ring: 'from-emerald-400/70 to-cyan-300/40',
@@ -226,7 +228,7 @@ export function WalletGlyph({
 
         return (
             <div
-                className={`flex ${dimensions} shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white p-2 shadow-sm dark:border-white/10 dark:bg-white/[0.04]`}
+                className={`flex ${dimensions} shrink-0 items-center justify-center rounded-card border border-line bg-white p-2 shadow-sm dark:border-white/10 dark:bg-white/[0.04]`}
             >
                 <BrandIcon size={iconSize} />
             </div>
@@ -235,25 +237,21 @@ export function WalletGlyph({
 
     return (
         <div
-            className={`relative ${dimensions} shrink-0 rounded-2xl border border-white/10 bg-black/30 p-[1px] shadow-[0_16px_40px_rgba(0,0,0,0.35)]`}
+            className={`relative ${dimensions} shrink-0 rounded-card border border-line bg-black/30 p-[1px] shadow-[0_16px_40px_rgba(0,0,0,0.35)]`}
         >
             <div
-                className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${style.ring} opacity-80 blur-[1px]`}
+                className={`absolute inset-0 rounded-card bg-gradient-to-br ${style.ring} opacity-80 blur-[1px]`}
             />
             <div
-                className={`relative flex h-full w-full items-center justify-center rounded-[calc(theme(borderRadius.2xl)-1px)] bg-gradient-to-br ${style.fill} font-black text-white`}
+                className={`relative flex h-full w-full items-center justify-center rounded-[calc(theme(borderRadius.2xl)-1px)] bg-gradient-to-br ${style.fill} font-semibold text-white`}
             >
-                <span className="tracking-[0.22em]">
-                    {shortName}
-                </span>
-                <span className="absolute bottom-1 right-1 rounded-full bg-black/20 px-1 text-[9px] font-bold tracking-[0.18em] text-white/90">
-                    {
-                        FAMILY_MARKS[
-                            family
-                        ]
-                    }
+                <span className="leading-none">
+                    {shortName.slice(0, 2)}
                 </span>
             </div>
+            <span className="absolute -bottom-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full border border-white dark:border-near-black bg-slate-900 px-0.5 text-[8px] font-semibold leading-none text-white">
+                {FAMILY_MARKS[family]}
+            </span>
         </div>
     );
 }

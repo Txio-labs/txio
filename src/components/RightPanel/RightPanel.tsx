@@ -47,18 +47,15 @@ const TabButton = ({
 }) => (
   <button
     onClick={() => onSelect(id)}
-    className={`flex-1 flex flex-col items-center justify-center py-2 gap-1 transition-colors relative ${
-      isActive
-      ? 'text-electric-violet'
-      : 'text-slate-500 hover:text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.03]'
+    role="tab"
+    aria-selected={isActive}
+    className={`flex-1 inline-flex items-center justify-center gap-1.5 h-7 rounded-[7px] text-xs font-medium transition-colors ${
+      isActive ? 'bg-surface text-fg border border-line shadow-[0_1px_2px_rgba(0,0,0,0.12)]' : 'text-fg-subtle hover:text-fg border border-transparent'
     }`}
     title={label}
   >
-    <Icon size={15} strokeWidth={isActive ? 2.25 : 1.75} />
-    <span className="text-[10px] font-medium">{label}</span>
-    {isActive && (
-      <span className="absolute bottom-0 left-0 right-0 h-px bg-electric-violet"></span>
-    )}
+    <Icon size={13} strokeWidth={isActive ? 2.2 : 1.8} />
+    <span>{label}</span>
   </button>
 );
 
@@ -137,14 +134,11 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   };
 
   return (
-    <div
-      style={{ width: 320 }}
-      className="shrink-0 bg-slate-50 dark:bg-near-black border-l border-slate-200 dark:border-white/[0.06] flex flex-col h-full font-sans relative z-30"
-    >
+    <div className="w-full flex flex-col h-full relative">
       {/* Header */}
-      <div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-slate-200 dark:border-white/[0.06] bg-white dark:bg-dark-indigo-glow">
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 tracking-tight">Inspector</span>
+      <div className="shrink-0 flex items-center justify-between gap-2 px-3 h-12 border-b border-line">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-[14px] font-semibold text-fg">Inspector</span>
           <Select
             value={network}
             size="xs"
@@ -160,19 +154,21 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         </div>
         <button
           onClick={onClose}
-          className="p-1 text-slate-500 hover:text-slate-700 dark:text-slate-200 rounded hover:bg-slate-100 dark:hover:bg-white/[0.05] transition-colors"
+          className="h-7 w-7 inline-flex items-center justify-center text-fg-subtle hover:text-fg rounded-[7px] hover:bg-hover transition-colors"
           aria-label="Close inspector"
         >
-          <X size={13} />
+          <X size={14} />
         </button>
       </div>
 
       {/* Navigation */}
-      <div className="shrink-0 flex border-b border-slate-200 dark:border-white/[0.06] bg-slate-50 dark:bg-near-black">
-        <TabButton id="wallet" icon={Wallet} label="Wallet" isActive={activeTab === 'wallet'} onSelect={setActiveTab} />
-        <TabButton id="objects" icon={Box} label="Objects" isActive={activeTab === 'objects'} onSelect={setActiveTab} />
-        <TabButton id="analysis" icon={BrainCircuit} label="Analysis" isActive={activeTab === 'analysis'} onSelect={setActiveTab} />
-        <TabButton id="discuss" icon={MessageSquare} label="Discuss" isActive={activeTab === 'discuss'} onSelect={setActiveTab} />
+      <div className="shrink-0 px-3 pt-3">
+        <div role="tablist" className="flex gap-0.5 p-0.5 rounded-[9px] bg-hover border border-line">
+          <TabButton id="wallet" icon={Wallet} label="Wallet" isActive={activeTab === 'wallet'} onSelect={setActiveTab} />
+          <TabButton id="objects" icon={Box} label="Assets" isActive={activeTab === 'objects'} onSelect={setActiveTab} />
+          <TabButton id="analysis" icon={BrainCircuit} label="Analysis" isActive={activeTab === 'analysis'} onSelect={setActiveTab} />
+          <TabButton id="discuss" icon={MessageSquare} label="Discuss" isActive={activeTab === 'discuss'} onSelect={setActiveTab} />
+        </div>
       </div>
 
       <div className="flex-1 flex flex-col min-h-0 relative">
@@ -185,7 +181,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
 
         {/* --- OBJECTS TAB --- */}
         {activeTab === 'objects' && (
-          <div className="flex-1 flex flex-col min-h-0 bg-slate-50 dark:bg-near-black">
+          <div className="flex-1 flex flex-col min-h-0">
             <ObjectsTab
               connectedAddress={connectedAddress}
               walletFamily={currentWallet?.family || null}

@@ -1,283 +1,182 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
-import { 
-    Shield, Globe, Cpu, Layers, Terminal, 
-    Database, Activity, ArrowRight, CheckCircle2,
-    BarChart3, MousePointer2, Share2, Rocket
+import Link from 'next/link';
+import {
+    ArrowRight,
+    Terminal,
+    Layers,
+    FileCode2,
+    Import,
+    Variable,
+    Activity,
+    ShieldAlert,
+    BadgeCheck,
+    PenLine,
+    FolderTree,
+    PlayCircle,
+    BookMarked,
+    History,
+    Repeat,
+    Banknote,
+    KeyRound,
+    Users,
+    MessageSquare,
+    Webhook,
+    Clock,
+    Fingerprint,
+    Network,
 } from 'lucide-react';
-import { appStore, useAppStore } from '@/lib/store';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import logoDark from '../assets/txio2.png';
-import logoLight from '../assets/txio3.png';
+import { appStore } from '@/lib/store';
+import { MarketingShell, PageHero, CtaBand, Eyebrow } from '@/components/marketing/MarketingShell';
 
 interface FeaturesPageProps {
     embedded?: boolean;
 }
 
-export const FeaturesPage: React.FC<
-    FeaturesPageProps
-> = ({ embedded = false }) => {
-    const { theme } = useAppStore();
-    const isDark = theme === 'dark';
-    const logo = isDark ? logoDark : logoLight;
-    const router = useRouter();
+type Item = { icon: React.ComponentType<{ size?: number }>; title: string; body: string };
 
-    const navigateTo = (
-        target:
-            | 'landing'
-            | 'ecosystem'
-            | 'docs'
-            | 'app'
-    ) => {
-        if (embedded) {
-            if (target === 'landing') {
-                appStore.setActiveTab(null);
-                return;
-            }
+const GROUPS: Array<{ id: string; label: string; title: string; body: string; items: Item[] }> = [
+    {
+        id: 'build',
+        label: 'Build',
+        title: 'Requests that understand the chain.',
+        body: 'Not a generic HTTP client. Txio knows each chain’s methods, transaction formats and address shapes.',
+        items: [
+            { icon: Terminal, title: 'RPC builder', body: 'JSON-RPC on every supported chain with method autocomplete, parameter templates and per-chain RPC health.' },
+            { icon: Layers, title: 'Transaction builders', body: 'EVM contract calls, Solana instructions, Soroban calls, Aptos entry functions, Sui Move calls and PTBs.' },
+            { icon: FileCode2, title: 'Contract builder', body: 'Write and compile Solidity in the browser, with Move flows for Sui and Aptos.' },
+            { icon: Import, title: 'cURL import', body: 'Paste a cURL command and get a request you can edit, save and run.' },
+            { icon: Variable, title: 'Variables & environments', body: 'Swap endpoints, addresses and keys per environment without editing requests.' },
+            { icon: Network, title: 'RPC failover', body: 'When an endpoint returns 429 or 5xx, the next backup endpoint takes the call.' },
+        ],
+    },
+    {
+        id: 'simulate',
+        label: 'Simulate & sign',
+        title: 'See the outcome before the signature.',
+        body: 'Each chain’s native dry run feeds one review screen. Fields a chain doesn’t report are hidden, not invented.',
+        items: [
+            { icon: Activity, title: 'Pre-sign simulation', body: 'dryRunTransactionBlock, eth_call and estimateGas, simulateTransaction and Aptos simulate.' },
+            { icon: ShieldAlert, title: 'Approval warnings', body: 'Unlimited approve and setApprovalForAll on EVM get flagged before you sign.' },
+            { icon: BadgeCheck, title: 'Verification badge', body: 'See whether the contract you are calling is verified.' },
+            { icon: PenLine, title: 'Wallet signing', body: 'Sign with the wallet for each chain family, including Ledger hardware wallets.' },
+            { icon: Fingerprint, title: 'Mainnet guard', body: 'An explicit warning before any transaction that moves real funds.' },
+        ],
+    },
+    {
+        id: 'organize',
+        label: 'Organize',
+        title: 'Keep the calls you need.',
+        body: 'Collections, history and recipes turn one-off requests into a reusable toolkit.',
+        items: [
+            { icon: FolderTree, title: 'Collections', body: 'Nested folders of requests, shared with your workspace.' },
+            { icon: PlayCircle, title: 'Collection runner', body: 'Run a collection’s requests in order with assertions and hooks.' },
+            { icon: BookMarked, title: 'Recipes', body: 'Reusable transaction templates, with starters that work offline.' },
+            { icon: History, title: 'History & export', body: 'Every call with status and timing, exportable as CSV or JSON.' },
+        ],
+    },
+    {
+        id: 'money',
+        label: 'Move value',
+        title: 'Swap, bridge and cash out.',
+        body: 'Money movement sits next to the requests that need it.',
+        items: [
+            { icon: Repeat, title: 'Swap & bridge', body: 'Quotes and orders through LI.FI, falling back to SideShift, with resumable swaps.' },
+            { icon: Banknote, title: 'Off-ramp', body: 'Off-ramp quotes and orders through Transak.' },
+            { icon: KeyRound, title: 'Approvals manager', body: 'Review and revoke EVM token approvals.' },
+        ],
+    },
+    {
+        id: 'team',
+        label: 'Team & automation',
+        title: 'Built for teams that ship.',
+        body: 'Workspaces, roles and automation for the work that repeats.',
+        items: [
+            { icon: Users, title: 'Workspaces & roles', body: 'Owners, editors and viewers across shared collections and environments.' },
+            { icon: MessageSquare, title: 'Comments', body: 'Discuss a request next to the request.' },
+            { icon: Clock, title: 'Scheduled tasks', body: 'Run requests on a schedule.' },
+            { icon: Webhook, title: 'Webhooks & limits', body: 'Get notified on results and cap what automation may spend.' },
+        ],
+    },
+];
 
-            if (target === 'app') {
-                appStore.openTab(
-                    'new_request'
-                );
-                return;
-            }
-
-            appStore.openTab(target);
-            return;
-        }
-
-        const modeToPath: Record<string, string> = {
-            landing: '/',
-            ecosystem: '/ecosystem',
-            docs: '/docs',
-            app: '/signup'
-        };
-
-        const path = modeToPath[target];
-        if (path) {
-            router.push(path);
-        }
-    };
-
-    React.useEffect(() => {
-        if (embedded) {
-            return;
-        }
-
-        document.body.style.overflow = 'auto';
-        document.body.style.overflowX = 'hidden';
-        return () => {
-            document.body.style.overflow = 'hidden';
-        };
-    }, [embedded]);
-
-    const mainFeatures = [
-        {
-            title: "RPC Builder",
-            desc: "Write and run JSON-RPC calls on any chain we support. Autocomplete catches the method names, schema validation catches the rest before you hit send.",
-            icon: Terminal,
-            color: "text-electric-violet",
-            bg: "bg-electric-violet/10"
-        },
-        {
-            title: "Dry-run first",
-            desc: "See gas, state changes, and where the transaction would blow up — without spending a cent on the live network.",
-            icon: Cpu,
-            color: "text-emerald-400",
-            bg: "bg-emerald-400/10"
-        }
-    ];
-
-    const gridFeatures = [
-        { title: "Object Explorer", desc: "Inspect on-chain state and ownership as it changes.", icon: Database },
-        { title: "Atomic Batching", desc: "Compose multiple operations into one transaction.", icon: Layers },
-        { title: "Team Sync", desc: "Shared collections with comments.", icon: Share2 },
-        { title: "Live Metrics", desc: "Node health and throughput, updating in real time.", icon: Activity },
-        { title: "Multi-Chain IDE", desc: "Sui, Ethereum/EVM, Solana, Aptos, Soroban — one workflow across all of them.", icon: Globe }
-    ];
+export const FeaturesPage: React.FC<FeaturesPageProps> = ({ embedded = false }) => {
+    const primaryCta = embedded ? (
+        <button
+            onClick={() => appStore.openTab('new_request')}
+            className="h-10 px-4 inline-flex items-center gap-2 rounded-[10px] bg-inverse text-on-inverse text-sm font-medium hover:opacity-90"
+        >
+            New request <ArrowRight size={14} />
+        </button>
+    ) : (
+        <Link href="/signup" className="h-10 px-4 inline-flex items-center gap-2 rounded-[10px] bg-inverse text-on-inverse text-sm font-medium hover:opacity-90">
+            Get started free <ArrowRight size={14} />
+        </Link>
+    );
 
     return (
-        <div className={`${embedded ? 'h-full overflow-y-auto custom-scrollbar' : 'min-h-screen'} font-sans selection:bg-electric-violet/30 overflow-x-hidden ${
-            isDark ? 'bg-[#0a0a0a] text-white' : 'bg-slate-50 text-slate-900'
-        }`}>
-            {/* Nav */}
-            <nav className={`${embedded ? 'sticky top-0' : 'fixed top-0 left-0 right-0'} h-20 border-b z-50 px-6 md:px-12 flex items-center justify-between backdrop-blur-xl ${
-                isDark ? 'bg-black/50 border-white/5' : 'bg-white/50 border-slate-200'
-            }`}>
-                <div className="flex items-center gap-8">
-                    <button className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('landing')}>
-                        <img src={logo.src} alt="txio" className="h-7 w-auto" />
-                        <span className="font-black tracking-tighter text-lg">features</span>
-                    </button>
-                    <div className="hidden md:flex items-center gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-                        <button onClick={() => navigateTo('ecosystem')} className="hover:text-electric-violet transition-colors">Ecosystem</button>
-                        <button onClick={() => navigateTo('docs')} className="hover:text-electric-violet transition-colors">Documentation</button>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <ThemeToggle />
-                    <button
-                        onClick={() => navigateTo('app')}
-                        className="px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-near-black rounded-xl font-black text-[10px] uppercase tracking-widest hover:opacity-90 transition-all shadow-xl active:scale-95"
-                    >
-                        {embedded ? 'New Request' : 'Get Started'}
-                    </button>
-                </div>
-            </nav>
-
-            {/* Hero */}
-            <section className={`relative ${embedded ? 'pt-28' : 'pt-48'} pb-32 px-6 overflow-hidden`}>
-                <div className="absolute top-1/4 -left-20 w-[600px] h-[600px] bg-electric-violet/10 blur-[120px] rounded-full" />
-                <div className="absolute bottom-1/4 -right-20 w-[600px] h-[600px] bg-electric-violet/10 blur-[120px] rounded-full" />
-
-                <div className="max-w-7xl mx-auto text-center relative z-10 space-y-12">
-                    <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="space-y-6"
-                    >
-                        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-md ${isDark ? 'bg-white/[0.03] border border-white/10' : 'bg-slate-900/[0.03] border border-slate-200'}`}>
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-electric-violet">Built for shipping</span>
-                            <div className="w-1 h-1 rounded-full bg-slate-500" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">v2.4.0</span>
-                        </div>
-                        <h1 className={`text-6xl md:text-8xl font-black tracking-tighter leading-[0.85] ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                            Tools that <br />
-                            <span className="text-electric-violet italic">don&apos;t get in the way.</span>
-                        </h1>
-                        <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
-                            One workspace for protocol engineers, DevOps, and the infra folks who keep it all running.
-                        </p>
-                    </motion.div>
-                </div>
-            </section>
-
-            {/* Main Features */}
-            <section className="py-24 px-6 max-w-7xl mx-auto">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {mainFeatures.map((f, i) => (
-                        <motion.div 
-                            key={f.title}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.1 }}
-                            className={`p-1 rounded-[3rem] bg-gradient-to-br to-transparent hover:from-electric-violet/20 transition-all group ${isDark ? 'from-white/10' : 'from-slate-900/10'}`}
+        <MarketingShell embedded={embedded}>
+            <PageHero
+                eyebrow="Features"
+                title="Tools that stay out of the way."
+                body="Everything you need to build, test and run on-chain calls, organized by the job you are doing."
+                actions={
+                    <>
+                        {primaryCta}
+                        <Link
+                            href="/docs"
+                            className="h-10 px-4 inline-flex items-center rounded-[10px] border border-line-strong bg-surface text-sm font-medium text-fg hover:bg-hover"
                         >
-                            <div className={`p-10 rounded-[2.8rem] h-full flex flex-col space-y-8 ${isDark ? 'bg-[#18181b]' : 'bg-white border border-slate-200'}`}>
-                                <div className={`w-16 h-16 rounded-2xl ${f.bg} flex items-center justify-center ${f.color} shadow-2xl`}>
-                                    <f.icon size={32} />
-                                </div>
-                                <div className="space-y-4 flex-1">
-                                    <h3 className="text-2xl font-black tracking-tight">{f.title}</h3>
-                                    <p className="text-slate-500 text-sm leading-relaxed">{f.desc}</p>
-                                </div>
-                                <div className={`pt-6 flex items-center justify-between transition-colors ${isDark ? 'border-t border-white/5 group-hover:text-white' : 'border-t border-slate-200 group-hover:text-slate-900'}`}>
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 group-hover:text-slate-400 transition-colors">Learn More</span>
-                                    <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                                </div>
-                            </div>
-                        </motion.div>
+                            Documentation
+                        </Link>
+                    </>
+                }
+            >
+                <nav className="mt-12 flex flex-wrap gap-2" aria-label="Feature groups">
+                    {GROUPS.map((g, i) => (
+                        <a
+                            key={g.id}
+                            href={`#${g.id}`}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                document.getElementById(g.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }}
+                            className="h-9 px-3 inline-flex items-center gap-2 rounded-[9px] border border-line bg-surface text-[14px] text-fg hover:border-line-strong transition-colors"
+                        >
+                            <span className="font-mono text-[12px] text-fg-subtle">0{i + 1}</span>
+                            {g.label}
+                        </a>
                     ))}
-                </div>
-            </section>
+                </nav>
+            </PageHero>
 
-            {/* Features Grid */}
-            <section className={`py-32 px-6 ${isDark ? 'bg-[#0a0a0a]' : 'bg-white'}`}>
-                <div className="max-w-7xl mx-auto space-y-20">
-                    <div className="text-center space-y-4">
-                        <h2 className="text-4xl md:text-6xl font-black tracking-tighter">Everything in one place.</h2>
-                        <p className="text-slate-500 font-bold">No tab juggling. No half-broken tooling. Just the toolchain.</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-16">
-                        {gridFeatures.map((f, i) => (
-                            <motion.div
-                                key={f.title}
-                                initial={{ opacity: 0 }}
-                                whileInView={{ opacity: 1 }}
-                                transition={{ delay: i * 0.05 }}
-                                className="flex gap-6 items-start"
-                            >
-                                <div className={`p-3 rounded-xl text-electric-violet ${isDark ? 'bg-white/[0.03] border border-white/5' : 'bg-slate-100 border border-slate-200'}`}>
-                                    <f.icon size={20} />
-                                </div>
-                                <div className="space-y-2">
-                                    <h4 className="font-bold text-lg">{f.title}</h4>
-                                    <p className="text-sm text-slate-500 leading-relaxed">{f.desc}</p>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Showcase Section */}
-            <section className="py-40 px-6 max-w-7xl mx-auto">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
-                    <div className="space-y-10">
-                        <h2 className="text-5xl font-black tracking-tighter leading-tight">Workspaces that <br /> get out of the way.</h2>
-                        <div className="space-y-6">
-                            {[
-                                "Native Move support for Sui and Aptos.",
-                                "PDA and instruction inspection for Solana.",
-                                "Trace and debug on every EVM chain.",
-                                "Secrets in a vault — not your dotfiles."
-                            ].map(t => (
-                                <div key={t} className="flex items-center gap-4 group">
-                                    <div className="p-1 rounded-full bg-emerald-500/20 text-emerald-400 group-hover:scale-110 transition-transform">
-                                        <CheckCircle2 size={16} />
-                                    </div>
-                                    <span className={`font-medium transition-colors ${isDark ? 'text-slate-400 group-hover:text-white' : 'text-slate-600 group-hover:text-slate-900'}`}>{t}</span>
+            <div className="w-full px-5 md:px-10 2xl:px-16 space-y-20 md:space-y-28">
+                {GROUPS.map((g, i) => (
+                    <section key={g.id} id={g.id} className="scroll-mt-24 grid grid-cols-1 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,2fr)] gap-8 lg:gap-16 border-t border-line pt-10">
+                        <div data-reveal className="lg:sticky lg:top-24 self-start">
+                            <Eyebrow>
+                                <span className="font-mono">0{i + 1}</span> {g.label}
+                            </Eyebrow>
+                            <h2 className="mt-4 text-[28px] md:text-[36px] font-semibold tracking-[-0.04em] leading-[1.05] text-balance">{g.title}</h2>
+                            <p className="mt-3 text-[16px] text-fg-muted leading-relaxed max-w-md">{g.body}</p>
+                        </div>
+                        <div data-reveal-group className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-px bg-line border border-line rounded-[16px] overflow-hidden">
+                            {g.items.map((it) => (
+                                <div key={it.title} className="bg-surface p-6 hover:bg-sunken transition-colors">
+                                    <span className="h-9 w-9 rounded-[9px] border border-line bg-sunken flex items-center justify-center text-fg-muted">
+                                        <it.icon size={16} />
+                                    </span>
+                                    <h3 className="mt-5 text-[16px] font-semibold tracking-[-0.01em]">{it.title}</h3>
+                                    <p className="mt-1.5 text-[14px] text-fg-muted leading-relaxed">{it.body}</p>
                                 </div>
                             ))}
+                            {g.items.length % 3 !== 0 && <div className="bg-surface hidden xl:block" />}
+                            {g.items.length % 3 === 1 && <div className="bg-surface hidden xl:block" />}
                         </div>
-                    </div>
+                    </section>
+                ))}
+            </div>
 
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-electric-violet/20 blur-[100px] rounded-full animate-pulse" />
-                        <div className={`relative p-10 rounded-[4rem] border shadow-2xl overflow-hidden ${
-                            isDark ? 'bg-[#18181b] border-white/10' : 'bg-white border-slate-200'
-                        }`}>
-                            <div className="space-y-6">
-                                <div className={`flex items-center gap-2 border-b pb-4 ${isDark ? 'border-white/5' : 'border-slate-200'}`}>
-                                    <div className="w-3 h-3 rounded-full bg-red-500" />
-                                    <div className="w-3 h-3 rounded-full bg-amber-500" />
-                                    <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                                    <span className={`text-[10px] font-black uppercase tracking-widest ml-2 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Terminal Execution</span>
-                                </div>
-                                <div className="font-mono text-sm space-y-2">
-                                    <div className={isDark ? 'text-slate-500' : 'text-slate-400'}># Validating Sui transaction block...</div>
-                                    <div className="text-emerald-500">SUCCESS: Transaction verified at checkpoint 29081</div>
-                                    <div className={isDark ? 'text-white' : 'text-slate-900'}>Gas Used: 0.021 SUI</div>
-                                    <div className={`mt-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}># Inspecting objects...</div>
-                                    <div className="text-sky-500">Object: 0x8a92... Type: 0x2::coin::Coin&lt;0x2::sui::SUI&gt;</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Footer */}
-            <footer className={`py-32 px-6 text-center space-y-12 ${isDark ? 'border-t border-white/5' : 'border-t border-slate-200'}`}>
-                <div className="max-w-4xl mx-auto space-y-6">
-                    <img src={logo.src} alt="txio" className="h-10 w-auto mx-auto" />
-                    <h3 className="text-3xl font-black tracking-tighter">Ready to ship?</h3>
-                    <div className="flex justify-center gap-4">
-                        <button onClick={() => navigateTo('app')} className="px-10 py-4 bg-slate-900 dark:bg-white text-white dark:text-near-black rounded-2xl font-black text-xs uppercase tracking-widest hover:opacity-90 transition-all shadow-2xl active:scale-95">
-                            {embedded ? 'New Request' : 'Get Started Free'}
-                        </button>
-                        <button onClick={() => navigateTo('docs')} className={`px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${isDark ? 'bg-white/5 border border-white/10 hover:bg-white/10' : 'bg-slate-100 border border-slate-200 hover:bg-slate-200'}`}>
-                            Documentation
-                        </button>
-                    </div>
-                </div>
-                <div className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-500">
-                    © 2026 txio labs • all rights reserved
-                </div>
-            </footer>
-        </div>
+            <CtaBand embedded={embedded} />
+        </MarketingShell>
     );
 };

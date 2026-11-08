@@ -36,16 +36,16 @@ const TabButton: React.FC<{
             onClick={() => onClick(id)}
             className={`group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors ${
                 isActive
-                    ? 'bg-electric-violet/[0.1] text-white'
-                    : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-100'
+                    ? 'bg-active text-white'
+                    : 'text-fg-subtle hover:bg-hover hover:text-slate-100'
             }`}
         >
             <Icon
                 size={15}
-                className={isActive ? 'text-electric-violet' : 'text-slate-500 group-hover:text-slate-300'}
+                className={isActive ? 'text-fg' : 'text-fg-subtle group-hover:text-slate-300'}
             />
             <span className="flex-1 text-sm font-medium">{label}</span>
-            {isActive && <ChevronRight size={13} className="text-electric-violet" />}
+            {isActive && <ChevronRight size={13} className="text-fg" />}
         </button>
     );
 };
@@ -59,22 +59,22 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
     const profileHandle = `@${user.email.split('@')[0].toLowerCase()}`;
 
     return (
-        <div className="flex w-full shrink-0 flex-col border-b border-white/[0.08] bg-dark-indigo-glow p-4 md:w-[260px] md:border-b-0 md:border-r md:border-white/[0.08]">
+        <div className="flex w-full shrink-0 flex-col border-b border-line bg-elevated p-4 md:w-[260px] md:border-b-0 md:border-r md:border-white/[0.08]">
             {/* Identity */}
             <div className="flex items-center gap-3 px-1 py-2">
                 <Avatar size="lg" src={user.avatarUrl} seed={user.email} />
                 <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold text-white">{user.name}</div>
-                    <div className="truncate text-xs text-slate-500">{user.email}</div>
+                    <div className="truncate text-xs text-fg-subtle">{user.email}</div>
                 </div>
             </div>
 
-            <div className="mt-2 flex items-center gap-2 px-1 text-[11px] text-slate-500">
-                <span className="inline-flex items-center gap-1 text-emerald-400">
+            <div className="mt-2 flex items-center gap-2 px-1 text-[12px] text-fg-subtle">
+                <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
                     <BadgeCheck size={12} />
                     Verified
                 </span>
-                <span className="text-slate-700">·</span>
+                <span className="text-fg-muted">·</span>
                 <span className="truncate font-mono">{profileHandle}</span>
             </div>
 
@@ -94,9 +94,9 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
             <div className="mt-auto pt-6 hidden md:block">
                 <button
                     onClick={onLogout}
-                    className="group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-slate-400 hover:bg-rose-500/[0.08] hover:text-rose-300 transition-colors"
+                    className="group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-fg-subtle hover:bg-rose-500/[0.08] hover:text-rose-300 transition-colors"
                 >
-                    <LogOut size={15} className="text-slate-500 group-hover:text-rose-400" />
+                    <LogOut size={15} className="text-fg-subtle group-hover:text-rose-400" />
                     Sign out
                 </button>
             </div>

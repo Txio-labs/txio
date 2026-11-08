@@ -1,227 +1,140 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Cpu, Zap, Shield, Database, Layout, Server, Activity, Boxes, Command, KeyRound, History } from 'lucide-react';
-import { appStore, useAppStore } from '@/lib/store';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import gsap from 'gsap';
+import Link from 'next/link';
+import {
+    ArrowRight,
+    Boxes,
+    Command,
+    KeyRound,
+    History,
+    Globe,
+    Server,
+    Monitor,
+    Terminal,
+    Package,
+    RefreshCcw,
+    HeartPulse,
+    Lock,
+    MailCheck,
+    ShieldCheck,
+    Fingerprint,
+} from 'lucide-react';
+import { appStore } from '@/lib/store';
+import { MarketingShell, PageHero, SectionHeading, CtaBand } from '@/components/marketing/MarketingShell';
 
 interface InfrastructurePageProps {
     embedded?: boolean;
 }
 
-export const InfrastructurePage: React.FC<
-    InfrastructurePageProps
-> = ({ embedded = false }) => {
-    const { theme } = useAppStore();
-    const router = useRouter();
+const LAYERS = [
+    { icon: Globe, name: 'Web app', tech: 'Next.js · static export', body: 'The console. Talks to chain RPC endpoints directly and to the Txio API for your account data.' },
+    { icon: Monitor, name: 'Desktop', tech: 'Rust · Tauri', body: 'The same console in a native window, with a Rust proxy that keeps your session out of page script.' },
+    { icon: Terminal, name: 'CLI', tech: 'Rust', body: 'Shares its core with the API through a common Rust crate, so calls behave the same in your shell.' },
+    { icon: Server, name: 'API', tech: 'Rust · Axum · MongoDB', body: 'Accounts, workspaces, collections, history and automation. Cookie sessions with CSRF checks.' },
+    { icon: Package, name: 'SDK', tech: 'TypeScript', body: 'A typed client for the public execution API: simulate, execute and read history.' },
+];
 
-    const navigateTo = (
-        target:
-            | 'app'
-            | 'ecosystem'
-    ) => {
-        if (embedded) {
-            if (target === 'app') {
-                appStore.openTab(
-                    'new_request'
-                );
-                return;
-            }
+const RPC = [
+    { icon: RefreshCcw, title: 'Failover', body: 'A 429 or 5xx from an endpoint moves the call to the next backup endpoint for that chain.' },
+    { icon: HeartPulse, title: 'Health checks', body: 'Per-chain latency and status, checked from your browser and shown next to every request.' },
+    { icon: Globe, title: 'Your own endpoints', body: 'Add private RPC URLs per network. Public endpoints remain as fallbacks.' },
+];
 
-            appStore.openTab(target);
-            return;
-        }
+const SECURITY = [
+    { icon: Lock, title: 'HttpOnly sessions', body: 'The session cookie is never readable by page script. Unsafe requests must carry a CSRF header.' },
+    { icon: MailCheck, title: 'Email verification', body: 'New accounts confirm their address with a one-time code.' },
+    { icon: Fingerprint, title: 'Keys stay in your wallet', body: 'Txio builds and simulates transactions. Signing happens in your wallet or Ledger.' },
+    { icon: ShieldCheck, title: 'Mainnet guard', body: 'Transactions that move real funds need an explicit confirmation first.' },
+];
 
-        const modeToPath: Record<string, string> = {
-            ecosystem: '/ecosystem',
-            app: '/signup'
-        };
+const CAPABILITIES = [
+    { icon: Boxes, name: 'One client, five chain families', body: 'Sui, Ethereum and EVM, Solana, Aptos and Stellar behind one interface.' },
+    { icon: Command, name: 'Native chain semantics', body: 'Real per-chain methods and transaction formats, including PTB construction for Sui.' },
+    { icon: KeyRound, name: 'Wallet signing built in', body: 'Build, sign, run and inspect without exporting to a separate signer.' },
+    { icon: History, name: 'Collections, environments, history', body: 'Organized calls, per-network environments and a full execution log.' },
+];
 
-        const path = modeToPath[target];
-        if (path) {
-            router.push(path);
-        }
-    };
-
-    React.useEffect(() => {
-        if (embedded) {
-            return;
-        }
-
-        document.body.style.overflow = 'auto';
-        document.body.style.overflowX = 'hidden';
-
-        const ctx = gsap.context(() => {
-            gsap.from('.infra-title > *', {
-                y: 50,
-                opacity: 0,
-                duration: 1,
-                stagger: 0.2,
-                ease: 'power4.out'
-            });
-
-            gsap.from('.infra-card', {
-                scale: 0.8,
-                opacity: 0,
-                duration: 0.8,
-                stagger: 0.1,
-                delay: 0.5,
-                ease: 'back.out(1.2)'
-            });
-
-            gsap.from('.stat-item', {
-                y: 30,
-                opacity: 0,
-                duration: 0.8,
-                stagger: 0.2,
-                delay: 1,
-                ease: 'power3.out'
-            });
-        });
-
-        return () => {
-            document.body.style.overflow = 'hidden';
-            ctx.revert();
-        };
-    }, [embedded]);
-
-    const tiers = [
-        { name: 'Edge nodes', desc: 'A distributed mesh of fullnodes close to wherever you are. Less hop, less wait.', icon: <Activity size={24} />, color: 'text-emerald-400' },
-        { name: 'Compute grid', desc: 'Parallel execution for the big simulations — burn-down tests, complex PTBs, you name it.', icon: <Cpu size={24} />, color: 'text-violet-400' },
-        { name: 'Vault layer', desc: 'HSM-backed key storage (FIPS 140-2 Level 3). For when "in a .env file" isn\'t cutting it.', icon: <Shield size={24} />, color: 'text-sky-400' },
-        { name: 'Storage fabric', desc: 'Decentralized data availability for state you actually need to keep around.', icon: <Database size={24} />, color: 'text-amber-400' }
-    ];
-
-    const capabilities = [
-        {
-            name: 'One client, five chains',
-            desc: 'Sui, Ethereum, Solana, Aptos, and Soroban/Stellar behind a single interface. No swapping tools when a call moves from EVM to Move.',
-            icon: <Boxes size={22} />,
-            color: 'text-emerald-400'
-        },
-        {
-            name: 'Native chain semantics',
-            desc: 'Real RPC method and transaction understanding per chain — including full PTB (Programmable Transaction Block) construction for Sui — not a generic HTTP passthrough.',
-            icon: <Command size={22} />,
-            color: 'text-violet-400'
-        },
-        {
-            name: 'Wallet signing, built in',
-            desc: 'Construct a call, sign it with a connected wallet, run it, inspect the result — without leaving the workspace or exporting to a separate signer.',
-            icon: <KeyRound size={22} />,
-            color: 'text-sky-400'
-        },
-        {
-            name: 'Collections, environments, history',
-            desc: 'Save and organize RPC calls into collections, switch environments per network, and pull up execution history without re-building a request from scratch.',
-            icon: <History size={22} />,
-            color: 'text-amber-400'
-        }
-    ];
-
+export const InfrastructurePage: React.FC<InfrastructurePageProps> = ({ embedded = false }) => {
     return (
-        <div className={`${embedded ? 'h-full overflow-y-auto custom-scrollbar' : 'min-h-screen'} font-sans selection:bg-electric-violet/30 ${
-            theme === 'dark' ? 'bg-[#0a0a0a] text-white' : 'bg-slate-50 text-slate-900'
-        }`}>
-            {/* Nav */}
-            <nav className={`${embedded ? 'sticky top-0' : 'fixed top-0 left-0 right-0'} h-20 border-b z-50 px-6 md:px-12 flex items-center justify-between backdrop-blur-xl ${
-                theme === 'dark' ? 'bg-black/50 border-white/5' : 'bg-white/50 border-slate-200'
-            }`}>
-                <div className="flex items-center gap-6">
-                    <button 
-                        onClick={() =>
-                            navigateTo(
-                                'ecosystem'
-                            )
-                        }
-                        className={`flex items-center gap-2 text-sm font-bold transition-all group ${
-                            theme === 'dark' ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
-                        }`}
-                    >
-                        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-                        <span>Ecosystem</span>
-                    </button>
-                    <div className={`h-6 w-px ${theme === 'dark' ? 'bg-white/10' : 'bg-slate-200'}`}></div>
-                    <div className="flex items-center gap-3">
-                        <span className="font-black tracking-tighter text-lg">Infrastructure</span>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <ThemeToggle />
-                    <button
-                        onClick={() =>
-                            navigateTo('app')
-                        }
-                        className="px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-near-black rounded-xl font-black text-[10px] uppercase tracking-widest hover:opacity-90 transition-all shadow-[0_10px_20px_-5px_rgba(163,163,163,0.4)] active:scale-95"
-                    >
-                        {embedded
-                            ? 'New Request'
-                            : 'Launch'}
-                    </button>
-                </div>
-            </nav>
-
-            <section className={`relative ${embedded ? 'pt-28' : 'pt-48'} pb-32 px-6 md:px-12`}>
-                <div className="max-w-7xl mx-auto">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center mb-32">
-                        <motion.div 
-                            initial={{ opacity: 0, x: -30 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="space-y-8 infra-title"
+        <MarketingShell embedded={embedded}>
+            <PageHero
+                eyebrow="Infrastructure"
+                title="How Txio is put together."
+                body="A static web app, a native desktop shell, a CLI and a Rust API. Your chain calls go straight to RPC endpoints; your keys stay in your wallet."
+                actions={
+                    embedded ? (
+                        <button
+                            onClick={() => appStore.openTab('infrastructure')}
+                            className="h-10 px-4 inline-flex items-center gap-2 rounded-[10px] bg-inverse text-on-inverse text-sm font-medium hover:opacity-90"
                         >
-                            <h1 className="text-6xl md:text-8xl font-black tracking-tight leading-[0.9]">
-                                Fast where <br />
-                                <span className="text-emerald-400">it counts.</span>
-                            </h1>
-                            <p className="text-xl text-slate-400 leading-relaxed">
-                                Sub-millisecond reads, key material that never leaves the HSM, and uptime you can actually run a business on. The backbone, not the bottleneck.
-                            </p>
-                        </motion.div>
+                            Manage networks <ArrowRight size={14} />
+                        </button>
+                    ) : (
+                        <Link href="/docs" className="h-10 px-4 inline-flex items-center gap-2 rounded-[10px] bg-inverse text-on-inverse text-sm font-medium hover:opacity-90">
+                            Read the docs <ArrowRight size={14} />
+                        </Link>
+                    )
+                }
+            />
 
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-electric-violet/10 blur-[120px] rounded-full" />
-                            <div className="grid grid-cols-2 gap-4 relative z-10">
-                                {tiers.map((tier, i) => (
-                                    <motion.div
-                                        key={tier.name}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: i * 0.1 }}
-                                        className={`p-10 rounded-[3rem] border infra-card ${
-                                            theme === 'dark' ? 'bg-[#18181b]/80 border-white/5' : 'bg-white border-slate-200 shadow-xl'
-                                        }`}
-                                    >
-                                        <div className={`mb-6 ${tier.color}`}>{tier.icon}</div>
-                                        <h3 className="text-xl font-black mb-2">{tier.name}</h3>
-                                        <p className="text-xs text-slate-500 font-bold leading-relaxed">{tier.desc}</p>
-                                    </motion.div>
-                                ))}
-                            </div>
+            <section className="w-full px-5 md:px-10 2xl:px-16">
+                <div data-reveal-group className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-px bg-line border border-line rounded-[16px] overflow-hidden">
+                    {LAYERS.map((l) => (
+                        <div key={l.name} className="bg-surface p-6">
+                            <span className="h-9 w-9 rounded-[9px] border border-line bg-sunken flex items-center justify-center text-fg-muted">
+                                <l.icon size={16} />
+                            </span>
+                            <h3 className="mt-5 text-[16px] font-semibold">{l.name}</h3>
+                            <div className="mt-1 font-mono text-[12px] text-fg-subtle">{l.tech}</div>
+                            <p className="mt-3 text-[14px] text-fg-muted leading-relaxed">{l.body}</p>
                         </div>
-                    </div>
-
-                    {/* Stats Grid */}
-                    <div className={`p-12 md:p-20 rounded-[5rem] border ${
-                        theme === 'dark' ? 'bg-white/[0.02] border-white/5' : 'bg-white border-slate-200 shadow-2xl'
-                    }`}>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
-                            {[
-                                { label: 'Uptime', value: '99.999%', sub: 'Monitored around the clock' },
-                                { label: 'Latency', value: '< 20ms', sub: 'Global average' },
-                                { label: 'Peak load', value: '1.5M/s', sub: 'Requests per second' }
-                            ].map((stat, i) => (
-                                <div key={i} className="space-y-4 stat-item">
-                                    <div className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-500">{stat.label}</div>
-                                    <div className={`text-5xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{stat.value}</div>
-                                    <div className="text-xs font-bold text-electric-violet">{stat.sub}</div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                    ))}
                 </div>
             </section>
-        </div>
+
+            <section className="w-full px-5 md:px-10 2xl:px-16 mt-24 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] gap-10 lg:gap-16">
+                <SectionHeading eyebrow="RPC layer" title="Calls go where you point them." body="Each chain has a list of public endpoints. You can put your own in front." />
+                <div data-reveal-group className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {RPC.map((r) => (
+                        <div key={r.title} className="rounded-[14px] border border-line bg-surface p-5">
+                            <r.icon size={18} className="text-fg-muted" />
+                            <h3 className="mt-4 text-[15px] font-semibold">{r.title}</h3>
+                            <p className="mt-1.5 text-[14px] text-fg-muted leading-relaxed">{r.body}</p>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            <section className="w-full px-5 md:px-10 2xl:px-16 mt-24 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] gap-10 lg:gap-16">
+                <SectionHeading eyebrow="Security" title="Less to trust." body="Txio never asks for a private key. The API holds your workspace data, not your funds." />
+                <div data-reveal-group className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {SECURITY.map((r) => (
+                        <div key={r.title} className="rounded-[14px] border border-line bg-surface p-5 flex gap-4">
+                            <span className="h-9 w-9 shrink-0 rounded-[9px] border border-line bg-sunken flex items-center justify-center text-fg-muted">
+                                <r.icon size={16} />
+                            </span>
+                            <div>
+                                <h3 className="text-[15px] font-semibold">{r.title}</h3>
+                                <p className="mt-1 text-[14px] text-fg-muted leading-relaxed">{r.body}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            <section className="w-full px-5 md:px-10 2xl:px-16 mt-24">
+                <SectionHeading eyebrow="What it adds up to" title="One workspace for the whole job." />
+                <div data-reveal-group className="mt-10 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                    {CAPABILITIES.map((c) => (
+                        <div key={c.name} className="rounded-[14px] border border-line bg-surface p-5">
+                            <c.icon size={18} className="text-fg-muted" />
+                            <h3 className="mt-4 text-[15px] font-semibold">{c.name}</h3>
+                            <p className="mt-1.5 text-[14px] text-fg-muted leading-relaxed">{c.body}</p>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            <CtaBand embedded={embedded} />
+        </MarketingShell>
     );
 };

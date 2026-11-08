@@ -98,7 +98,7 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({ wallet }) => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-full text-slate-500 text-xs gap-2">
+            <div className="flex items-center justify-center h-full text-fg-subtle text-xs gap-2">
                 <Loader2 size={16} className="animate-spin" /> Loading limits…
             </div>
         );
@@ -106,15 +106,15 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({ wallet }) => {
 
     return (
         <div className="p-6 w-full space-y-5">
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-fg-subtle">
                 Caps enforced before any transaction on this wallet executes — interactive or automated (scheduled tasks
                 always go through this check, since there&apos;s no human present to warn). Leave a field blank for no cap on
                 that dimension.
             </p>
 
-            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow p-4 space-y-4">
+            <div className="rounded-[10px] border border-line bg-sunken p-4 space-y-4">
                 <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500" htmlFor="daily-limit">
+                    <label className="text-[12px] font-semibold text-fg-subtle" htmlFor="daily-limit">
                         Daily limit (USD)
                     </label>
                     <input
@@ -123,11 +123,11 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({ wallet }) => {
                         onChange={(e) => setForm((f) => ({ ...f, dailyLimitUsd: e.target.value }))}
                         placeholder="No limit"
                         inputMode="decimal"
-                        className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-electric-violet"
+                        className="w-full h-9 rounded-lg border border-line bg-surface px-3 text-xs font-mono text-fg outline-none focus:border-line-strong"
                     />
                 </div>
                 <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500" htmlFor="per-tx-limit">
+                    <label className="text-[12px] font-semibold text-fg-subtle" htmlFor="per-tx-limit">
                         Per-transaction limit (USD)
                     </label>
                     <input
@@ -136,11 +136,11 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({ wallet }) => {
                         onChange={(e) => setForm((f) => ({ ...f, perTxLimitUsd: e.target.value }))}
                         placeholder="No limit"
                         inputMode="decimal"
-                        className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-electric-violet"
+                        className="w-full h-9 rounded-lg border border-line bg-surface px-3 text-xs font-mono text-fg outline-none focus:border-line-strong"
                     />
                 </div>
                 <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500" htmlFor="max-tx">
+                    <label className="text-[12px] font-semibold text-fg-subtle" htmlFor="max-tx">
                         Max transactions per window
                     </label>
                     <input
@@ -149,19 +149,19 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({ wallet }) => {
                         onChange={(e) => setForm((f) => ({ ...f, maxTxPerHour: e.target.value }))}
                         placeholder="No limit"
                         inputMode="numeric"
-                        className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-electric-violet"
+                        className="w-full h-9 rounded-lg border border-line bg-surface px-3 text-xs font-mono text-fg outline-none focus:border-line-strong"
                     />
                 </div>
             </div>
 
-            <div className="flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-900/30 bg-amber-50 dark:bg-amber-900/10 p-3 text-[11px] text-amber-700 dark:text-amber-400">
+            <div className="flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-900/30 bg-amber-50 dark:bg-amber-900/10 p-3 text-[12px] text-amber-700 dark:text-amber-400">
                 <ShieldOff size={13} className="shrink-0 mt-0.5" />
                 USD valuation for on-chain amounts isn&apos;t wired to a live price feed yet — dollar-denominated limits
                 aren&apos;t enforced against real transaction values until that lands. Transaction-count limits work today.
             </div>
 
             {error && (
-                <div className="flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/10 px-3 py-2 text-[11px] text-red-600 dark:text-red-400">
+                <div className="flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/10 px-3 py-2 text-[12px] text-red-600 dark:text-red-400">
                     <AlertTriangle size={13} /> {error}
                 </div>
             )}
@@ -170,7 +170,7 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({ wallet }) => {
                 <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg bg-slate-900 dark:bg-white text-white dark:text-near-black hover:opacity-90 disabled:opacity-40"
+                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg bg-inverse text-on-inverse hover:opacity-90 disabled:opacity-40"
                 >
                     {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
                     Save
@@ -179,7 +179,7 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({ wallet }) => {
                     <button
                         onClick={handleRemove}
                         disabled={saving}
-                        className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg border border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/15 disabled:opacity-40"
+                        className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg border border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/15 disabled:opacity-40"
                     >
                         <Trash2 size={13} /> Remove limits
                     </button>

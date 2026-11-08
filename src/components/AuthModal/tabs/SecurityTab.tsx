@@ -99,10 +99,10 @@ interface FieldProps {
 
 const Field: React.FC<FieldProps> = ({ label, htmlFor, error, children }) => (
   <div className="space-y-1.5">
-    <label htmlFor={htmlFor} className="block text-xs font-medium text-slate-400">{label}</label>
+    <label htmlFor={htmlFor} className="block text-xs font-medium text-fg-subtle">{label}</label>
     {children}
     {error && (
-      <p className="flex items-center gap-1.5 text-[11px] text-rose-400">
+      <p className="flex items-center gap-1.5 text-[12px] text-rose-600 dark:text-rose-400">
         <AlertCircle size={11} /> {error}
       </p>
     )}
@@ -110,14 +110,14 @@ const Field: React.FC<FieldProps> = ({ label, htmlFor, error, children }) => (
 );
 
 const inputBase =
-  'w-full bg-white dark:bg-near-black border rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-200 outline-none transition-colors';
-const editableInput = `${inputBase} border-slate-200 dark:border-white/[0.08] placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-electric-violet/60`;
+  'w-full bg-surface border rounded-lg px-3 py-2 text-sm text-fg outline-none transition-colors';
+const editableInput = `${inputBase} border-line placeholder:text-fg-subtle focus:border-line-strong`;
 const errorInput = `${inputBase} border-rose-500/40 focus:border-rose-500/60`;
 
 const primaryButton =
-  'px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-lg bg-slate-900 dark:bg-white text-white dark:text-near-black hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors';
+  'px-4 py-2 text-xs font-semibold rounded-lg bg-inverse text-on-inverse hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors';
 const secondaryButton =
-  'px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.05] disabled:opacity-50 disabled:cursor-not-allowed transition-colors';
+  'px-4 py-2 text-xs font-semibold rounded-lg border border-line text-fg-muted hover:bg-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors';
 
 export const SecurityTab: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -202,13 +202,13 @@ export const SecurityTab: React.FC = () => {
 
   const renderSessionsPanel = () => {
     if (sessionsState.status === 'loading' || sessionsState.status === 'idle') {
-      return <p className="text-xs text-slate-500">Loading sessions…</p>;
+      return <p className="text-xs text-fg-subtle">Loading sessions…</p>;
     }
 
     if (sessionsState.status === 'error') {
       return (
         <div className="flex flex-col items-start gap-3">
-          <p className="text-xs text-rose-400">{sessionsState.message}</p>
+          <p className="text-xs text-rose-600 dark:text-rose-400">{sessionsState.message}</p>
           <button type="button" className={secondaryButton} onClick={retrySessions}>
             Try again
           </button>
@@ -217,27 +217,27 @@ export const SecurityTab: React.FC = () => {
     }
 
     if (sessionsState.data.length === 0) {
-      return <p className="text-xs text-slate-500">No active sessions found.</p>;
+      return <p className="text-xs text-fg-subtle">No active sessions found.</p>;
     }
 
     return (
-      <ul className="rounded-lg border border-slate-200 dark:border-white/[0.08] divide-y divide-slate-200 dark:divide-white/[0.06] overflow-hidden">
+      <ul className="rounded-lg border border-line divide-y divide-slate-200 dark:divide-white/[0.06] overflow-hidden">
         {sessionsState.data.map((session) => {
           const isRevoking = revokingId === session.id;
           return (
-            <li key={session.id} className="flex items-center justify-between gap-3 px-4 py-3 bg-white dark:bg-near-black">
+            <li key={session.id} className="flex items-center justify-between gap-3 px-4 py-3 bg-surface">
               <div className="min-w-0">
-                <div className="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-200">
+                <div className="flex items-center gap-2 text-sm font-medium text-fg">
                   <span
                     className={`h-2 w-2 rounded-full shrink-0 ${session.is_current ? 'bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.15)]' : 'bg-slate-500'}`}
                     aria-hidden="true"
                   />
                   <span className="truncate">{session.device_label}</span>
                   {session.is_current && (
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Current</span>
+                    <span className="text-[12px] font-semibold text-emerald-600 dark:text-emerald-400">Current</span>
                   )}
                 </div>
-                <div className="mt-1 text-xs text-slate-500 truncate">
+                <div className="mt-1 text-xs text-fg-subtle truncate">
                   {session.ip_address !== 'unknown' ? session.ip_address : 'IP unavailable'}
                   {' · '}
                   {formatSessionDate(session.last_active_at)}
@@ -249,7 +249,7 @@ export const SecurityTab: React.FC = () => {
                   onClick={() => revokeSession(session.id)}
                   disabled={isRevoking}
                   aria-label={`Revoke session for ${session.device_label}`}
-                  className="shrink-0 px-3 py-1.5 text-xs font-bold uppercase tracking-widest rounded-lg border border-rose-500/20 bg-rose-500/10 text-rose-300 hover:bg-rose-500/15 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="shrink-0 px-3 py-1.5 text-xs font-semibold rounded-lg border border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-300 hover:bg-rose-500/15 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {isRevoking ? 'Revoking…' : 'Revoke'}
                 </button>
@@ -264,10 +264,10 @@ export const SecurityTab: React.FC = () => {
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-right-2 duration-200">
       {/* Password Rotation Card */}
-      <section className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-dark-indigo-glow overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 dark:border-white/[0.06]">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Password Rotation</h3>
-          <p className="text-xs text-slate-500 mt-0.5">
+      <section className="rounded-[10px] border border-line bg-elevated overflow-hidden">
+        <div className="px-5 py-4 border-b border-line">
+          <h3 className="text-sm font-semibold text-fg tracking-tight">Password Rotation</h3>
+          <p className="text-xs text-fg-subtle mt-0.5">
             Keep credential lifetime short and rotate keys before your environment becomes sticky.
           </p>
         </div>
@@ -342,10 +342,10 @@ export const SecurityTab: React.FC = () => {
       </section>
 
       {/* Session Review Card */}
-      <section className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-dark-indigo-glow overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 dark:border-white/[0.06]">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Session review</h3>
-          <p className="text-xs text-slate-500 mt-0.5">
+      <section className="rounded-[10px] border border-line bg-elevated overflow-hidden">
+        <div className="px-5 py-4 border-b border-line">
+          <h3 className="text-sm font-semibold text-fg tracking-tight">Session review</h3>
+          <p className="text-xs text-fg-subtle mt-0.5">
             Audit active surfaces and revoke stale sessions when operators or devices change.
           </p>
         </div>

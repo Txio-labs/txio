@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { AuthLayout } from '@/components/auth/AuthLayout';
 import { useRouter } from 'next/navigation';
 import {
     Mail,
@@ -264,11 +265,11 @@ export const SignInPage: React.FC = () => {
     // Loading screen while checking auth
     if (authChecking) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-near-black">
+            <div className="min-h-screen flex items-center justify-center bg-canvas">
                 <div className="flex flex-col items-center gap-4">
-                    <div className="w-10 h-10 border-2 border-white/20 border-t-electric-violet rounded-full animate-spin"></div>
+                    <div className="w-10 h-10 border-2 border-line-strong border-t-electric-violet rounded-full animate-spin"></div>
 
-                    <p className="text-sm text-slate-400">
+                    <p className="text-sm text-fg-subtle">
                         Authenticating...
                     </p>
                 </div>
@@ -277,130 +278,27 @@ export const SignInPage: React.FC = () => {
     }
 
     return (
-        <div
-            className={`min-h-screen flex selection:bg-electric-violet/30 ${
-                theme === 'dark'
-                    ? 'bg-near-black text-white'
-                    : 'bg-slate-50 text-slate-900'
-            }`}
+        <AuthLayout
+            onBack={() => {
+                if (forgotPasswordStep !== 'none') {
+                    setForgotPasswordStep('none');
+                } else {
+                    appStore.setViewMode('landing');
+                    router.push('/');
+                }
+            }}
+            panelTitle={<>Welcome back.<br /><span className="text-fg-subtle">Pick up where you left off.</span></>}
+            panelBody="Your workspaces, collections and history are right where you put them, on every chain you work with."
+            points={['Collections and environments synced to your account', 'History of every call, with status and timing', 'Same account on web, desktop and CLI']}
         >
-            {/* Left Wing */}
-            <div className="hidden lg:flex flex-1 relative bg-near-black border-r border-white/5 p-16 flex-col justify-between overflow-hidden">
-                <div
-                    className="absolute inset-0 opacity-20"
-                    style={{
-                        backgroundImage:
-                            'radial-gradient(circle at 2px 2px, #a3a3a3 1px, transparent 0)',
-                        backgroundSize: '30px 30px'
-                    }}
-                />
-
-                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-electric-violet/10 blur-[150px] rounded-full"></div>
-
-                <div className="relative z-10">
-                    <button
-                        className="flex items-center gap-3 mb-16 cursor-pointer"
-                        onClick={() => {
-                            appStore.setViewMode('landing');
-                            router.push('/');
-                        }}
-                    >
-                        <img
-                            src={logoDark.src}
-                            alt="txio"
-                            className="h-10 w-auto"
-                        />
-
-                        <span className="text-2xl font-bold tracking-tighter text-white">
-                            txio
-                        </span>
-                    </button>
-
-                    <div className="space-y-6">
-                        <h1 className="text-6xl font-bold tracking-tight text-white leading-[1.1]">
-                            Welcome back. <br />
-                            <span className="text-electric-violet">
-                                Let&apos;s get to it.
-                            </span>
-                        </h1>
-
-                        <p className="text-lg text-slate-400 max-w-md leading-relaxed">
-                            Pick up where you left off. Your workspaces, collections, and history are right where you put them.
-                        </p>
-                    </div>
-                </div>
-
-                <div className="relative z-10 flex gap-12">
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-electric-violet">
-                            <ShieldCheck size={18} />
-
-                            <span className="font-bold text-xs uppercase tracking-widest">
-                                Secure
-                            </span>
-                        </div>
-
-                        <div className="text-[10px] text-slate-500">
-                            AES-256 Workspace Encryption
-                        </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-electric-violet">
-                            <Zap size={18} />
-
-                            <span className="font-bold text-xs uppercase tracking-widest">
-                                Fast
-                            </span>
-                        </div>
-
-                        <div className="text-[10px] text-slate-500">
-                            Real-time RPC Monitoring
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Right Wing */}
-            <div className="flex-1 flex flex-col justify-center items-center p-4 pt-20 sm:p-8 sm:pt-24 md:p-16 relative">
-                <button
-                    onClick={() => {
-                        if (forgotPasswordStep !== 'none') {
-                            setForgotPasswordStep('none');
-                        } else {
-                            appStore.setViewMode('landing');
-                            router.push('/');
-                        }
-                    }}
-                    className={`absolute top-6 left-4 sm:top-8 sm:left-8 flex items-center gap-2 text-sm font-medium transition-colors ${
-                        theme === 'dark' ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-900'
-                    }`}
-                >
-                    <ArrowLeft size={16} />
-                    Back
-                </button>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`w-full max-w-md p-6 sm:p-10 rounded-[2rem] sm:rounded-[2.5rem] border shadow-2xl ${
-                        theme === 'dark'
-                            ? 'bg-white/[0.04] border-white/20'
-                            : 'bg-white border-slate-200'
-                    }`}
-                >
                     {forgotPasswordStep === 'none' && (
                         <>
-                            <div className="text-center mb-8 sm:mb-10">
-                                <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-3xl bg-electric-violet/10 mb-4 sm:mb-6">
-                                    <img src={logoDark.src} alt="txio" className="h-7 w-auto sm:h-8" />
-                                </div>
-
-                                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
+                            <div className="mb-8">
+<h2 className="text-[28px] font-semibold tracking-[-0.035em] mb-1.5">
                                     Sign In
                                 </h2>
 
-                                <p className="text-sm text-slate-500">
+                                <p className="text-sm text-fg-subtle">
                                     Email and password. That&apos;s all we need.
                                 </p>
                             </div>
@@ -410,14 +308,13 @@ export const SignInPage: React.FC = () => {
                                 className="space-y-4 sm:space-y-5"
                             >
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">
+                                    <label className="text-xs font-medium text-fg-muted">
                                         Email
                                     </label>
 
                                     <div className="relative">
-                                        <Mail
-                                            size={18}
-                                            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                                        <Mail size={16}
+                                            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-fg-subtle"
                                         />
 
                                         <input
@@ -431,14 +328,14 @@ export const SignInPage: React.FC = () => {
                                                 }))
                                             }
                                             placeholder="name@company.com"
-                                            className="w-full pl-12 pr-4 py-4 rounded-2xl border bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-400 transition-all"
+                                            className="w-full pl-10 pr-4 h-11 rounded-[10px] border bg-surface border-line text-fg placeholder:text-fg-subtle outline-none focus:border-line-strong focus:ring-4 focus:ring-[var(--hover)] transition-all"
                                         />
                                     </div>
                                 </div>
 
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-center px-1">
-                                        <label className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                                        <label className="text-xs font-medium text-fg-muted">
                                             Password
                                         </label>
 
@@ -448,16 +345,15 @@ export const SignInPage: React.FC = () => {
                                                 setForgotPasswordEmail(formData.email);
                                                 setForgotPasswordStep('email');
                                             }}
-                                            className="text-[10px] font-bold text-electric-violet"
+                                            className="text-[12px] font-semibold text-fg"
                                         >
                                             Forgot?
                                         </button>
                                     </div>
 
                                     <div className="relative">
-                                        <Lock
-                                            size={18}
-                                            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                                        <Lock size={16}
+                                            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-fg-subtle"
                                         />
 
                                         <input
@@ -471,36 +367,35 @@ export const SignInPage: React.FC = () => {
                                                 }))
                                             }
                                             placeholder="••••••••"
-                                            className="w-full pl-12 pr-12 py-4 rounded-2xl border bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-400 transition-all"
+                                            className="w-full pl-10 pr-12 h-11 rounded-[10px] border bg-surface border-line text-fg placeholder:text-fg-subtle outline-none focus:border-line-strong focus:ring-4 focus:ring-[var(--hover)] transition-all"
                                         />
 
                                         <button
                                             type="button"
                                             onClick={() => setShowPassword((current) => !current)}
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
+                                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-fg transition-colors"
                                             aria-label={showPassword ? 'Hide password' : 'Show password'}
                                         >
-                                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                         </button>
                                     </div>
                                 </div>
 
                                 <button
                                     disabled={isLoading || !formData.email || !formData.password}
-                                    className={`w-full py-4 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-2 group shadow-xl ${
+                                    className={`w-full h-11 rounded-[10px] font-medium text-sm transition-all flex items-center justify-center gap-2 group ${
                                         formData.email && formData.password
-                                            ? `${theme === 'dark' ? 'bg-white text-near-black' : 'bg-slate-900 text-white'} hover:opacity-90`
-                                            : `${theme === 'dark' ? 'bg-white/10 text-slate-500' : 'bg-slate-200 text-slate-400'} cursor-not-allowed`
+                                            ? `bg-inverse text-on-inverse hover:opacity-90`
+                                            : `${theme === 'dark' ? 'bg-active text-fg-subtle' : 'bg-active text-fg-subtle'} cursor-not-allowed`
                                     }`}
                                 >
                                     {isLoading ? (
-                                        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                        <div className="w-6 h-6 border-2 border-current/30 border-t-current rounded-full animate-spin"></div>
                                     ) : (
                                         <>
                                             Sign In
 
-                                            <ArrowRight
-                                                size={20}
+                                            <ArrowRight size={16}
                                                 className="group-hover:translate-x-1 transition-transform"
                                             />
                                         </>
@@ -511,14 +406,14 @@ export const SignInPage: React.FC = () => {
                             <div className="mt-8 space-y-3">
                                 <div className="relative flex items-center justify-center mb-6">
                                     <div className="absolute inset-0 flex items-center">
-                                        <div className="w-full border-t border-slate-200 dark:border-white/5"></div>
+                                        <div className="w-full border-t border-line"></div>
                                     </div>
 
                                     <span
-                                        className={`relative px-4 text-[10px] font-bold uppercase tracking-widest ${
+                                        className={`relative px-4 text-[12px] font-semibold ${
                                             theme === 'dark'
-                                                ? 'bg-[#0a0a0a] text-slate-600'
-                                                : 'bg-white text-slate-400'
+                                                ? 'bg-surface text-fg-muted'
+                                                : 'bg-surface text-fg-subtle'
                                         }`}
                                     >
                                         Or continue with
@@ -529,14 +424,14 @@ export const SignInPage: React.FC = () => {
                                     type="button"
                                     disabled={socialLoading !== null}
                                     onClick={() => handleSocialLogin('Google')}
-                                    className={`w-full flex items-center justify-center gap-3 py-3 rounded-xl border transition-all ${
+                                    className={`w-full flex items-center justify-center gap-3 h-10 rounded-[10px] border transition-all ${
                                         theme === 'dark'
-                                            ? 'border-white/10 bg-white/5 hover:bg-white/10 disabled:opacity-50'
-                                            : 'border-slate-200 bg-white hover:bg-slate-50 shadow-sm disabled:opacity-50'
+                                            ? 'border-line bg-hover hover:bg-active disabled:opacity-50'
+                                            : 'border-line bg-surface hover:bg-hover disabled:opacity-50'
                                     }`}
                                 >
                                     {socialLoading === 'Google' ? (
-                                        <div className="w-5 h-5 border-2 border-slate-500 border-t-electric-violet rounded-full animate-spin"></div>
+                                        <div className="w-5 h-5 border-2 border-line-strong border-t-fg rounded-full animate-spin"></div>
                                     ) : (
                                         <svg
                                             viewBox="0 0 24 24"
@@ -566,7 +461,7 @@ export const SignInPage: React.FC = () => {
                                         </svg>
                                     )}
 
-                                    <span className="text-sm font-bold">
+                                    <span className="text-sm font-semibold">
                                         {socialLoading === 'Google'
                                             ? 'Connecting...'
                                             : 'Continue with Google'}
@@ -578,19 +473,19 @@ export const SignInPage: React.FC = () => {
                                         type="button"
                                         disabled={socialLoading !== null}
                                         onClick={() => handleSocialLogin('GitHub')}
-                                        className={`flex items-center justify-center gap-2 py-3 rounded-xl border transition-all ${
+                                        className={`flex items-center justify-center gap-2 h-10 rounded-[10px] border transition-all ${
                                             theme === 'dark'
-                                                ? 'border-white/5 bg-white/5 hover:bg-white/10 disabled:opacity-50'
-                                                : 'border-slate-200 bg-white hover:bg-slate-50 shadow-sm disabled:opacity-50'
+                                                ? 'border-line bg-hover hover:bg-active disabled:opacity-50'
+                                                : 'border-line bg-surface hover:bg-hover disabled:opacity-50'
                                         }`}
                                     >
                                         {socialLoading === 'GitHub' ? (
-                                            <div className="w-4 h-4 border-2 border-slate-500 border-t-electric-violet rounded-full animate-spin"></div>
+                                            <div className="w-4 h-4 border-2 border-line-strong border-t-fg rounded-full animate-spin"></div>
                                         ) : (
                                             <Github size={18} />
                                         )}
 
-                                        <span className="text-sm font-bold">
+                                        <span className="text-sm font-semibold">
                                             GitHub
                                         </span>
                                     </button>
@@ -599,22 +494,22 @@ export const SignInPage: React.FC = () => {
                                         type="button"
                                         disabled={socialLoading !== null}
                                         onClick={() => handleSocialLogin('X')}
-                                        className={`flex items-center justify-center gap-2 py-3 rounded-xl border transition-all ${
+                                        className={`flex items-center justify-center gap-2 h-10 rounded-[10px] border transition-all ${
                                             theme === 'dark'
-                                                ? 'border-white/5 bg-white/5 hover:bg-white/10 disabled:opacity-50'
-                                                : 'border-slate-200 bg-white hover:bg-slate-50 shadow-sm disabled:opacity-50'
+                                                ? 'border-line bg-hover hover:bg-active disabled:opacity-50'
+                                                : 'border-line bg-surface hover:bg-hover disabled:opacity-50'
                                         }`}
                                     >
                                         {socialLoading === 'X' ? (
-                                            <div className="w-4 h-4 border-2 border-slate-500 border-t-electric-violet rounded-full animate-spin"></div>
+                                            <div className="w-4 h-4 border-2 border-line-strong border-t-fg rounded-full animate-spin"></div>
                                         ) : (
                                             <XLogo
                                                 size={18}
-                                                className="text-slate-300"
+                                                className="text-fg-muted"
                                             />
                                         )}
 
-                                        <span className="text-sm font-bold">
+                                        <span className="text-sm font-semibold">
                                             X
                                         </span>
                                     </button>
@@ -625,33 +520,32 @@ export const SignInPage: React.FC = () => {
 
                     {forgotPasswordStep === 'email' && (
                         <>
-                            <div className="text-center mb-8 sm:mb-10">
-                                <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-3xl bg-electric-violet/10 mb-4 sm:mb-6">
+                            <div className="mb-8">
+                                <div className="inline-flex items-center justify-center w-10 h-10 rounded-[10px] border border-line bg-sunken mb-5">
                                     <Mail
-                                        className="text-electric-violet"
-                                        size={28}
+                                        className="text-fg"
+                                        size={18}
                                     />
                                 </div>
 
-                                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
+                                <h2 className="text-[28px] font-semibold tracking-[-0.035em] mb-1.5">
                                     Forgot Password
                                 </h2>
 
-                                <p className="text-sm text-slate-500">
+                                <p className="text-sm text-fg-subtle">
                                     Enter your email to receive a recovery code.
                                 </p>
                             </div>
 
                             <form onSubmit={handleForgotPasswordEmailSubmit} className="space-y-5">
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">
+                                    <label className="text-xs font-medium text-fg-muted">
                                         Email
                                     </label>
 
                                     <div className="relative">
-                                        <Mail
-                                            size={18}
-                                            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                                        <Mail size={16}
+                                            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-fg-subtle"
                                         />
 
                                         <input
@@ -660,22 +554,21 @@ export const SignInPage: React.FC = () => {
                                             value={forgotPasswordEmail}
                                             onChange={(e) => setForgotPasswordEmail(e.target.value)}
                                             placeholder="name@company.com"
-                                            className="w-full pl-12 pr-4 py-4 rounded-2xl border bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-400 transition-all"
+                                            className="w-full pl-10 pr-4 h-11 rounded-[10px] border bg-surface border-line text-fg placeholder:text-fg-subtle outline-none focus:border-line-strong focus:ring-4 focus:ring-[var(--hover)] transition-all"
                                         />
                                     </div>
                                 </div>
 
                                 <button
                                     disabled={isLoading}
-                                    className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-near-black rounded-2xl font-bold text-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 group shadow-xl"
+                                    className="w-full h-11 bg-inverse text-on-inverse rounded-[10px] font-semibold text-sm hover:opacity-90 transition-all flex items-center justify-center gap-2 group shadow-card"
                                 >
                                     {isLoading ? (
-                                        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                        <div className="w-6 h-6 border-2 border-current/30 border-t-current rounded-full animate-spin"></div>
                                     ) : (
                                         <>
                                             Send Code
-                                            <ArrowRight
-                                                size={20}
+                                            <ArrowRight size={16}
                                                 className="group-hover:translate-x-1 transition-transform"
                                             />
                                         </>
@@ -687,20 +580,20 @@ export const SignInPage: React.FC = () => {
 
                     {forgotPasswordStep === 'otp' && (
                         <>
-                            <div className="text-center mb-8 sm:mb-10">
-                                <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-3xl bg-electric-violet/10 mb-4 sm:mb-6">
+                            <div className="mb-8">
+                                <div className="inline-flex items-center justify-center w-10 h-10 rounded-[10px] border border-line bg-sunken mb-5">
                                     <ShieldCheck
-                                        className="text-electric-violet"
-                                        size={28}
+                                        className="text-fg"
+                                        size={18}
                                     />
                                 </div>
 
-                                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
+                                <h2 className="text-[28px] font-semibold tracking-[-0.035em] mb-1.5">
                                     Check your inbox
                                 </h2>
 
-                                <p className="text-sm text-slate-500">
-                                    We sent a 6-digit code to <span className="font-medium text-slate-900 dark:text-white">{forgotPasswordEmail}</span>
+                                <p className="text-sm text-fg-subtle">
+                                    We sent a 6-digit code to <span className="font-medium text-fg">{forgotPasswordEmail}</span>
                                 </p>
                             </div>
 
@@ -715,12 +608,12 @@ export const SignInPage: React.FC = () => {
                                                 value={digit}
                                                 onChange={(e) => handleOtpChange(index, e.target.value)}
                                                 onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                                                className={`w-full aspect-square text-center text-lg sm:text-2xl font-bold rounded-lg sm:rounded-xl border outline-none transition-all duration-300 ${
+                                                className={`w-full aspect-square text-center text-xl font-semibold rounded-[10px] border outline-none transition-all duration-300 ${
                                                     digit
-                                                        ? 'border-electric-violet bg-electric-violet/5'
+                                                        ? 'border-fg/40 bg-hover'
                                                         : theme === 'dark'
-                                                            ? 'bg-white/[0.03] border-white/10 focus:border-electric-violet/50'
-                                                            : 'bg-slate-50 border-slate-200 focus:border-electric-violet/30'
+                                                            ? 'bg-hover border-line focus:border-line-strong'
+                                                            : 'bg-sunken border-line focus:border-line-strong'
                                                 }`}
                                             />
                                         </div>
@@ -729,27 +622,27 @@ export const SignInPage: React.FC = () => {
 
                                 <div className="space-y-4 pt-2">
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">
+                                        <label className="text-xs font-medium text-fg-muted">
                                             New Password
                                         </label>
                                         <div className="relative">
-                                            <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-fg-subtle" />
                                             <input
                                                 type={showNewPassword ? 'text' : 'password'}
                                                 required
                                                 value={newPassword}
                                                 onChange={(e) => setNewPassword(e.target.value)}
                                                 placeholder="••••••••"
-                                                className={`w-full pl-12 pr-12 py-4 rounded-2xl border outline-none transition-all ${
+                                                className={`w-full h-11 pl-10 pr-11 rounded-[10px] border text-sm outline-none transition-all ${
                                                     theme === 'dark'
-                                                        ? 'bg-near-black border-white/5 focus:border-electric-violet/50'
-                                                        : 'bg-slate-50 border-slate-200'
+                                                        ? 'bg-canvas border-line focus:border-line-strong'
+                                                        : 'bg-sunken border-line'
                                                 }`}
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowNewPassword((current) => !current)}
-                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
+                                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-fg transition-colors"
                                                 aria-label={showNewPassword ? 'Hide password' : 'Show password'}
                                             >
                                                 {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -758,27 +651,27 @@ export const SignInPage: React.FC = () => {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">
+                                        <label className="text-xs font-medium text-fg-muted">
                                             Confirm Password
                                         </label>
                                         <div className="relative">
-                                            <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-fg-subtle" />
                                             <input
                                                 type={showConfirmPassword ? 'text' : 'password'}
                                                 required
                                                 value={confirmPassword}
                                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                                 placeholder="••••••••"
-                                                className={`w-full pl-12 pr-12 py-4 rounded-2xl border outline-none transition-all ${
+                                                className={`w-full h-11 pl-10 pr-11 rounded-[10px] border text-sm outline-none transition-all ${
                                                     theme === 'dark'
-                                                        ? 'bg-near-black border-white/5 focus:border-electric-violet/50'
-                                                        : 'bg-slate-50 border-slate-200'
+                                                        ? 'bg-canvas border-line focus:border-line-strong'
+                                                        : 'bg-sunken border-line'
                                                 }`}
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowConfirmPassword((current) => !current)}
-                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
+                                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-fg transition-colors"
                                                 aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                                             >
                                                 {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -789,15 +682,14 @@ export const SignInPage: React.FC = () => {
 
                                 <button
                                     disabled={isLoading}
-                                    className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-near-black rounded-2xl font-bold text-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 group shadow-xl"
+                                    className="w-full h-11 bg-inverse text-on-inverse rounded-[10px] font-semibold text-sm hover:opacity-90 transition-all flex items-center justify-center gap-2 group shadow-card"
                                 >
                                     {isLoading ? (
-                                        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                        <div className="w-6 h-6 border-2 border-current/30 border-t-current rounded-full animate-spin"></div>
                                     ) : (
                                         <>
                                             Reset Password
-                                            <ArrowRight
-                                                size={20}
+                                            <ArrowRight size={16}
                                                 className="group-hover:translate-x-1 transition-transform"
                                             />
                                         </>
@@ -814,17 +706,15 @@ export const SignInPage: React.FC = () => {
                                 router.push('/signup');
                             }}
                             className={`text-sm font-medium transition-colors ${
-                                theme === 'dark' ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-900'
+                                theme === 'dark' ? 'text-fg-subtle hover:text-fg' : 'text-fg-subtle hover:text-fg'
                             }`}
                         >
                             Don&apos;t have an account?{' '}
-                            <span className={theme === 'dark' ? 'text-white font-bold' : 'text-slate-900 font-bold'}>
+                            <span className={theme === 'dark' ? 'text-fg font-semibold' : 'text-fg font-semibold'}>
                                 Get Started
                             </span>
                         </button>
                     </div>
-                </motion.div>
-            </div>
-        </div>
+        </AuthLayout>
     );
 };

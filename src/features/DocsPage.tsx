@@ -5,9 +5,9 @@ import {
     ArrowLeft, Search, ExternalLink, Copy, Check, Menu, X, Shield, LifeBuoy,
 } from 'lucide-react';
 import { Github } from '@/components/icons/BrandIcons';
+import { TxioLogo } from '@/components/ui/TxioMark';
 import { appStore, useAppStore } from '@/lib/store';
 import { API_BASE as DOCS_API_BASE } from '@/services/api';
-import logo from '../assets/txio2.png';
 
 interface DocsPageProps {
     embedded?: boolean;
@@ -98,19 +98,19 @@ function CodeBlock({ label, code }: { label: string; code: string }) {
     };
 
     return (
-        <div className="my-4 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-[#12151b]">
-            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-100 px-3.5 py-2 font-mono text-[11px] text-slate-400 dark:border-white/10 dark:bg-[#171b22] dark:text-[#5c6472]">
+        <div className="my-4 overflow-hidden rounded-lg border border-line bg-sunken">
+            <div className="flex items-center justify-between border-b border-line bg-hover px-3.5 py-2 font-mono text-[12px] text-fg-subtle">
                 <span>{label}</span>
                 <button
                     type="button"
                     onClick={handleCopy}
-                    className="flex items-center gap-1.5 text-slate-400 transition-colors hover:text-electric-violet dark:text-[#5c6472]"
+                    className="flex items-center gap-1.5 text-fg-subtle transition-colors hover:text-fg"
                 >
                     {copied ? <Check size={12} /> : <Copy size={12} />}
                     {copied ? 'copied' : 'copy'}
                 </button>
             </div>
-            <pre className="m-0 overflow-x-auto p-4 font-mono text-[13px] leading-[1.7] text-slate-700 dark:text-[#d6dae0]">{code}</pre>
+            <pre className="m-0 overflow-x-auto p-4 font-mono text-[14px] leading-[1.7] text-fg-muted">{code}</pre>
         </div>
     );
 }
@@ -118,13 +118,13 @@ function CodeBlock({ label, code }: { label: string; code: string }) {
 function DocsTable({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) {
     return (
         <div className="my-4 overflow-x-auto">
-            <table className="w-full min-w-[480px] border-collapse text-[13.5px]">
+            <table className="w-full min-w-[480px] border-collapse text-[15px]">
                 <thead>
                     <tr>
                         {head.map((h) => (
                             <th
                                 key={h}
-                                className="border-b border-slate-200 px-3 py-2 text-left font-mono text-[10.5px] uppercase tracking-wider text-slate-400 dark:border-white/10 dark:text-[#5c6472]"
+                                className="border-b border-line px-3 py-2 text-left font-mono text-[12px] text-fg-subtle"
                             >
                                 {h}
                             </th>
@@ -135,7 +135,7 @@ function DocsTable({ head, rows }: { head: string[]; rows: React.ReactNode[][] }
                     {rows.map((row, i) => (
                         <tr key={i}>
                             {row.map((cell, j) => (
-                                <td key={j} className="border-b border-slate-200 px-3 py-2.5 align-top text-slate-600 last:border-b-0 dark:border-white/10 dark:text-[#c4c9d1]">
+                                <td key={j} className="border-b border-line px-3 py-2.5 align-top text-fg-muted last:border-b-0">
                                     {cell}
                                 </td>
                             ))}
@@ -150,19 +150,19 @@ function DocsTable({ head, rows }: { head: string[]; rows: React.ReactNode[][] }
 function Callout({ tone, children }: { tone: 'warn' | 'info' | 'note'; children: React.ReactNode }) {
     // Callout tones are semantic accent colors — left as-is across themes.
     const styles: Record<typeof tone, string> = {
-        warn: 'bg-[#f0654d]/[0.06] border-[#f0654d] text-[#b8402a] dark:text-[#f3a99b]',
-        info: 'bg-[#5b9dff]/[0.06] border-[#5b9dff] text-[#2f6fd1] dark:text-[#a9c6ff]',
-        note: 'bg-electric-violet/[0.06] border-electric-violet text-[#52525b] dark:text-[#d4d4d8]',
+        warn: 'bg-amber-500/[0.06] border-amber-500/50 text-fg-muted',
+        info: 'bg-sky-500/[0.06] border-sky-500/50 text-fg-muted',
+        note: 'bg-hover border-line-strong text-fg-muted',
     };
-    return <div className={`my-4 rounded-lg border-l-[3px] px-4 py-3.5 text-[13.5px] leading-relaxed ${styles[tone]}`}>{children}</div>;
+    return <div className={`my-4 rounded-lg border-l-[3px] px-4 py-3.5 text-[15px] leading-relaxed ${styles[tone]}`}>{children}</div>;
 }
 
 function Endpoint({ method, path, id, children }: { method: Method; path: string; id: string; children: React.ReactNode }) {
     return (
         <div id={id} className="mt-9 scroll-mt-20">
             <div className="mb-2 flex items-center gap-2.5">
-                <span className={`rounded px-2.5 py-1 font-mono text-[11px] font-bold ${METHOD_STYLE[method]}`}>{method}</span>
-                <span className="font-mono text-sm text-slate-900 dark:text-[#e6e8eb]">{path}</span>
+                <span className={`rounded px-2.5 py-1 font-mono text-[12px] font-semibold ${METHOD_STYLE[method]}`}>{method}</span>
+                <span className="font-mono text-sm text-fg">{path}</span>
             </div>
             {children}
         </div>
@@ -170,20 +170,20 @@ function Endpoint({ method, path, id, children }: { method: Method; path: string
 }
 
 function H2({ id, children }: { id?: string; children: React.ReactNode }) {
-    return <h2 id={id} className="mb-3.5 mt-10 scroll-mt-20 text-[22px] font-bold tracking-tight text-slate-900 first:mt-0 dark:text-[#e6e8eb]">{children}</h2>;
+    return <h2 id={id} className="mb-3.5 mt-10 scroll-mt-20 text-[22px] font-semibold tracking-tight text-fg first:mt-0">{children}</h2>;
 }
 
 function H3({ id, children }: { id?: string; children: React.ReactNode }) {
-    return <h3 id={id} className="mb-2.5 mt-7 scroll-mt-20 text-base font-bold text-slate-900 dark:text-[#e6e8eb]">{children}</h3>;
+    return <h3 id={id} className="mb-2.5 mt-7 scroll-mt-20 text-base font-semibold text-fg">{children}</h3>;
 }
 
 function P({ children }: { children: React.ReactNode }) {
-    return <p className="mb-4 leading-relaxed text-slate-600 dark:text-[#c4c9d1]">{children}</p>;
+    return <p className="mb-4 leading-relaxed text-fg-muted">{children}</p>;
 }
 
 function Section({ id, children }: { id: string; children: React.ReactNode }) {
     return (
-        <section id={id} className="scroll-mt-20 border-b border-slate-200 pb-14 last:border-b-0 dark:border-white/10">
+        <section id={id} className="scroll-mt-20 border-b border-line pb-14 last:border-b-0">
             {children}
         </section>
     );
@@ -213,9 +213,8 @@ export const DocsPage: React.FC<DocsPageProps> = ({ embedded = false }) => {
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
-    // Placeholder — not wired to a real support destination yet.
     const contactSupport = () => {
-        console.log('Contact support clicked — no destination wired up yet.');
+        window.open('https://github.com/Txio-labs/txio/issues/new', '_blank', 'noopener');
     };
 
     useEffect(() => {
@@ -267,7 +266,7 @@ export const DocsPage: React.FC<DocsPageProps> = ({ embedded = false }) => {
         <div className="space-y-7">
             {NAV_GROUPS.map((group) => (
                 <div key={group.title}>
-                    <div className="mb-2 px-2 font-mono text-[10.5px] uppercase tracking-[0.08em] text-slate-400 dark:text-[#5c6472]">{group.title}</div>
+                    <div className="mb-2 px-2 font-mono text-[12px] text-fg-subtle">{group.title}</div>
                     <div className="space-y-0.5">
                         {group.items.map((item) => {
                             const active = activeSection === item.id;
@@ -276,15 +275,15 @@ export const DocsPage: React.FC<DocsPageProps> = ({ embedded = false }) => {
                                     key={item.id}
                                     type="button"
                                     onClick={() => scrollToSection(item.id)}
-                                    className={`flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[13.5px] transition-colors ${
+                                    className={`flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[15px] transition-colors ${
                                         active
-                                            ? 'bg-slate-100 font-semibold text-electric-violet shadow-[inset_2px_0_0_0_#a3a3a3] dark:bg-white/[0.04]'
-                                            : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-[#8b93a1] dark:hover:bg-white/[0.03] dark:hover:text-[#e6e8eb]'
+                                            ? 'bg-hover font-semibold text-fg shadow-[inset_2px_0_0_0_var(--fg)]'
+                                            : 'text-fg-subtle hover:bg-hover hover:text-fg'
                                     }`}
                                 >
                                     <span className="truncate">{item.label}</span>
                                     {item.method && (
-                                        <span className={`ml-auto shrink-0 rounded px-1.5 py-0.5 font-mono text-[9px] tracking-wide ${METHOD_STYLE[item.method]}`}>
+                                        <span className={`ml-auto shrink-0 rounded px-1.5 py-0.5 font-mono text-[12px] tracking-wide ${METHOD_STYLE[item.method]}`}>
                                             {item.method}
                                         </span>
                                     )}
@@ -302,7 +301,7 @@ export const DocsPage: React.FC<DocsPageProps> = ({ embedded = false }) => {
     const renderToc = () => (
         <div className="space-y-6">
             <div>
-                <div className="mb-3 px-1 font-mono text-[10.5px] uppercase tracking-[0.08em] text-slate-400 dark:text-[#5c6472]">On this page</div>
+                <div className="mb-3 px-1 font-mono text-[12px] text-fg-subtle">On this page</div>
                 <div className="space-y-0.5">
                     {NAV_GROUPS.map((group) => {
                         const active = group.items.some((item) => item.id === activeSection);
@@ -311,10 +310,10 @@ export const DocsPage: React.FC<DocsPageProps> = ({ embedded = false }) => {
                                 key={group.title}
                                 type="button"
                                 onClick={() => scrollToSection(group.items[0].id)}
-                                className={`block w-full rounded-md px-2.5 py-1.5 text-left text-[13px] transition-colors ${
+                                className={`block w-full rounded-md px-2.5 py-1.5 text-left text-[14px] transition-colors ${
                                     active
-                                        ? 'font-semibold text-electric-violet'
-                                        : 'text-slate-500 hover:text-slate-900 dark:text-[#8b93a1] dark:hover:text-[#e6e8eb]'
+                                        ? 'font-semibold text-fg'
+                                        : 'text-fg-subtle hover:text-fg'
                                 }`}
                             >
                                 {group.title}
@@ -324,26 +323,26 @@ export const DocsPage: React.FC<DocsPageProps> = ({ embedded = false }) => {
                 </div>
             </div>
 
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-[#12151b]">
-                <div className="mb-2 flex items-center gap-2 text-slate-700 dark:text-[#e6e8eb]">
-                    <LifeBuoy size={16} className="text-electric-violet" />
-                    <span className="text-[13px] font-bold">Need Help?</span>
+            <div className="rounded-lg border border-line bg-sunken p-4">
+                <div className="mb-2 flex items-center gap-2 text-fg-muted">
+                    <LifeBuoy size={16} className="text-fg" />
+                    <span className="text-[14px] font-semibold">Need Help?</span>
                 </div>
-                <p className="mb-3.5 text-[12.5px] leading-relaxed text-slate-500 dark:text-[#8b93a1]">
+                <p className="mb-3.5 text-[14px] leading-relaxed text-fg-muted">
                     Check our quick start guide or reach out to our support team.
                 </p>
                 <div className="space-y-2">
                     <button
                         type="button"
                         onClick={() => scrollToSection('quickstart')}
-                        className="w-full rounded-md bg-slate-900 dark:bg-white px-3 py-1.5 text-[12px] font-bold text-white dark:text-near-black transition-opacity hover:opacity-90 active:scale-95"
+                        className="w-full rounded-md bg-inverse px-3 py-1.5 text-[13px] font-semibold text-on-inverse transition-opacity hover:opacity-90"
                     >
                         View Quick Start
                     </button>
                     <button
                         type="button"
                         onClick={contactSupport}
-                        className="w-full rounded-md border border-slate-200 px-3 py-1.5 text-[12px] font-bold text-slate-600 transition-colors hover:bg-slate-100 dark:border-white/10 dark:text-[#8b93a1] dark:hover:bg-white/[0.03]"
+                        className="w-full rounded-md border border-line px-3 py-1.5 text-[13px] font-semibold text-fg-muted transition-colors hover:bg-hover"
                     >
                         Contact Support
                     </button>
@@ -353,33 +352,32 @@ export const DocsPage: React.FC<DocsPageProps> = ({ embedded = false }) => {
     );
 
     return (
-        <div className={`${embedded ? 'h-full' : 'h-screen'} overflow-hidden bg-white font-sans text-slate-900 selection:bg-electric-violet/25 dark:bg-[#0a0c10] dark:text-[#e6e8eb]`}>
-            <div className={`${embedded ? 'sticky top-0' : 'fixed left-0 right-0 top-0'} z-50 flex h-14 items-center gap-4 border-b border-slate-200 bg-white/90 px-4 backdrop-blur-md dark:border-white/10 dark:bg-[#0a0c10]/90 md:px-6`}>
+        <div className={`${embedded ? 'h-full' : 'h-screen'} overflow-hidden bg-surface font-sans text-fg selection:bg-active`}>
+            <div className={`${embedded ? 'sticky top-0' : 'fixed left-0 right-0 top-0'} z-50 flex h-14 items-center gap-3 border-b border-line bg-surface/85 px-4 backdrop-blur-xl md:px-6`}>
                 <button
                     type="button"
                     onClick={() => navigateTo('landing')}
-                    className="flex shrink-0 items-center gap-2 text-sm font-bold text-slate-500 transition-colors hover:text-slate-900 dark:text-[#8b93a1] dark:hover:text-white"
+                    className="flex shrink-0 items-center gap-2 text-sm font-semibold text-fg-subtle transition-colors hover:text-fg"
                 >
                     <ArrowLeft size={16} />
                     <span className="hidden sm:inline">Home</span>
                 </button>
-                <div className="h-5 w-px bg-slate-200 dark:bg-white/10" />
-                <div className="flex shrink-0 items-center gap-2 font-mono text-[15px] font-semibold">
-                    <span className="h-2 w-2 rounded-full bg-electric-violet shadow-[0_0_8px_#a3a3a3]" />
-                    <img src={logo.src} alt="txio" className="h-5 w-auto" />
-                    <span className="text-slate-400 dark:text-[#5c6472]">/ docs</span>
+                <div className="h-5 w-px bg-active" />
+                <div className="flex shrink-0 items-center gap-2">
+                    <TxioLogo size={22} />
+                    <span className="text-[14px] text-fg-subtle">/ docs</span>
                 </div>
 
-                <div className="hidden max-w-[420px] flex-1 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 font-mono text-[12.5px] text-slate-400 dark:border-white/10 dark:bg-[#12151b] dark:text-[#5c6472] md:flex">
+                <div className="hidden max-w-[420px] flex-1 items-center gap-2 rounded-[8px] border border-line bg-sunken px-2.5 h-8 text-[14px] text-fg-subtle md:flex">
                     <Search size={13} />
                     <span>Search chains, commands, endpoints…</span>
                 </div>
 
-                <nav className="ml-auto hidden items-center gap-5 text-[13px] text-slate-500 dark:text-[#8b93a1] lg:flex">
-                    <button type="button" onClick={() => scrollToSection('overview')} className="hover:text-electric-violet">Guide</button>
-                    <button type="button" onClick={() => scrollToSection('cli-reference')} className="hover:text-electric-violet">CLI</button>
-                    <button type="button" onClick={() => scrollToSection('api-reference')} className="hover:text-electric-violet">API</button>
-                    <a href="https://github.com/Txio-labs/txio" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:text-electric-violet">
+                <nav className="ml-auto hidden items-center gap-5 text-[14px] text-fg-muted lg:flex">
+                    <button type="button" onClick={() => scrollToSection('overview')} className="hover:text-fg">Guide</button>
+                    <button type="button" onClick={() => scrollToSection('cli-reference')} className="hover:text-fg">CLI</button>
+                    <button type="button" onClick={() => scrollToSection('api-reference')} className="hover:text-fg">API</button>
+                    <a href="https://github.com/Txio-labs/txio" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:text-fg">
                         <Github size={14} /> Repo <ExternalLink size={11} />
                     </a>
                 </nav>
@@ -387,7 +385,7 @@ export const DocsPage: React.FC<DocsPageProps> = ({ embedded = false }) => {
                 <button
                     type="button"
                     onClick={() => setMobileNavOpen((v) => !v)}
-                    className="ml-auto text-slate-500 hover:text-slate-900 dark:text-[#8b93a1] dark:hover:text-white lg:hidden"
+                    className="ml-auto text-fg-subtle hover:text-fg lg:hidden"
                 >
                     {mobileNavOpen ? <X size={20} /> : <Menu size={20} />}
                 </button>
@@ -395,29 +393,29 @@ export const DocsPage: React.FC<DocsPageProps> = ({ embedded = false }) => {
                 <button
                     type="button"
                     onClick={() => navigateTo('signup')}
-                    className="hidden shrink-0 rounded-md bg-slate-900 px-4 py-1.5 text-[11px] font-black uppercase tracking-widest text-white shadow-lg transition-all hover:bg-electric-violet active:scale-95 dark:bg-white dark:text-near-black dark:hover:text-white sm:block"
+                    className="hidden shrink-0 rounded-control bg-inverse px-3.5 h-8 text-[14px] font-medium text-on-inverse transition-opacity hover:opacity-90 dark:bg-white dark:text-near-black sm:block"
                 >
                     {embedded ? 'New request' : 'Launch'}
                 </button>
             </div>
 
             {mobileNavOpen && (
-                <div className="fixed inset-0 z-40 bg-white/95 pt-14 dark:bg-[#0a0c10]/95 lg:hidden">
+                <div className="fixed inset-0 z-40 bg-surface/95 backdrop-blur-xl pt-14 lg:hidden">
                     <div className="h-full overflow-y-auto px-6 py-8">{renderNav()}</div>
                 </div>
             )}
 
             <div className={`flex w-full ${embedded ? 'h-[calc(100%-3.5rem)]' : 'h-screen pt-14'}`}>
-                <aside className="hidden w-64 shrink-0 overflow-y-auto border-r border-slate-200 px-3.5 py-6 dark:border-white/10 lg:block">
+                <aside className="hidden w-64 shrink-0 overflow-y-auto border-r border-line px-3.5 py-6 lg:block">
                     {renderNav()}
                 </aside>
 
                 <main ref={scrollRef} className="flex-1 overflow-y-auto">
                     <div className="w-full px-6 py-10 md:px-12 xl:px-16">
                         <Section id="overview">
-                            <div className="mb-2.5 font-mono text-[11px] uppercase tracking-[0.1em] text-electric-violet">Introduction</div>
-                            <h1 className="mb-3.5 text-[32px] font-bold tracking-tight text-slate-900 dark:text-white">One terminal, every chain</h1>
-                            <p className="mb-6 text-[17px] leading-relaxed text-slate-500 dark:text-[#8b93a1]">
+                            <div className="mb-2.5 font-mono text-[12px] text-fg">Introduction</div>
+                            <h1 className="mb-3.5 text-[32px] font-semibold tracking-tight text-fg">One terminal, every chain</h1>
+                            <p className="mb-6 text-[17px] leading-relaxed text-fg-muted">
                                 txio is a multi-chain developer toolkit: a single CLI, a single backend, and a single command grammar
                                 for Sui, Ethereum, Solana, Aptos, and Soroban. This is the reference documentation for the CLI, the
                                 REST API behind it, and the dashboard.
@@ -427,19 +425,19 @@ export const DocsPage: React.FC<DocsPageProps> = ({ embedded = false }) => {
                                 initial={{ opacity: 0, y: 8 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.3 }}
-                                className="my-6 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-[#12151b]"
+                                className="my-6 overflow-hidden rounded-lg border border-line bg-sunken"
                             >
-                                <div className="flex items-center gap-1.5 border-b border-slate-200 bg-slate-100 px-3.5 py-2.5 dark:border-white/10 dark:bg-[#171b22]">
-                                    <span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-white/15" />
-                                    <span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-white/15" />
-                                    <span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-white/15" />
-                                    <span className="ml-3 font-mono text-[11px] text-slate-400 dark:text-[#5c6472]">~/txio</span>
+                                <div className="flex items-center gap-1.5 border-b border-line bg-hover px-3.5 py-2.5">
+                                    <span className="h-2 w-2 rounded-full bg-slate-300" />
+                                    <span className="h-2 w-2 rounded-full bg-slate-300" />
+                                    <span className="h-2 w-2 rounded-full bg-slate-300" />
+                                    <span className="ml-3 font-mono text-[12px] text-fg-subtle">~/txio</span>
                                 </div>
-                                <pre className="m-0 min-h-[110px] p-5 font-mono text-[13.5px] leading-[1.9]">
-                                    <span className="text-emerald-600 dark:text-[#3ecf8e]">$ </span>
-                                    <span className="text-slate-900 dark:text-[#e6e8eb]">{cmd.slice(0, typedChars)}</span>
-                                    {typedChars < cmd.length && <span className="ml-0.5 inline-block h-[14px] w-[7px] animate-pulse bg-electric-violet align-[-2px]" />}
-                                    {showOutput && <div className="mt-1 text-slate-500 dark:text-[#8b93a1]">{out}</div>}
+                                <pre className="m-0 min-h-[110px] p-5 font-mono text-[15px] leading-[1.9]">
+                                    <span className="text-emerald-600">$ </span>
+                                    <span className="text-fg">{cmd.slice(0, typedChars)}</span>
+                                    {typedChars < cmd.length && <span className="ml-0.5 inline-block h-[14px] w-[7px] animate-pulse bg-inverse align-[-2px]" />}
+                                    {showOutput && <div className="mt-1 text-fg-muted">{out}</div>}
                                 </pre>
                             </motion.div>
 
@@ -451,7 +449,7 @@ export const DocsPage: React.FC<DocsPageProps> = ({ embedded = false }) => {
                                     { name: 'Aptos', dot: 'bg-[#2ed3b7]' },
                                     { name: 'Soroban', dot: 'bg-[#f5d060]' },
                                 ].map((chain) => (
-                                    <span key={chain.name} className="flex items-center gap-1.5 rounded-full border border-slate-200 px-2.5 py-1 font-mono text-[11.5px] text-slate-500 dark:border-white/10 dark:text-[#8b93a1]">
+                                    <span key={chain.name} className="flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1 font-mono text-[13px] text-fg-subtle">
                                         <span className={`h-1.5 w-1.5 rounded-full ${chain.dot}`} />
                                         {chain.name}
                                     </span>
@@ -459,8 +457,8 @@ export const DocsPage: React.FC<DocsPageProps> = ({ embedded = false }) => {
                             </div>
 
                             <Callout tone="warn">
-                                <strong className="text-[#7a2e1c] dark:text-[#e6e8eb]">Pre-1.0, not security audited.</strong> Read{' '}
-                                <button type="button" onClick={() => scrollToSection('security-status')} className="text-electric-violet underline">
+                                <strong className="text-fg">Pre-1.0, not security audited.</strong> Read{' '}
+                                <button type="button" onClick={() => scrollToSection('security-status')} className="text-fg underline">
                                     Security &amp; hardening
                                 </button>{' '}
                                 for what has been checked and what is still open before you expose a deployment to an untrusted network.
@@ -513,7 +511,7 @@ cargo run -- sui balance aliphatic.sui`}
                                 ]}
                             />
                             <P>
-                                Adding a chain means implementing <code className="rounded bg-slate-100 px-1.5 py-0.5 text-electric-violet dark:bg-[#12151b]">ChainAdapter</code>{' '}
+                                Adding a chain means implementing <code className="rounded bg-hover px-1.5 py-0.5 text-fg">ChainAdapter</code>{' '}
                                 (call_rpc, get_balance) in one new file under cli/src/chains/ and registering it in factory.rs — no
                                 changes to the parser or the other adapters.
                             </P>
@@ -526,7 +524,7 @@ cargo run -- sui balance aliphatic.sui`}
                                 logged in is attributed to your account automatically — no extra flags needed.
                             </P>
                             <Callout tone="note">
-                                <strong className="text-slate-800 dark:text-[#e6e8eb]">Scoped API keys:</strong> for CI/CD and headless scripts, generate a
+                                <strong className="text-fg">Scoped API keys:</strong> for CI/CD and headless scripts, generate a
                                 scoped key instead of reusing a personal login token — see{' '}
                                 <code className="rounded bg-black/10 px-1.5 py-0.5 dark:bg-black/20">txio keys create --scope read</code>. Read-only keys
                                 can call balance and call for view methods; execute-scoped keys can also submit transactions.
@@ -550,7 +548,7 @@ cargo run -- sui balance aliphatic.sui`}
                                 head={['Command', 'Description']}
                                 rows={[
                                     [<code key="1">txio sui balance &lt;address|.sui&gt;</code>, 'Balance lookup, resolves SuiNS names automatically'],
-                                    [<code key="2">txio eth balance 0x...</code>, <>Ethereum balance. ENS resolution is <span className="text-slate-400 dark:text-[#5c6472]">not yet implemented</span></>],
+                                    [<code key="2">txio eth balance 0x...</code>, <>Ethereum balance. ENS resolution is <span className="text-fg-subtle">not yet implemented</span></>],
                                     [<code key="3">txio solana balance &lt;address&gt;</code>, 'Balance in lamports/SOL'],
                                     [<code key="4">txio aptos balance &lt;address&gt;</code>, 'Balance lookup'],
                                     [<code key="5">txio soroban balance &lt;address&gt;</code>, 'Balance lookup'],
@@ -583,10 +581,11 @@ cargo run -- sui balance aliphatic.sui`}
                             />
 
                             <Callout tone="warn">
-                                <strong className="text-[#7a2e1c] dark:text-[#e6e8eb]">Removed:</strong> txio db list-users and any other command that talks
+                                <strong className="text-fg">Removed:</strong>{' '}
+                                txio db list-users and any other command that talks
                                 to MongoDB directly with database credentials. Admin actions now go through authenticated, RBAC&apos;d
                                 backend endpoints — the CLI never holds DB creds. See{' '}
-                                <button type="button" onClick={() => scrollToSection('deprecations')} className="text-electric-violet underline">
+                                <button type="button" onClick={() => scrollToSection('deprecations')} className="text-fg underline">
                                     Deprecated / removed
                                 </button>
                                 .
@@ -597,7 +596,7 @@ cargo run -- sui balance aliphatic.sui`}
                             <H2>API reference</H2>
                             <P>
                                 All endpoints below are used by both the CLI and the dashboard. Requests and responses are JSON;
-                                authenticated routes expect <code className="rounded bg-slate-100 px-1.5 py-0.5 text-electric-violet dark:bg-[#12151b]">Authorization: Bearer &lt;jwt|api-key&gt;</code>.
+                                authenticated routes expect <code className="rounded bg-hover px-1.5 py-0.5 text-fg">Authorization: Bearer &lt;jwt|api-key&gt;</code>.
                             </P>
 
                             <H3>Response envelope</H3>
@@ -646,9 +645,9 @@ cargo run -- sui balance aliphatic.sui`}
                                 <DocsTable
                                     head={['Chain', 'Namespace', 'Status']}
                                     rows={[
-                                        ['Sui', 'SuiNS (.sui)', <span key="1" className="text-[#1f9e6b] dark:text-[#3ecf8e]">Live</span>],
-                                        ['Ethereum', 'ENS (.eth)', <span key="2" className="text-slate-400 dark:text-[#5c6472]">not implemented</span>],
-                                        ['Aptos / Soroban', '—', <span key="3" className="text-slate-400 dark:text-[#5c6472]">roadmap</span>],
+                                        ['Sui', 'SuiNS (.sui)', <span key="1" className="text-[#1f9e6b]">Live</span>],
+                                        ['Ethereum', 'ENS (.eth)', <span key="2" className="text-fg-subtle">not implemented</span>],
+                                        ['Aptos / Soroban', '—', <span key="3" className="text-fg-subtle">roadmap</span>],
                                     ]}
                                 />
                             </Endpoint>
@@ -683,16 +682,16 @@ cargo run -- sui balance aliphatic.sui`}
                             <H2 id="guide-resolution">Guide: Name resolution</H2>
                             <P>
                                 Instead of exact-matching a name string, the resolver runs a recursive scan (
-                                <code className="rounded bg-slate-100 px-1.5 py-0.5 text-electric-violet dark:bg-[#12151b]">([a-zA-Z0-9-]+\.sui)</code>) across
+                                <code className="rounded bg-hover px-1.5 py-0.5 text-fg">([a-zA-Z0-9-]+\.sui)</code>) across
                                 the entire request body. This matters because developers often embed names inside Move type tags, e.g.{' '}
-                                <code className="rounded bg-slate-100 px-1.5 py-0.5 text-electric-violet dark:bg-[#12151b]">0x...::Coin&lt;names.sui&gt;</code> —
+                                <code className="rounded bg-hover px-1.5 py-0.5 text-fg">0x...::Coin&lt;names.sui&gt;</code> —
                                 a flat match would miss it. Every occurrence, at any nesting depth, is resolved before the call goes out.
                             </P>
 
                             <H2 id="guide-ptb">Guide: PTB builder</H2>
                             <P>
                                 A node-based, infinite-canvas editor for Programmable Transaction Blocks. Current node types: Object
-                                (input coins/objects), SplitCoins, and Transfer. Every builder run supports <strong className="text-slate-800 dark:text-[#e6e8eb]">Simulate</strong>,
+                                (input coins/objects), SplitCoins, and Transfer. Every builder run supports <strong className="text-fg">Simulate</strong>,
                                 which dry-runs the transaction before you commit on-chain.
                             </P>
 
@@ -701,7 +700,7 @@ cargo run -- sui balance aliphatic.sui`}
                                 Collections group saved requests into folders and can be run end-to-end with the Collection Runner
                                 (pass/fail per request, live progress, timing). txio context mirrors this on the CLI side: named
                                 bundles of network, RPC URL, and key material you can switch between with one command, e.g.{' '}
-                                <code className="rounded bg-slate-100 px-1.5 py-0.5 text-electric-violet dark:bg-[#12151b]">txio context use staging</code>.
+                                <code className="rounded bg-hover px-1.5 py-0.5 text-fg">txio context use staging</code>.
                             </P>
                         </Section>
 
@@ -751,19 +750,19 @@ cargo run -- sui balance aliphatic.sui`}
                             />
                         </Section>
 
-                        <footer className="mt-16 flex flex-col gap-3 border-t border-slate-200 pt-8 text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:border-white/10 dark:text-[#5c6472] sm:flex-row sm:items-center sm:justify-between">
+                        <footer className="mt-16 flex flex-col gap-3 border-t border-line pt-8 text-[12px] text-fg-subtle sm:flex-row sm:items-center sm:justify-between">
                             <span className="flex items-center gap-2 normal-case tracking-normal">
                                 <Shield size={12} /> pre-1.0, actively developed
                             </span>
                             <div className="flex gap-6">
-                                <a href="https://github.com/Txio-labs/txio" target="_blank" rel="noreferrer" className="hover:text-electric-violet">GitHub</a>
+                                <a href="https://github.com/Txio-labs/txio" target="_blank" rel="noreferrer" className="hover:text-fg">GitHub</a>
                                 <span>© 2026 txio</span>
                             </div>
                         </footer>
                     </div>
                 </main>
 
-                <aside className="hidden w-64 shrink-0 overflow-y-auto border-l border-slate-200 px-4 py-6 dark:border-white/10 xl:block">
+                <aside className="hidden w-64 shrink-0 overflow-y-auto border-l border-line px-4 py-6 xl:block">
                     {renderToc()}
                 </aside>
             </div>

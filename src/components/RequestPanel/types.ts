@@ -27,8 +27,6 @@ export interface BuilderTabProps {
 
 export type ActiveTab =
   | 'builder'
-  | 'headers'
-  | 'auth'
   | 'raw'
   | 'transaction'
   | 'advanced'

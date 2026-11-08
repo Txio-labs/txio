@@ -42,10 +42,10 @@ const ChainDot: React.FC<{ family: WalletChainFamily; size?: number }> = ({ fami
 );
 
 const WalletGlyph: React.FC<{ shortName: string; family: WalletChainFamily; size?: 'sm' | 'md' }> = ({ shortName, family, size = 'md' }) => {
-    const dims = size === 'sm' ? 'w-8 h-8 text-[10px]' : 'w-10 h-10 text-xs';
+    const dims = size === 'sm' ? 'w-8 h-8 text-[12px]' : 'w-10 h-10 text-xs';
     return (
         <div
-            className={`${dims} rounded-xl flex items-center justify-center font-bold shrink-0 border`}
+            className={`${dims} rounded-[10px] flex items-center justify-center font-semibold shrink-0 border`}
             style={{ backgroundColor: `${CHAIN_META[family].color}1a`, borderColor: `${CHAIN_META[family].color}40`, color: CHAIN_META[family].color }}
         >
             {shortName}
@@ -62,7 +62,7 @@ const CopyButton: React.FC<{ value: string }> = ({ value }) => {
                 setCopied(true);
                 setTimeout(() => setCopied(false), 1200);
             }}
-            className="text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors shrink-0"
+            className="text-fg-subtle hover:text-fg transition-colors shrink-0"
             title="Copy address"
         >
             {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
@@ -101,11 +101,11 @@ export const WalletsPage: React.FC = () => {
         .filter((w): w is NonNullable<typeof w> => Boolean(w));
 
     return (
-        <div className="h-full overflow-y-auto custom-scrollbar bg-white dark:bg-near-black p-6 md:p-8">
+        <div className="h-full overflow-y-auto custom-scrollbar bg-surface p-6 md:p-8">
             <div className="space-y-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Wallets</h1>
-                    <p className="text-sm text-slate-500 mt-1">
+                    <h1 className="text-[22px] font-semibold tracking-[-0.03em] text-fg">Wallets</h1>
+                    <p className="text-sm text-fg-subtle mt-1">
                         Connect one wallet per chain — a Sui wallet and a Stellar wallet can both stay linked at once, which is what lets a cross-chain send find an address on each side.
                     </p>
                 </div>
@@ -121,7 +121,7 @@ export const WalletsPage: React.FC = () => {
                                     return (
                                         <div
                                             key={wallet.id}
-                                            className="rounded-2xl border p-5 flex flex-wrap items-center gap-6"
+                                            className="rounded-card border p-5 flex flex-wrap items-center gap-6"
                                             style={{
                                                 borderColor: isActive ? `${CHAIN_META[wallet.family].color}66` : undefined
                                             }}
@@ -130,12 +130,12 @@ export const WalletsPage: React.FC = () => {
                                                 <WalletGlyph shortName={wallet.name.slice(0, 2).toUpperCase()} family={wallet.family} />
                                                 <div className="min-w-0">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="font-bold text-slate-900 dark:text-white truncate">{wallet.name}</span>
-                                                        <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-300">
+                                                        <span className="font-semibold text-fg truncate">{wallet.name}</span>
+                                                        <span className="text-[12px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-active text-fg-muted">
                                                             {CHAIN_META[wallet.family].label}
                                                         </span>
                                                         {isActive && (
-                                                            <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                                            <span className="text-[12px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                                                                 Default signer
                                                             </span>
                                                         )}
@@ -144,7 +144,7 @@ export const WalletsPage: React.FC = () => {
                                                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                                                         Connected
                                                     </div>
-                                                    <div className="flex items-center gap-1.5 mt-1 text-xs font-mono text-slate-500">
+                                                    <div className="flex items-center gap-1.5 mt-1 text-xs font-mono text-fg-subtle">
                                                         <span>{shortenAddress(wallet.address)}</span>
                                                         <CopyButton value={wallet.address} />
                                                     </div>
@@ -154,10 +154,10 @@ export const WalletsPage: React.FC = () => {
                                             {wallet.family === currentWallet?.family && (
                                                 <div className="flex items-center gap-6 text-sm">
                                                     <div>
-                                                        <div className="font-bold text-slate-900 dark:text-white">
+                                                        <div className="font-semibold text-fg">
                                                             {isBalanceLoading ? '…' : balance?.formatted ?? '—'}
                                                         </div>
-                                                        <div className="text-[11px] text-slate-500">Balance</div>
+                                                        <div className="text-[12px] text-fg-subtle">Balance</div>
                                                     </div>
                                                 </div>
                                             )}
@@ -166,7 +166,7 @@ export const WalletsPage: React.FC = () => {
                                                 {!isActive && (
                                                     <button
                                                         onClick={() => setActiveSigner(wallet.family)}
-                                                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                                                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-line text-xs font-semibold text-fg-muted hover:bg-hover transition-colors"
                                                     >
                                                         Make default
                                                     </button>
@@ -176,14 +176,14 @@ export const WalletsPage: React.FC = () => {
                                                         href={explorerUrl}
                                                         target="_blank"
                                                         rel="noreferrer"
-                                                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                                                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-line text-xs font-semibold text-fg-muted hover:bg-hover transition-colors"
                                                     >
                                                         <ExternalLink size={12} /> Explorer
                                                     </a>
                                                 )}
                                                 <button
                                                     onClick={() => void disconnect(wallet.family)}
-                                                    className="px-3 py-2 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-near-black text-xs font-bold hover:opacity-90 transition-opacity"
+                                                    className="px-3 py-2 rounded-lg bg-inverse text-on-inverse text-xs font-semibold hover:opacity-90 transition-opacity"
                                                 >
                                                     Disconnect
                                                 </button>
@@ -193,18 +193,18 @@ export const WalletsPage: React.FC = () => {
                                 })}
                             </div>
                         ) : (
-                            <div className="rounded-2xl border border-dashed border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow p-8 flex flex-col items-center text-center gap-3">
-                                <div className="w-12 h-12 rounded-xl bg-slate-200 dark:bg-white/5 flex items-center justify-center text-slate-400">
+                            <div className="rounded-card border border-dashed border-line bg-sunken p-8 flex flex-col items-center text-center gap-3">
+                                <div className="w-12 h-12 rounded-[10px] bg-active flex items-center justify-center text-fg-subtle">
                                     <WalletIcon size={20} />
                                 </div>
                                 <div>
-                                    <div className="font-bold text-slate-900 dark:text-white">No wallet connected</div>
-                                    <p className="text-xs text-slate-500 mt-1">Connect a wallet to sign transactions across Sui, EVM, Solana, Aptos, or Stellar.</p>
+                                    <div className="font-semibold text-fg">No wallet connected</div>
+                                    <p className="text-[14px] text-fg-muted mt-1.5">Connect a wallet to sign transactions across Sui, EVM, Solana, Aptos, or Stellar.</p>
                                 </div>
                                 <button
                                     onClick={openModal}
                                     disabled={isConnecting}
-                                    className="mt-1 px-4 py-2 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-near-black text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+                                    className="mt-1 px-4 py-2 rounded-lg bg-inverse text-on-inverse text-xs font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
                                 >
                                     {isConnecting ? 'Connecting…' : 'Connect Wallet'}
                                 </button>
@@ -216,7 +216,7 @@ export const WalletsPage: React.FC = () => {
                             <button
                                 onClick={openModal}
                                 disabled={isConnecting}
-                                className="w-full rounded-2xl border border-dashed border-slate-200 dark:border-white/10 p-4 flex items-center justify-center gap-2 text-xs font-bold text-slate-500 hover:text-electric-violet hover:border-electric-violet/40 transition-colors disabled:opacity-50"
+                                className="w-full rounded-card border border-dashed border-line p-4 flex items-center justify-center gap-2 text-xs font-semibold text-fg-subtle hover:text-fg hover:border-line-strong transition-colors disabled:opacity-50"
                             >
                                 <Plus size={14} />
                                 Connect a wallet on {unlinkedFamilies.map((f) => CHAIN_META[f].label).join(', ')}
@@ -224,20 +224,20 @@ export const WalletsPage: React.FC = () => {
                         )}
 
                         {/* Recent wallets */}
-                        <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-dark-indigo-glow overflow-hidden">
-                            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-white/5">
+                        <div className="rounded-card border border-line bg-elevated overflow-hidden">
+                            <div className="flex items-center justify-between px-5 py-4 border-b border-line">
                                 <div>
-                                    <h2 className="text-sm font-bold text-slate-900 dark:text-white">Recent Wallets</h2>
-                                    <p className="text-xs text-slate-500 mt-0.5">Wallets you&apos;ve connected before — reconnect with one click.</p>
+                                    <h2 className="text-sm font-semibold text-fg">Recent Wallets</h2>
+                                    <p className="text-xs text-fg-subtle mt-0.5">Wallets you&apos;ve connected before — reconnect with one click.</p>
                                 </div>
                             </div>
 
                             {recentWallets.length === 0 ? (
-                                <div className="px-5 py-10 text-center text-xs text-slate-500">
+                                <div className="px-5 py-10 text-center text-xs text-fg-subtle">
                                     No recent wallets yet.
                                 </div>
                             ) : (
-                                <div className="divide-y divide-slate-100 dark:divide-white/5">
+                                <div className="divide-y divide-line">
                                     {recentWallets.map((wallet) => (
                                         <div
                                             key={wallet.id}
@@ -246,8 +246,8 @@ export const WalletsPage: React.FC = () => {
                                             <div className="flex items-center gap-2.5 min-w-0">
                                                 <WalletGlyph shortName={wallet.shortName} family={wallet.chainFamily} size="sm" />
                                                 <div className="min-w-0">
-                                                    <div className="font-bold text-slate-900 dark:text-white truncate">{wallet.name}</div>
-                                                    <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                                                    <div className="font-semibold text-fg truncate">{wallet.name}</div>
+                                                    <div className="flex items-center gap-1.5 text-[12px] text-fg-subtle">
                                                         <ChainDot family={wallet.chainFamily} />
                                                         {CHAIN_META[wallet.chainFamily].label}
                                                     </div>
@@ -256,7 +256,7 @@ export const WalletsPage: React.FC = () => {
                                             <button
                                                 onClick={() => void connect(wallet.id)}
                                                 disabled={isConnecting}
-                                                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
+                                                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line text-xs font-semibold text-fg-muted hover:bg-hover transition-colors disabled:opacity-50"
                                             >
                                                 <RefreshCcw size={12} /> Reconnect
                                             </button>
@@ -268,11 +268,11 @@ export const WalletsPage: React.FC = () => {
 
                         {/* Transaction history */}
                         {currentWallet && (
-                            <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-dark-indigo-glow overflow-hidden">
-                                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-white/5">
+                            <div className="rounded-card border border-line bg-elevated overflow-hidden">
+                                <div className="flex items-center justify-between px-5 py-4 border-b border-line">
                                     <div>
-                                        <h2 className="text-sm font-bold text-slate-900 dark:text-white">Transaction History</h2>
-                                        <p className="text-xs text-slate-500 mt-0.5">Recent activity for {CHAIN_META[currentWallet.family].label} ({currentWallet.name}).</p>
+                                        <h2 className="text-sm font-semibold text-fg">Transaction History</h2>
+                                        <p className="text-xs text-fg-subtle mt-0.5">Recent activity for {CHAIN_META[currentWallet.family].label} ({currentWallet.name}).</p>
                                     </div>
                                 </div>
                                 <TransactionHistoryList wallet={currentWallet} />
@@ -283,8 +283,8 @@ export const WalletsPage: React.FC = () => {
                     {/* Right sidebar */}
                     <div className="space-y-6">
                         {/* Supported networks */}
-                        <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow p-5 space-y-4">
-                            <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Supported Networks</h3>
+                        <div className="rounded-card border border-line bg-sunken p-5 space-y-4">
+                            <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Supported Networks</h3>
                             <div className="grid grid-cols-2 gap-2">
                                 {CHAIN_FAMILY_ORDER.map((family) => (
                                     <div
@@ -292,7 +292,7 @@ export const WalletsPage: React.FC = () => {
                                         className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border text-xs ${
                                             linkedWallets[family]
                                                 ? 'border-emerald-500/40 text-emerald-600 dark:text-emerald-400'
-                                                : 'border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300'
+                                                : 'border-line text-fg-muted'
                                         }`}
                                     >
                                         <ChainDot family={family} />
@@ -303,11 +303,11 @@ export const WalletsPage: React.FC = () => {
                         </div>
 
                         {/* Security note */}
-                        <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow p-5 flex items-start gap-3">
+                        <div className="rounded-card border border-line bg-sunken p-5 flex items-start gap-3">
                             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 shrink-0">
                                 {isDark ? <ShieldCheck size={16} /> : <Shield size={16} />}
                             </div>
-                            <p className="text-xs text-slate-500 leading-relaxed">
+                            <p className="text-xs text-fg-subtle leading-relaxed">
                                 Your wallets are connected directly to their own blockchains. Txio does not store your private keys or seed phrases.
                             </p>
                         </div>

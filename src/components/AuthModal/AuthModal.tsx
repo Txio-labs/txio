@@ -64,17 +64,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       role="button"
       tabIndex={-1}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClose(); }}
-      className={`fixed inset-0 z-50 bg-white/70 dark:bg-near-black/70 backdrop-blur-sm animate-in fade-in duration-200 font-sans ${
+      className={`fixed inset-0 z-50 bg-white/70 dark:bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 font-sans ${
         isProfileDrawer
           ? 'flex justify-end items-stretch sm:items-center p-0 sm:p-6'
           : 'flex items-center justify-center p-4'
       }`}
     >
       <div 
-        className={`bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 shadow-2xl w-full overflow-hidden relative transition-all duration-300 flex flex-col ${
+        className={`bg-elevated border border-line shadow-pop w-full overflow-hidden relative transition-all duration-300 flex flex-col ${
           isProfileDrawer
             ? 'h-full sm:h-auto sm:max-h-[85vh] max-w-full sm:max-w-[820px] md:max-w-[1080px] rounded-none sm:rounded-2xl border-y-0 sm:border-y sm:border-slate-200 dark:sm:border-white/10 border-r-0 border-l-slate-200 dark:border-l-white/10 animate-in slide-in-from-right-8 duration-300'
-            : 'max-w-md h-auto rounded-xl'
+            : 'max-w-md h-auto rounded-[10px]'
         }`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
@@ -82,9 +82,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       >
         <button 
           onClick={onClose}
-          className={`absolute top-4 right-4 z-10 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors p-1 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 ${
+          className={`absolute top-4 right-4 z-10 text-fg-subtle hover:text-fg transition-colors p-1 rounded-full hover:bg-hover ${
             isProfileDrawer
-              ? 'bg-white/70 dark:bg-near-black/70'
+              ? 'bg-white/70 dark:bg-black/60'
               : 'bg-white/50 dark:bg-dark-indigo-glow/50'
           }`}
         >
@@ -100,7 +100,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               onLogout={onLogout}
             />
             
-            <div className="relative min-w-0 flex-1 overflow-hidden bg-slate-50 dark:bg-[linear-gradient(180deg,#070709_0%,#18181b_52%,#060608_100%)]">
+            <div className="relative min-w-0 flex-1 overflow-hidden bg-sunken(180deg,#070709_0%,#18181b_52%,#060608_100%)]">
               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(100,100,100,0.06),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(100,100,100,0.05),transparent_30%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(163,163,163,0.14),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(163,163,163,0.1),transparent_30%)]" />
               <div className="relative h-full min-h-0 overflow-y-auto p-5 md:p-8 custom-scrollbar">
                 {renderTabContent()}

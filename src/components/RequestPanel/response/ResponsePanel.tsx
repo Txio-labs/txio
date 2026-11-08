@@ -39,17 +39,17 @@ const highlightJSON = (code: string) => {
       parts.push(escapeHtml(code.slice(lastIndex, match.index)));
     }
     const token = match[0];
-    let cls = 'text-sky-300';
+    let cls = 'text-sky-600 dark:text-sky-300';
     if (/^"/.test(token)) {
-      cls = /:$/.test(token) ? 'text-sky-300' : 'text-emerald-300';
+      cls = /:$/.test(token) ? 'text-sky-600 dark:text-sky-300' : 'text-emerald-600 dark:text-emerald-300';
     } else if (/true|false/.test(token)) {
-      cls = 'text-amber-300';
+      cls = 'text-amber-600 dark:text-amber-300';
     } else if (/null/.test(token)) {
-      cls = 'text-slate-500 italic';
+      cls = 'text-fg-subtle italic';
     } else if (/^-?\d/.test(token)) {
-      cls = 'text-orange-300';
+      cls = 'text-orange-600 dark:text-orange-300';
     } else if (/[[\]{},]/.test(token)) {
-      cls = 'text-slate-500';
+      cls = 'text-fg-subtle';
     }
     parts.push(`<span class="${cls}">${escapeHtml(token)}</span>`);
     lastIndex = tokenRegex.lastIndex;
@@ -68,7 +68,7 @@ const statusTone = (status: number) => {
   if (status >= 200 && status < 300) return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
   if (status >= 400 && status < 500) return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
   if (status >= 500) return 'text-red-500 bg-red-500/10 border-red-500/20';
-  return 'text-slate-500 bg-slate-500/10 border-slate-500/20';
+  return 'text-fg-subtle bg-hover border-line';
 };
 
 const statusLabel = (status: number) => {
@@ -140,90 +140,88 @@ export const ResponsePanel: React.FC<ResponsePanelProps> = ({ outcome, isLoading
   ];
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden">
+    <div className="flex flex-col h-full bg-surface border border-line rounded-card overflow-hidden">
       {/* Header: title + sub-tabs */}
-      <div className="flex items-center justify-between px-4 pt-3 border-b border-slate-200 dark:border-white/10 shrink-0">
-        <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-[0.2em] pb-3">
-          Response
-        </h3>
-      </div>
-      <div className="flex items-center gap-5 px-4 h-9 border-b border-slate-200 dark:border-white/10 shrink-0 overflow-x-auto no-scrollbar">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`h-full text-[10px] font-bold uppercase tracking-widest border-b-2 transition-all shrink-0 ${
-              tab === t.id
-                ? 'border-electric-violet text-electric-violet'
-                : 'border-transparent text-slate-500 hover:text-slate-600 dark:text-slate-300'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="flex items-center justify-between gap-3 pl-4 pr-2 h-10 border-b border-line shrink-0">
+        <h3 className="text-[14px] font-semibold text-fg">Response</h3>
+        <div role="tablist" className="flex items-center gap-0.5 overflow-x-auto no-scrollbar">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              role="tab"
+              aria-selected={tab === t.id}
+              onClick={() => setTab(t.id)}
+              className={`h-7 px-2.5 rounded-[7px] text-xs transition-colors shrink-0 ${
+                tab === t.id ? 'bg-active text-fg font-medium' : 'text-fg-subtle hover:text-fg'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {!outcome && !isLoading && (
         <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center p-8">
-          <FileJson size={22} className="text-slate-300 dark:text-slate-700" />
-          <p className="text-xs text-slate-500">Send a request to see the response here.</p>
+          <FileJson size={22} className="text-fg-subtle" />
+          <p className="text-xs text-fg-subtle">Send a request to see the response here.</p>
         </div>
       )}
 
       {isLoading && (
         <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center p-8">
-          <div className="h-5 w-5 rounded-full border-2 border-electric-violet/30 border-t-electric-violet animate-spin" />
-          <p className="text-xs text-slate-500">Waiting for response…</p>
+          <div className="h-5 w-5 rounded-full border-2 border-line-strong border-t-electric-violet animate-spin" />
+          <p className="text-xs text-fg-subtle">Waiting for response…</p>
         </div>
       )}
 
       {outcome && !isLoading && (
         <>
           {/* Status row */}
-          <div className="flex items-center flex-wrap gap-3 px-4 py-2.5 border-b border-slate-200 dark:border-white/10 shrink-0 text-xs">
-            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border font-bold ${statusTone(outcome.status)}`}>
+          <div className="flex items-center flex-wrap gap-3 px-4 py-2.5 border-b border-line shrink-0 text-xs">
+            <span className={`inline-flex items-center gap-1.5 h-6 px-2 rounded-md border font-mono font-medium ${statusTone(outcome.status)}`}>
               <CircleDot size={10} />
               {outcome.status} {statusLabel(outcome.status)}
             </span>
-            <span className="flex items-center gap-1 text-slate-500">
+            <span className="flex items-center gap-1 text-fg-subtle">
               <Clock size={11} /> {Math.round(outcome.duration)} ms
             </span>
-            <span className="flex items-center gap-1 text-slate-500">
+            <span className="flex items-center gap-1 text-fg-subtle">
               <HardDrive size={11} /> {formatBytes(sizeBytes)}
             </span>
-            <span className="text-slate-400 ml-auto font-mono text-[10px]">
+            <span className="text-fg-subtle ml-auto font-mono text-[12px]">
               {new Date(outcome.timestamp).toLocaleTimeString()}
             </span>
           </div>
 
           {tab === 'json' && (
             <>
-              <div className="flex items-center justify-between px-3 py-1.5 border-b border-slate-200 dark:border-white/10 shrink-0">
+              <div className="flex items-center justify-between px-3 py-1.5 border-b border-line shrink-0">
                 <div className="flex items-center gap-1">
                   <button
                     onClick={handleCopy}
-                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 hover:text-slate-900 dark:hover:text-white rounded transition-colors"
+                    className="p-1.5 hover:bg-hover text-fg-subtle hover:text-fg rounded transition-colors"
                     title="Copy"
                   >
                     {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
                   </button>
                   <button
                     onClick={handleDownload}
-                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 hover:text-slate-900 dark:hover:text-white rounded transition-colors"
+                    className="p-1.5 hover:bg-hover text-fg-subtle hover:text-fg rounded transition-colors"
                     title="Download"
                   >
                     <Download size={12} />
                   </button>
                   <button
                     onClick={() => setExpanded((e) => !e)}
-                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 hover:text-slate-900 dark:hover:text-white rounded transition-colors"
+                    className="p-1.5 hover:bg-hover text-fg-subtle hover:text-fg rounded transition-colors"
                     title={expanded ? 'Minify' : 'Expand all'}
                   >
                     {expanded ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
                   </button>
                   <button
                     onClick={() => setSearchOpen((s) => !s)}
-                    className={`p-1.5 rounded transition-colors ${searchOpen ? 'bg-electric-violet/15 text-electric-violet' : 'hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+                    className={`p-1.5 rounded transition-colors ${searchOpen ? 'bg-active text-fg' : 'hover:bg-hover text-fg-subtle hover:text-fg'}`}
                     title="Search"
                   >
                     <Search size={12} />
@@ -232,8 +230,8 @@ export const ResponsePanel: React.FC<ResponsePanelProps> = ({ outcome, isLoading
               </div>
 
               {searchOpen && (
-                <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-200 dark:border-white/10 shrink-0">
-                  <Search size={12} className="text-slate-500 shrink-0" />
+                <div className="flex items-center gap-2 px-3 py-2 border-b border-line shrink-0">
+                  <Search size={12} className="text-fg-subtle shrink-0" />
                   <input
                     type="text"
                     autoFocus
@@ -241,20 +239,20 @@ export const ResponsePanel: React.FC<ResponsePanelProps> = ({ outcome, isLoading
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyDown={(e) => e.key === 'Escape' && setSearchOpen(false)}
                     placeholder="Search response..."
-                    className="flex-1 bg-transparent outline-none text-[11px] font-mono text-slate-700 dark:text-white placeholder:text-slate-500"
+                    className="flex-1 bg-transparent outline-none text-[12px] font-mono text-fg placeholder:text-fg-subtle"
                   />
-                  <span className="text-[10px] text-slate-500 font-mono shrink-0">
+                  <span className="text-[12px] text-fg-subtle font-mono shrink-0">
                     {searchTerm ? `${matchCount} match${matchCount === 1 ? '' : 'es'}` : ''}
                   </span>
-                  <button onClick={() => setSearchOpen(false)} className="p-1 hover:bg-slate-100 dark:hover:bg-white/5 text-slate-500 rounded transition-colors">
+                  <button onClick={() => setSearchOpen(false)} className="p-1 hover:bg-hover text-fg-subtle rounded transition-colors">
                     <X size={11} />
                   </button>
                 </div>
               )}
 
-              <div className="flex-1 overflow-auto custom-scrollbar bg-white dark:bg-[#18181b] min-h-0">
+              <div className="flex-1 overflow-auto custom-scrollbar bg-sunken min-h-0">
                 <pre
-                  className="p-4 font-mono text-[12px] leading-relaxed whitespace-pre-wrap break-all text-slate-700 dark:text-slate-200"
+                  className="p-4 font-mono text-[13px] leading-relaxed whitespace-pre-wrap break-all text-fg"
                   dangerouslySetInnerHTML={{ __html: highlightJSON(displayText) }}
                 />
               </div>
@@ -263,7 +261,7 @@ export const ResponsePanel: React.FC<ResponsePanelProps> = ({ outcome, isLoading
 
           {tab === 'headers' && (
             <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center p-8">
-              <p className="text-xs text-slate-500 max-w-xs">
+              <p className="text-xs text-fg-subtle max-w-xs">
                 JSON-RPC responses in Txio don&apos;t expose transport-level HTTP headers — only the JSON-RPC
                 envelope (result/error) is captured. Nothing to show here.
               </p>
@@ -271,10 +269,10 @@ export const ResponsePanel: React.FC<ResponsePanelProps> = ({ outcome, isLoading
           )}
 
           {tab === 'logs' && (
-            <div className="flex-1 overflow-auto custom-scrollbar p-4 font-mono text-[11px] text-slate-500 space-y-1">
+            <div className="flex-1 overflow-auto custom-scrollbar p-4 font-mono text-[12px] text-fg-subtle space-y-1">
               <p>Full command + response logs are streamed to the Terminal panel (bottom bar).</p>
               {outcome.error ? (
-                <p className="text-red-400">! {outcome.error}</p>
+                <p className="text-red-600 dark:text-red-400">! {outcome.error}</p>
               ) : (
                 <p className="text-emerald-500">✓ request completed in {Math.round(outcome.duration)}ms</p>
               )}
@@ -282,8 +280,8 @@ export const ResponsePanel: React.FC<ResponsePanelProps> = ({ outcome, isLoading
           )}
 
           {tab === 'raw' && (
-            <div className="flex-1 overflow-auto custom-scrollbar bg-white dark:bg-[#18181b] min-h-0">
-              <pre className="p-4 font-mono text-[12px] leading-relaxed whitespace-pre-wrap break-all text-slate-500">
+            <div className="flex-1 overflow-auto custom-scrollbar bg-sunken min-h-0">
+              <pre className="p-4 font-mono text-[13px] leading-relaxed whitespace-pre-wrap break-all text-fg-subtle">
                 {bodyText}
               </pre>
             </div>
@@ -292,16 +290,16 @@ export const ResponsePanel: React.FC<ResponsePanelProps> = ({ outcome, isLoading
           {tab === 'timing' && (
             <div className="flex-1 overflow-auto custom-scrollbar p-4 space-y-3">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-500">Total duration</span>
-                <span className="font-mono text-slate-700 dark:text-slate-200">{Math.round(outcome.duration)} ms</span>
+                <span className="text-fg-subtle">Total duration</span>
+                <span className="font-mono text-fg">{Math.round(outcome.duration)} ms</span>
               </div>
-              <div className="h-1.5 rounded-full bg-slate-100 dark:bg-white/5 overflow-hidden">
+              <div className="h-1.5 rounded-full bg-hover overflow-hidden">
                 <div
-                  className="h-full bg-electric-violet"
+                  className="h-full bg-inverse"
                   style={{ width: `${Math.min(100, (outcome.duration / 2000) * 100)}%` }}
                 />
               </div>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[12px] text-fg-subtle">
                 Detailed phase breakdown (DNS/TLS/TTFB) isn&apos;t available from the browser fetch API used here —
                 only end-to-end request duration is measured.
               </p>
@@ -309,26 +307,26 @@ export const ResponsePanel: React.FC<ResponsePanelProps> = ({ outcome, isLoading
           )}
 
           {/* Response Details footer */}
-          <div className="border-t border-slate-200 dark:border-white/10 px-4 py-3 bg-slate-50 dark:bg-near-black/40 shrink-0">
-            <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-2">Response Details</h4>
+          <div className="border-t border-line px-4 py-3 bg-sunken shrink-0">
+            <h4 className="text-xs font-medium text-fg-muted mb-2">Response details</h4>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
               <div className="flex items-center justify-between">
-                <dt className="text-slate-500">Status</dt>
-                <dd className={`font-mono font-bold ${outcome.status >= 200 && outcome.status < 300 ? 'text-emerald-500' : 'text-red-500'}`}>
+                <dt className="text-fg-subtle">Status</dt>
+                <dd className={`font-mono font-semibold ${outcome.status >= 200 && outcome.status < 300 ? 'text-emerald-500' : 'text-red-500'}`}>
                   {outcome.status} {statusLabel(outcome.status)}
                 </dd>
               </div>
               <div className="flex items-center justify-between">
-                <dt className="text-slate-500">Response Time</dt>
-                <dd className="font-mono text-slate-700 dark:text-slate-200">{Math.round(outcome.duration)} ms</dd>
+                <dt className="text-fg-subtle">Response Time</dt>
+                <dd className="font-mono text-fg">{Math.round(outcome.duration)} ms</dd>
               </div>
               <div className="flex items-center justify-between">
-                <dt className="text-slate-500">Response Size</dt>
-                <dd className="font-mono text-slate-700 dark:text-slate-200">{formatBytes(sizeBytes)}</dd>
+                <dt className="text-fg-subtle">Response Size</dt>
+                <dd className="font-mono text-fg">{formatBytes(sizeBytes)}</dd>
               </div>
               <div className="flex items-center justify-between">
-                <dt className="text-slate-500">Content Type</dt>
-                <dd className="font-mono text-slate-700 dark:text-slate-200">application/json</dd>
+                <dt className="text-fg-subtle">Content Type</dt>
+                <dd className="font-mono text-fg">application/json</dd>
               </div>
             </dl>
           </div>

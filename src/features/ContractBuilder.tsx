@@ -331,21 +331,21 @@ export const ContractBuilder: React.FC = () => {
     const canDeploy = compile.status === 'done' && compile.result.ok && Boolean(artifact);
 
     return (
-        <div className="h-full flex bg-[#0a0a0a] text-slate-300 font-sans overflow-hidden">
+        <div className="h-full flex bg-surface text-fg-muted font-sans overflow-hidden">
             {/* Module Sidebar */}
-            <aside className="w-64 border-r border-white/5 flex flex-col bg-[#18181b]">
+            <aside className="w-64 border-r border-line flex flex-col bg-sunken">
                 <div className="p-6 space-y-6 flex-1 overflow-y-auto custom-scrollbar">
                     <div className="space-y-4">
-                        <div className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600 px-2">Contract Templates</div>
+                        <div className="text-[12px] font-semibold text-fg-muted px-2">Contract Templates</div>
                         <div className="space-y-1">
                             {modules.map(mod => (
                                 <button
                                     key={mod.id}
                                     onClick={() => setActiveModule(mod.id)}
-                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-bold transition-all ${
+                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-[10px] text-sm font-semibold transition-all ${
                                         activeModule === mod.id
-                                        ? 'bg-electric-violet text-white shadow-lg'
-                                        : 'text-slate-500 hover:bg-white/5'
+                                        ? 'bg-inverse text-on-inverse shadow-pop'
+                                        : 'text-fg-subtle hover:bg-hover'
                                     }`}
                                 >
                                     <mod.icon size={16} />
@@ -356,16 +356,16 @@ export const ContractBuilder: React.FC = () => {
                     </div>
 
                     <div className="space-y-4">
-                        <div className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600 px-2">Your Modules</div>
-                        <div className="p-4 rounded-xl border border-dashed border-white/10 text-center space-y-2 group cursor-pointer hover:border-electric-violet/30 transition-all">
-                            <Plus size={16} className="mx-auto text-slate-600 group-hover:text-electric-violet" />
-                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-600">New {config.label} Module</div>
+                        <div className="text-[12px] font-semibold text-fg-muted px-2">Your Modules</div>
+                        <div className="p-4 rounded-[10px] border border-dashed border-line text-center space-y-2 group cursor-pointer hover:border-line-strong transition-all">
+                            <Plus size={16} className="mx-auto text-fg-muted group-hover:text-fg" />
+                            <div className="text-[12px] font-semibold text-fg-muted">New {config.label} Module</div>
                         </div>
                     </div>
                 </div>
 
-                <div className="p-4 border-t border-white/5 bg-black/20">
-                    <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-600">
+                <div className="p-4 border-t border-line bg-sunken">
+                    <div className="flex items-center justify-between text-[12px] font-semibold text-fg-muted">
                         <span>{config.compilerLabel} {config.compilerVersion}</span>
                         <div className={`w-2 h-2 rounded-full ${config.canCompile ? 'bg-emerald-400' : 'bg-slate-600'}`} title={config.canCompile ? 'Compiler available' : 'No compiler for this chain yet'} />
                     </div>
@@ -375,15 +375,15 @@ export const ContractBuilder: React.FC = () => {
             {/* Visual Canvas */}
             <main className="flex-1 flex flex-col relative overflow-hidden">
                 {/* Header */}
-                <header className="h-14 border-b border-white/5 flex items-center justify-between px-6 bg-black/40 backdrop-blur-md relative z-10">
+                <header className="h-14 border-b border-line flex items-center justify-between px-6 bg-surface backdrop-blur-md relative z-10">
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-electric-violet" />
-                            <span className="text-sm font-black text-white">{contractName || 'Untitled_Contract'}.{config.fileExt}</span>
-                            <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border border-amber-500/40 text-amber-400">Experimental</span>
+                            <div className="w-2 h-2 rounded-full bg-inverse" />
+                            <span className="text-sm font-semibold text-fg">{contractName || 'Untitled_Contract'}.{config.fileExt}</span>
+                            <span className="text-[12px] font-semibold px-1.5 py-0.5 rounded border border-amber-500/40 text-amber-600 dark:text-amber-400">Experimental</span>
                         </div>
-                        {saveStatus === 'success' && <span className="text-xs font-bold text-emerald-400 flex items-center gap-1"><Check size={12}/> Saved in this browser</span>}
-                        {saveStatus === 'failed' && <span className="text-xs font-bold text-rose-400">Could not save</span>}
+                        {saveStatus === 'success' && <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><Check size={12}/> Saved in this browser</span>}
+                        {saveStatus === 'failed' && <span className="text-xs font-semibold text-rose-600 dark:text-rose-400">Could not save</span>}
                     </div>
 
                     <div className="absolute left-1/2 -translate-x-1/2 w-56">
@@ -397,14 +397,14 @@ export const ContractBuilder: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <button onClick={handleSave} className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-bold transition-all">
+                        <button onClick={handleSave} className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-hover hover:bg-active text-xs font-semibold transition-all">
                             <Save size={14} /> Save draft
                         </button>
                         <button
                             onClick={() => void handleCompile()}
                             disabled={!config.canCompile || isCompiling || !code.trim()}
                             title={config.canCompile ? undefined : config.unavailableReason}
-                            className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-xs font-bold transition-all disabled:opacity-40"
+                            className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-active hover:bg-active text-xs font-semibold transition-all disabled:opacity-40"
                         >
                             {isCompiling ? <Loader2 size={14} className="animate-spin" /> : <Hammer size={14} />} Compile
                         </button>
@@ -412,7 +412,7 @@ export const ContractBuilder: React.FC = () => {
                             onClick={handleDeploy}
                             disabled={!canDeploy}
                             title={canDeploy ? undefined : config.canCompile ? 'Compile without errors first' : config.unavailableReason}
-                            className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-electric-violet text-white text-xs font-bold shadow-lg shadow-electric-violet/20 hover:bg-soft-purple transition-all disabled:opacity-40"
+                            className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-inverse text-on-inverse text-xs font-semibold shadow-card shadow-card hover:bg-soft-purple transition-all disabled:opacity-40"
                         >
                             <Play size={14} /> Review deployment
                         </button>
@@ -421,41 +421,41 @@ export const ContractBuilder: React.FC = () => {
 
                 {/* Canvas Content */}
                 <div className="flex-1 p-12 relative z-10 overflow-y-auto custom-scrollbar">
-                    <div className="max-w-4xl mx-auto space-y-6">
+                    <div className="w-full space-y-6">
                         {!config.canCompile && (
-                            <div role="note" className="p-4 rounded-xl bg-white/[0.03] border border-white/10 text-slate-400 flex items-start gap-3 text-sm">
-                                <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-400" />
+                            <div role="note" className="p-4 rounded-[10px] bg-hover border border-line text-fg-subtle flex items-start gap-3 text-sm">
+                                <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
                                 <span>{config.unavailableReason} You can still write and save a draft here.</span>
                             </div>
                         )}
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="p-1 rounded-[1.5rem] bg-[#18181b] border border-white/10 shadow-2xl relative group h-[70vh] max-h-[480px] flex flex-col"
+                            className="p-1 rounded-panel bg-sunken border border-line shadow-card relative group h-[70vh] max-h-[480px] flex flex-col"
                         >
-                            <div className="flex items-center gap-2 px-6 py-4 border-b border-white/5">
-                                <Code2 size={18} className="text-slate-500"/>
-                                <span className="text-xs font-black uppercase tracking-widest text-slate-500">Contract Editor</span>
+                            <div className="flex items-center gap-2 px-6 py-4 border-b border-line">
+                                <Code2 size={18} className="text-fg-subtle"/>
+                                <span className="text-xs font-semibold text-fg-subtle">Contract Editor</span>
                             </div>
                             <textarea
                                 value={code}
                                 onChange={(e) => setCode(e.target.value)}
                                 spellCheck={false}
                                 aria-label="Contract source"
-                                className="flex-1 w-full bg-transparent text-sm font-mono text-slate-300 p-6 focus:outline-none resize-none custom-scrollbar"
+                                className="flex-1 w-full bg-transparent text-sm font-mono text-fg-muted p-6 focus:outline-none resize-none custom-scrollbar"
                                 placeholder={`// Write your ${config.label} contract here...`}
                             />
                         </motion.div>
 
                         {compile.status !== 'idle' && (
-                            <section aria-label="Compiler output" className="rounded-2xl border border-white/10 bg-[#18181b] p-4 space-y-3">
-                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Compiler output</div>
-                                <pre className="text-xs font-mono text-slate-400 whitespace-pre-wrap">{compile.logs.join('\n')}</pre>
-                                {compile.status === 'failed' && <p role="alert" className="text-xs text-rose-400">{compile.message}</p>}
+                            <section aria-label="Compiler output" className="rounded-card border border-line bg-sunken p-4 space-y-3">
+                                <div className="text-[12px] font-semibold text-fg-subtle">Compiler output</div>
+                                <pre className="text-xs font-mono text-fg-subtle whitespace-pre-wrap">{compile.logs.join('\n')}</pre>
+                                {compile.status === 'failed' && <p role="alert" className="text-xs text-rose-600 dark:text-rose-400">{compile.message}</p>}
                                 {compile.status === 'done' && compile.result.diagnostics.length > 0 && (
                                     <ul className="space-y-2">
                                         {compile.result.diagnostics.map((d, i) => (
-                                            <li key={i} className={`text-xs font-mono whitespace-pre-wrap ${d.severity === 'error' ? 'text-rose-400' : 'text-amber-400'}`}>
+                                            <li key={i} className={`text-xs font-mono whitespace-pre-wrap ${d.severity === 'error' ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'}`}>
                                                 {d.line ? `Line ${d.line}:${d.column ?? 1}  ` : ''}{d.formatted.trim()}
                                             </li>
                                         ))}
@@ -465,73 +465,73 @@ export const ContractBuilder: React.FC = () => {
                         )}
 
                         {canDeploy && artifact && (
-                            <section aria-label="Compiled contract" className="rounded-2xl border border-white/10 bg-[#18181b] p-4 space-y-3">
+                            <section aria-label="Compiled contract" className="rounded-card border border-line bg-sunken p-4 space-y-3">
                                 <div className="flex items-center justify-between gap-4">
-                                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Compiled</div>
+                                    <div className="text-[12px] font-semibold text-fg-subtle">Compiled</div>
                                     {artifacts.length > 1 && (
                                         <select
                                             aria-label="Contract to deploy"
                                             value={artifact.name}
                                             onChange={(e) => { setSelectedName(e.target.value); setCtorArgs([]); }}
-                                            className="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs"
+                                            className="bg-hover border border-line rounded-lg px-2 py-1 text-xs"
                                         >
                                             {artifacts.map((c) => <option key={c.name}>{c.name}</option>)}
                                         </select>
                                     )}
                                 </div>
-                                <div className="text-xs text-slate-400">
-                                    <span className="font-bold text-white">{artifact.name}</span> · {artifact.runtimeSize} bytes deployed code
-                                    {artifact.runtimeSize > MAX_RUNTIME_BYTES && <span className="text-rose-400"> (over the {MAX_RUNTIME_BYTES}-byte limit)</span>}
+                                <div className="text-xs text-fg-subtle">
+                                    <span className="font-semibold text-fg">{artifact.name}</span> · {artifact.runtimeSize} bytes deployed code
+                                    {artifact.runtimeSize > MAX_RUNTIME_BYTES && <span className="text-rose-600 dark:text-rose-400"> (over the {MAX_RUNTIME_BYTES}-byte limit)</span>}
                                 </div>
                                 {constructorInputs.map((input, i) => (
-                                    <label key={i} className="block text-[10px] font-black uppercase text-slate-600">
-                                        {input.name || `arg${i}`} <span className="font-mono normal-case text-slate-500">{input.type}</span>
+                                    <label key={i} className="block text-[12px] font-semibold uppercase text-fg-muted">
+                                        {input.name || `arg${i}`} <span className="font-mono normal-case text-fg-subtle">{input.type}</span>
                                         <input
                                             aria-label={`Constructor argument ${input.name || i} (${input.type})`}
                                             value={ctorArgs[i] ?? ''}
                                             onChange={(e) => setCtorArgs((prev) => { const next = [...prev]; next[i] = e.target.value; return next; })}
-                                            className="mt-1 w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs font-mono normal-case text-white outline-none focus:border-electric-violet/40"
+                                            className="mt-1 w-full bg-hover border border-line rounded-lg px-3 py-2 text-xs font-mono normal-case text-fg outline-none focus:border-line-strong"
                                         />
                                     </label>
                                 ))}
-                                {deployError && <p role="alert" className="text-xs text-rose-400">{deployError}</p>}
-                                <p className="text-[11px] text-slate-500">
+                                {deployError && <p role="alert" className="text-xs text-rose-600 dark:text-rose-400">{deployError}</p>}
+                                <p className="text-[12px] text-fg-subtle">
                                     Deploying opens a Transaction request: it is simulated on the chain and reviewed before your wallet is asked to sign.
                                 </p>
                             </section>
                         )}
-                        {compile.status === 'done' && errors.length > 0 && <p className="text-xs text-rose-400">Fix the errors above, then compile again.</p>}
+                        {compile.status === 'done' && errors.length > 0 && <p className="text-xs text-rose-600 dark:text-rose-400">Fix the errors above, then compile again.</p>}
                     </div>
                 </div>
             </main>
 
             {/* Inspector */}
-            <aside className="w-80 border-l border-white/5 bg-[#18181b] p-6 space-y-8">
+            <aside className="w-80 border-l border-line bg-sunken p-6 space-y-8">
                 <div className="space-y-4">
-                    <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Properties</h3>
+                    <h3 className="text-xs font-semibold text-fg-subtle">Properties</h3>
                     <div className="space-y-4">
                         <div className="space-y-1">
-                            <label className="text-[10px] font-black text-slate-600 uppercase">Contract Name</label>
+                            <label className="text-[12px] font-semibold text-fg-muted uppercase">Contract Name</label>
                             <input
                                 type="text"
                                 value={contractName}
                                 onChange={(e) => setContractName(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm font-bold focus:border-electric-violet/40 transition-all outline-none text-white"
+                                className="w-full bg-hover border border-line rounded-[10px] px-4 py-2 text-sm font-semibold focus:border-line-strong transition-all outline-none text-fg"
                                 placeholder="Enter contract name"
                             />
                         </div>
                         <div className="space-y-1">
-                            <label className="text-[10px] font-black text-slate-600 uppercase">{config.editionLabel}</label>
+                            <label className="text-[12px] font-semibold text-fg-muted uppercase">{config.editionLabel}</label>
                             <select
                                 value={edition}
                                 onChange={(e) => setEdition(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm font-bold outline-none"
+                                className="w-full bg-hover border border-line rounded-[10px] px-4 py-2 text-sm font-semibold outline-none"
                             >
                                 {config.editions.map((option) => (
                                     <option key={option}>{option}</option>
                                 ))}
                             </select>
-                            {config.canCompile && <p className="text-[10px] text-slate-600">Compiles with the built-in solc {config.compilerVersion} (optimizer on). This setting is not applied yet.</p>}
+                            {config.canCompile && <p className="text-[12px] text-fg-muted">Compiles with the built-in solc {config.compilerVersion} (optimizer on). This setting is not applied yet.</p>}
                         </div>
                     </div>
                 </div>

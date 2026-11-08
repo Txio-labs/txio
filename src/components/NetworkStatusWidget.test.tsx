@@ -27,7 +27,7 @@ describe('NetworkStatusWidget', () => {
     vi.clearAllMocks();
   });
 
-  it('renders the monitored chains and the configured-later chains as "Not configured"', async () => {
+  it('renders every supported chain', async () => {
     getChainRpcHealth.mockResolvedValue({
       endpoint: 'https://example.org',
       latency: [88],
@@ -38,16 +38,13 @@ describe('NetworkStatusWidget', () => {
 
     render(<NetworkStatusWidget />);
 
-    expect(screen.getByText('Ethereum Mainnet')).toBeInTheDocument();
-    expect(screen.getByText('Sui Mainnet')).toBeInTheDocument();
-    expect(screen.getByText('Stellar Mainnet')).toBeInTheDocument();
-
-    expect(screen.getByText('Solana Mainnet')).toBeInTheDocument();
-    expect(screen.getByText('Bitcoin Mainnet')).toBeInTheDocument();
-    expect(screen.getAllByText('Not configured').length).toBeGreaterThanOrEqual(4);
+    for (const label of ['Sui', 'Ethereum / EVM', 'Stellar', 'Solana', 'Aptos']) {
+      expect(screen.getByText(label)).toBeInTheDocument();
+    }
+    await waitFor(() => expect(getChainRpcHealth).toHaveBeenCalledTimes(5));
   });
 
-  it('shows real latency and an Online status once health checks resolve', async () => {
+  it('shows real latency and a Healthy status once health checks resolve', async () => {
     getChainRpcHealth.mockResolvedValue({
       endpoint: 'https://example.org',
       latency: [88],
@@ -59,22 +56,22 @@ describe('NetworkStatusWidget', () => {
     render(<NetworkStatusWidget />);
 
     await waitFor(() => {
-      expect(screen.getAllByText('Online').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Healthy').length).toBeGreaterThan(0);
     });
     expect(screen.getAllByText('88ms').length).toBeGreaterThan(0);
   });
 
-  it('shows Offline when a health check fails', async () => {
+  it('shows Down when a health check fails', async () => {
     getChainRpcHealth.mockRejectedValue(new Error('network error'));
 
     render(<NetworkStatusWidget />);
 
     await waitFor(() => {
-      expect(screen.getAllByText('Offline').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Down').length).toBeGreaterThan(0);
     });
   });
 
-  it('navigates to the infrastructure tab when "View all" is clicked', () => {
+  it('navigates to the networks tab from the header action', () => {
     getChainRpcHealth.mockResolvedValue({
       endpoint: 'https://example.org',
       latency: [1],
@@ -84,7 +81,7 @@ describe('NetworkStatusWidget', () => {
     });
 
     render(<NetworkStatusWidget />);
-    fireEvent.click(screen.getByText('View all'));
+    fireEvent.click(screen.getByText('Networks'));
 
     expect(openTab).toHaveBeenCalledWith('infrastructure');
   });

@@ -27,7 +27,7 @@ interface TransactionEditorProps {
 /**
  * Transaction form for any chain: pick the chain, get that chain's native
  * transaction shape. Simulation and execution go through transactionService.
- * Uses the same flat bg-slate-50 card language as Headers/Auth/Advanced, but
+ * Uses the same flat bg-sunken card language as Headers/Auth/Advanced, but
  * — like the Params tab (RPCBuilder) it sits alongside — runs the full width
  * of the panel rather than capping to a narrow column: this is a real form
  * with fields worth the space, not a short static blurb.
@@ -53,9 +53,9 @@ export const TransactionEditor: React.FC<TransactionEditorProps> = ({
       case 'evm':
         return <EvmTransactionBuilder request={request} activeAddress={activeAddress} isReadOnly={isReadOnly} onChange={onChange} />;
       case 'solana':
-        return <SolanaTransactionBuilder request={request} activeAddress={activeAddress} onChange={onChange} />;
+        return <SolanaTransactionBuilder request={request} activeAddress={activeAddress} network={network} isReadOnly={isReadOnly} onChange={onChange} />;
       case 'stellar':
-        return <StellarTransactionBuilder request={request} activeAddress={activeAddress} isReadOnly={isReadOnly} onChange={onChange} />;
+        return <StellarTransactionBuilder request={request} activeAddress={activeAddress} network={network} isReadOnly={isReadOnly} onChange={onChange} />;
       case 'aptos':
         return <AptosTransactionBuilder request={request} activeAddress={activeAddress} network={network} isReadOnly={isReadOnly} onChange={onChange} />;
       case 'sui':
@@ -75,8 +75,8 @@ export const TransactionEditor: React.FC<TransactionEditorProps> = ({
         // in normal use, but handled explicitly in case an older saved
         // request already has this chain.
         return (
-          <div className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-white/10 text-center text-xs text-slate-500">
-            Transaction building isn't available for {chain} yet.
+          <div className="p-4 rounded-[10px] border border-dashed border-line text-center text-xs text-fg-subtle">
+            Transaction building isn&apos;t available for {chain} yet.
           </div>
         );
     }
@@ -85,15 +85,15 @@ export const TransactionEditor: React.FC<TransactionEditorProps> = ({
   return (
     <div className="p-4 md:p-6 space-y-6">
       <div className="flex items-center gap-3">
-        <Layers size={16} className="text-slate-400" />
-        <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-[0.2em]">
+        <Layers size={16} className="text-fg-subtle" />
+        <h3 className="text-xs font-semibold text-fg">
           Transaction
         </h3>
       </div>
 
-      <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black/40">
-        <div className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Chain</div>
-        <div className="text-xs text-slate-500 mb-3">Which chain this transaction targets — sets the params below and which wallet can sign it.</div>
+      <div className="p-4 rounded-[10px] border border-line bg-sunken">
+        <div className="text-sm font-semibold text-fg mb-1">Chain</div>
+        <div className="text-xs text-fg-subtle mb-3">Which chain this transaction targets — sets the params below and which wallet can sign it.</div>
         <div className="max-w-xs">
           <Select
             value={chain}

@@ -25,8 +25,8 @@ type LoadState =
 const MANUAL_ARG_TYPES: MoveParamType[] = ['u8', 'u16', 'u32', 'u64', 'u128', 'u256', 'bool', 'address', 'string', 'object', 'vector<u8>', 'vector<address>', 'json'];
 
 const fieldClass =
-  'w-full bg-white dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-slate-700 dark:text-slate-200 focus:border-electric-violet focus:outline-none transition-colors';
-const labelClass = 'block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1.5';
+  'w-full bg-surface border border-line rounded-lg px-3 py-2 text-xs font-mono text-fg focus:border-line-strong focus:outline-none transition-colors';
+const labelClass = 'block text-[12px] font-semibold text-fg-subtle mb-1.5';
 
 /** Maps an on-chain Move parameter type to the input kind the adapter can serialize. */
 export const moveParamTypeForAptos = (type: string): MoveParamType => {
@@ -146,12 +146,12 @@ export const AptosTransactionBuilder: React.FC<AptosTransactionBuilderProps> = (
   const userParams = selectedFunction ? selectedFunction.parameters.filter((p) => !isSignerParam(p.type)) : [];
 
   return (
-    <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black/40 space-y-5">
+    <div className="p-4 rounded-[10px] border border-line bg-sunken space-y-5">
       <div className="flex items-center justify-between">
-        <div className="text-sm font-bold text-slate-700 dark:text-slate-200">Aptos entry function call</div>
+        <div className="text-sm font-semibold text-fg">Aptos entry function call</div>
         <div className="flex items-center gap-3">
           {activeAddress && (
-            <div className="flex items-center gap-2 px-2.5 py-1 bg-white dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-full text-[10px] font-mono text-emerald-500 dark:text-emerald-400">
+            <div className="flex items-center gap-2 px-2.5 py-1 bg-surface border border-line rounded-full text-[12px] font-mono text-emerald-500 dark:text-emerald-400">
               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
               Signer: {activeAddress.slice(0, 6)}...{activeAddress.slice(-4)}
             </div>
@@ -160,7 +160,7 @@ export const AptosTransactionBuilder: React.FC<AptosTransactionBuilderProps> = (
             type="button"
             onClick={() => setManual((m) => !m)}
             disabled={isReadOnly}
-            className="text-[11px] text-electric-violet hover:opacity-80 disabled:opacity-50"
+            className="text-[12px] text-fg hover:opacity-80 disabled:opacity-50"
           >
             {manual ? 'Use on-chain ABI' : 'Enter manually'}
           </button>
@@ -184,26 +184,26 @@ export const AptosTransactionBuilder: React.FC<AptosTransactionBuilderProps> = (
               onClick={() => isAptosAddress(address) && void loadModules(address)}
               disabled={isReadOnly || !isAptosAddress(address) || view.status === 'loading'}
               aria-label="Reload modules"
-              className="p-2 text-slate-500 hover:text-electric-violet transition-colors disabled:opacity-50"
+              className="p-2 text-fg-subtle hover:text-fg transition-colors disabled:opacity-50"
             >
               <RefreshCw size={14} className={view.status === 'loading' ? 'animate-spin' : ''} />
             </button>
           )}
         </div>
         {!manual && view.status === 'idle' && (
-          <p className="mt-1.5 text-[11px] text-slate-500">Enter a module address to load its entry functions.</p>
+          <p className="mt-1.5 text-[12px] text-fg-subtle">Enter a module address to load its entry functions.</p>
         )}
         {!manual && view.status === 'loading' && (
-          <p className="mt-1.5 text-[11px] text-slate-500">Loading modules from the {network} fullnode…</p>
+          <p className="mt-1.5 text-[12px] text-fg-subtle">Loading modules from the {network} fullnode…</p>
         )}
         {!manual && view.status === 'error' && (
-          <p role="alert" className="mt-1.5 text-[11px] text-rose-500">
+          <p role="alert" className="mt-1.5 text-[12px] text-rose-500">
             {view.message} You can still{' '}
             <button type="button" onClick={() => setManual(true)} className="underline">enter the call manually</button>.
           </p>
         )}
         {!manual && pkg && entryModules.length === 0 && (
-          <p className="mt-1.5 text-[11px] text-slate-500">This account has modules but none expose an entry function.</p>
+          <p className="mt-1.5 text-[12px] text-fg-subtle">This account has modules but none expose an entry function.</p>
         )}
       </div>
 
@@ -261,14 +261,14 @@ export const AptosTransactionBuilder: React.FC<AptosTransactionBuilderProps> = (
               <div>
                 <label className={labelClass}>Arguments</label>
                 {userParams.length === 0 ? (
-                  <div className="text-center py-4 bg-white dark:bg-near-black border border-dashed border-slate-200 dark:border-white/10 rounded-lg">
-                    <span className="text-xs text-slate-500">This function takes no arguments besides the signer.</span>
+                  <div className="text-center py-4 bg-surface border border-dashed border-line rounded-lg">
+                    <span className="text-xs text-fg-subtle">This function takes no arguments besides the signer.</span>
                   </div>
                 ) : (
                   <div className="space-y-2">
                     {userParams.map((p, i) => (
                       <div key={`${selectedFunction.name}-${i}`}>
-                        <div className="text-[10px] font-mono text-slate-500 mb-1">
+                        <div className="text-[12px] font-mono text-fg-subtle mb-1">
                           {p.name}: {p.type}
                         </div>
                         <input
@@ -283,7 +283,7 @@ export const AptosTransactionBuilder: React.FC<AptosTransactionBuilderProps> = (
                     ))}
                   </div>
                 )}
-                <p className="mt-2 text-[11px] text-slate-500">The signer argument is supplied by your connected Aptos wallet.</p>
+                <p className="mt-2 text-[12px] text-fg-subtle">The signer argument is supplied by your connected Aptos wallet.</p>
               </div>
             )}
           </>
@@ -294,7 +294,7 @@ export const AptosTransactionBuilder: React.FC<AptosTransactionBuilderProps> = (
         <button
           type="button"
           onClick={() => setShowAdvanced((v) => !v)}
-          className="text-[11px] text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+          className="text-[12px] text-fg-subtle hover:text-fg"
         >
           {showAdvanced ? 'Hide' : 'Show'} gas options
         </button>
@@ -391,12 +391,12 @@ const ManualFields: React.FC<{
 
       <div>
         <div className="flex justify-between items-center mb-1.5">
-          <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Arguments</label>
+          <label className="text-[12px] font-semibold text-fg-subtle">Arguments</label>
           <button
             type="button"
             onClick={() => update({ arguments: [...params.arguments, { id: Date.now().toString(), type: 'address', value: '' }] })}
             disabled={isReadOnly}
-            className="text-xs flex items-center gap-1 text-electric-violet hover:opacity-80 disabled:opacity-50"
+            className="text-xs flex items-center gap-1 text-fg hover:opacity-80 disabled:opacity-50"
           >
             <Plus size={12} /> Add Argument
           </button>
@@ -427,15 +427,15 @@ const ManualFields: React.FC<{
                 onClick={() => update({ arguments: params.arguments.filter((_, i) => i !== idx) })}
                 disabled={isReadOnly}
                 aria-label={`Remove argument ${idx + 1}`}
-                className="p-2 text-slate-500 hover:text-rose-500 transition-colors disabled:opacity-50"
+                className="p-2 text-fg-subtle hover:text-rose-500 transition-colors disabled:opacity-50"
               >
                 <Trash2 size={14} />
               </button>
             </div>
           ))}
           {params.arguments.length === 0 && (
-            <div className="text-center py-4 bg-white dark:bg-near-black border border-dashed border-slate-200 dark:border-white/10 rounded-lg">
-              <span className="text-xs text-slate-500">No arguments defined.</span>
+            <div className="text-center py-4 bg-surface border border-dashed border-line rounded-lg">
+              <span className="text-xs text-fg-subtle">No arguments defined.</span>
             </div>
           )}
         </div>

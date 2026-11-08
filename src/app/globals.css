@@ -1,64 +1,126 @@
 @import "tailwindcss";
 @config "../../tailwind.config.ts";
 
+/*
+ * Txio design system: "Operator".
+ * Same palette as before (near-black, zinc neutrals, muted-steel accent, status hues),
+ * rebuilt as semantic tokens. Components use bg-canvas / bg-surface / bg-elevated,
+ * border-line / border-line-strong and text-fg / text-fg-muted / text-fg-subtle,
+ * so light and dark themes come from these variables alone.
+ */
 @layer base {
   :root {
-    --surface-0: #0a0a0a;
-    --surface-1: #18181b;
-    --surface-hover: rgba(163,163,163, 0.05);
-    --border-subtle: rgba(163,163,163, 0.06);
-    --border-default: rgba(163,163,163, 0.09);
-    --border-strong: rgba(163,163,163, 0.14);
+    --accent: #52525b;
+    --canvas: #f4f4f5;
+    --surface: #ffffff;
+    --elevated: #ffffff;
+    --sunken: #fafafa;
+    --hover: rgba(9, 9, 11, 0.04);
+    --active: rgba(9, 9, 11, 0.07);
+    --line: rgba(9, 9, 11, 0.08);
+    --line-strong: rgba(9, 9, 11, 0.14);
+    --fg: #09090b;
+    --fg-muted: #27272a;
+    --fg-subtle: #52525b;
+    --inverse: #09090b;
+    --on-inverse: #fafafa;
+    --ring: rgba(9, 9, 11, 0.35);
+    --shadow-pop: 0 1px 2px rgba(9, 9, 11, 0.04), 0 12px 32px -8px rgba(9, 9, 11, 0.14);
+    --shadow-card: 0 1px 2px rgba(9, 9, 11, 0.04);
+    --highlight: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
+    /* Kept for older markup still using these names. */
+    --surface-0: var(--canvas);
+    --surface-1: var(--surface);
+    --surface-hover: var(--hover);
+    --border-subtle: var(--line);
+    --border-default: var(--line);
+    --border-strong: var(--line-strong);
+  }
+
+  .dark {
+    --accent: #d4d4d8;
+    --canvas: #0a0a0a;
+    --surface: #111113;
+    --elevated: #18181b;
+    --sunken: #0c0c0d;
+    --hover: rgba(255, 255, 255, 0.045);
+    --active: rgba(255, 255, 255, 0.08);
+    --line: rgba(255, 255, 255, 0.07);
+    --line-strong: rgba(255, 255, 255, 0.13);
+    --fg: #fafafa;
+    --fg-muted: #e4e4e7;
+    --fg-subtle: #a1a1aa;
+    --inverse: #fafafa;
+    --on-inverse: #09090b;
+    --ring: rgba(255, 255, 255, 0.35);
+    --shadow-pop: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 16px 40px -12px rgba(0, 0, 0, 0.8);
+    --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+    --highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   }
 
   html {
     font-size: 16px;
+    background-color: var(--canvas);
   }
 
   body {
-    background-color: #fafafa;
-    color: #3f3f46;
-    font-family: var(--font-space-grotesk), var(--font-inter), sans-serif;
+    background-color: var(--canvas);
+    color: var(--fg);
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+    font-feature-settings: "cv11", "ss01";
     overflow: hidden;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-  }
-
-  .dark body {
-    background-color: #0a0a0a;
-    color: #e4e4e7;
+    text-rendering: optimizeLegibility;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-space-grotesk), sans-serif;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
+    font-family: var(--font-geist-sans), ui-sans-serif, sans-serif;
+    line-height: 1.15;
+    letter-spacing: -0.025em;
     font-weight: 600;
+    color: var(--fg);
+  }
+
+  code, kbd, pre, samp {
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--fg) 18%, transparent);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
 
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 10px;
+    height: 10px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(163,163,163, 0.10);
-    border-radius: 3px;
+    background: var(--line-strong);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(163,163,163, 0.20);
+    background-color: var(--fg-subtle);
   }
 
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus,
   input:-webkit-autofill:active {
-    -webkit-text-fill-color: #0f172a;
-    -webkit-box-shadow: 0 0 0px 1000px #ffffff inset;
-    box-shadow: 0 0 0px 1000px #ffffff inset;
+    -webkit-text-fill-color: var(--fg);
+    -webkit-box-shadow: 0 0 0px 1000px var(--surface) inset;
+    box-shadow: 0 0 0px 1000px var(--surface) inset;
     transition: background-color 5000s ease-in-out 0s;
   }
 
@@ -68,10 +130,59 @@
     box-shadow: none;
     outline: none;
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
-.dot-grid {
-  background-image: radial-gradient(rgba(163,163,163,0.12) 1px, transparent 1px);
+@layer utilities {
+  .no-scrollbar { scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .custom-scrollbar { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+
+  /* Hairline grid used behind marketing sections. */
+  .grid-lines {
+    background-image:
+      linear-gradient(to right, var(--line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+    background-size: 64px 64px;
+  }
+  .dot-grid {
+    background-image: radial-gradient(var(--line-strong) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+  .mask-fade-b { mask-image: linear-gradient(to bottom, black 55%, transparent); }
+  .mask-fade-y { mask-image: linear-gradient(to bottom, transparent, black 18%, black 82%, transparent); }
+  .mask-radial { mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%); }
+  .text-balance { text-wrap: balance; }
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  /* Entrance animations used by popovers, drawers and modals. */
+  .animate-in { animation: tx-enter 160ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .fade-in { --tx-enter-opacity: 0; }
+  .zoom-in-95 { --tx-enter-scale: 0.96; }
+  .slide-in-from-right { --tx-enter-x: 16px; }
+  .slide-in-from-left { --tx-enter-x: -16px; }
+  .slide-in-from-top { --tx-enter-y: -8px; }
+  .slide-in-from-bottom { --tx-enter-y: 8px; }
+}
+
+@keyframes tx-enter {
+  from {
+    opacity: var(--tx-enter-opacity, 0);
+    transform: translate3d(var(--tx-enter-x, 0), var(--tx-enter-y, 0), 0) scale(var(--tx-enter-scale, 1));
+  }
+}
+
+@keyframes tx-shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
 }
 
 /* Dark theme overrides for @mysten/dapp-kit wallet modal */

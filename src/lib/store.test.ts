@@ -102,6 +102,8 @@ describe('appStore auth and session state', () => {
         vi.resetAllMocks();
     });
 
+    // First test to import ./store cold: transforming its module graph can
+    // exceed the default 5s when the whole suite runs in parallel.
     it('starts in app mode when a token is already stored', async () => {
         localStorage.setItem(
             'txio_session_hint',
@@ -116,7 +118,7 @@ describe('appStore auth and session state', () => {
         expect(
             appStore.getSnapshot().user
         ).toBeNull();
-    });
+    }, 30_000);
 
     it('persists a successful login and hydrates its workspace', async () => {
         const { appStore, apiService } =

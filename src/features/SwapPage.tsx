@@ -11,10 +11,28 @@ import { ChainId, RequestType, RequestItem, SwapParams } from '../types';
 import { DEFAULT_MOVE_CALL } from '@/lib/constants';
 import { SwapReviewModal } from '@/components/SwapReviewModal';
 import { OfframpPanel } from '@/components/OfframpPanel';
+import { Select } from '@/components/Select';
 
 const SLIPPAGE_PRESETS = [0.1, 0.5, 1];
 const DEFAULT_SLIPPAGE = 0.5;
 const DEFAULT_DEADLINE_MINUTES = 20;
+
+// Route APIs take integer base units; name the unit so nobody types "1.5 ETH".
+const BASE_UNIT: Record<ChainId, string> = {
+    evm: 'wei',
+    sui: 'MIST',
+    solana: 'lamports',
+    aptos: 'octas',
+    stellar: 'stroops'
+};
+
+const chainLabel = (chain: ChainId) => RPC_CHAINS.find((c) => c.id === chain)?.label ?? chain;
+
+const fieldClass =
+    'h-9 rounded-lg border border-line bg-surface px-3 text-xs font-mono text-fg outline-none focus:border-line-strong';
+
+const chainOptions = RPC_CHAINS.map((c) => ({ label: c.label, value: c.id }));
+const evmOptions = EVM_CHAINS.map((c) => ({ label: c.name, value: String(c.id) }));
 
 const routeHopCount = (route: LifiRoute) => route.steps.length;
 
@@ -56,8 +74,13 @@ export const SwapPage: React.FC = () => {
 
     const fromWallet = linkedWallets[fromChain] ?? null;
     const fromAddress = fromWallet?.address ?? null;
+    // Funds settle on the destination chain, so the receiving address must be
+    // a wallet on that chain's family — the source address is only reusable
+    // when both sides are the same family (e.g. EVM → EVM).
+    const toAddress = toChain === fromChain ? fromAddress : linkedWallets[toChain]?.address ?? null;
+    const amountIsBaseUnits = /^\d+$/.test(fromAmount.trim());
 
-    const canSearch = Boolean(fromAddress && fromToken.trim() && toToken.trim() && fromAmount.trim());
+    const canSearch = Boolean(fromAddress && toAddress && fromToken.trim() && toToken.trim() && amountIsBaseUnits);
 
     /**
      * Falls back to txio-backend's bridge aggregator (which itself tries
@@ -67,7 +90,7 @@ export const SwapPage: React.FC = () => {
      * chain keys for both.
      */
     const tryBackendFallback = async () => {
-        if (!fromAddress) return;
+        if (!fromAddress || !toAddress) return;
         try {
             const quote = await apiService.getBridgeQuote({
                 from_chain: sideshiftChainSlug(fromChain),
@@ -76,7 +99,7 @@ export const SwapPage: React.FC = () => {
                 to_token: asSideshiftCoin(toToken, toChain),
                 amount: fromAmount.trim(),
                 from_address: fromAddress,
-                to_address: fromAddress
+                to_address: toAddress
             });
             setSideshiftQuote(quote);
             setError(null);
@@ -92,8 +115,13 @@ export const SwapPage: React.FC = () => {
         }
     };
 
+    const effectiveSlippage = useMemo(() => {
+        const custom = Number(customSlippage);
+        return customSlippage.trim() && !Number.isNaN(custom) && custom > 0 ? custom : slippagePercent;
+    }, [customSlippage, slippagePercent]);
+
     const handleSearch = async () => {
-        if (!fromAddress) return;
+        if (!fromAddress || !toAddress) return;
         setLoading(true);
         setError(null);
         setRoutes([]);
@@ -109,8 +137,9 @@ export const SwapPage: React.FC = () => {
                 fromToken: fromToken.trim(),
                 toToken: toToken.trim(),
                 fromAddress,
+                toAddress,
                 fromAmount: fromAmount.trim(),
-                slippagePercent,
+                slippagePercent: effectiveSlippage,
                 // A simple fixed share (5%) of the transferred amount,
                 // converted to destination-chain gas per LI.FI's
                 // gas-subsidy mechanism — not a source-chain "pay gas in
@@ -147,7 +176,7 @@ export const SwapPage: React.FC = () => {
             fromToken: fromToken.trim(),
             toToken: toToken.trim(),
             fromAmount: fromAmount.trim(),
-            slippagePercent,
+            slippagePercent: effectiveSlippage,
             deadlineMinutes,
             selectedRouteId: route.id
         };
@@ -171,7 +200,7 @@ export const SwapPage: React.FC = () => {
             fromToken: fromToken.trim(),
             toToken: toToken.trim(),
             fromAmount: fromAmount.trim(),
-            slippagePercent,
+            slippagePercent: effectiveSlippage,
             deadlineMinutes,
             selectedRouteId: sideshiftQuote.id
         };
@@ -186,38 +215,42 @@ export const SwapPage: React.FC = () => {
         });
     };
 
-    const effectiveSlippage = useMemo(() => {
-        const custom = Number(customSlippage);
-        return customSlippage.trim() && !Number.isNaN(custom) && custom > 0 ? custom : slippagePercent;
-    }, [customSlippage, slippagePercent]);
+    const reverse = () => {
+        setFromChain(toChain);
+        setToChain(fromChain);
+        setFromEvmChainId(toEvmChainId);
+        setToEvmChainId(fromEvmChainId);
+        setFromToken(toToken);
+        setToToken(fromToken);
+    };
 
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-near-black font-sans overflow-y-auto custom-scrollbar">
-            <div className="px-6 py-5 border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-dark-indigo-glow/50 shrink-0">
-                <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-3">
-                    <Repeat size={22} className="text-electric-violet" />
-                    Send
+        <div className="flex flex-col h-full bg-surface font-sans overflow-y-auto custom-scrollbar">
+            <div className="px-4 sm:px-6 py-5 border-b border-line bg-sunken shrink-0">
+                <h1 className="text-[22px] font-semibold tracking-[-0.03em] text-fg flex items-center gap-3">
+<span className="h-9 w-9 rounded-[9px] border border-line bg-surface shadow-card flex items-center justify-center text-fg-muted shrink-0"><Repeat size={16} /></span>
+Send
                 </h1>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-[14px] text-fg-muted mt-1.5">
                     Compare routes across DEXs and bridges (via LI.FI, with a SideShift fallback) for a swap or cross-chain transfer, or cash out USDC to fiat.
                 </p>
-                <div className="flex items-center gap-2 mt-3">
+                <div className="flex flex-wrap items-center gap-2 mt-3">
                     <button
                         onClick={() => setTab('swap')}
-                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-colors ${
+                        className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold flex items-center gap-1.5 transition-colors ${
                             tab === 'swap'
-                                ? 'bg-electric-violet/10 text-electric-violet border border-electric-violet/30'
-                                : 'border border-slate-200 dark:border-white/10 text-slate-500 hover:bg-white dark:hover:bg-white/5'
+                                ? 'bg-hover text-fg border border-line-strong'
+                                : 'border border-line text-fg-subtle hover:bg-hover'
                         }`}
                     >
                         <Repeat size={12} /> Swap / Bridge
                     </button>
                     <button
                         onClick={() => setTab('offramp')}
-                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-colors ${
+                        className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold flex items-center gap-1.5 transition-colors ${
                             tab === 'offramp'
-                                ? 'bg-electric-violet/10 text-electric-violet border border-electric-violet/30'
-                                : 'border border-slate-200 dark:border-white/10 text-slate-500 hover:bg-white dark:hover:bg-white/5'
+                                ? 'bg-hover text-fg border border-line-strong'
+                                : 'border border-line text-fg-subtle hover:bg-hover'
                         }`}
                     >
                         <Banknote size={12} /> Cash out (USDC → fiat)
@@ -226,106 +259,101 @@ export const SwapPage: React.FC = () => {
             </div>
 
             {tab === 'offramp' ? (
-                <div className="flex-1 p-6 w-full">
+                <div className="flex-1 p-4 sm:p-6 w-full">
                     <OfframpPanel />
                 </div>
             ) : (
-            <div className="flex-1 p-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <div className="flex-1 p-4 sm:p-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             <div className="space-y-5 w-full">
                 {/* From */}
-                <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow p-4 space-y-3">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">From</label>
-                    <div className="flex gap-2">
-                        <select
-                            value={fromChain}
-                            onChange={(e) => setFromChain(e.target.value as ChainId)}
-                            className="h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-electric-violet"
-                        >
-                            {RPC_CHAINS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-                        </select>
-                        {fromChain === 'evm' && (
-                            <select
-                                value={fromEvmChainId}
-                                onChange={(e) => setFromEvmChainId(Number(e.target.value))}
-                                className="h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-electric-violet"
-                            >
-                                {EVM_CHAINS.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                            </select>
+                <div className="rounded-[10px] border border-line bg-sunken p-4 space-y-3">
+                    <label className="text-[12px] font-semibold text-fg-subtle">From</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">
+                        <Select value={fromChain} options={chainOptions} onChange={(v) => setFromChain(v as ChainId)} fullWidth />
+                        {fromChain === 'evm' ? (
+                            <Select value={String(fromEvmChainId)} options={evmOptions} onChange={(v) => setFromEvmChainId(Number(v))} fullWidth />
+                        ) : (
+                            <div className="hidden sm:block" />
                         )}
-                        <input
-                            value={fromToken}
-                            onChange={(e) => setFromToken(e.target.value)}
-                            placeholder="Token address or symbol"
-                            className="flex-1 min-w-0 h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-electric-violet"
-                        />
                     </div>
+                    <input
+                        value={fromToken}
+                        onChange={(e) => setFromToken(e.target.value)}
+                        placeholder="Token address or symbol"
+                        aria-label="From token"
+                        className={`w-full ${fieldClass}`}
+                    />
                     <input
                         value={fromAmount}
                         onChange={(e) => setFromAmount(e.target.value)}
-                        placeholder="Amount (smallest unit)"
-                        className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-electric-violet"
+                        placeholder={`Amount in ${BASE_UNIT[fromChain]} (integer base units)`}
+                        aria-label="Amount"
+                        inputMode="numeric"
+                        className={`w-full ${fieldClass}`}
                     />
+                    {fromAmount.trim() && !amountIsBaseUnits && (
+                        <p className="text-[12px] text-red-600 dark:text-red-400 flex items-center gap-1.5">
+                            <AlertTriangle size={12} /> Enter a whole number of {BASE_UNIT[fromChain]} — no decimals.
+                        </p>
+                    )}
                     {!fromAddress && (
-                        <p className="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                            <AlertTriangle size={12} /> No {fromChain.toUpperCase()} wallet linked — connect one to search routes.
+                        <p className="text-[12px] text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                            <AlertTriangle size={12} /> No {chainLabel(fromChain)} wallet linked — connect one to search routes.
                         </p>
                     )}
                 </div>
 
                 <div className="flex justify-center -my-2 relative z-10">
                     <button
-                        onClick={() => { setFromChain(toChain); setToChain(fromChain); setFromToken(toToken); setToToken(fromToken); }}
-                        className="p-2 rounded-full border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black text-slate-500 hover:text-electric-violet transition-colors"
+                        onClick={reverse}
+                        className="p-2 rounded-full border border-line bg-surface text-fg-subtle hover:text-fg transition-colors"
                         title="Reverse"
+                        aria-label="Reverse from and to"
                     >
                         <ArrowDown size={14} />
                     </button>
                 </div>
 
                 {/* To */}
-                <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow p-4 space-y-3">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">To</label>
-                    <div className="flex gap-2">
-                        <select
-                            value={toChain}
-                            onChange={(e) => setToChain(e.target.value as ChainId)}
-                            className="h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-electric-violet"
-                        >
-                            {RPC_CHAINS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-                        </select>
-                        {toChain === 'evm' && (
-                            <select
-                                value={toEvmChainId}
-                                onChange={(e) => setToEvmChainId(Number(e.target.value))}
-                                className="h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-electric-violet"
-                            >
-                                {EVM_CHAINS.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                            </select>
+                <div className="rounded-[10px] border border-line bg-sunken p-4 space-y-3">
+                    <label className="text-[12px] font-semibold text-fg-subtle">To</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">
+                        <Select value={toChain} options={chainOptions} onChange={(v) => setToChain(v as ChainId)} fullWidth />
+                        {toChain === 'evm' ? (
+                            <Select value={String(toEvmChainId)} options={evmOptions} onChange={(v) => setToEvmChainId(Number(v))} fullWidth />
+                        ) : (
+                            <div className="hidden sm:block" />
                         )}
-                        <input
-                            value={toToken}
-                            onChange={(e) => setToToken(e.target.value)}
-                            placeholder="Token address or symbol"
-                            className="flex-1 min-w-0 h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-electric-violet"
-                        />
                     </div>
+                    <input
+                        value={toToken}
+                        onChange={(e) => setToToken(e.target.value)}
+                        placeholder="Token address or symbol"
+                        aria-label="To token"
+                        className={`w-full ${fieldClass}`}
+                    />
+                    {fromAddress && !toAddress && (
+                        <p className="text-[12px] text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                            <AlertTriangle size={12} /> Link a {chainLabel(toChain)} wallet to receive on {chainLabel(toChain)}.
+                        </p>
+                    )}
                 </div>
 
                 {/* Slippage & deadline */}
-                <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow p-4 space-y-3">
+                <div className="rounded-[10px] border border-line bg-sunken p-4 space-y-3">
                     <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Slippage tolerance</label>
-                        <span className="text-xs font-mono text-slate-600 dark:text-slate-300">{effectiveSlippage}%</span>
+                        <label className="text-[12px] font-semibold text-fg-subtle">Slippage tolerance</label>
+                        <span className="text-xs font-mono text-fg-muted">{effectiveSlippage}%</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         {SLIPPAGE_PRESETS.map((p) => (
                             <button
                                 key={p}
                                 onClick={() => { setSlippagePercent(p); setCustomSlippage(''); }}
-                                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${
+                                className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-colors ${
                                     !customSlippage.trim() && slippagePercent === p
-                                        ? 'bg-electric-violet/10 text-electric-violet border border-electric-violet/30'
-                                        : 'border border-slate-200 dark:border-white/10 text-slate-500 hover:bg-white dark:hover:bg-white/5'
+                                        ? 'bg-hover text-fg border border-line-strong'
+                                        : 'border border-line text-fg-subtle hover:bg-hover'
                                 }`}
                             >
                                 {p}%
@@ -335,27 +363,27 @@ export const SwapPage: React.FC = () => {
                             value={customSlippage}
                             onChange={(e) => setCustomSlippage(e.target.value)}
                             placeholder="Custom %"
-                            className="w-24 h-8 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-2 text-[11px] font-mono text-slate-900 dark:text-white outline-none focus:border-electric-violet"
+                            className="w-24 h-8 rounded-lg border border-line bg-surface px-2 text-[12px] font-mono text-fg outline-none focus:border-line-strong"
                         />
                     </div>
 
                     <div className="flex items-center justify-between pt-1">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500" htmlFor="swap-deadline">Deadline (minutes)</label>
+                        <label className="text-[12px] font-semibold text-fg-subtle" htmlFor="swap-deadline">Deadline (minutes)</label>
                         <input
                             id="swap-deadline"
                             type="number"
                             min={1}
                             value={deadlineMinutes}
                             onChange={(e) => setDeadlineMinutes(Math.max(1, Number(e.target.value) || DEFAULT_DEADLINE_MINUTES))}
-                            className="w-20 h-8 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-2 text-[11px] font-mono text-slate-900 dark:text-white outline-none focus:border-electric-violet"
+                            className="w-20 h-8 rounded-lg border border-line bg-surface px-2 text-[12px] font-mono text-fg outline-none focus:border-line-strong"
                         />
                     </div>
 
                     {fromChain !== toChain && (
-                        <label className="flex items-center gap-2 pt-1 text-[11px] text-slate-600 dark:text-slate-300">
+                        <label className="flex items-center gap-2 pt-1 text-[12px] text-fg-muted">
                             <input type="checkbox" checked={gasTopUp} onChange={(e) => setGasTopUp(e.target.checked)} />
                             Ensure I have gas on the destination chain
-                            <span className="text-slate-400">(converts part of the bridged amount into destination-chain gas)</span>
+                            <span className="text-fg-subtle">(converts part of the bridged amount into destination-chain gas)</span>
                         </label>
                     )}
                 </div>
@@ -363,14 +391,14 @@ export const SwapPage: React.FC = () => {
                 <button
                     onClick={handleSearch}
                     disabled={!canSearch || loading}
-                    className="w-full h-11 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-near-black text-sm font-bold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity flex items-center justify-center gap-2"
+                    className="w-full h-11 rounded-[10px] bg-inverse text-on-inverse text-sm font-semibold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity flex items-center justify-center gap-2"
                 >
                     {loading ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
                     {loading ? 'Comparing routes…' : 'Compare routes'}
                 </button>
 
                 {error && (
-                    <div className="flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/10 px-3 py-2 text-[11px] text-red-600 dark:text-red-400">
+                    <div className="flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/10 px-3 py-2 text-[12px] text-red-600 dark:text-red-400">
                         <AlertTriangle size={13} /> {error}
                     </div>
                 )}
@@ -379,7 +407,7 @@ export const SwapPage: React.FC = () => {
             <div className="space-y-2 w-full">
                 {routes.length > 0 ? (
                     <>
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        <label className="text-[12px] font-semibold text-fg-subtle">
                             {routes.length} route{routes.length === 1 ? '' : 's'} found
                         </label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -387,26 +415,26 @@ export const SwapPage: React.FC = () => {
                                 <button
                                     key={route.id}
                                     onClick={() => handleSelectRoute(route)}
-                                    className={`w-full text-left rounded-xl border p-4 transition-colors ${
+                                    className={`w-full text-left rounded-[10px] border p-4 transition-colors ${
                                         selectedRoute?.id === route.id
-                                            ? 'border-electric-violet bg-electric-violet/5'
-                                            : 'border-slate-200 dark:border-white/10 bg-white dark:bg-dark-indigo-glow hover:border-electric-violet/40'
+                                            ? 'border-fg/40 bg-hover'
+                                            : 'border-line bg-elevated hover:border-line-strong'
                                     }`}
                                 >
                                     <div className="flex items-center justify-between gap-3">
                                         <div className="flex items-center gap-2 flex-wrap">
                                             {(route.tags ?? []).map((tag) => (
-                                                <span key={tag} className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                                <span key={tag} className="px-2 py-0.5 rounded-full text-[12px] font-semibold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                                                     {tag}
                                                 </span>
                                             ))}
-                                            <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                                            <span className="text-xs font-semibold text-fg">
                                                 {route.steps.map((s) => s.tool).join(' → ')}
                                             </span>
                                         </div>
-                                        <span className="text-[10px] text-slate-400 shrink-0">{routeHopCount(route)} hop{routeHopCount(route) === 1 ? '' : 's'}</span>
+                                        <span className="text-[12px] text-fg-subtle shrink-0">{routeHopCount(route)} hop{routeHopCount(route) === 1 ? '' : 's'}</span>
                                     </div>
-                                    <div className="mt-2 flex items-center gap-4 text-[11px] text-slate-500">
+                                    <div className="mt-2 flex items-center gap-4 text-[12px] text-fg-subtle">
                                         <span>Cost {routeCostLabel(route)}</span>
                                         <span>~{routeTimeLabel(route)}</span>
                                         <span>You receive {route.toAmountMin}</span>
@@ -417,28 +445,28 @@ export const SwapPage: React.FC = () => {
                     </>
                 ) : sideshiftQuote ? (
                     <>
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        <label className="text-[12px] font-semibold text-fg-subtle">
                             1 route found (via SideShift)
                         </label>
                         <button
                             onClick={handleSelectSideshiftQuote}
-                            className="w-full text-left rounded-xl border border-electric-violet bg-electric-violet/5 p-4 transition-colors"
+                            className="w-full text-left rounded-[10px] border border-fg/40 bg-hover p-4 transition-colors"
                         >
                             <div className="flex items-center justify-between gap-3">
-                                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                <span className="px-2 py-0.5 rounded-full text-[12px] font-semibold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                                     SideShift
                                 </span>
-                                <span className="text-[10px] text-slate-400 shrink-0">deposit-address flow</span>
+                                <span className="text-[12px] text-fg-subtle shrink-0">deposit-address flow</span>
                             </div>
-                            <div className="mt-2 flex items-center gap-4 text-[11px] text-slate-500">
+                            <div className="mt-2 flex items-center gap-4 text-[12px] text-fg-subtle">
                                 <span>You receive ~{sideshiftQuote.to_amount_estimated} {sideshiftQuote.to.symbol}</span>
                             </div>
                         </button>
                     </>
                 ) : (
-                    <div className="hidden lg:flex flex-col items-center justify-center h-full min-h-[320px] rounded-xl border border-dashed border-slate-200 dark:border-white/10 text-center p-6">
-                        <Zap size={24} className="text-slate-300 dark:text-slate-700 mb-3" />
-                        <p className="text-xs text-slate-400">Compared routes will appear here.</p>
+                    <div className="hidden lg:flex flex-col items-center justify-center h-full min-h-[320px] rounded-[10px] border border-dashed border-line text-center p-6">
+                        <Zap size={24} className="text-fg-subtle mb-3" />
+                        <p className="text-xs text-fg-subtle">Compared routes will appear here.</p>
                     </div>
                 )}
             </div>

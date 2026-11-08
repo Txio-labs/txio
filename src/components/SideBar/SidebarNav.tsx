@@ -19,7 +19,7 @@ const TxioLogo = () => {
     <img
       src={logo.src}
       alt="txio"
-      className="w-6 h-6 object-contain drop-shadow-[0_0_6px_rgba(163,163,163,0.35)]"
+      className="w-6 h-6 object-contain drop-"
     />
   );
 };
@@ -51,7 +51,7 @@ const NavItem: React.FC<NavItemProps> = ({
         {isActive && (
           <motion.div
             layoutId="nav-pill"
-            className="absolute left-0 w-[2px] h-6 bg-electric-violet rounded-r-full shadow-[0_0_10px_rgba(163,163,163,0.6)]"
+            className="absolute left-0 w-[2px] h-6 bg-inverse rounded-r-full"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -61,10 +61,10 @@ const NavItem: React.FC<NavItemProps> = ({
       </AnimatePresence>
 
       <div className={`
-        relative p-2 rounded-xl transition-colors duration-200
+        relative p-2 rounded-[10px] transition-colors duration-200
         ${isActive
-          ? 'text-electric-violet bg-electric-violet/[0.08]'
-          : 'text-slate-500 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.04]'}
+          ? 'text-fg bg-hover'
+          : 'text-fg-subtle hover:text-fg hover:bg-hover'}
       `}>
         <Icon size={18} strokeWidth={isActive ? 2 : 1.75} className="relative z-10" />
       </div>
@@ -96,14 +96,14 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       initial="hidden"
       animate="visible"
       variants={containerVariants}
-      className="w-14 bg-slate-50 dark:bg-near-black border-r border-slate-200 dark:border-white/[0.06] flex flex-col items-center py-4 gap-1 z-20 shrink-0 relative"
+      className="w-14 bg-surface border-r border-line flex flex-col items-center py-4 gap-1 z-20 shrink-0 relative"
     >
       <motion.button
         variants={itemVariants}
         className="mb-4 group cursor-pointer relative"
         onClick={() => appStore.setActiveTab(null)}
       >
-        <div className="relative z-10 p-1.5 rounded-xl bg-slate-100/70 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06] group-hover:border-electric-violet/30 transition-colors duration-300">
+        <div className="relative z-10 p-1.5 rounded-[10px] bg-hover border border-line group-hover:border-line-strong transition-colors duration-300">
           <TxioLogo />
         </div>
       </motion.button>
@@ -146,10 +146,10 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         <button
           onClick={() => appStore.openTab('move')}
           className={`
-            relative p-2 transition-colors duration-200 rounded-xl group mb-1
+            relative p-2 transition-colors duration-200 rounded-[10px] group mb-1
             ${activeTabType === 'move'
-              ? 'text-electric-violet bg-electric-violet/[0.08]'
-              : 'text-slate-500 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.04]'}
+              ? 'text-fg bg-hover'
+              : 'text-fg-subtle hover:text-fg hover:bg-hover'}
           `}
           title="Move Builder"
         >
@@ -161,10 +161,10 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         <button
           onClick={() => appStore.openTab('playground')}
           className={`
-            relative p-2 transition-colors duration-200 rounded-xl group mb-1
+            relative p-2 transition-colors duration-200 rounded-[10px] group mb-1
             ${activeTabType === 'playground'
-              ? 'text-electric-violet bg-electric-violet/[0.08]'
-              : 'text-slate-500 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.04]'}
+              ? 'text-fg bg-hover'
+              : 'text-fg-subtle hover:text-fg hover:bg-hover'}
           `}
           title="Playground"
         >
@@ -176,10 +176,10 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         <button
           onClick={() => appStore.openTab('settings')}
           className={`
-            relative p-2 transition-colors duration-200 rounded-xl group
+            relative p-2 transition-colors duration-200 rounded-[10px] group
             ${activeTabType === 'settings'
-              ? 'text-electric-violet bg-electric-violet/[0.08]'
-              : 'text-slate-500 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.04]'}
+              ? 'text-fg bg-hover'
+              : 'text-fg-subtle hover:text-fg hover:bg-hover'}
           `}
           title="Settings"
         >

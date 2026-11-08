@@ -761,6 +761,19 @@ let state: AppState = {
 
 // Sync telemetry gate with persisted settings on boot.
 setTelemetryEnabled(initialSettings.telemetry);
+// What the server rendered: the same initial state with nothing read from
+// browser storage. Hydration must use this (not the storage-backed client
+// state) or any component reading theme/settings/network/session renders
+// different markup than the server sent and React throws a hydration error.
+const SERVER_SNAPSHOT: AppState = {
+    ...state,
+    theme: DEFAULT_APP_SETTINGS.theme,
+    settings: DEFAULT_APP_SETTINGS,
+    network: 'mainnet',
+    comments: {},
+    viewMode: 'landing'
+};
+
 track('app_boot', { theme: initialSettings.theme });
 
 // Debounced auto-save for request tabs when settings.autoSave is on.
@@ -913,11 +926,7 @@ export const appStore = {
                     break;
 
                 case 'move':
-                    title = 'Move Builder';
-                    break;
-
-                case 'playground':
-                    title = 'Playground';
+                    title = 'Contracts';
                     break;
 
                 case 'profile':
@@ -981,7 +990,7 @@ export const appStore = {
                     break;
 
                 case 'infrastructure':
-                    title = 'Infrastructure';
+                    title = 'Networks';
                     break;
 
                 case 'partners':
@@ -2658,6 +2667,6 @@ export const useAppStore = () => {
     return useSyncExternalStore(
         appStore.subscribe,
         appStore.getSnapshot,
-        appStore.getSnapshot
+        () => SERVER_SNAPSHOT
     );
 };

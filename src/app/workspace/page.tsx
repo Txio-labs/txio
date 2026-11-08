@@ -16,8 +16,7 @@ import { WalletsPage } from "@/features/WalletsPage";
 import { ProfilePage } from "@/features/ProfilePage";
 import { SettingsPage } from "@/features/SettingsPage";
 import { CollectionRunner } from "@/features/CollectionRunner";
-import { MoveBuilder } from "@/features/MoveBuilder";
-import { Playground } from "@/features/Playground";
+import { ContractBuilder } from "@/features/ContractBuilder";
 import { WorkspaceOnboarding } from "@/features/WorkspaceOnboarding";
 import { DocsPage } from "@/features/DocsPage";
 import { EcosystemPage } from "@/features/EcosystemPage";
@@ -80,9 +79,7 @@ const WorkspaceContent: React.FC = () => {
         case 'runner':
             return <CollectionRunner collectionId={activeTab.data?.collectionId} />;
         case 'move':
-            return <MoveBuilder />;
-        case 'playground':
-            return <Playground />;
+            return <ContractBuilder />;
         case 'workspace_overview':
             return <WorkspaceOverviewPage />;
         case 'docs':
@@ -136,15 +133,15 @@ export default function WorkspacePage() {
         <>
             <div>
                 {isBootstrappingWorkspace ? (
-                    <div className="min-h-screen bg-white dark:bg-near-black text-slate-900 dark:text-white flex items-center justify-center px-6">
-                        <div className="w-full max-w-md rounded-[2rem] border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.035] p-8 text-center shadow-[0_30px_80px_-55px_rgba(163,163,163,0.65)]">
-                            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-slate-900/10 dark:bg-white/10 text-slate-900 dark:text-white">
+                    <div className="min-h-screen bg-surface text-fg flex items-center justify-center px-6">
+                        <div className="w-full max-w-md rounded-panel border border-line bg-sunken p-8 text-center shadow-[0_30px_80px_-55px_rgba(163,163,163,0.65)]">
+                            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-card bg-slate-900/10 dark:bg-white/10 text-fg">
                                 <div className="h-6 w-6 rounded-full border-2 border-slate-900/30 dark:border-white/30 border-t-slate-900 dark:border-t-white animate-spin" />
                             </div>
-                            <h2 className="mt-5 text-2xl font-bold text-slate-900 dark:text-white">
+                            <h2 className="mt-5 text-2xl font-semibold text-fg">
                                 Loading workspace state
                             </h2>
-                            <p className="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">
+                            <p className="mt-3 text-sm leading-7 text-fg-muted">
                                 Restoring your txio environment, workspace list,
                                 and saved operational context.
                             </p>

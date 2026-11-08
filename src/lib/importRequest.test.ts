@@ -34,7 +34,7 @@ describe('curlToRpcRequest', () => {
   it('extracts method and params from the JSON-RPC body', () => {
     const curl = `curl -X POST https://fullnode.mainnet.sui.io:443 -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"suix_getAllBalances","params":["0xabc"]}'`;
 
-    expect(curlToRpcRequest(curl)).toEqual({
+    expect(curlToRpcRequest(curl)).toMatchObject({
       name: 'suix_getAllBalances',
       method: 'suix_getAllBalances',
       params: ['0xabc']
@@ -73,7 +73,7 @@ describe('parseImportFile', () => {
       JSON.stringify({ method: 'sui_getObject', params: ['0x1'] })
     );
 
-    expect(requests).toEqual([{ name: 'sui_getObject', method: 'sui_getObject', params: ['0x1'] }]);
+    expect(requests).toMatchObject([{ name: 'sui_getObject', method: 'sui_getObject', params: ['0x1'] }]);
   });
 
   it('parses an array of JSON-RPC objects', () => {
@@ -97,7 +97,7 @@ describe('parseImportFile', () => {
       })
     );
 
-    expect(requests).toEqual([
+    expect(requests).toMatchObject([
       { name: 'Get Balances', method: 'suix_getAllBalances', params: ['0xabc'] }
     ]);
   });
@@ -115,7 +115,7 @@ describe('parseImportFile', () => {
 
     const requests = parseImportFile(JSON.stringify(har));
 
-    expect(requests).toEqual([{ name: 'sui_getObject', method: 'sui_getObject', params: ['0x1'] }]);
+    expect(requests).toMatchObject([{ name: 'sui_getObject', method: 'sui_getObject', params: ['0x1'] }]);
   });
 
   it('throws on invalid JSON', () => {
@@ -125,4 +125,20 @@ describe('parseImportFile', () => {
   it('throws when nothing importable is found', () => {
     expect(() => parseImportFile(JSON.stringify({ foo: 'bar' }))).toThrow(/no json-rpc requests/i);
   });
+});
+
+describe('inferChain / chain-aware import', () => {
+    it('infers the chain from the method, params shape or endpoint', async () => {
+        const { inferChain, curlToRpcRequest } = await import('./importRequest');
+        expect(inferChain('eth_call')).toBe('evm');
+        expect(inferChain('suix_getAllBalances')).toBe('sui');
+        expect(inferChain('getLatestLedger')).toBe('stellar');
+        expect(inferChain('getAccountInfo')).toBe('solana');
+        expect(inferChain('getHealth', { })).toBe('stellar');
+        expect(inferChain('getBalance', [], 'https://solana-rpc.publicnode.com')).toBe('solana');
+        expect(inferChain('getBalance', [])).toBeUndefined();
+
+        const req = curlToRpcRequest(`curl -X POST https://soroban-testnet.stellar.org -d '{"jsonrpc":"2.0","id":1,"method":"getTransaction","params":{"hash":"abc"}}'`);
+        expect(req).toMatchObject({ chain: 'stellar', params: [{ hash: 'abc' }] });
+    });
 });

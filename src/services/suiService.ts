@@ -1,7 +1,9 @@
 
+import { getAddressHistory } from './transactionHistory';
 import { resolveChainCustomRpcUrl, resolveChainRpcUrlList, resolveRpcUrl, resolveRpcUrlList } from '@/lib/appConfig';
 import { appStore } from '@/lib/store';
-import { getEvmChain, STELLAR_HORIZON_URLS } from '@/lib/constants';
+import { APTOS_NETWORKS, getEvmChain, STELLAR_HORIZON_URLS } from '@/lib/constants';
+import { aptosErrorMessage, callAptosRest } from './aptosRest';
 import {
   Network,
   ChainId,
@@ -52,8 +54,9 @@ export const resolveChainRpcUrl = (
   network: Network,
   evmChainId?: number
 ): string => {
-  if (chain !== 'sui' && chain !== 'evm' && chain !== 'stellar' && chain !== 'solana') {
-    throw new Error(`No RPC endpoint configuration exists for chain "${chain}" yet.`);
+  // Aptos is REST, with one built-in fullnode per network and no overrides.
+  if (chain === 'aptos') {
+    return APTOS_NETWORKS[network];
   }
 
   // A specific EVM mainnet (e.g. Base, Arbitrum) overrides the generic
@@ -72,8 +75,8 @@ export const resolveChainRpcUrls = (
   network: Network,
   evmChainId?: number
 ): string[] => {
-  if (chain !== 'sui' && chain !== 'evm' && chain !== 'stellar' && chain !== 'solana') {
-    throw new Error(`No RPC endpoint configuration exists for chain "${chain}" yet.`);
+  if (chain === 'aptos') {
+    return [APTOS_NETWORKS[network]];
   }
 
   if (chain === 'evm' && evmChainId) {
@@ -242,6 +245,9 @@ const getStellarBalanceViaHorizon = async (
 };
 
 /** Generic JSON-RPC fetch used for all chains. */
+/** Built-in method, available on every chain, that returns an address's recent transactions. */
+export const ADDRESS_TRANSACTIONS_METHOD = 'getAddressTransactions';
+
 export const executeChainRpc = async (
   chain: ChainId,
   network: Network,
@@ -249,8 +255,33 @@ export const executeChainRpc = async (
   params: any[],
   evmChainId?: number
 ): Promise<{ result: any; duration: number; status: number }> => {
+  // Built-in on every chain: an address's recent transactions, from each chain's
+  // own history source (Sui RPC, Horizon/Soroban RPC, Solana RPC, Aptos indexer,
+  // Etherscan or Blockscout). See services/transactionHistory.ts.
+  if (method === ADDRESS_TRANSACTIONS_METHOD) {
+    const startTime = performance.now();
+    const first = params[0];
+    const address = typeof first === 'object' && first !== null ? String(first.address ?? '') : String(first ?? '');
+    const options = (typeof first === 'object' && first !== null ? first : params[1]) ?? {};
+    const limit = Math.min(Math.max(Number(options.limit) || 20, 1), 100);
+    const history = await getAddressHistory({ chain, address, network, evmChainId, limit });
+    const duration = performance.now() - startTime;
+    if (history.items.length === 0 && /^(Failed|Invalid)/.test(history.warning ?? '')) {
+      throw new SuiRpcError(history.warning ?? 'Failed to load transaction history.', {
+        status: history.warning?.startsWith('Invalid') ? 400 : 502,
+        endpoint: history.source,
+        duration,
+      });
+    }
+    return { result: history, duration, status: 200 };
+  }
+
   if (chain === 'sui') {
     return executeSuiRpc(network, method, params);
+  }
+
+  if (chain === 'aptos') {
+    return executeAptosRest(network, method, params);
   }
 
   // "getBalance" isn't a real Soroban RPC method — Soroban RPC has no way to
@@ -332,6 +363,38 @@ export const executeChainRpc = async (
   }
 };
 
+const executeAptosRest = async (
+  network: Network,
+  method: string,
+  params: any[]
+): Promise<{ result: any; duration: number; status: number }> => {
+  const endpoint = APTOS_NETWORKS[network];
+  const startTime = performance.now();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), RPC_TIMEOUT_MS);
+  try {
+    const { ok, status, data } = await callAptosRest(endpoint, method, params, controller.signal);
+    const duration = Math.round(performance.now() - startTime);
+    if (!ok) {
+      throw new SuiRpcError(aptosErrorMessage(data, status), { status, endpoint, duration });
+    }
+    return { result: data, duration, status };
+  } catch (error) {
+    if (error instanceof SuiRpcError) throw error;
+    const duration = Math.round(performance.now() - startTime);
+    if ((error as Error)?.name === 'AbortError') {
+      throw new SuiRpcError(`Aptos request timed out after ${RPC_TIMEOUT_MS / 1000}s.`, { status: 504, endpoint, duration });
+    }
+    throw new SuiRpcError(error instanceof Error && error.message ? error.message : 'Unable to reach the Aptos fullnode.', {
+      status: 0,
+      endpoint,
+      duration
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
 /** Chain-aware health check: pings a lightweight method per chain. */
 export const getChainRpcHealth = async (
   chain: ChainId,
@@ -343,7 +406,7 @@ export const getChainRpcHealth = async (
   }
 
   const url = resolveChainRpcUrl(chain, network, evmChainId);
-  const method = chain === 'evm' ? 'eth_blockNumber' : 'getHealth';
+  const method = chain === 'evm' ? 'eth_blockNumber' : chain === 'aptos' ? 'getLedgerInfo' : 'getHealth';
   const params: any[] = chain === 'evm' ? [] : [];
 
   try {
@@ -354,7 +417,12 @@ export const getChainRpcHealth = async (
       latency: [duration],
       successRate: 1,
       status: duration >= DEGRADED_RPC_LATENCY_MS ? 'degraded' : 'healthy',
-      blockHeight: typeof result === 'string' ? parseInt(result, 16) || 0 : Number(result) || 0,
+      blockHeight:
+        chain === 'aptos'
+          ? Number(result?.block_height) || 0
+          : typeof result === 'string'
+            ? parseInt(result, 16) || 0
+            : Number(result) || 0,
     };
   } catch (error) {
     const rpcError = error instanceof SuiRpcError ? error : null;

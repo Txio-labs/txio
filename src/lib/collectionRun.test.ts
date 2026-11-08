@@ -4,7 +4,7 @@ import {
     type CellOutcome, type PlannedCell
 } from './collectionRun';
 import { DEFAULT_MOVE_CALL } from '@/lib/constants';
-import { RequestItem, RequestType, ChainId } from '../types';
+import { Assertion, RequestItem, RequestType, ChainId } from '../types';
 
 const req = (id: string, chain: ChainId = 'sui'): RequestItem => ({
     id, name: `req-${id}`, type: RequestType.RPC, rpcParams: { method: 'm', params: [], chain }, moveParams: { ...DEFAULT_MOVE_CALL }
@@ -127,11 +127,69 @@ describe('helpers', () => {
 });
 
 describe('toCliCollection', () => {
-    it('exports RPC requests for `txio run` and names the ones it cannot express', () => {
-        const tx = { ...req('t'), type: RequestType.TRANSACTION, name: 'a transfer' };
-        const rpc = { ...req('r', 'evm'), name: 'gas', rpcParams: { method: 'eth_gasPrice', params: [], chain: 'evm' as ChainId } };
-        const { file, skipped } = toCliCollection('Smoke', [rpc, tx, { ...req('empty'), rpcParams: { method: '', params: [], chain: 'sui' as ChainId } }]);
-        expect(file).toEqual({ name: 'Smoke', requests: [{ name: 'gas', chain: 'evm', method: 'eth_gasPrice', params: [] }] });
-        expect(skipped).toEqual(['a transfer', 'req-empty']);
+    const tx = (id: string, chain: ChainId, extra: Partial<RequestItem>): RequestItem => ({
+        ...req(id, chain), type: RequestType.TRANSACTION, name: `tx-${id}`, ...extra
+    });
+    const test = (a: Partial<Assertion>): Assertion => ({ id: 'x', category: 'transaction', target: 'tx_status', operator: 'equals', value: 'success', enabled: true, ...a });
+
+    it('exports RPC calls with their checks and maps chains to CLI names', () => {
+        const rpc = {
+            ...req('r', 'evm'), name: 'gas', rpcParams: { method: 'eth_gasPrice', params: [], chain: 'evm' as ChainId },
+            tests: [test({ category: 'response', target: 'json_path', value: 'n::7' }), test({ category: 'response', target: 'http_status', value: '200' })]
+        };
+        const { file, skipped, dropped } = toCliCollection('Smoke', [rpc, { ...req('empty'), rpcParams: { method: '', params: [], chain: 'sui' as ChainId } }]);
+        expect(file).toEqual({ name: 'Smoke', requests: [{ name: 'gas', chain: 'eth', method: 'eth_gasPrice', params: [], expect: [{ path: 'n', equals: 7 }] }] });
+        expect(skipped).toEqual(['req-empty: no RPC method']);
+        expect(dropped).toEqual(['gas: http_status equals 200']);
+    });
+
+    it('exports EVM, Aptos and Solana transactions as simulate cells', () => {
+        const evm = tx('e', 'evm', {
+            evmTxParams: { chainId: 11155111, to: '0xTo', value: '0', functionSignature: 'transfer(address,uint256)', args: ['0xB', '1.5'], argDecimals: [null, 6], data: '' },
+            tests: [test({}), test({ target: 'gas_used', operator: 'less_than', value: '50000' })]
+        });
+        const aptos = tx('a', 'aptos', {
+            aptosTxParams: { moduleAddress: '0x1', module: 'aptos_account', function: 'transfer', typeArguments: [], arguments: [{ id: '1', type: 'address', value: '0xB' }, { id: '2', type: 'u64', value: '10' }], maxGasAmount: '5000' },
+            tests: [
+                test({ target: 'balance_change', value: '0x1::coin::T@0xB::-0.5' }),
+                test({ target: 'balance_change', value: 'APT@0xC::0' }),
+                test({ category: 'event', target: 'event_type', operator: 'contains', value: 'CoinDeposit' }),
+                test({ target: 'balance_change', operator: 'less_than', value: 'APT@0xB::0' })
+            ]
+        });
+        const solana = tx('s', 'solana', {
+            solanaTxParams: { programId: 'Prog', accounts: [{ id: '1', pubkey: 'Acc', isSigner: true, isWritable: true }, { id: '2', pubkey: 'Ro', isSigner: false, isWritable: false }], data: 'hi', dataEncoding: 'utf8' }
+        });
+        const { file, skipped, dropped } = toCliCollection('Tx', [evm, aptos, solana], { aptos: '0xSender', solana: 'Payer' });
+        expect(skipped).toEqual([]);
+        expect(file.requests).toEqual([
+            { name: 'tx-e', chain: 'eth', kind: 'simulate', tx: { to: '0xTo', sig: 'transfer(address,uint256)', args: ['0xB', '1500000'] },
+              expect: [{ status: 'success' }, { gasUsed: { lte: '49999' } }] },
+            { name: 'tx-a', chain: 'aptos', kind: 'simulate',
+              tx: { function: '0x1::aptos_account::transfer', sender: '0xSender', args: ['address:0xB', 'u64:10'], maxGas: 5000 },
+              expect: [
+                  { balanceChange: { account: '0xB', asset: '0x1::coin::T', direction: 'out', amount: { eq: '0.5' } } },
+                  { balanceChange: { account: '0xC', asset: 'APT', direction: 'none' } },
+                  { event: 'CoinDeposit' }
+              ] },
+            { name: 'tx-s', chain: 'solana', kind: 'simulate', tx: { program: 'Prog', accounts: ['Acc:s:w', 'Ro'], payer: 'Payer', data: 'utf8:hi' } }
+        ]);
+        expect(dropped).toEqual(['tx-a: balance_change less_than APT@0xB::0']);
+    });
+
+    it('names each transaction it cannot export, with the reason', () => {
+        const { file, skipped } = toCliCollection('Tx', [
+            tx('sui', 'sui', {}),
+            tx('base', 'evm', { evmTxParams: { chainId: 8453, to: '0x1', value: '', functionSignature: '', args: [], data: '' } }),
+            tx('nosender', 'aptos', { aptosTxParams: { moduleAddress: '0x1', module: 'm', function: 'f', typeArguments: [], arguments: [] } }),
+            tx('deploy', 'evm', { evmTxParams: { chainId: 1, to: '', value: '', functionSignature: '', args: [], data: '0x60', deploy: true } })
+        ]);
+        expect(file.requests).toEqual([]);
+        expect(skipped).toEqual([
+            'tx-sui: the CLI cannot simulate Sui transactions yet',
+            'tx-base: the CLI targets Ethereum mainnet or Sepolia only (chain 8453)',
+            'tx-nosender: link an Aptos wallet: the CLI needs a sender account',
+            'tx-deploy: contract deployment is not available in the CLI'
+        ]);
     });
 });

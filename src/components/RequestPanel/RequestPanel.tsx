@@ -8,8 +8,6 @@ import { TestsEditor } from './editors/TestsEditor';
 import { HooksEditor } from './editors/HooksEditor';
 import { RawEditor } from './editors/RawEditor';
 import { CodeSnippet } from './editors/CodeSnippet';
-import { HeadersEditor } from './editors/HeadersEditor';
-import { AuthEditor } from './editors/AuthEditor';
 import { AdvancedEditor } from './editors/AdvancedEditor';
 import { TransactionNotice } from './editors/TransactionNotice';
 import { RequestType } from '../../types';
@@ -59,12 +57,6 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
           />
         );
 
-      case 'headers':
-        return <HeadersEditor />;
-
-      case 'auth':
-        return <AuthEditor />;
-
       case 'advanced':
         return <AdvancedEditor chain={chain} />;
 
@@ -91,7 +83,7 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
       case 'builder':
       default:
         return request.type === RequestType.RPC ? (
-          <div className="p-4 md:p-6 space-y-8">
+          <div className="p-4 md:p-6 space-y-8 w-full">
             <RPCBuilder
               request={request}
               onChange={onChange}
@@ -114,7 +106,7 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-near-black relative font-sans">
+    <div className="flex flex-col h-full bg-surface relative font-sans">
       <HeaderBar
         requestType={request.type}
         network={network}
@@ -142,7 +134,7 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
         onTabChange={setActiveTab}
       />
 
-      <div className="flex-1 overflow-auto bg-white dark:bg-dark-indigo-glow custom-scrollbar">
+      <div className="flex-1 overflow-auto custom-scrollbar">
         {renderLeft()}
       </div>
     </div>
