@@ -32,25 +32,21 @@ const StatusBadge: React.FC<{ status: 'success' | 'failed' | 'unknown' }> = ({ s
 
 export const TransactionHistoryList: React.FC<{ wallet: ConnectedWallet }> = ({ wallet }) => {
   const { network } = useAppStore();
-  const [loading, setLoading] = useState(true);
-  const [result, setResult] = useState<TransactionHistoryResult | null>(null);
+  const key = `${wallet.family}:${wallet.address}:${wallet.chain?.id ?? ''}:${network}`;
+  const [loaded, setLoaded] = useState<{ key: string; result: TransactionHistoryResult } | null>(null);
+  const loading = loaded?.key !== key;
+  const result = loading ? null : loaded.result;
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-
     getTransactionHistory(wallet, network).then((res) => {
-      if (!cancelled) {
-        setResult(res);
-        setLoading(false);
-      }
+      if (!cancelled) setLoaded({ key, result: res });
     });
-
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wallet.address, wallet.family, network]);
+  }, [key]);
 
   if (loading) {
     return (

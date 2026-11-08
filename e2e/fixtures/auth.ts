@@ -25,6 +25,8 @@ export const test = base.extend<AuthFixtures>({
     }, token);
 
     await page.goto(baseURL || '/');
+    // Playwright fixture callback, not a React hook.
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(page);
   },
 });

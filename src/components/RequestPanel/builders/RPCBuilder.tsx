@@ -127,9 +127,11 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
   // live read of state at the time getLatestLedger resolves rather than
   // whatever was captured in its closure when it was kicked off.
   const requestRef = useRef(request);
-  requestRef.current = request;
   const rawJsonRef = useRef(rawJson);
-  rawJsonRef.current = rawJson;
+  useEffect(() => {
+    requestRef.current = request;
+    rawJsonRef.current = rawJson;
+  });
 
   // getTransactions/getEvents templates ship a placeholder startLedger
   // (Soroban nodes only retain a rolling ledger window, so no static number

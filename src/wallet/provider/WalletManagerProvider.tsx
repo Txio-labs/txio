@@ -292,10 +292,14 @@ export function WalletManagerProvider({
     }, []);
 
     useEffect(() => {
-        refreshStellarAvailability();
-        refreshSolanaAvailability();
-        refreshAptosAvailability();
-        refreshInjectedAvailability();
+        // Detection reads window globals that extensions inject after load, so it
+        // runs after the first paint rather than during render.
+        queueMicrotask(() => {
+            refreshStellarAvailability();
+            refreshSolanaAvailability();
+            refreshAptosAvailability();
+            refreshInjectedAvailability();
+        });
     }, [refreshStellarAvailability, refreshSolanaAvailability, refreshAptosAvailability, refreshInjectedAvailability]);
 
     // window.ethereum (and EIP-6963 providers) can be injected by extensions
@@ -336,10 +340,12 @@ export function WalletManagerProvider({
 
     useEffect(() => {
         if (isModalOpen) {
-            refreshStellarAvailability();
-            refreshSolanaAvailability();
-            refreshAptosAvailability();
-            refreshInjectedAvailability();
+            queueMicrotask(() => {
+                refreshStellarAvailability();
+                refreshSolanaAvailability();
+                refreshAptosAvailability();
+                refreshInjectedAvailability();
+            });
         }
     }, [
         isModalOpen,
