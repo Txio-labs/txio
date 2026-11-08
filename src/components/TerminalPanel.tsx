@@ -476,7 +476,7 @@ export const TerminalPanel: React.FC = () => {
                             : { type: 'spring', damping: 25, stiffness: 200 }
                     }
                     onClick={focusInput}
-                    className="bg-slate-50 dark:bg-near-black border-t border-slate-200 dark:border-white/[0.06] flex flex-col font-mono text-xs shadow-2xl relative z-40 overflow-hidden text-left"
+                    className="bg-surface border-t border-line flex flex-col font-mono text-xs shadow-pop relative z-40 overflow-hidden text-left"
                 >
                     {/* Resize handle */}
                     <div
@@ -491,33 +491,33 @@ export const TerminalPanel: React.FC = () => {
                         aria-orientation="horizontal"
                         aria-label="Resize terminal"
                         className={`shrink-0 h-1.5 cursor-row-resize flex items-center justify-center group transition-colors ${
-                            isDragging ? 'bg-electric-violet/40' : 'hover:bg-electric-violet/20'
+                            isDragging ? 'bg-active' : 'hover:bg-active'
                         }`}
                     >
                         <div
                             className={`h-0.5 rounded-full transition-all duration-200 ${
                                 isDragging
-                                    ? 'w-20 bg-electric-violet'
-                                    : 'w-10 bg-white/[0.08] group-hover:w-16 group-hover:bg-electric-violet/60'
+                                    ? 'w-20 bg-inverse'
+                                    : 'w-10 bg-white/[0.08] group-hover:w-16 group-hover:bg-active'
                             }`}
                         />
                     </div>
 
                     {/* Terminal Header */}
-                    <div className="flex items-center justify-between px-3 py-1.5 border-b border-slate-200 dark:border-white/[0.06] bg-white dark:bg-dark-indigo-glow select-none">
+                    <div className="flex items-center justify-between px-3 py-1.5 border-b border-line bg-elevated select-none">
                         <div className="flex items-center gap-2.5 font-sans">
-                            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-                                <Terminal size={12} className="text-electric-violet" />
-                                <span className="text-[11px] font-medium tracking-tight">Terminal</span>
+                            <div className="flex items-center gap-1.5 text-fg-muted">
+                                <Terminal size={12} className="text-fg" />
+                                <span className="text-[12px] font-medium tracking-tight">Terminal</span>
                             </div>
                             <div className="h-3 w-px bg-white/[0.08]"></div>
-                            <span className="text-[11px] text-slate-500 font-mono">bash</span>
+                            <span className="text-[12px] text-fg-subtle font-mono">bash</span>
                             <div className="h-3 w-px bg-white/[0.08]"></div>
-                            <div className={`flex items-center gap-1.5 text-[11px] font-medium ${
+                            <div className={`flex items-center gap-1.5 text-[12px] font-medium ${
                                 isCancelling
-                                    ? 'text-amber-300'
+                                    ? 'text-amber-600 dark:text-amber-300'
                                     : isExecuting
-                                    ? 'text-amber-400'
+                                    ? 'text-amber-600 dark:text-amber-400'
                                     : 'text-emerald-400/80'
                             }`}>
                                 <span className={`h-1.5 w-1.5 rounded-full ${
@@ -542,7 +542,7 @@ export const TerminalPanel: React.FC = () => {
                                     e.stopPropagation();
                                     copyAllLogs();
                                 }}
-                                className="p-1.5 rounded-md text-slate-500 hover:text-slate-200 hover:bg-white/[0.05] transition-colors"
+                                className="p-1.5 rounded-md text-fg-subtle hover:text-fg hover:bg-hover transition-colors"
                                 title="Copy all output"
                             >
                                 <Copy size={13} />
@@ -554,8 +554,8 @@ export const TerminalPanel: React.FC = () => {
                                 }}
                                 className={`p-1.5 rounded-md transition-colors ${
                                     showErrorsOnly
-                                        ? 'text-electric-violet bg-electric-violet/[0.08]'
-                                        : 'text-slate-500 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.05]'
+                                        ? 'text-fg bg-hover'
+                                        : 'text-fg-subtle hover:text-fg hover:bg-hover'
                                 }`}
                                 title={showErrorsOnly ? 'Show all logs' : 'Show only errors'}
                             >
@@ -566,7 +566,7 @@ export const TerminalPanel: React.FC = () => {
                                     e.stopPropagation();
                                     clearLogs();
                                 }}
-                                className="p-1.5 rounded-md text-slate-500 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.05] transition-colors"
+                                className="p-1.5 rounded-md text-fg-subtle hover:text-fg hover:bg-hover transition-colors"
                                 title="Clear console"
                             >
                                 <Trash2 size={13} />
@@ -578,7 +578,7 @@ export const TerminalPanel: React.FC = () => {
                                         void cancelExecution();
                                     }}
                                     disabled={isCancelling}
-                                    className="p-1.5 rounded-md text-amber-400 hover:text-amber-300 hover:bg-amber-400/10 transition-colors"
+                                    className="p-1.5 rounded-md text-amber-600 dark:text-amber-400 hover:text-amber-300 hover:bg-amber-400/10 transition-colors"
                                     title={`Cancel ${pendingCommand || 'command'}`}
                                 >
                                     <Square size={11} fill="currentColor" />
@@ -589,7 +589,7 @@ export const TerminalPanel: React.FC = () => {
                                     e.stopPropagation();
                                     appStore.toggleTerminal();
                                 }}
-                                className="p-1.5 rounded-md text-slate-500 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.05] transition-colors"
+                                className="p-1.5 rounded-md text-fg-subtle hover:text-fg hover:bg-hover transition-colors"
                                 aria-label="Close terminal"
                             >
                                 <X size={13} />
@@ -600,7 +600,7 @@ export const TerminalPanel: React.FC = () => {
                     {/* Terminal Output */}
                     <div 
                         ref={scrollRef}
-                        className="flex-1 overflow-y-auto p-4 space-y-1.5 custom-scrollbar bg-slate-50 dark:bg-near-black"
+                        className="flex-1 overflow-y-auto p-4 space-y-1.5 custom-scrollbar bg-surface"
                     >
                         {visibleLogs.map((log) => {
                             const isMultiline = log.action.includes('\n');
@@ -616,17 +616,17 @@ export const TerminalPanel: React.FC = () => {
                             }
                             const prettyAction = isJson ? tryPrettyPrintJson(log.action) : log.action;
                             const typeBadge = (
-                                <span className={`shrink-0 px-1.5 rounded-[2px] font-bold text-[9px] uppercase ${
-                                    log.type === 'request' ? 'text-emerald-400 bg-emerald-400/5' :
-                                    log.type === 'team' ? 'text-blue-400 bg-blue-400/5' :
-                                    log.type === 'error' ? 'text-red-400 bg-red-400/5' :
-                                    'text-electric-violet bg-electric-violet/5'
+                                <span className={`shrink-0 px-1.5 rounded-[2px] font-semibold text-[12px] uppercase ${
+                                    log.type === 'request' ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-400/5' :
+                                    log.type === 'team' ? 'text-blue-600 dark:text-blue-400 bg-blue-400/5' :
+                                    log.type === 'error' ? 'text-red-600 dark:text-red-400 bg-red-400/5' :
+                                    'text-fg bg-hover'
                                 }`}>
                                     {log.type}
                                 </span>
                             );
                             const timestamp = (
-                                <span className="text-slate-600 shrink-0">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
+                                <span className="text-fg-muted shrink-0">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
                             );
 
                             if (isMultiline) {
@@ -647,7 +647,7 @@ export const TerminalPanel: React.FC = () => {
                                                         e.stopPropagation();
                                                         toggleLogExpanded(log.id);
                                                     }}
-                                                    className="shrink-0 p-0.5 -ml-1 rounded text-slate-500 hover:text-slate-200 hover:bg-white/[0.05] transition-colors"
+                                                    className="shrink-0 p-0.5 -ml-1 rounded text-fg-subtle hover:text-fg hover:bg-hover transition-colors"
                                                     title={expandedLogIds.has(log.id) ? 'Collapse' : 'Expand'}
                                                 >
                                                     {expandedLogIds.has(log.id) ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
@@ -655,10 +655,10 @@ export const TerminalPanel: React.FC = () => {
                                             )}
                                             {timestamp}
                                             {typeBadge}
-                                            <span className="text-slate-500 font-bold">{log.userName}</span>
-                                            {log.target && <span className="text-electric-violet/60 italic text-[10px]">({log.target})</span>}
+                                            <span className="text-fg-subtle font-semibold">{log.userName}</span>
+                                            {log.target && <span className="text-fg italic text-[12px]">({log.target})</span>}
                                             {isJson && !expandedLogIds.has(log.id) && (
-                                                <span className="text-slate-500 text-[10px] italic truncate">
+                                                <span className="text-fg-subtle text-[12px] italic truncate">
                                                     {prettyAction.replace(/\s+/g, ' ').slice(0, 80)}
                                                     {prettyAction.length > 80 ? '…' : ''}
                                                 </span>
@@ -669,22 +669,22 @@ export const TerminalPanel: React.FC = () => {
                                                         e.stopPropagation();
                                                         void copyToClipboard(prettyAction, log.id);
                                                     }}
-                                                    className="opacity-0 group-hover:opacity-100 p-1 rounded text-slate-500 hover:text-slate-200 hover:bg-white/[0.05] transition-all"
+                                                    className="opacity-0 group-hover:opacity-100 p-1 rounded text-fg-subtle hover:text-fg hover:bg-hover transition-all"
                                                     title="Copy output"
                                                 >
-                                                    {copiedLogId === log.id ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
+                                                    {copiedLogId === log.id ? <Check size={11} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={11} />}
                                                 </button>
                                             </div>
                                         </div>
                                         {isJson ? (
                                             expandedLogIds.has(log.id) && (
                                                 <pre
-                                                    className="text-slate-800 dark:text-white/90 whitespace-pre-wrap break-words ml-4 rounded-lg border border-slate-200 dark:border-white/5 bg-white dark:bg-white/[0.02] px-3 py-2.5 leading-relaxed"
+                                                    className="text-fg/90 whitespace-pre-wrap break-words ml-4 rounded-lg border border-line bg-surface px-3 py-2.5 leading-relaxed"
                                                     dangerouslySetInnerHTML={{ __html: highlightJson(prettyAction) }}
                                                 />
                                             )
                                         ) : (
-                                            <pre className="text-slate-800 dark:text-white/90 whitespace-pre-wrap break-words ml-4 border-l border-slate-200 dark:border-white/5 pl-3">
+                                            <pre className="text-fg/90 whitespace-pre-wrap break-words ml-4 border-l border-line pl-3">
                                                 {log.action}
                                             </pre>
                                         )}
@@ -701,21 +701,21 @@ export const TerminalPanel: React.FC = () => {
                                 >
                                     {timestamp}
                                     {typeBadge}
-                                    <span className="text-slate-600 dark:text-slate-300 flex-1">
-                                        <span className="text-slate-500 font-bold">{log.userName}</span>
-                                        <span className="mx-2 text-slate-600">→</span>
-                                        <span className="text-slate-800 dark:text-white/90 whitespace-pre-wrap break-words">{log.action}</span>
-                                        {log.target && <span className="ml-2 text-electric-violet/60 italic">({log.target})</span>}
+                                    <span className="text-fg-muted flex-1">
+                                        <span className="text-fg-subtle font-semibold">{log.userName}</span>
+                                        <span className="mx-2 text-fg-muted">→</span>
+                                        <span className="text-fg/90 whitespace-pre-wrap break-words">{log.action}</span>
+                                        {log.target && <span className="ml-2 text-fg italic">({log.target})</span>}
                                     </span>
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             void copyToClipboard(log.action, log.id);
                                         }}
-                                        className="opacity-0 group-hover:opacity-100 p-1 rounded text-slate-500 hover:text-slate-200 hover:bg-white/[0.05] transition-all shrink-0"
+                                        className="opacity-0 group-hover:opacity-100 p-1 rounded text-fg-subtle hover:text-fg hover:bg-hover transition-all shrink-0"
                                         title="Copy output"
                                     >
-                                        {copiedLogId === log.id ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
+                                        {copiedLogId === log.id ? <Check size={11} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={11} />}
                                     </button>
                                 </motion.div>
                             );
@@ -723,8 +723,8 @@ export const TerminalPanel: React.FC = () => {
                         
                         {/* Prompt */}
                         <div className="flex items-center gap-2 pt-2">
-                            <span className="text-electric-violet font-bold">➜</span>
-                            <span className="text-electric-violet font-bold">~</span>
+                            <span className="text-fg font-semibold">➜</span>
+                            <span className="text-fg font-semibold">~</span>
                             <form onSubmit={handleCommand} className="flex-1">
                                 <input 
                                     ref={inputRef}
@@ -732,7 +732,7 @@ export const TerminalPanel: React.FC = () => {
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
                                     disabled={isExecuting}
-                                    className="w-full bg-transparent border-none outline-none text-slate-900 dark:text-white caret-electric-violet"
+                                    className="w-full bg-transparent border-none outline-none text-fg caret-fg"
                                     autoFocus
                                     placeholder={isExecuting && pendingCommand
                                         ? `${isCancelling ? 'Stopping' : 'Running'} ${pendingCommand}...`
@@ -743,7 +743,7 @@ export const TerminalPanel: React.FC = () => {
                     </div>
 
                     {/* Subtle bottom glow */}
-                    <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-electric-violet/30 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-fg-subtle to-transparent"></div>
                 </motion.div>
             )}
         </AnimatePresence>

@@ -133,76 +133,76 @@ export const SessionKeysTab: React.FC<SessionKeysTabProps> = ({ wallets }) => {
     return (
         <div className="p-6 w-full space-y-5">
             <div className="flex items-center justify-between">
-                <p className="text-xs text-slate-500 max-w-md">
+                <p className="text-xs text-fg-subtle max-w-md">
                     A session key lets automations sign on your behalf without your real wallet — scoped to a contract, an
                     amount, and an expiry. EVM only today.
                 </p>
                 <button
                     onClick={() => setShowCreate((s) => !s)}
                     disabled={!evmWallet}
-                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg bg-slate-900 dark:bg-white text-white dark:text-near-black hover:opacity-90 disabled:opacity-40 shrink-0"
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-inverse text-on-inverse hover:opacity-90 disabled:opacity-40 shrink-0"
                 >
                     <Plus size={13} /> New session key
                 </button>
             </div>
 
             {!evmWallet && (
-                <div className="flex items-center gap-2 rounded-lg border border-amber-200 dark:border-amber-900/30 bg-amber-50 dark:bg-amber-900/10 p-3 text-[11px] text-amber-700 dark:text-amber-400">
+                <div className="flex items-center gap-2 rounded-lg border border-amber-200 dark:border-amber-900/30 bg-amber-50 dark:bg-amber-900/10 p-3 text-[12px] text-amber-700 dark:text-amber-400">
                     <AlertTriangle size={13} /> Link an EVM wallet to create a session key.
                 </div>
             )}
 
             {showCreate && evmWallet && (
-                <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow p-4 space-y-3">
+                <div className="rounded-[10px] border border-line bg-sunken p-4 space-y-3">
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Label</label>
+                        <label className="text-[12px] font-semibold text-fg-subtle">Label</label>
                         <input
                             value={label}
                             onChange={(e) => setLabel(e.target.value)}
                             placeholder="e.g. Weekly DCA bot"
-                            className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs text-slate-900 dark:text-white outline-none focus:border-electric-violet"
+                            className="w-full h-9 rounded-lg border border-line bg-surface px-3 text-xs text-fg outline-none focus:border-line-strong"
                         />
                     </div>
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Token contract to scope to</label>
+                        <label className="text-[12px] font-semibold text-fg-subtle">Token contract to scope to</label>
                         <input
                             value={tokenAddress}
                             onChange={(e) => setTokenAddress(e.target.value)}
                             placeholder="0x…"
-                            className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-electric-violet"
+                            className="w-full h-9 rounded-lg border border-line bg-surface px-3 text-xs font-mono text-fg outline-none focus:border-line-strong"
                         />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Approved amount (base units)</label>
+                            <label className="text-[12px] font-semibold text-fg-subtle">Approved amount (base units)</label>
                             <input
                                 value={amount}
                                 onChange={(e) => setAmount(e.target.value)}
                                 placeholder="1000000000000000000"
-                                className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-electric-violet"
+                                className="w-full h-9 rounded-lg border border-line bg-surface px-3 text-xs font-mono text-fg outline-none focus:border-line-strong"
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Max USD per tx (optional)</label>
+                            <label className="text-[12px] font-semibold text-fg-subtle">Max USD per tx (optional)</label>
                             <input
                                 value={maxUsd}
                                 onChange={(e) => setMaxUsd(e.target.value)}
                                 placeholder="No limit"
-                                className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-electric-violet"
+                                className="w-full h-9 rounded-lg border border-line bg-surface px-3 text-xs font-mono text-fg outline-none focus:border-line-strong"
                             />
                         </div>
                     </div>
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Expires in (hours)</label>
+                        <label className="text-[12px] font-semibold text-fg-subtle">Expires in (hours)</label>
                         <input
                             value={expiryHours}
                             onChange={(e) => setExpiryHours(e.target.value)}
                             inputMode="numeric"
-                            className="w-32 h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-electric-violet"
+                            className="w-32 h-9 rounded-lg border border-line bg-surface px-3 text-xs font-mono text-fg outline-none focus:border-line-strong"
                         />
                     </div>
 
-                    <div className="flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-900/30 bg-amber-50 dark:bg-amber-900/10 p-3 text-[11px] text-amber-700 dark:text-amber-400">
+                    <div className="flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-900/30 bg-amber-50 dark:bg-amber-900/10 p-3 text-[12px] text-amber-700 dark:text-amber-400">
                         <ShieldAlert size={13} className="shrink-0 mt-0.5" />
                         This generates a new signing key in your browser and sends it once to Txio&apos;s server, encrypted at
                         rest, so scheduled tasks can sign without you present. It is never your real wallet&apos;s key, and is
@@ -212,7 +212,7 @@ export const SessionKeysTab: React.FC<SessionKeysTabProps> = ({ wallets }) => {
                     <button
                         onClick={handleGenerate}
                         disabled={!tokenAddress.trim() || !amount.trim()}
-                        className="w-full h-10 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-near-black text-xs font-bold hover:opacity-90 disabled:opacity-40"
+                        className="w-full h-10 rounded-lg bg-inverse text-on-inverse text-xs font-semibold hover:opacity-90 disabled:opacity-40"
                     >
                         Generate &amp; authorize on-chain
                     </button>
@@ -220,30 +220,30 @@ export const SessionKeysTab: React.FC<SessionKeysTabProps> = ({ wallets }) => {
             )}
 
             {error && (
-                <div className="flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/10 px-3 py-2 text-[11px] text-red-600 dark:text-red-400">
+                <div className="flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/10 px-3 py-2 text-[12px] text-red-600 dark:text-red-400">
                     <AlertTriangle size={13} /> {error}
                 </div>
             )}
 
             {loading ? (
-                <div className="flex items-center justify-center py-10 text-slate-500 text-xs gap-2">
+                <div className="flex items-center justify-center py-10 text-fg-subtle text-xs gap-2">
                     <Loader2 size={16} className="animate-spin" /> Loading session keys…
                 </div>
             ) : keys.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-10 text-center">
-                    <KeyRound size={28} className="text-slate-400 mb-3" />
-                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">No session keys yet</p>
+                    <KeyRound size={28} className="text-fg-subtle mb-3" />
+                    <p className="text-sm font-semibold text-fg">No session keys yet</p>
                 </div>
             ) : (
                 <div className="space-y-2">
                     {keys.map((key) => {
                         const active = !key.revoked_at && new Date(key.expires_at) > new Date();
                         return (
-                            <div key={key.id?.toString()} className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-dark-indigo-glow p-3">
+                            <div key={key.id?.toString()} className="flex items-center justify-between rounded-lg border border-line bg-elevated p-3">
                                 <div className="min-w-0">
-                                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200">{key.label}</div>
-                                    <div className="text-[11px] text-slate-500 font-mono truncate">{key.delegate_address}</div>
-                                    <div className="text-[10px] text-slate-400 mt-0.5">
+                                    <div className="text-xs font-semibold text-fg">{key.label}</div>
+                                    <div className="text-[12px] text-fg-subtle font-mono truncate">{key.delegate_address}</div>
+                                    <div className="text-[12px] text-fg-subtle mt-0.5">
                                         {active ? `Expires ${new Date(key.expires_at).toLocaleString()}` : 'Expired or revoked'}
                                     </div>
                                 </div>
@@ -278,8 +278,8 @@ export const SessionKeysTab: React.FC<SessionKeysTabProps> = ({ wallets }) => {
             />
 
             {creating && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/70 dark:bg-near-black/80">
-                    <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface/80">
+                    <div className="flex items-center gap-2 text-xs text-fg-muted">
                         <Loader2 size={16} className="animate-spin" /> Saving session key…
                     </div>
                 </div>

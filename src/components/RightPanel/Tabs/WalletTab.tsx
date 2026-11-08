@@ -1,3 +1,5 @@
+import { RPC_CHAINS } from '@/lib/constants';
+import { ChainIcon } from '@/components/ui/ChainIcon';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -6,8 +8,6 @@ import {
     Copy,
     ExternalLink,
     LogOut,
-    Shield,
-    Sparkles,
     Wallet
 } from 'lucide-react';
 
@@ -120,40 +120,26 @@ export const WalletTab: React.FC<
     if (!currentWallet) {
         return (
             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-5">
-                <div className="relative overflow-hidden rounded-[28px] border border-slate-200 dark:border-white/10 bg-[radial-gradient(circle_at_top,rgba(124,58,237,0.06),transparent_42%),linear-gradient(180deg,#ffffff,#f8fafc)] dark:bg-[radial-gradient(circle_at_top,rgba(163,163,163,0.16),transparent_42%),linear-gradient(180deg,rgba(24,24,27,0.98),rgba(10,10,10,0.98))] p-5">
-                    <div className="absolute inset-0 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.04),transparent)] opacity-60 hidden dark:block" />
-                    <div className="relative z-10">
-                        <div className="mb-4 inline-flex rounded-2xl border border-electric-violet/20 bg-electric-violet/10 p-3 text-electric-violet shadow-[0_20px_45px_rgba(163,163,163,0.18)]">
-                            <Wallet size={24} />
-                        </div>
-                        <div className="mb-2 text-sm font-bold text-slate-900 dark:text-white">
-                            Universal wallet access
-                        </div>
-                        <p className="mb-5 text-xs leading-6 text-slate-400">
-                            Connect EVM, Sui, Solana, or Stellar wallets from one shared connection layer.
-                        </p>
-                        <ConnectWalletButton fullWidth />
-                        <div className="mt-4 grid gap-3">
-                            <InfoCard
-                                icon={
-                                    <Shield size={16} />
-                                }
-                                title="Safer session handling"
-                                body="Provider validation, reconnect persistence, and explicit disconnect flows are built in."
-                            />
-                            <InfoCard
-                                icon={
-                                    <Sparkles size={16} />
-                                }
-                                title="Chain-aware tooling"
-                                body="Object inspection is available for Sui wallets; balance and transaction tooling work across every connected chain."
-                            />
-                        </div>
+                <div className="rounded-card border border-line bg-surface p-5">
+                    <div className="mb-3 inline-flex rounded-[10px] border border-line bg-sunken p-2.5 text-fg-muted">
+                        <Wallet size={20} />
                     </div>
+                    <div className="mb-1 text-sm font-semibold text-fg">No wallet connected</div>
+                    <p className="mb-4 text-xs leading-5 text-fg-subtle">
+                        Connect a wallet on any supported chain to sign transactions and see balances here.
+                    </p>
+                    <div className="mb-4 flex items-center gap-1.5">
+                        {RPC_CHAINS.map((chain) => (
+                            <span key={chain.id} title={chain.label}>
+                                <ChainIcon chain={chain.id} size={26} />
+                            </span>
+                        ))}
+                    </div>
+                    <ConnectWalletButton fullWidth />
                 </div>
 
                 {error ? (
-                    <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs leading-6 text-red-200">
+                    <div className="rounded-card border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs leading-6 text-red-600 dark:text-red-300">
                         {error.message}
                     </div>
                 ) : null}
@@ -171,20 +157,20 @@ export const WalletTab: React.FC<
 
     return (
         <div className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-5">
-            <div className="relative overflow-hidden rounded-[28px] border border-slate-200 dark:border-white/10 bg-[radial-gradient(circle_at_top,rgba(124,58,237,0.07),transparent_42%),linear-gradient(180deg,#ffffff,#f8fafc)] dark:bg-[radial-gradient(circle_at_top,rgba(163,163,163,0.18),transparent_42%),linear-gradient(180deg,rgba(24,24,27,0.98),rgba(10,10,10,0.98))] p-5 shadow-sm dark:shadow-[0_28px_80px_rgba(0,0,0,0.4)]">
-                <div className="absolute -right-8 top-0 h-32 w-32 rounded-full bg-electric-violet/10 blur-[48px]" />
+            <div className="relative overflow-hidden rounded-[28px] border border-line bg-[radial-gradient(circle_at_top,rgba(124,58,237,0.07),transparent_42%),linear-gradient(180deg,#ffffff,#f8fafc)] dark:bg-[radial-gradient(circle_at_top,rgba(163,163,163,0.18),transparent_42%),linear-gradient(180deg,rgba(24,24,27,0.98),rgba(10,10,10,0.98))] p-5 shadow-sm dark:shadow-[0_28px_80px_rgba(0,0,0,0.4)]">
+                <div className="absolute -right-8 top-0 h-32 w-32 rounded-full bg-hover blur-[48px]" />
                 <div className="relative z-10">
                     <div className="flex items-start justify-between gap-3">
                         <div>
-                            <div className="text-[10px] font-black uppercase tracking-[0.26em] text-slate-500">
+                            <div className="text-[12px] font-semibold text-fg-subtle">
                                 Active wallet
                             </div>
-                            <div className="mt-2 text-lg font-semibold text-slate-900 dark:text-white">
+                            <div className="mt-2 text-lg font-semibold text-fg">
                                 {
                                     currentWallet.name
                                 }
                             </div>
-                            <div className="mt-1 text-xs text-slate-400">
+                            <div className="mt-1 text-xs text-fg-subtle">
                                 {getFamilyLabel(
                                     currentWallet.family
                                 )}{' '}
@@ -194,7 +180,7 @@ export const WalletTab: React.FC<
                                 }
                             </div>
                         </div>
-                        <div className="rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/[0.04] p-1">
+                        <div className="rounded-full border border-line bg-hover p-1">
                             <Avatar
                                 size="xs"
                                 seed={
@@ -204,19 +190,19 @@ export const WalletTab: React.FC<
                         </div>
                     </div>
 
-                    <div className="mt-5 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 p-4">
+                    <div className="mt-5 rounded-card border border-line bg-hover p-4">
                         <div className="flex items-center justify-between gap-3">
                             <div>
-                                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">
+                                <div className="text-[12px] font-semibold text-fg-subtle">
                                     Address
                                 </div>
-                                <div className="mt-1 font-mono text-sm text-slate-900 dark:text-white">
+                                <div className="mt-1 font-mono text-sm text-fg">
                                     {formatAddress(
                                         currentWallet.address
                                     )}
                                 </div>
                             </div>
-                            <span className="rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/[0.04] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-slate-600 dark:text-slate-300">
+                            <span className="rounded-full border border-line bg-hover px-2.5 py-1 text-[12px] font-semibold text-fg-muted">
                                 {status}
                             </span>
                         </div>
@@ -240,12 +226,12 @@ export const WalletTab: React.FC<
                             />
                         </div>
 
-                        <div className="mt-5 flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-near-black/40 p-1">
+                        <div className="mt-5 flex items-center gap-2 rounded-card border border-line bg-hover p-1">
                             <button
                                 onClick={() =>
                                     void handleCopy()
                                 }
-                                className="flex flex-1 items-center justify-center gap-1.5 rounded-[14px] px-3 py-2 text-[11px] font-bold text-slate-600 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
+                                className="flex flex-1 items-center justify-center gap-1.5 rounded-[14px] px-3 py-2 text-[12px] font-semibold text-fg-muted transition-colors hover:bg-hover hover:text-fg"
                             >
                                 {copied ? (
                                     <Check
@@ -259,7 +245,7 @@ export const WalletTab: React.FC<
                                     ? 'Copied'
                                     : 'Copy'}
                             </button>
-                            <div className="h-5 w-px bg-slate-200 dark:bg-white/10" />
+                            <div className="h-5 w-px bg-active" />
                             <button
                                 onClick={() => {
                                     if (
@@ -275,7 +261,7 @@ export const WalletTab: React.FC<
                                     !explorerUrl
                                 }
                                 title={explorerUrl ? undefined : 'No block explorer configured for this network'}
-                                className="flex flex-1 items-center justify-center gap-1.5 rounded-[14px] px-3 py-2 text-[11px] font-bold text-slate-600 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-600 dark:disabled:hover:text-slate-300"
+                                className="flex flex-1 items-center justify-center gap-1.5 rounded-[14px] px-3 py-2 text-[12px] font-semibold text-fg-muted transition-colors hover:bg-hover hover:text-fg disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-600 dark:disabled:hover:text-slate-300"
                             >
                                 <ExternalLink size={13} />
                                 Explorer
@@ -291,7 +277,7 @@ export const WalletTab: React.FC<
                                     ? setIsSwitchOpen((open) => !open)
                                     : openModal()
                             }
-                            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 dark:border-white/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
+                            className="flex w-full items-center justify-center gap-2 rounded-card border border-line px-4 py-3 text-xs font-semibold text-fg-muted transition-colors hover:bg-hover"
                         >
                             <Wallet size={14} />
                             Switch
@@ -319,7 +305,7 @@ export const WalletTab: React.FC<
                                         left: switchMenuRect.left,
                                         width: switchMenuRect.width
                                     }}
-                                    className="z-[101] overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] shadow-2xl animate-in fade-in zoom-in-95 duration-100 origin-top"
+                                    className="z-[101] overflow-hidden rounded-card border border-line bg-elevated shadow-pop animate-in fade-in zoom-in-95 duration-100 origin-top"
                                 >
                                     {otherLinkedWallets.map((wallet) => (
                                         <button
@@ -328,12 +314,12 @@ export const WalletTab: React.FC<
                                                 setActiveSigner(wallet.family);
                                                 setIsSwitchOpen(false);
                                             }}
-                                            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
+                                            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-hover"
                                         >
                                             <Avatar size="xs" seed={wallet.address} />
                                             <div className="min-w-0 flex-1">
-                                                <div className="truncate text-xs font-bold text-slate-900 dark:text-white">{wallet.name}</div>
-                                                <div className="text-[10px] text-slate-400">
+                                                <div className="truncate text-xs font-semibold text-fg">{wallet.name}</div>
+                                                <div className="text-[12px] text-fg-subtle">
                                                     {getFamilyLabel(wallet.family)} · {formatAddress(wallet.address)}
                                                 </div>
                                             </div>
@@ -344,7 +330,7 @@ export const WalletTab: React.FC<
                                             setIsSwitchOpen(false);
                                             openModal();
                                         }}
-                                        className="flex w-full items-center gap-2.5 whitespace-nowrap border-t border-slate-200 dark:border-white/10 px-3 py-2.5 text-left text-xs font-bold text-electric-violet transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
+                                        className="flex w-full items-center gap-2.5 whitespace-nowrap border-t border-line px-3 py-2.5 text-left text-xs font-semibold text-fg transition-colors hover:bg-hover"
                                     >
                                         <Wallet size={13} className="shrink-0" />
                                         Connect another chain
@@ -357,7 +343,7 @@ export const WalletTab: React.FC<
                             onClick={() =>
                                 void disconnect()
                             }
-                            className="flex items-center justify-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-red-600 dark:text-red-400 transition-colors hover:bg-red-500/15"
+                            className="flex items-center justify-center gap-2 rounded-card border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs font-semibold text-red-600 dark:text-red-400 transition-colors hover:bg-red-500/15"
                         >
                             <LogOut size={14} />
                             Disconnect
@@ -366,7 +352,7 @@ export const WalletTab: React.FC<
 
                     <button
                         onClick={() => appStore.openTab('profile')}
-                        className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+                        className="mt-2 flex w-full items-center justify-center gap-2 rounded-card px-4 py-2.5 text-[12px] font-semibold text-fg-subtle hover:text-fg transition-colors"
                     >
                         Manage all wallets →
                     </button>
@@ -374,7 +360,7 @@ export const WalletTab: React.FC<
             </div>
 
             {error ? (
-                <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs leading-6 text-red-200">
+                <div className="rounded-card border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs leading-6 text-red-600 dark:text-red-300">
                     {error.message}
                 </div>
             ) : null}
@@ -390,36 +376,12 @@ function Metric({
     value: string;
 }) {
     return (
-        <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/[0.03] px-3 py-3">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">
+        <div className="rounded-card border border-line bg-hover px-3 py-3">
+            <div className="text-[12px] font-semibold text-fg-subtle">
                 {label}
             </div>
-            <div className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">
+            <div className="mt-2 text-sm font-semibold text-fg">
                 {value}
-            </div>
-        </div>
-    );
-}
-
-function InfoCard({
-    icon,
-    title,
-    body
-}: {
-    icon: React.ReactNode;
-    title: string;
-    body: string;
-}) {
-    return (
-        <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/[0.03] p-4">
-            <div className="mb-3 inline-flex rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 p-2 text-electric-violet">
-                {icon}
-            </div>
-            <div className="text-xs font-bold text-slate-900 dark:text-white">
-                {title}
-            </div>
-            <div className="mt-1 text-[11px] leading-6 text-slate-400">
-                {body}
             </div>
         </div>
     );

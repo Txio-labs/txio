@@ -83,7 +83,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <button
         onClick={() => setIsMobileOpen(true)}
         aria-label="Open sidebar"
-        className="md:hidden absolute top-2 left-2 z-20 p-1.5 rounded-lg bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-900 dark:hover:text-white"
+        className="md:hidden absolute top-2 left-2 z-20 p-1.5 rounded-lg bg-surface border border-line text-fg-subtle hover:text-fg"
       >
         <Menu size={16} />
       </button>
@@ -92,12 +92,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           onClick={() => setIsMobileOpen(false)}
           aria-label="Close sidebar"
-          className="md:hidden fixed inset-0 z-30 bg-near-black/50 animate-in fade-in duration-150"
+          className="md:hidden fixed inset-0 z-30 bg-black/50 animate-in fade-in duration-150"
         />
       )}
 
       <div
-        className={`fixed inset-y-0 left-0 z-40 md:static md:z-auto w-[280px] md:w-auto max-w-[85vw] md:max-w-none flex h-full bg-slate-50 dark:bg-near-black border-r border-slate-200 dark:border-white/[0.06] transition-transform duration-200 md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 md:static md:z-auto w-[280px] md:w-auto max-w-[85vw] md:max-w-none flex h-full bg-surface border-r border-line transition-transform duration-200 md:translate-x-0 ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -113,7 +113,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             onClick={() => setIsMobileOpen(false)}
             aria-label="Close sidebar"
-            className="md:hidden absolute top-2 right-2 z-20 p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white"
+            className="md:hidden absolute top-2 right-2 z-20 p-1.5 rounded-lg text-fg-subtle hover:text-fg"
           >
             <X size={16} />
           </button>
@@ -128,7 +128,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onOpenMembers={() => setIsMembersOpen(true)}
           />
         {!canEdit && (
-          <div className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200 dark:border-white/[0.06]">
+          <div className="px-3 py-1.5 text-[12px] font-mono text-fg-subtle border-b border-line">
             View only
           </div>
         )}
@@ -147,7 +147,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col min-h-0 bg-slate-50 dark:bg-near-black relative">
+        <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col min-h-0 bg-surface relative">
           <AnimatePresence mode="wait">
             {/* COLLECTIONS */}
             {mode === 'collections' && (

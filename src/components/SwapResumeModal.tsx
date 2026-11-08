@@ -93,11 +93,11 @@ export const SwapResumeModal: React.FC<SwapResumeModalProps> = ({ isOpen, item, 
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/70 dark:bg-near-black/80 backdrop-blur-sm">
-            <div className="bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
-                <div className="p-4 border-b border-slate-200 dark:border-white/5 flex justify-between items-center bg-white dark:bg-near-black">
-                    <h2 className="text-sm font-bold text-slate-900 dark:text-white">Resume Send</h2>
-                    <button onClick={onClose} className="text-slate-500 hover:text-slate-900 dark:hover:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface/80 backdrop-blur-sm">
+            <div className="bg-elevated border border-line rounded-[10px] shadow-card w-full max-w-md overflow-hidden flex flex-col">
+                <div className="p-4 border-b border-line flex justify-between items-center bg-surface">
+                    <h2 className="text-sm font-semibold text-fg">Resume Send</h2>
+                    <button onClick={onClose} className="text-fg-subtle hover:text-fg">
                         <X size={18} />
                     </button>
                 </div>
@@ -111,8 +111,8 @@ export const SwapResumeModal: React.FC<SwapResumeModalProps> = ({ isOpen, item, 
                                 ) : (
                                     <AlertTriangle size={13} className="text-amber-500" />
                                 )}
-                                <span className="font-bold text-slate-700 dark:text-slate-300">{leg.tool}</span>
-                                <span className="text-slate-400 font-mono truncate">{leg.hash}</span>
+                                <span className="font-semibold text-fg-muted">{leg.tool}</span>
+                                <span className="text-fg-subtle font-mono truncate">{leg.hash}</span>
                             </div>
                         ))}
                     </div>
@@ -120,26 +120,26 @@ export const SwapResumeModal: React.FC<SwapResumeModalProps> = ({ isOpen, item, 
                     <button
                         onClick={handleCheckStatus}
                         disabled={checking || !lastLeg?.hash}
-                        className="w-full flex items-center justify-center gap-2 h-9 rounded-lg border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-40"
+                        className="w-full flex items-center justify-center gap-2 h-9 rounded-lg border border-line text-xs font-semibold text-fg-muted hover:bg-hover disabled:opacity-40"
                     >
                         {checking ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
                         Check current status
                     </button>
 
                     {status && (
-                        <div className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black p-3 text-xs space-y-1">
-                            <div className="flex justify-between"><span className="text-slate-500">Status</span><span className="font-mono">{status.status}</span></div>
-                            {status.substatus && <div className="flex justify-between"><span className="text-slate-500">Detail</span><span className="font-mono">{status.substatus}</span></div>}
+                        <div className="rounded-lg border border-line bg-surface p-3 text-xs space-y-1">
+                            <div className="flex justify-between"><span className="text-fg-subtle">Status</span><span className="font-mono">{status.status}</span></div>
+                            {status.substatus && <div className="flex justify-between"><span className="text-fg-subtle">Detail</span><span className="font-mono">{status.substatus}</span></div>}
                         </div>
                     )}
 
                     {error && (
-                        <div className="flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/10 px-3 py-2 text-[11px] text-red-600 dark:text-red-400">
+                        <div className="flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/10 px-3 py-2 text-[12px] text-red-600 dark:text-red-400">
                             <AlertTriangle size={13} /> {error}
                         </div>
                     )}
 
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-[12px] text-fg-subtle">
                         If LI.FI reports this transfer as failed or stuck rather than still confirming, re-submitting sends the
                         same transaction again using the same parameters that were originally built.
                     </p>
@@ -147,7 +147,7 @@ export const SwapResumeModal: React.FC<SwapResumeModalProps> = ({ isOpen, item, 
                     <button
                         onClick={handleResubmit}
                         disabled={resubmitting || !currentWallet}
-                        className="w-full h-10 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-near-black text-xs font-bold hover:opacity-90 disabled:opacity-40 flex items-center justify-center gap-2"
+                        className="w-full h-10 rounded-lg bg-inverse text-on-inverse text-xs font-semibold hover:opacity-90 disabled:opacity-40 flex items-center justify-center gap-2"
                     >
                         {resubmitting ? <Loader2 size={13} className="animate-spin" /> : null}
                         {resubmitting ? 'Re-submitting…' : 'Re-submit this leg'}

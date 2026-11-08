@@ -126,3 +126,19 @@ describe('parseImportFile', () => {
     expect(() => parseImportFile(JSON.stringify({ foo: 'bar' }))).toThrow(/no json-rpc requests/i);
   });
 });
+
+describe('inferChain / chain-aware import', () => {
+    it('infers the chain from the method, params shape or endpoint', async () => {
+        const { inferChain, curlToRpcRequest } = await import('./importRequest');
+        expect(inferChain('eth_call')).toBe('evm');
+        expect(inferChain('suix_getAllBalances')).toBe('sui');
+        expect(inferChain('getLatestLedger')).toBe('stellar');
+        expect(inferChain('getAccountInfo')).toBe('solana');
+        expect(inferChain('getHealth', { })).toBe('stellar');
+        expect(inferChain('getBalance', [], 'https://solana-rpc.publicnode.com')).toBe('solana');
+        expect(inferChain('getBalance', [])).toBeUndefined();
+
+        const req = curlToRpcRequest(`curl -X POST https://soroban-testnet.stellar.org -d '{"jsonrpc":"2.0","id":1,"method":"getTransaction","params":{"hash":"abc"}}'`);
+        expect(req).toMatchObject({ chain: 'stellar', params: [{ hash: 'abc' }] });
+    });
+});

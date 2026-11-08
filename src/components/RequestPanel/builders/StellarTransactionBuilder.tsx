@@ -31,8 +31,8 @@ const PLACEHOLDERS: Partial<Record<StellarArgType, string>> = {
 };
 
 const fieldClass =
-  'w-full bg-white dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-slate-700 dark:text-slate-200 focus:border-electric-violet focus:outline-none transition-colors';
-const labelClass = 'block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1.5';
+  'w-full bg-surface border border-line rounded-lg px-3 py-2 text-xs font-mono text-fg focus:border-line-strong focus:outline-none transition-colors';
+const labelClass = 'block text-[12px] font-semibold text-fg-subtle mb-1.5';
 
 export const StellarTransactionBuilder: React.FC<StellarTransactionBuilderProps> = ({
   request,
@@ -105,12 +105,12 @@ export const StellarTransactionBuilder: React.FC<StellarTransactionBuilderProps>
   const removeArg = (index: number) => update({ args: params.args.filter((_, i) => i !== index) });
 
   return (
-    <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black/40 space-y-5">
+    <div className="p-4 rounded-[10px] border border-line bg-sunken space-y-5">
       <div className="flex items-center justify-between">
-        <div className="text-sm font-bold text-slate-700 dark:text-slate-200">Soroban contract call</div>
+        <div className="text-sm font-semibold text-fg">Soroban contract call</div>
         <div className="flex items-center gap-3">
           {activeAddress && (
-            <div className="flex items-center gap-2 px-2.5 py-1 bg-white dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-full text-[10px] font-mono text-emerald-500 dark:text-emerald-400">
+            <div className="flex items-center gap-2 px-2.5 py-1 bg-surface border border-line rounded-full text-[12px] font-mono text-emerald-500 dark:text-emerald-400">
               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
               Signer: {activeAddress.slice(0, 4)}...{activeAddress.slice(-4)}
             </div>
@@ -119,7 +119,7 @@ export const StellarTransactionBuilder: React.FC<StellarTransactionBuilderProps>
             type="button"
             onClick={() => setManual((m) => !m)}
             disabled={isReadOnly}
-            className="text-[11px] text-electric-violet hover:opacity-80 disabled:opacity-50"
+            className="text-[12px] text-fg hover:opacity-80 disabled:opacity-50"
           >
             {manual ? 'Use contract spec' : 'Enter manually'}
           </button>
@@ -143,20 +143,20 @@ export const StellarTransactionBuilder: React.FC<StellarTransactionBuilderProps>
               onClick={() => isStellarContractId(contractId) && void loadSpec(contractId)}
               disabled={isReadOnly || !isStellarContractId(contractId) || view.status === 'loading'}
               aria-label="Reload contract spec"
-              className="p-2 text-slate-500 hover:text-electric-violet transition-colors disabled:opacity-50"
+              className="p-2 text-fg-subtle hover:text-fg transition-colors disabled:opacity-50"
             >
               <RefreshCw size={14} className={view.status === 'loading' ? 'animate-spin' : ''} />
             </button>
           )}
         </div>
         {!manual && view.status === 'idle' && (
-          <p className="mt-1.5 text-[11px] text-slate-500">Enter a contract address to load its functions from the contract spec.</p>
+          <p className="mt-1.5 text-[12px] text-fg-subtle">Enter a contract address to load its functions from the contract spec.</p>
         )}
         {!manual && view.status === 'loading' && (
-          <p className="mt-1.5 text-[11px] text-slate-500">Loading contract spec from {network} Soroban RPC…</p>
+          <p className="mt-1.5 text-[12px] text-fg-subtle">Loading contract spec from {network} Soroban RPC…</p>
         )}
         {!manual && view.status === 'error' && (
-          <p role="alert" className="mt-1.5 text-[11px] text-rose-500">
+          <p role="alert" className="mt-1.5 text-[12px] text-rose-500">
             {view.message} You can still{' '}
             <button type="button" onClick={() => setManual(true)} className="underline">enter the call manually</button>.
           </p>
@@ -190,8 +190,8 @@ export const StellarTransactionBuilder: React.FC<StellarTransactionBuilderProps>
         <div>
           <label className={labelClass}>Arguments</label>
           {selectedFunction.parameters.length === 0 ? (
-            <div className="text-center py-4 bg-white dark:bg-near-black border border-dashed border-slate-200 dark:border-white/10 rounded-lg">
-              <span className="text-xs text-slate-500">This function takes no arguments.</span>
+            <div className="text-center py-4 bg-surface border border-dashed border-line rounded-lg">
+              <span className="text-xs text-fg-subtle">This function takes no arguments.</span>
             </div>
           ) : (
             <div className="space-y-2">
@@ -200,7 +200,7 @@ export const StellarTransactionBuilder: React.FC<StellarTransactionBuilderProps>
                 if (!arg) return null;
                 return (
                   <div key={arg.id}>
-                    <div className="text-[10px] font-mono text-slate-500 mb-1">
+                    <div className="text-[12px] font-mono text-fg-subtle mb-1">
                       {p.name}: {p.type}
                     </div>
                     <input
@@ -217,7 +217,7 @@ export const StellarTransactionBuilder: React.FC<StellarTransactionBuilderProps>
             </div>
           )}
           {unsupportedParams.length > 0 && (
-            <p className="mt-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-[10px] text-amber-700 dark:text-amber-400">
+            <p className="mt-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-[12px] text-amber-700 dark:text-amber-400">
               {unsupportedParams.map((p) => `${p.name} (${p.type})`).join(', ')} can&apos;t be built by this form yet. Use Manual mode or pick another function.
             </p>
           )}
@@ -225,11 +225,11 @@ export const StellarTransactionBuilder: React.FC<StellarTransactionBuilderProps>
       ) : (
       <div>
         <div className="flex justify-between items-center mb-1.5">
-          <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Arguments</label>
+          <label className="text-[12px] font-semibold text-fg-subtle">Arguments</label>
           <button
             onClick={addArg}
             disabled={isReadOnly}
-            className="text-xs flex items-center gap-1 text-electric-violet hover:opacity-80 disabled:opacity-50"
+            className="text-xs flex items-center gap-1 text-fg hover:opacity-80 disabled:opacity-50"
           >
             <Plus size={12} /> Add Argument
           </button>
@@ -259,15 +259,15 @@ export const StellarTransactionBuilder: React.FC<StellarTransactionBuilderProps>
                 onClick={() => removeArg(idx)}
                 disabled={isReadOnly}
                 aria-label={`Remove argument ${idx + 1}`}
-                className="p-2 text-slate-500 hover:text-rose-500 transition-colors disabled:opacity-50"
+                className="p-2 text-fg-subtle hover:text-rose-500 transition-colors disabled:opacity-50"
               >
                 <Trash2 size={14} />
               </button>
             </div>
           ))}
           {params.args.length === 0 && (
-            <div className="text-center py-4 bg-white dark:bg-near-black border border-dashed border-slate-200 dark:border-white/10 rounded-lg">
-              <span className="text-xs text-slate-500">No arguments defined.</span>
+            <div className="text-center py-4 bg-surface border border-dashed border-line rounded-lg">
+              <span className="text-xs text-fg-subtle">No arguments defined.</span>
             </div>
           )}
         </div>

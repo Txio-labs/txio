@@ -13,9 +13,9 @@ interface VerificationBadgeProps {
 
 const LEVEL_STYLE: Record<VerificationResult['level'], string> = {
     verified: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-    unverified: 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/10',
+    unverified: 'bg-hover text-fg-muted border-line',
     'seen-before': 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20',
-    unknown: 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/10',
+    unknown: 'bg-hover text-fg-muted border-line',
     blocked: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30'
 };
 
@@ -68,7 +68,7 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({ chain, add
 
     if (loading && !result) {
         return (
-            <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide bg-slate-100 dark:bg-white/5 text-slate-400 border-slate-200 dark:border-white/10 ${className ?? ''}`}>
+            <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide bg-hover text-fg-subtle border-line ${className ?? ''}`}>
                 <Loader2 size={11} className="animate-spin" /> Checking
             </span>
         );
@@ -81,7 +81,7 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({ chain, add
     return (
         <span
             title={result.detail}
-            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${LEVEL_STYLE[result.level]} ${className ?? ''}`}
+            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide ${LEVEL_STYLE[result.level]} ${className ?? ''}`}
         >
             <Icon size={11} /> {result.label}
         </span>

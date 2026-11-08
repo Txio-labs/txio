@@ -35,7 +35,7 @@ describe('ResponsePanel', () => {
     expect(screen.getAllByText((_, el) => el?.textContent === '200 OK').length).toBeGreaterThan(0);
     expect(screen.getAllByText((_, el) => el?.textContent === '124 ms').length).toBeGreaterThan(0);
 
-    expect(screen.getByText('Response Details')).toBeInTheDocument();
+    expect(screen.getByText('Response details')).toBeInTheDocument();
     expect(screen.getByText('Content Type')).toBeInTheDocument();
     expect(screen.getByText('application/json')).toBeInTheDocument();
   });
@@ -48,7 +48,7 @@ describe('ResponsePanel', () => {
 
   it('switches to the Headers tab and shows the explanatory empty state', () => {
     render(<ResponsePanel outcome={successOutcome} isLoading={false} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Headers' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Headers' }));
     expect(
       screen.getByText(/don't expose transport-level HTTP headers/i)
     ).toBeInTheDocument();
@@ -56,14 +56,14 @@ describe('ResponsePanel', () => {
 
   it('switches to the Timing tab and shows the total duration', () => {
     render(<ResponsePanel outcome={successOutcome} isLoading={false} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Timing' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Timing' }));
     expect(screen.getByText('Total duration')).toBeInTheDocument();
     expect(screen.getAllByText((_, el) => el?.textContent === '124 ms').length).toBeGreaterThan(0);
   });
 
   it('switches to the Raw tab and renders the raw JSON body', () => {
     render(<ResponsePanel outcome={successOutcome} isLoading={false} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Raw' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Raw' }));
     expect(screen.getByText(/"value"/)).toBeInTheDocument();
   });
 

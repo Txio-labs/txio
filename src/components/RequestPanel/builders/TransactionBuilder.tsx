@@ -17,8 +17,8 @@ interface TransactionBuilderProps {
 }
 
 const fieldClass =
-  'w-full bg-white dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-slate-700 dark:text-slate-200 focus:border-electric-violet focus:outline-none transition-colors';
-const labelClass = 'block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1.5';
+  'w-full bg-surface border border-line rounded-lg px-3 py-2 text-xs font-mono text-fg focus:border-line-strong focus:outline-none transition-colors';
+const labelClass = 'block text-[12px] font-semibold text-fg-subtle mb-1.5';
 
 /** Move type string ("u64", "vector<u8>", "address"...) → this app's BuilderArg type enum. */
 const moveParamTypeFor = (param: DiscoveredParameter): MoveParamType => {
@@ -166,28 +166,28 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
   const unsupportedParams = selectedFunction?.parameters.filter((p) => !isRenderable(p)) ?? [];
 
   return (
-    <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black/40 space-y-5">
+    <div className="p-4 rounded-[10px] border border-line bg-sunken space-y-5">
       <div className="flex items-center justify-between">
-        <div className="text-sm font-bold text-slate-700 dark:text-slate-200">Sui Move call</div>
+        <div className="text-sm font-semibold text-fg">Sui Move call</div>
         <div className="flex items-center gap-2">
           {activeAddress && (
-            <div className="flex items-center gap-2 px-2.5 py-1 bg-white dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-full text-[10px] font-mono text-emerald-500 dark:text-emerald-400">
+            <div className="flex items-center gap-2 px-2.5 py-1 bg-surface border border-line rounded-full text-[12px] font-mono text-emerald-500 dark:text-emerald-400">
               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
               Signer: {activeAddress.slice(0,6)}...{activeAddress.slice(-4)}
             </div>
           )}
-          <div className="flex rounded-lg border border-slate-200 dark:border-white/10 overflow-hidden text-[10px] font-bold uppercase tracking-wide">
+          <div className="flex rounded-lg border border-line overflow-hidden text-[12px] font-semibold uppercase tracking-wide">
             <button
               onClick={() => setMode('discover')}
               disabled={isReadOnly}
-              className={`px-2.5 py-1 flex items-center gap-1 transition-colors ${mode === 'discover' ? 'bg-electric-violet text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5'}`}
+              className={`px-2.5 py-1 flex items-center gap-1 transition-colors ${mode === 'discover' ? 'bg-inverse text-on-inverse' : 'text-fg-subtle hover:bg-hover'}`}
             >
               <Sparkles size={11} /> Discover
             </button>
             <button
               onClick={() => setMode('manual')}
               disabled={isReadOnly}
-              className={`px-2.5 py-1 transition-colors ${mode === 'manual' ? 'bg-slate-900 dark:bg-white text-white dark:text-near-black' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5'}`}
+              className={`px-2.5 py-1 transition-colors ${mode === 'manual' ? 'bg-inverse text-on-inverse' : 'text-fg-subtle hover:bg-hover'}`}
             >
               Manual
             </button>
@@ -214,13 +214,13 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
               <button
                 onClick={handleFetch}
                 disabled={isReadOnly || !packageDraft.trim() || discoveryState.status === 'loading'}
-                className="shrink-0 px-3 py-2 bg-slate-900 dark:bg-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white dark:text-near-black text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all"
+                className="shrink-0 px-3 py-2 bg-inverse hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-on-inverse text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-all"
               >
                 {discoveryState.status === 'loading' ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />}
                 Fetch
               </button>
             </div>
-            <p className="text-[10px] text-slate-500 mt-1.5">
+            <p className="text-[12px] text-fg-subtle mt-1.5">
               Discovers this package&apos;s modules, functions and argument types directly from the chain — no manual typing needed for what Sui already tells us.
             </p>
           </div>
@@ -268,7 +268,7 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
               </div>
 
               {selectedFunction && (
-                <div className="text-[10px] font-mono text-slate-500 px-3 py-2 bg-white dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg break-all">
+                <div className="text-[12px] font-mono text-fg-subtle px-3 py-2 bg-surface border border-line rounded-lg break-all">
                   {request.moveParams.packageId}::{selectedFunction.module}::{selectedFunction.name}
                   {selectedFunction.typeParameters.length > 0 && `<${selectedFunction.typeParameters.map((t) => t.name).join(', ')}>`}
                 </div>
@@ -327,7 +327,7 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
           <div className="space-y-2">
             {selectedFunction.typeParameters.map((tp, i) => (
               <div key={tp.name} className="flex items-center gap-2">
-                <span className="w-10 shrink-0 text-[10px] font-mono font-bold text-slate-500">{tp.name}</span>
+                <span className="w-10 shrink-0 text-[12px] font-mono font-semibold text-fg-subtle">{tp.name}</span>
                 <input
                   className={fieldClass}
                   value={request.moveParams.typeArguments[i] ?? ''}
@@ -360,17 +360,17 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
       {mode === 'discover' && selectedFunction ? (
         <div>
           <div className="flex justify-between items-center mb-1.5">
-            <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Arguments</label>
+            <label className="text-[12px] font-semibold text-fg-subtle">Arguments</label>
             {hasTxContext && (
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+              <span className="text-[12px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                 <Check size={11} /> Transaction context supplied automatically
               </span>
             )}
           </div>
           <div className="space-y-2">
             {renderableParams.length === 0 && (
-              <div className="text-center py-4 bg-white dark:bg-near-black border border-dashed border-slate-200 dark:border-white/10 rounded-lg">
-                <span className="text-xs text-slate-500">This function takes no arguments.</span>
+              <div className="text-center py-4 bg-surface border border-dashed border-line rounded-lg">
+                <span className="text-xs text-fg-subtle">This function takes no arguments.</span>
               </div>
             )}
             {renderableParams.map((param, idx) => {
@@ -382,13 +382,13 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
               return (
                 <div key={arg.id} className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="w-28 shrink-0 text-[10px] font-mono text-slate-500 truncate" title={param.type}>
+                    <span className="w-28 shrink-0 text-[12px] font-mono text-fg-subtle truncate" title={param.type}>
                       {param.name}
-                      <span className="block text-slate-400 truncate">{param.type}</span>
+                      <span className="block text-fg-subtle truncate">{param.type}</span>
                     </span>
                     {showSelector ? (
                       candidates === 'loading' ? (
-                        <div className="flex-1 flex items-center gap-2 px-3 py-2 text-xs text-slate-400">
+                        <div className="flex-1 flex items-center gap-2 px-3 py-2 text-xs text-fg-subtle">
                           <Loader2 size={12} className="animate-spin" /> Loading wallet {param.kind === 'coin' ? 'coins' : 'objects'}…
                         </div>
                       ) : candidates === 'error' || !candidates ? (
@@ -441,7 +441,7 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
             })}
           </div>
           {unsupportedParams.length > 0 && (
-            <div className="mt-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-[10px] text-amber-700 dark:text-amber-400">
+            <div className="mt-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-[12px] text-amber-700 dark:text-amber-400">
               {unsupportedParams.length} parameter{unsupportedParams.length > 1 ? 's' : ''} on this function ({unsupportedParams.map((p) => p.type).join(', ')}) can&apos;t be built by this form yet — try Manual mode, or a different function.
             </div>
           )}
@@ -449,13 +449,13 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
       ) : (
         <div>
           <div className="flex justify-between items-center mb-1.5">
-            <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">
+            <label className="text-[12px] font-semibold text-fg-subtle">
               Function Arguments
             </label>
             <button
               onClick={addMoveArg}
               disabled={isReadOnly}
-              className="text-xs flex items-center gap-1 text-electric-violet hover:opacity-80 disabled:opacity-50"
+              className="text-xs flex items-center gap-1 text-fg hover:opacity-80 disabled:opacity-50"
             >
               <Plus size={12} /> Add Argument
             </button>
@@ -488,23 +488,23 @@ export const TransactionBuilder: React.FC<TransactionBuilderProps> = ({
                 <button
                   onClick={() => removeMoveArg(idx)}
                   disabled={isReadOnly}
-                  className="p-2 text-slate-500 hover:text-rose-500 transition-colors disabled:opacity-50"
+                  className="p-2 text-fg-subtle hover:text-rose-500 transition-colors disabled:opacity-50"
                 >
                   <Trash2 size={14} />
                 </button>
               </div>
             ))}
             {request.moveParams.arguments.length === 0 && (
-              <div className="text-center py-4 bg-white dark:bg-near-black border border-dashed border-slate-200 dark:border-white/10 rounded-lg">
-                <span className="text-xs text-slate-500">No arguments defined.</span>
+              <div className="text-center py-4 bg-surface border border-dashed border-line rounded-lg">
+                <span className="text-xs text-fg-subtle">No arguments defined.</span>
               </div>
             )}
           </div>
         </div>
       )}
 
-      <div className="pt-1 border-t border-slate-200 dark:border-white/10">
-        <label className="flex items-center gap-1.5 text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1.5 mt-3">
+      <div className="pt-1 border-t border-line">
+        <label className="flex items-center gap-1.5 text-[12px] font-semibold text-fg-subtle mb-1.5 mt-3">
           <Zap size={12} className="text-amber-500" /> Gas Budget (MIST)
         </label>
         <input

@@ -28,7 +28,7 @@ export const Avatar: React.FC<AvatarProps> = ({
 }) => {
   const sizeMap = {
     xs: 'w-5 h-5',
-    sm: 'w-8 h-8',
+    sm: 'w-7 h-7',
     md: 'w-10 h-10',
     lg: 'w-12 h-12',
     xl: 'w-16 h-16'
@@ -46,7 +46,7 @@ export const Avatar: React.FC<AvatarProps> = ({
     const avatar = createAvatar(avatarStyles[type] as any, {
       seed: seed || 'default',
       ...(type === 'user' && {
-        backgroundColor: ['0f172a', '1e1b4b'],
+        backgroundColor: ['27272a', '3f3f46'],
       }),
       ...(type === 'bot' && {
         backgroundColor: ['0f172a'],
@@ -78,12 +78,12 @@ export const Avatar: React.FC<AvatarProps> = ({
 
   return (
     <div className={`relative shrink-0 ${sizeMap[size]} ${className}`}>
-      <div className="w-full h-full rounded-full overflow-hidden border border-white/10 bg-near-black flex items-center justify-center">
+      <div className="w-full h-full rounded-full overflow-hidden ring-1 ring-line bg-active flex items-center justify-center">
         {renderGraphic()}
       </div>
       
       {status && (
-        <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-near-black ${statusMap[status]}`} />
+        <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-surface ${statusMap[status]}`} />
       )}
     </div>
   );

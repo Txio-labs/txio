@@ -60,3 +60,21 @@ afterEach(() => {
     localStorage.clear();
     sessionStorage.clear();
 });
+
+// jsdom has no matchMedia; GSAP's matchMedia and responsive code paths need it.
+if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
+    Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        configurable: true,
+        value: (query: string) => ({
+            matches: false,
+            media: query,
+            onchange: null,
+            addListener: () => {},
+            removeListener: () => {},
+            addEventListener: () => {},
+            removeEventListener: () => {},
+            dispatchEvent: () => false,
+        }),
+    });
+}

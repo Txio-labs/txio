@@ -59,7 +59,8 @@ describe('MembersPanel', () => {
         fireEvent.click(screen.getByRole('button', { name: /invite/i }));
         await waitFor(() => expect(mocks.inviteWorkspaceMember).toHaveBeenCalledWith('w1', 'new@x.com', 'editor'));
 
-        fireEvent.change(screen.getByLabelText('Role for ed@x.com'), { target: { value: 'viewer' } });
+        fireEvent.click(screen.getByLabelText('Role for ed@x.com'));
+        fireEvent.click(screen.getByRole('button', { name: 'Viewer' }));
         await waitFor(() => expect(mocks.updateWorkspaceMemberRole).toHaveBeenCalledWith('w1', 'm1', 'viewer'));
 
         fireEvent.click(screen.getByLabelText('Remove ed@x.com'));

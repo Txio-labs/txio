@@ -72,7 +72,7 @@ describe('ProfileMenu', () => {
     render(<ProfileMenu />);
     fireEvent.click(screen.getByTitle('Account'));
 
-    expect(screen.getByText('Victor Oladimeji')).toBeInTheDocument();
+    expect(screen.getAllByText('Victor Oladimeji').length).toBeGreaterThan(0);
     expect(screen.getByText('oladimejivictor611@gmail.com')).toBeInTheDocument();
   });
 

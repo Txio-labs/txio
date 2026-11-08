@@ -191,6 +191,7 @@ export function WalletManagerProvider({
     });
     const [solanaAvailability, setSolanaAvailability] = useState({'phantom-solana': false, solflare: false, backpack: false, glow: false, 'nightly-solana': false});
     const [aptosAvailability, setAptosAvailability] = useState({petra: false, martian: false, pontem: false, 'rise-wallet': false, 'nightly-aptos': false});
+    const [injected, setInjected] = useState(() => detectInjectedWallets());
 
     const restoreAttemptedRef =
         useRef(false);
@@ -286,12 +287,29 @@ export function WalletManagerProvider({
     const refreshAptosAvailability = useCallback(() => {
         detectAptosWallets().then(setAptosAvailability).catch(() => setAptosAvailability({petra: false, martian: false, pontem: false, 'rise-wallet': false, 'nightly-aptos': false}));
     }, []);
+    const refreshInjectedAvailability = useCallback(() => {
+        setInjected(detectInjectedWallets());
+    }, []);
 
     useEffect(() => {
         refreshStellarAvailability();
         refreshSolanaAvailability();
         refreshAptosAvailability();
-    }, [refreshStellarAvailability, refreshSolanaAvailability, refreshAptosAvailability]);
+        refreshInjectedAvailability();
+    }, [refreshStellarAvailability, refreshSolanaAvailability, refreshAptosAvailability, refreshInjectedAvailability]);
+
+    // window.ethereum (and EIP-6963 providers) can be injected by extensions
+    // after this component's first render, so a one-shot detectInjectedWallets()
+    // call in render can permanently miss wallets that announce late.
+    useEffect(() => {
+        if (!isBrowser()) return;
+        window.addEventListener('eip6963:announceProvider', refreshInjectedAvailability);
+        window.addEventListener('ethereum#initialized', refreshInjectedAvailability);
+        return () => {
+            window.removeEventListener('eip6963:announceProvider', refreshInjectedAvailability);
+            window.removeEventListener('ethereum#initialized', refreshInjectedAvailability);
+        };
+    }, [refreshInjectedAvailability]);
 
     // Best-effort prefetch of the heavy, dynamically-imported chain SDKs
     // (@mysten/sui/transactions, @stellar/stellar-sdk) during browser idle
@@ -319,14 +337,16 @@ export function WalletManagerProvider({
     useEffect(() => {
         if (isModalOpen) {
             refreshStellarAvailability();
-        refreshSolanaAvailability();
-        refreshAptosAvailability();
+            refreshSolanaAvailability();
+            refreshAptosAvailability();
+            refreshInjectedAvailability();
         }
     }, [
         isModalOpen,
         refreshStellarAvailability,
         refreshSolanaAvailability,
-        refreshAptosAvailability
+        refreshAptosAvailability,
+        refreshInjectedAvailability
     ]);
 
     const connectedSuiWallet =
@@ -1057,8 +1077,6 @@ export function WalletManagerProvider({
     const wallets = useMemo<
         WalletCatalogItem[]
     >(() => {
-        const injected =
-            detectInjectedWallets();
         const currentSuiIds =
             new Set(
                 suiWallets
@@ -1287,7 +1305,8 @@ export function WalletManagerProvider({
         stellarAvailability,
         solanaAvailability,
         aptosAvailability,
-        suiWallets
+        suiWallets,
+        injected
     ]);
 
     const value = useMemo<

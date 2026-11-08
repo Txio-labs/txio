@@ -92,8 +92,8 @@ export const WorkspaceOnboarding: React.FC<
     };
 
     return (
-        <div className={`min-h-screen selection:bg-electric-violet/30 ${
-            isDark ? 'bg-near-black text-white' : 'bg-slate-50 text-slate-900'
+        <div className={`min-h-screen selection:bg-active ${
+            isDark ? 'bg-canvas text-fg' : 'bg-canvas text-fg'
         }`}>
             <div className="relative min-h-screen overflow-hidden">
                 <div className={`absolute inset-0 bg-[size:34px_34px] ${
@@ -101,10 +101,10 @@ export const WorkspaceOnboarding: React.FC<
                         ? 'bg-[linear-gradient(rgba(163,163,163,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(163,163,163,0.06)_1px,transparent_1px)] opacity-20'
                         : 'bg-[linear-gradient(rgba(15,23,42,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.05)_1px,transparent_1px)] opacity-40'
                 }`} />
-                <div className="absolute -left-24 top-16 h-72 w-72 rounded-full bg-electric-violet/18 blur-[120px]" />
-                <div className="absolute bottom-0 right-0 h-[28rem] w-[28rem] rounded-full bg-electric-violet/14 blur-[140px]" />
+                <div className="absolute -left-24 top-16 h-72 w-72 rounded-full bg-active blur-[120px]" />
+                <div className="absolute bottom-0 right-0 h-[28rem] w-[28rem] rounded-full bg-active blur-[140px]" />
 
-                <div className="relative mx-auto flex min-h-screen max-w-7xl flex-col gap-10 px-6 py-10 lg:flex-row lg:items-center lg:px-10">
+                <div className="relative mx-auto flex min-h-screen flex-col gap-10 px-6 py-10 lg:flex-row lg:items-center lg:px-10">
                     <motion.div
                         initial={{
                             opacity: 0,
@@ -119,20 +119,20 @@ export const WorkspaceOnboarding: React.FC<
                         }}
                         className="flex-1"
                     >
-                        <div className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-[0.3em] ${
+                        <div className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[12px] font-semibold ${
                             isDark
-                                ? 'border-violet-400/20 bg-violet-400/10 text-violet-300'
+                                ? 'border-violet-400/20 bg-violet-400/10 text-violet-600 dark:text-violet-300'
                                 : 'border-violet-200 bg-violet-100 text-violet-700'
                         }`}>
                             <Sparkles size={13} />
                             Workspace Setup
                         </div>
 
-                        <h1 className="mt-6 max-w-3xl text-4xl font-black tracking-tight md:text-5xl lg:text-6xl">
+                        <h1 className="mt-6 max-w-3xl text-4xl font-semibold tracking-tight md:text-5xl lg:text-6xl">
                             One last thing — name your workspace.
                         </h1>
 
-                        <p className={`mt-5 max-w-2xl text-base leading-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        <p className={`mt-5 max-w-2xl text-base leading-8 ${isDark ? 'text-fg-subtle' : 'text-fg-subtle'}`}>
                             Your account&apos;s good to go. Workspaces are where your collections, requests, and history live. You can have more than one later.
                         </p>
 
@@ -143,70 +143,70 @@ export const WorkspaceOnboarding: React.FC<
                                     description:
                                         'Your requests and saved flows live inside the workspace — not floating around in one big pile.',
                                     icon: Layers3,
-                                    tone: isDark ? 'text-electric-violet bg-electric-violet/10' : 'text-violet-600 bg-violet-100'
+                                    tone: isDark ? 'text-fg bg-hover' : 'text-violet-600 bg-violet-100'
                                 },
                                 {
                                     title: 'Team-ready',
                                     description:
                                         'Solo today, team later. Same workspace, just more people.',
                                     icon: Users,
-                                    tone: isDark ? 'text-electric-violet bg-electric-violet/10' : 'text-violet-600 bg-violet-100'
+                                    tone: isDark ? 'text-fg bg-hover' : 'text-violet-600 bg-violet-100'
                                 },
                                 {
                                     title: 'Isolated state',
                                     description:
                                         'Workspaces are isolated. Different projects, different auth, no crosstalk.',
                                     icon: ShieldCheck,
-                                    tone: isDark ? 'text-emerald-400 bg-emerald-500/10' : 'text-emerald-600 bg-emerald-100'
+                                    tone: isDark ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' : 'text-emerald-600 bg-emerald-100'
                                 }
                             ].map((item) => (
                                 <div
                                     key={item.title}
-                                    className={`rounded-[1.75rem] border p-5 backdrop-blur-sm ${
+                                    className={`rounded-card border p-5 backdrop-blur-sm ${
                                         isDark
-                                            ? 'border-white/10 bg-white/[0.035] shadow-[0_24px_55px_-45px_rgba(0,0,0,0.85)]'
-                                            : 'border-slate-200 bg-white shadow-sm'
+                                            ? 'border-line bg-hover shadow-card'
+                                            : 'border-line bg-surface shadow-card'
                                     }`}
                                 >
                                     <div
-                                        className={`flex h-11 w-11 items-center justify-center rounded-2xl ${item.tone}`}
+                                        className={`flex h-11 w-11 items-center justify-center rounded-card ${item.tone}`}
                                     >
                                         <item.icon size={18} />
                                     </div>
-                                    <div className="mt-4 text-lg font-bold">
+                                    <div className="mt-4 text-lg font-semibold">
                                         {item.title}
                                     </div>
-                                    <p className={`mt-2 text-sm leading-7 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                    <p className={`mt-2 text-sm leading-7 ${isDark ? 'text-fg-subtle' : 'text-fg-subtle'}`}>
                                         {item.description}
                                     </p>
                                 </div>
                             ))}
                         </div>
 
-                        <div className={`mt-8 rounded-[2rem] border p-5 ${
+                        <div className={`mt-8 rounded-panel border p-5 ${
                             isDark
-                                ? 'border-white/10 bg-white/[0.03] shadow-[0_28px_70px_-55px_rgba(0,0,0,0.95)]'
-                                : 'border-slate-200 bg-white shadow-sm'
+                                ? 'border-line bg-hover shadow-card'
+                                : 'border-line bg-surface shadow-card'
                         }`}>
                             <div className="flex items-start gap-4">
-                                <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${
-                                    isDark ? 'bg-electric-violet/10 text-electric-violet' : 'bg-violet-100 text-violet-600'
+                                <div className={`flex h-12 w-12 items-center justify-center rounded-card ${
+                                    isDark ? 'bg-hover text-fg' : 'bg-violet-100 text-violet-600'
                                 }`}>
                                     <Workflow size={20} />
                                 </div>
                                 <div>
-                                    <div className={`text-sm font-bold uppercase tracking-[0.22em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                                    <div className={`text-sm font-semibold ${isDark ? 'text-fg-subtle' : 'text-fg-subtle'}`}>
                                         Signed in as
                                     </div>
-                                    <div className="mt-2 text-xl font-bold">
+                                    <div className="mt-2 text-xl font-semibold">
                                         {user.name}
                                     </div>
-                                    <p className={`mt-1 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                    <p className={`mt-1 text-sm ${isDark ? 'text-fg-subtle' : 'text-fg-subtle'}`}>
                                         {user.email}
                                     </p>
-                                    <div className={`mt-4 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] ${
+                                    <div className={`mt-4 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[12px] font-semibold ${
                                         isDark
-                                            ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
+                                            ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                                             : 'border-emerald-200 bg-emerald-50 text-emerald-600'
                                     }`}>
                                         <CheckCircle2 size={14} />
@@ -234,25 +234,25 @@ export const WorkspaceOnboarding: React.FC<
                     >
                         <div className={`rounded-[2.2rem] border p-6 md:p-7 ${
                             isDark
-                                ? 'border-white/10 bg-[linear-gradient(180deg,rgba(24,24,27,0.96)_0%,rgba(10,10,10,0.98)_100%)] shadow-[0_45px_100px_-65px_rgba(163,163,163,0.75)]'
-                                : 'border-slate-200 bg-white shadow-xl'
+                                ? 'border-line bg-[linear-gradient(180deg,rgba(24,24,27,0.96)_0%,rgba(10,10,10,0.98)_100%)] shadow-card'
+                                : 'border-line bg-surface shadow-card'
                         }`}>
                             <div className="flex items-start justify-between gap-4">
                                 <div>
-                                    <div className={`text-[10px] font-black uppercase tracking-[0.32em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                                    <div className={`text-[12px] font-semibold ${isDark ? 'text-fg-subtle' : 'text-fg-subtle'}`}>
                                         Create Workspace
                                     </div>
-                                    <h2 className="mt-3 text-2xl font-black">
+                                    <h2 className="mt-3 text-2xl font-semibold">
                                         Name it and you&apos;re in.
                                     </h2>
-                                    <p className={`mt-2 text-sm leading-7 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                    <p className={`mt-2 text-sm leading-7 ${isDark ? 'text-fg-subtle' : 'text-fg-subtle'}`}>
                                         Once you create it, the IDE opens with your workspace already wired up.
                                     </p>
                                 </div>
 
-                                <div className={`rounded-2xl border p-3 ${
+                                <div className={`rounded-card border p-3 ${
                                     isDark
-                                        ? 'border-violet-400/15 bg-violet-400/10 text-violet-300'
+                                        ? 'border-violet-400/15 bg-violet-400/10 text-violet-600 dark:text-violet-300'
                                         : 'border-violet-200 bg-violet-100 text-violet-600'
                                 }`}>
                                     <Building2 size={20} />
@@ -264,7 +264,7 @@ export const WorkspaceOnboarding: React.FC<
                                 className="mt-8 space-y-6"
                             >
                                 <div className="space-y-2">
-                                    <label className={`text-[11px] font-black uppercase tracking-[0.22em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                                    <label className={`text-[12px] font-semibold ${isDark ? 'text-fg-subtle' : 'text-fg-subtle'}`}>
                                         Workspace Name
                                     </label>
                                     <input
@@ -278,18 +278,18 @@ export const WorkspaceOnboarding: React.FC<
                                             )
                                         }}
                                         placeholder={`${user.name}'s workspace`}
-                                        className={`w-full rounded-[1.35rem] border px-4 py-4 text-sm outline-none transition-colors focus:border-violet-400/40 ${
+                                        className={`w-full rounded-card border px-4 py-4 text-sm outline-none transition-colors focus:border-violet-400/40 ${
                                             isDark
-                                                ? 'border-white/10 bg-black/35 text-white placeholder:text-slate-600'
-                                                : 'border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400'
+                                                ? 'border-line bg-black/35 text-white placeholder:text-fg-subtle'
+                                                : 'border-line bg-sunken text-fg placeholder:text-fg-subtle'
                                         }`}
                                     />
                                 </div>
 
                                 {formError ? (
-                                    <div className={`rounded-[1.25rem] border px-4 py-3 text-sm ${
+                                    <div className={`rounded-card border px-4 py-3 text-sm ${
                                         isDark
-                                            ? 'border-red-500/20 bg-red-500/10 text-red-300'
+                                            ? 'border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-300'
                                             : 'border-red-200 bg-red-50 text-red-600'
                                     }`}>
                                         <div className="flex items-start gap-3">
@@ -309,7 +309,7 @@ export const WorkspaceOnboarding: React.FC<
                                 ) : null}
 
                                 <div className="space-y-3">
-                                    <div className={`text-[11px] font-black uppercase tracking-[0.22em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                                    <div className={`text-[12px] font-semibold ${isDark ? 'text-fg-subtle' : 'text-fg-subtle'}`}>
                                         Workspace Type
                                     </div>
 
@@ -345,26 +345,26 @@ export const WorkspaceOnboarding: React.FC<
                                                             option.id
                                                         )
                                                     }
-                                                    className={`rounded-[1.45rem] border p-4 text-left transition-all ${
+                                                    className={`rounded-card border p-4 text-left transition-all ${
                                                         isActive
                                                             ? isDark
-                                                                ? 'border-violet-400/30 bg-violet-400/10 shadow-[0_20px_45px_-28px_rgba(163,163,163,0.6)]'
+                                                                ? 'border-violet-400/30 bg-violet-400/10 shadow-card'
                                                                 : 'border-violet-300 bg-violet-50 shadow-sm'
                                                             : isDark
-                                                                ? 'border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05]'
-                                                                : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                                                                ? 'border-line bg-hover hover:border-line-strong hover:bg-hover'
+                                                                : 'border-line bg-surface hover:border-line-strong hover:bg-hover'
                                                     }`}
                                                 >
                                                     <div className="flex items-center gap-3">
                                                         <div
-                                                            className={`flex h-10 w-10 items-center justify-center rounded-2xl ${
+                                                            className={`flex h-10 w-10 items-center justify-center rounded-card ${
                                                                 isActive
                                                                     ? isDark
-                                                                        ? 'bg-violet-400/15 text-violet-300'
+                                                                        ? 'bg-violet-400/15 text-violet-600 dark:text-violet-300'
                                                                         : 'bg-violet-100 text-violet-600'
                                                                     : isDark
-                                                                        ? 'bg-white/[0.05] text-slate-400'
-                                                                        : 'bg-slate-100 text-slate-500'
+                                                                        ? 'bg-hover text-fg-subtle'
+                                                                        : 'bg-hover text-fg-subtle'
                                                             }`}
                                                         >
                                                             <option.icon
@@ -373,13 +373,13 @@ export const WorkspaceOnboarding: React.FC<
                                                                 }
                                                             />
                                                         </div>
-                                                        <div className="text-sm font-bold">
+                                                        <div className="text-sm font-semibold">
                                                             {
                                                                 option.title
                                                             }
                                                         </div>
                                                     </div>
-                                                    <p className={`mt-3 text-xs leading-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                                    <p className={`mt-3 text-xs leading-6 ${isDark ? 'text-fg-subtle' : 'text-fg-subtle'}`}>
                                                         {
                                                             option.description
                                                         }
@@ -390,26 +390,26 @@ export const WorkspaceOnboarding: React.FC<
                                     </div>
                                 </div>
 
-                                <div className={`rounded-[1.6rem] border p-4 ${isDark ? 'border-white/10 bg-white/[0.035]' : 'border-slate-200 bg-slate-50'}`}>
-                                    <div className={`text-[10px] font-black uppercase tracking-[0.24em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                                <div className={`rounded-card border p-4 ${isDark ? 'border-line bg-hover' : 'border-line bg-sunken'}`}>
+                                    <div className={`text-[12px] font-semibold ${isDark ? 'text-fg-subtle' : 'text-fg-subtle'}`}>
                                         Preview
                                     </div>
-                                    <div className={`mt-3 flex items-center justify-between gap-4 rounded-[1.2rem] border px-4 py-3 ${
-                                        isDark ? 'border-white/8 bg-black/25' : 'border-slate-200 bg-white'
+                                    <div className={`mt-3 flex items-center justify-between gap-4 rounded-card border px-4 py-3 ${
+                                        isDark ? 'border-white/8 bg-black/25' : 'border-line bg-white'
                                     }`}>
                                         <div>
-                                            <div className="text-sm font-bold">
+                                            <div className="text-sm font-semibold">
                                                 {workspaceName.trim() ||
                                                     `${user.name}'s workspace`}
                                             </div>
-                                            <div className={`mt-1 font-mono text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                                            <div className={`mt-1 font-mono text-xs ${isDark ? 'text-fg-subtle' : 'text-fg-subtle'}`}>
                                                 txio/{workspaceSlug || 'workspace'}
                                             </div>
                                         </div>
-                                        <div className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${
+                                        <div className={`rounded-full border px-3 py-1 text-[12px] font-semibold ${
                                             isDark
-                                                ? 'border-white/10 bg-white/[0.04] text-slate-300'
-                                                : 'border-slate-200 bg-slate-100 text-slate-600'
+                                                ? 'border-line bg-hover text-fg-muted'
+                                                : 'border-line bg-hover text-fg-muted'
                                         }`}>
                                             {workspaceType}
                                         </div>
@@ -419,11 +419,7 @@ export const WorkspaceOnboarding: React.FC<
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className={`flex w-full items-center justify-center gap-2 rounded-[1.35rem] px-5 py-4 text-sm font-black uppercase tracking-[0.2em] text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 ${
-                                        isDark
-                                            ? 'bg-slate-900 dark:bg-white shadow-[0_25px_55px_-28px_rgba(163,163,163,0.85)]'
-                                            : 'bg-slate-900 shadow-[0_20px_45px_-25px_rgba(15,23,42,0.5)]'
-                                    }`}
+                                    className="flex w-full items-center justify-center gap-2 rounded-[10px] h-11 px-5 text-sm font-medium bg-inverse text-on-inverse transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                     {isSubmitting ? (
                                         <div className="h-5 w-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />

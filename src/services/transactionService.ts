@@ -174,6 +174,11 @@ export interface SimulationSummary {
     balanceChanges?: SimulationBalanceChange[];
     /** Estimated network fee, formatted with its unit; null when the chain's simulation doesn't report one. */
     fee: string | null;
+    /**
+     * Gas the run used, in the chain's own unit: net gas in MIST (Sui), gas
+     * units (EVM estimate, Aptos), compute units (Solana). `undefined` when not reported.
+     */
+    gasUsed?: number;
     /** Objects/accounts the call would touch, one short line each; empty when the chain doesn't report them. */
     touched: string[];
     /** Events/logs emitted during the simulated run; empty when the chain doesn't report them. */
@@ -296,9 +301,8 @@ export const summarizeSimulation = (
             };
         });
         const gas = result?.effects?.gasUsed;
-        const fee = gas
-            ? `${formatBaseUnits(BigInt(gas.computationCost) + BigInt(gas.storageCost) - BigInt(gas.storageRebate), 9)} SUI`
-            : null;
+        const netGas = gas ? BigInt(gas.computationCost) + BigInt(gas.storageCost) - BigInt(gas.storageRebate) : undefined;
+        const fee = netGas !== undefined ? `${formatBaseUnits(netGas, 9)} SUI` : null;
         const touched = (result?.objectChanges ?? [])
             .slice(0, MAX_LIST)
             .map((c) => `${c.type ?? 'changed'} ${short(c.objectType ?? c.packageId ?? '')} ${short(c.objectId ?? '')}`.trim());
@@ -307,6 +311,7 @@ export const summarizeSimulation = (
             ...base,
             balanceChanges,
             fee,
+            ...(netGas !== undefined ? { gasUsed: Number(netGas) } : {}),
             touched,
             events,
             sources: { balanceChanges: balanceChanges ? 'dry-run balance changes' : undefined },
@@ -400,7 +405,11 @@ export const summarizeSimulation = (
         // units — no gas price is fetched, so it can't be shown as a currency.
         const gas = result?.gasEstimate;
         const fee = gas !== undefined && gas !== null ? `~${gas} gas` : null;
-        return { ...base, balanceChanges, fee, touched: [], events, stateDiff, sources, warnings };
+        const gasUsed = gas !== undefined && gas !== null ? Number(gas) : undefined;
+        return {
+            ...base, balanceChanges, fee, ...(gasUsed !== undefined && Number.isFinite(gasUsed) ? { gasUsed } : {}),
+            touched: [], events, stateDiff, sources, warnings
+        };
     }
 
     if (chain === 'solana') {
@@ -424,6 +433,7 @@ export const summarizeSimulation = (
             ...base,
             balanceChanges,
             fee,
+            ...(typeof result?.unitsConsumed === 'number' ? { gasUsed: result.unitsConsumed } : {}),
             touched: [],
             events: (result?.logs ?? []).slice(0, MAX_LIST),
             sources: {
@@ -483,6 +493,7 @@ export const summarizeSimulation = (
             ...base,
             balanceChanges,
             fee,
+            ...(result?.gas_used ? { gasUsed: Number(result.gas_used) } : {}),
             touched,
             events,
             sources: {

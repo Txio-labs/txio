@@ -5,6 +5,7 @@
  * join them rather than getting four separate near-empty pages).
  */
 import React, { useEffect, useState } from 'react';
+import { Select } from '@/components/Select';
 import { AlertTriangle, Bell, Clock, KeyRound, ShieldCheck } from 'lucide-react';
 import { useWallet } from '@/wallet';
 import { LimitsTab } from './automation/LimitsTab';
@@ -37,26 +38,26 @@ export const AutomationPage: React.FC = () => {
     const selectedWallet = wallets.find((w) => `${w.family}:${w.address}` === selectedWalletKey) ?? null;
 
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-near-black font-sans">
-            <div className="px-6 py-5 border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-dark-indigo-glow/50 shrink-0">
-                <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-3">
-                    <ShieldCheck size={22} className="text-electric-violet" />
-                    Automation &amp; Safety
+        <div className="flex flex-col h-full bg-surface font-sans">
+            <div className="px-6 md:px-8 pt-7 pb-5 border-b border-line shrink-0">
+                <h1 className="text-[22px] font-semibold tracking-[-0.03em] text-fg flex items-center gap-3">
+<span className="h-9 w-9 rounded-[9px] border border-line bg-surface shadow-card flex items-center justify-center text-fg-muted shrink-0"><ShieldCheck size={16} /></span>
+Automation &amp; Safety
                 </h1>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-[14px] text-fg-muted mt-1.5">
                     Spend limits, delegated signing for automations, scheduled/conditional execution, and webhook alerts.
                 </p>
 
                 <div className="flex gap-3 items-center mt-4 flex-wrap">
-                    <div className="flex bg-white dark:bg-near-black p-1 rounded-lg border border-slate-200 dark:border-white/5">
+                    <div className="inline-flex bg-hover p-0.5 rounded-[9px] border border-line gap-0.5">
                         {TABS.map(({ id, label, icon: Icon }) => (
                             <button
                                 key={id}
                                 onClick={() => setTab(id)}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${
+                                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                                     tab === id
-                                        ? 'bg-electric-violet/10 text-electric-violet'
-                                        : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                                        ? 'bg-hover text-fg'
+                                        : 'text-fg-subtle hover:text-fg'
                                 }`}
                             >
                                 <Icon size={13} />
@@ -66,17 +67,17 @@ export const AutomationPage: React.FC = () => {
                     </div>
 
                     {wallets.length > 0 && tab === 'limits' && (
-                        <select
-                            value={selectedWalletKey ?? ''}
-                            onChange={(e) => setSelectedWalletKey(e.target.value)}
-                            className="h-9 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-electric-violet"
-                        >
-                            {wallets.map((w) => (
-                                <option key={`${w.family}:${w.address}`} value={`${w.family}:${w.address}`}>
-                                    {w.family.toUpperCase()} · {w.address.slice(0, 6)}...{w.address.slice(-4)}
-                                </option>
-                            ))}
-                        </select>
+                        <div className="w-52">
+                            <Select
+                                value={selectedWalletKey ?? ''}
+                                options={wallets.map((w) => ({
+                                    label: `${w.family.toUpperCase()} · ${w.address.slice(0, 6)}...${w.address.slice(-4)}`,
+                                    value: `${w.family}:${w.address}`
+                                }))}
+                                onChange={setSelectedWalletKey}
+                                fullWidth
+                            />
+                        </div>
                     )}
                 </div>
             </div>
@@ -99,9 +100,9 @@ export const AutomationPage: React.FC = () => {
 
 const EmptyWalletState: React.FC = () => (
     <div className="flex flex-col items-center justify-center h-full text-center p-6">
-        <AlertTriangle size={28} className="text-slate-400 mb-3" />
-        <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">No wallet linked</p>
-        <p className="text-xs text-slate-500 mt-1 max-w-xs">
+        <AlertTriangle size={28} className="text-fg-subtle mb-3" />
+        <p className="text-sm font-semibold text-fg">No wallet linked</p>
+        <p className="text-xs text-fg-subtle mt-1 max-w-xs">
             Connect a wallet to set spend limits for it.
         </p>
     </div>

@@ -376,10 +376,14 @@ export const getWalletExplorerUrl = (
         }
     }
 
+    if (wallet.family === 'aptos') {
+        const network = wallet.chain.network.toLowerCase();
+        if (network.includes('local')) return null;
+        const query = network === 'mainnet' ? '' : `?network=${network}`;
+        return `https://explorer.aptoslabs.com/account/${wallet.address}${query}`;
+    }
+
     if (wallet.family !== 'stellar') {
-        // No explorer mapping exists for this wallet family yet (e.g. Aptos) —
-        // return null rather than silently building a wrong (Stellar-shaped)
-        // URL for an address format it doesn't belong to.
         return null;
     }
 
@@ -397,15 +401,12 @@ export const getWalletExplorerUrl = (
     return `https://stellar.expert/explorer/${networkPath}/account/${wallet.address}`;
 };
 
-export const getFamilyLabel = (
-    family: WalletChainFamily
-) => {
-    switch (family) {
-        case 'evm':
-            return 'EVM';
-        case 'sui':
-            return 'Sui';
-        case 'stellar':
-            return 'Stellar';
-    }
+const FAMILY_LABELS: Record<WalletChainFamily, string> = {
+    evm: 'EVM',
+    sui: 'Sui',
+    stellar: 'Stellar',
+    solana: 'Solana',
+    aptos: 'Aptos'
 };
+
+export const getFamilyLabel = (family: WalletChainFamily): string => FAMILY_LABELS[family];

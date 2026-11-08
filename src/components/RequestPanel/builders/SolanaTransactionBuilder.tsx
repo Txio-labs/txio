@@ -29,8 +29,8 @@ const DEFAULT_SOLANA_TX_PARAMS: SolanaTxParams = {
 };
 
 const fieldClass =
-  'w-full bg-white dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-slate-700 dark:text-slate-200 focus:border-electric-violet focus:outline-none transition-colors';
-const labelClass = 'block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1.5';
+  'w-full bg-surface border border-line rounded-lg px-3 py-2 text-xs font-mono text-fg focus:border-line-strong focus:outline-none transition-colors';
+const labelClass = 'block text-[12px] font-semibold text-fg-subtle mb-1.5';
 
 export const SolanaTransactionBuilder: React.FC<SolanaTransactionBuilderProps> = ({
   request,
@@ -153,12 +153,12 @@ export const SolanaTransactionBuilder: React.FC<SolanaTransactionBuilderProps> =
   };
 
   return (
-    <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black/40 space-y-5">
+    <div className="p-4 rounded-[10px] border border-line bg-sunken space-y-5">
       <div className="flex items-center justify-between">
-        <div className="text-sm font-bold text-slate-700 dark:text-slate-200">Solana instruction</div>
+        <div className="text-sm font-semibold text-fg">Solana instruction</div>
         <div className="flex items-center gap-3">
           {activeAddress && (
-            <div className="flex items-center gap-2 px-2.5 py-1 bg-white dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-full text-[10px] font-mono text-emerald-500 dark:text-emerald-400">
+            <div className="flex items-center gap-2 px-2.5 py-1 bg-surface border border-line rounded-full text-[12px] font-mono text-emerald-500 dark:text-emerald-400">
               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
               Signer: {activeAddress.slice(0, 4)}...{activeAddress.slice(-4)}
             </div>
@@ -167,7 +167,7 @@ export const SolanaTransactionBuilder: React.FC<SolanaTransactionBuilderProps> =
             type="button"
             onClick={() => setManual((m) => !m)}
             disabled={isReadOnly}
-            className="text-[11px] text-electric-violet hover:opacity-80 disabled:opacity-50"
+            className="text-[12px] text-fg hover:opacity-80 disabled:opacity-50"
           >
             {manual ? 'Use program IDL' : 'Enter manually'}
           </button>
@@ -193,20 +193,20 @@ export const SolanaTransactionBuilder: React.FC<SolanaTransactionBuilderProps> =
               onClick={() => isSolanaProgramId(programId) && void loadIdl(programId)}
               disabled={isReadOnly || !isSolanaProgramId(programId) || view.status === 'loading'}
               aria-label="Reload program IDL"
-              className="p-2 text-slate-500 hover:text-electric-violet transition-colors disabled:opacity-50"
+              className="p-2 text-fg-subtle hover:text-fg transition-colors disabled:opacity-50"
             >
               <RefreshCw size={14} className={view.status === 'loading' ? 'animate-spin' : ''} />
             </button>
           )}
         </div>
         {!manual && view.status === 'idle' && (
-          <p className="mt-1.5 text-[11px] text-slate-500">Enter a program ID to load its instructions from the on-chain Anchor IDL.</p>
+          <p className="mt-1.5 text-[12px] text-fg-subtle">Enter a program ID to load its instructions from the on-chain Anchor IDL.</p>
         )}
         {!manual && view.status === 'loading' && (
-          <p className="mt-1.5 text-[11px] text-slate-500">Loading program IDL from {network}…</p>
+          <p className="mt-1.5 text-[12px] text-fg-subtle">Loading program IDL from {network}…</p>
         )}
         {!manual && view.status === 'error' && (
-          <p role="alert" className="mt-1.5 text-[11px] text-rose-500">
+          <p role="alert" className="mt-1.5 text-[12px] text-rose-500">
             {view.message} You can still{' '}
             <button type="button" onClick={() => setManual(true)} className="underline">build the instruction manually</button>.
           </p>
@@ -233,7 +233,7 @@ export const SolanaTransactionBuilder: React.FC<SolanaTransactionBuilderProps> =
           <div className="space-y-2">
             {selectedInstruction.parameters.map((p, idx) => (
               <div key={`${selectedInstruction.name}-${idx}`}>
-                <div className="text-[10px] font-mono text-slate-500 mb-1">
+                <div className="text-[12px] font-mono text-fg-subtle mb-1">
                   {p.name}: {p.type}
                 </div>
                 <input
@@ -247,9 +247,9 @@ export const SolanaTransactionBuilder: React.FC<SolanaTransactionBuilderProps> =
               </div>
             ))}
           </div>
-          {encodeError && <p className="mt-1.5 text-[11px] text-rose-500">{encodeError}</p>}
+          {encodeError && <p className="mt-1.5 text-[12px] text-rose-500">{encodeError}</p>}
           {unsupportedParams.length > 0 && (
-            <p className="mt-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-[10px] text-amber-700 dark:text-amber-400">
+            <p className="mt-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-[12px] text-amber-700 dark:text-amber-400">
               {unsupportedParams.map((p) => `${p.name} (${p.type})`).join(', ')} can&apos;t be encoded by this form yet. Enter the instruction data by hand below.
             </p>
           )}
@@ -258,12 +258,12 @@ export const SolanaTransactionBuilder: React.FC<SolanaTransactionBuilderProps> =
 
       <div>
         <div className="flex justify-between items-center mb-1.5">
-          <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">
+          <label className="text-[12px] font-semibold text-fg-subtle">
             Accounts
           </label>
           <button
             onClick={addAccount}
-            className="text-xs flex items-center gap-1 text-electric-violet hover:opacity-80"
+            className="text-xs flex items-center gap-1 text-fg hover:opacity-80"
           >
             <Plus size={12} /> Add Account
           </button>
@@ -278,35 +278,35 @@ export const SolanaTransactionBuilder: React.FC<SolanaTransactionBuilderProps> =
                 placeholder={selectedInstruction?.accounts?.[idx]?.name ?? 'Account pubkey'}
                 title={selectedInstruction?.accounts?.[idx]?.name}
               />
-              <label className="flex items-center gap-1.5 text-[10px] text-slate-500 shrink-0 whitespace-nowrap">
+              <label className="flex items-center gap-1.5 text-[12px] text-fg-subtle shrink-0 whitespace-nowrap">
                 <input
                   type="checkbox"
                   checked={account.isSigner}
                   onChange={(e) => updateAccount(idx, { isSigner: e.target.checked })}
-                  className="accent-electric-violet"
+                  className="accent-zinc-500"
                 />
                 Signer
               </label>
-              <label className="flex items-center gap-1.5 text-[10px] text-slate-500 shrink-0 whitespace-nowrap">
+              <label className="flex items-center gap-1.5 text-[12px] text-fg-subtle shrink-0 whitespace-nowrap">
                 <input
                   type="checkbox"
                   checked={account.isWritable}
                   onChange={(e) => updateAccount(idx, { isWritable: e.target.checked })}
-                  className="accent-electric-violet"
+                  className="accent-zinc-500"
                 />
                 Writable
               </label>
               <button
                 onClick={() => removeAccount(idx)}
-                className="p-2 text-slate-500 hover:text-rose-500 transition-colors shrink-0"
+                className="p-2 text-fg-subtle hover:text-rose-500 transition-colors shrink-0"
               >
                 <Trash2 size={14} />
               </button>
             </div>
           ))}
           {params.accounts.length === 0 && (
-            <div className="text-center py-4 bg-white dark:bg-near-black border border-dashed border-slate-200 dark:border-white/10 rounded-lg">
-              <span className="text-xs text-slate-500">No accounts defined.</span>
+            <div className="text-center py-4 bg-surface border border-dashed border-line rounded-lg">
+              <span className="text-xs text-fg-subtle">No accounts defined.</span>
             </div>
           )}
         </div>
@@ -314,7 +314,7 @@ export const SolanaTransactionBuilder: React.FC<SolanaTransactionBuilderProps> =
 
       <div>
         <div className="flex justify-between items-center mb-1.5">
-          <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">
+          <label className="text-[12px] font-semibold text-fg-subtle">
             Instruction Data
           </label>
           <div className="flex items-center gap-1">
@@ -322,10 +322,10 @@ export const SolanaTransactionBuilder: React.FC<SolanaTransactionBuilderProps> =
               <button
                 key={enc}
                 onClick={() => updateParams({ dataEncoding: enc })}
-                className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase transition-colors ${
+                className={`px-2 py-0.5 rounded text-[12px] font-semibold uppercase transition-colors ${
                   params.dataEncoding === enc
-                    ? 'bg-electric-violet/15 text-electric-violet'
-                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                    ? 'bg-active text-fg'
+                    : 'text-fg-subtle hover:text-fg'
                 }`}
               >
                 {enc}
@@ -345,12 +345,12 @@ export const SolanaTransactionBuilder: React.FC<SolanaTransactionBuilderProps> =
                 : 'Raw UTF-8 instruction data'
           }
         />
-        <p className="text-[10px] text-slate-500 leading-relaxed mt-1.5">
+        <p className="text-[12px] text-fg-subtle leading-relaxed mt-1.5">
           Leave empty for instructions that take no data (e.g. a fixed-purpose counter increment).
         </p>
       </div>
 
-      <div className="flex items-center gap-2 pt-1 border-t border-slate-200 dark:border-white/10 text-[10px] text-slate-500 mt-3">
+      <div className="flex items-center gap-2 pt-1 border-t border-line text-[12px] text-fg-subtle mt-3">
         <Zap size={12} className="text-amber-500 shrink-0" />
         This builds and submits a real, signed transaction via your connected Solana wallet — it is not a simulation.
       </div>

@@ -10,6 +10,16 @@ interface TestsEditorProps {
   results?: AssertionResult[];
 }
 
+/**
+ * `subject::expected` for JSON-path and balance-change checks. A balance
+ * subject splits on the last `::`, since Aptos coin types contain it.
+ */
+const splitTwoPart = (target: string, value: string | undefined): [string, string] => {
+  const raw = value ?? '';
+  const sep = target === 'balance_change' ? raw.lastIndexOf('::') : raw.indexOf('::');
+  return sep === -1 ? [raw, ''] : [raw.slice(0, sep), raw.slice(sep + 2)];
+};
+
 export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange, results = [] }) => {
   const resultsById = new Map(results.map((r) => [r.id, r]));
   const addTest = () => {
@@ -46,6 +56,7 @@ export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange, 
         { label: 'Status (Success/Fail)', value: 'tx_status' },
         { label: 'Abort Code', value: 'abort_code' },
         { label: 'Gas Used', value: 'gas_used' },
+        { label: 'Balance Change', value: 'balance_change' },
         { label: 'Sender Address', value: 'sender' }
       ];
       case 'object': return [
@@ -62,17 +73,17 @@ export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange, 
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="p-4 md:p-6 w-full">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">Assertions</h3>
-          <p className="text-xs text-slate-500 mt-1">
+          <h3 className="text-sm font-semibold text-fg">Assertions</h3>
+          <p className="text-xs text-fg-subtle mt-1">
             Define rules to automatically validate the execution result.
           </p>
         </div>
         <button 
           onClick={addTest}
-          className="text-xs font-bold flex items-center gap-1.5 bg-slate-900 dark:bg-white hover:opacity-90 text-white dark:text-near-black px-3 py-1.5 rounded transition-colors"
+          className="text-xs font-semibold flex items-center gap-1.5 bg-inverse hover:opacity-90 text-on-inverse px-3 py-1.5 rounded transition-colors"
         >
           <Plus size={12} strokeWidth={3}/> Add Test
         </button>
@@ -80,10 +91,10 @@ export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange, 
 
       {results.length > 0 && (
         <div
-          className={`mb-4 text-xs font-bold px-3 py-2 rounded-lg border ${
+          className={`mb-4 text-xs font-semibold px-3 py-2 rounded-lg border ${
             results.every((r) => r.passed)
-              ? 'text-emerald-400 border-emerald-900/30 bg-emerald-900/10'
-              : 'text-red-400 border-red-900/30 bg-red-900/10'
+              ? 'text-emerald-600 dark:text-emerald-400 border-emerald-900/30 bg-emerald-900/10'
+              : 'text-red-600 dark:text-red-400 border-red-900/30 bg-red-900/10'
           }`}
         >
           {results.filter((r) => r.passed).length}/{results.length} assertions passed on last run
@@ -94,22 +105,22 @@ export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange, 
         {tests.map((test, idx) => {
           const result = resultsById.get(test.id);
           return (
-          <div key={test.id} className="group flex items-start gap-3 p-3 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 rounded-lg hover:border-slate-300 dark:hover:border-white/20 transition-all">
+          <div key={test.id} className="group flex items-start gap-3 p-3 bg-elevated border border-line rounded-lg hover:border-line-strong transition-all">
             <div className="pt-2">
               <input
                 type="checkbox"
                 checked={test.enabled}
                 onChange={() => updateTest(idx, { enabled: !test.enabled })}
-                className="accent-electric-violet cursor-pointer"
+                className="accent-zinc-500 cursor-pointer"
               />
             </div>
 
             {result && (
               <div className="pt-2" title={result.message}>
                 {result.passed ? (
-                  <CheckCircle2 size={14} className="text-emerald-400" />
+                  <CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400" />
                 ) : (
-                  <XCircle size={14} className="text-red-400" />
+                  <XCircle size={14} className="text-red-600 dark:text-red-400" />
                 )}
               </div>
             )}
@@ -117,7 +128,7 @@ export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange, 
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-3">
               {/* Category */}
               <div className="sm:col-span-2">
-                <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Subject</label>
+                <label className="text-xs font-medium text-fg-muted uppercase block mb-1">Subject</label>
                 <Select 
                   className="w-full"
                   value={test.category}
@@ -140,7 +151,7 @@ export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange, 
 
               {/* Target Field */}
               <div className="sm:col-span-3">
-                <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Property</label>
+                <label className="text-xs font-medium text-fg-muted uppercase block mb-1">Property</label>
                 <Select 
                   className="w-full"
                   value={test.target}
@@ -154,7 +165,7 @@ export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange, 
 
               {/* Operator */}
               <div className="sm:col-span-2">
-                <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Condition</label>
+                <label className="text-xs font-medium text-fg-muted uppercase block mb-1">Condition</label>
                 <Select 
                   className="w-full"
                   value={test.operator}
@@ -176,17 +187,22 @@ export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange, 
 
               {/* Expected Value */}
               <div className="sm:col-span-5">
-                <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">
-                  {test.target === 'json_path' ? 'Key Path (e.g. result.digest)' : 'Expected Value'}
+                <label className="text-xs font-medium text-fg-muted uppercase block mb-1">
+                  {test.target === 'json_path'
+                    ? 'Key Path (e.g. result.digest)'
+                    : test.target === 'balance_change'
+                      ? 'Asset@account, signed change (e.g. APT@0x1…, -0.5)'
+                      : 'Expected Value'}
                 </label>
                 <div className="flex gap-2">
-                  {test.target === 'json_path' && (
+                  {(test.target === 'json_path' || test.target === 'balance_change') && (
                     <input 
-                      placeholder="Path..." 
-                      className="w-1/2 bg-white dark:bg-[#111] border border-slate-200 dark:border-white/10 rounded px-2 py-1.5 text-xs text-electric-violet font-mono outline-none focus:border-electric-violet"
-                      value={test.value?.split('::')[0] || ''}
+                      placeholder={test.target === 'balance_change' ? 'APT@0x…' : 'Path...'}
+                      aria-label={test.target === 'balance_change' ? 'Asset and account' : 'Key path'} 
+                      className="w-1/2 bg-surface border border-line rounded px-2 py-1.5 text-xs text-fg font-mono outline-none focus:border-line-strong"
+                      value={splitTwoPart(test.target, test.value)[0]}
                       onChange={(e) => {
-                        const val = test.value?.split('::')[1] || '';
+                        const val = splitTwoPart(test.target, test.value)[1];
                         updateTest(idx, { value: `${e.target.value}::${val}` });
                       }}
                     />
@@ -194,11 +210,11 @@ export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange, 
                   <input 
                     placeholder={test.operator === 'exists' ? 'N/A' : 'Value...'}
                     disabled={test.operator === 'exists' || test.operator === 'not_exists'}
-                    className={`flex-1 bg-white dark:bg-[#111] border border-slate-200 dark:border-white/10 rounded px-2 py-1.5 text-xs text-slate-900 dark:text-white font-mono outline-none focus:border-electric-violet ${test.target === 'json_path' ? 'w-1/2' : 'w-full'}`}
-                    value={test.target === 'json_path' ? (test.value?.split('::')[1] || '') : (test.value || '')}
+                    className={`flex-1 bg-surface border border-line rounded px-2 py-1.5 text-xs text-fg font-mono outline-none focus:border-line-strong ${test.target === 'json_path' || test.target === 'balance_change' ? 'w-1/2' : 'w-full'}`}
+                    value={test.target === 'json_path' || test.target === 'balance_change' ? splitTwoPart(test.target, test.value)[1] : (test.value || '')}
                     onChange={(e) => {
-                      if (test.target === 'json_path') {
-                        const path = test.value?.split('::')[0] || '';
+                      if (test.target === 'json_path' || test.target === 'balance_change') {
+                        const path = splitTwoPart(test.target, test.value)[0];
                         updateTest(idx, { value: `${path}::${e.target.value}` });
                       } else {
                         updateTest(idx, { value: e.target.value });
@@ -209,20 +225,20 @@ export const TestsEditor: React.FC<TestsEditorProps> = ({ tests = [], onChange, 
               </div>
             </div>
 
-            <button onClick={() => removeTest(idx)} aria-label="Remove test" title="Remove test" className="mt-6 text-slate-600 hover:text-red-400 p-1 transition-colors">
+            <button onClick={() => removeTest(idx)} aria-label="Remove test" title="Remove test" className="mt-6 text-fg-muted hover:text-red-400 p-1 transition-colors">
               <X size={14}/>
             </button>
           </div>
           );
         })}
         {tests.length === 0 && (
-          <div className="text-center py-12 border-2 border-dashed border-slate-200 dark:border-white/5 rounded-xl bg-slate-100/70 dark:bg-white/[0.02]">
-            <Beaker size={32} className="mx-auto text-slate-600 mb-3" />
-            <p className="text-sm font-bold text-slate-400">No tests defined</p>
-            <p className="text-xs text-slate-600 mt-1 max-w-sm mx-auto">
+          <div className="text-center py-12 border-2 border-dashed border-line rounded-[10px] bg-hover">
+            <Beaker size={32} className="mx-auto text-fg-muted mb-3" />
+            <p className="text-sm font-semibold text-fg-subtle">No tests defined</p>
+            <p className="text-xs text-fg-muted mt-1 max-w-sm mx-auto">
               Add tests to verify transaction status, gas usage, events, or specific data fields in the response.
             </p>
-            <button onClick={addTest} className="mt-4 text-xs font-bold text-electric-violet hover:opacity-80">
+            <button onClick={addTest} className="mt-4 text-xs font-semibold text-fg hover:opacity-80">
               + Create your first test
             </button>
           </div>

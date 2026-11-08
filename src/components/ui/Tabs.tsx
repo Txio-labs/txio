@@ -58,11 +58,11 @@ export const Tab: React.FC<TabProps> = ({ title, isActive, onSelect, onClose, on
     return (
         <div
             className={`
-                group flex items-center gap-2 px-3 py-2 text-xs cursor-pointer border-r border-slate-200 dark:border-white/[0.06]
-                transition-colors select-none min-w-[120px] max-w-[220px] relative
+                group relative flex items-center gap-2 h-full pl-3 pr-1.5 text-xs cursor-pointer rounded-t-[8px]
+                transition-colors select-none min-w-[120px] max-w-[220px] border border-b-0
                 ${isActive
-                    ? 'bg-white dark:bg-dark-indigo-glow text-slate-900 dark:text-slate-100'
-                    : 'bg-slate-50 dark:bg-near-black text-slate-500 hover:bg-slate-100/70 dark:hover:bg-white/[0.02] hover:text-slate-600 dark:text-slate-300'}
+                    ? 'bg-surface text-fg border-line -mb-px z-[1]'
+                    : 'border-transparent text-fg-subtle hover:text-fg hover:bg-hover'}
             `}
             onClick={onSelect}
             onDoubleClick={handleDoubleClick}
@@ -71,7 +71,7 @@ export const Tab: React.FC<TabProps> = ({ title, isActive, onSelect, onClose, on
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(); }}
         >
-            {icon && <span className={`flex-shrink-0 transition-colors ${isActive ? 'text-electric-violet' : 'text-slate-600 group-hover:text-slate-500'}`}>{icon}</span>}
+            {icon && <span className={`flex-shrink-0 transition-colors ${isActive ? 'text-fg-muted' : 'text-fg-subtle'}`}>{icon}</span>}
 
             {isEditing ? (
                 <input
@@ -81,21 +81,19 @@ export const Tab: React.FC<TabProps> = ({ title, isActive, onSelect, onClose, on
                     onBlur={finishEditing}
                     onKeyDown={handleKeyDown}
                     onClick={(e) => e.stopPropagation()}
-                    className="flex-1 bg-slate-100 dark:bg-white/[0.04] text-slate-900 dark:text-white border border-electric-violet/40 focus:border-electric-violet focus:outline-none min-w-0 px-1.5 py-0.5 rounded font-sans"
+                    className="flex-1 bg-sunken text-fg border border-line-strong focus:outline-none min-w-0 px-1.5 py-0.5 rounded-md"
                 />
             ) : (
-                <span className="truncate flex-1 font-sans font-medium tracking-tight">{title}</span>
+                <span className="truncate flex-1 font-medium">{title}</span>
             )}
 
             <button
                 onClick={(e) => { e.stopPropagation(); onClose(); }}
-                className={`flex-shrink-0 p-1 rounded hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:text-slate-100 transition-all ${isActive ? 'opacity-70' : 'opacity-0 group-hover:opacity-70'}`}
+                className={`flex-shrink-0 h-5 w-5 inline-flex items-center justify-center rounded-[5px] text-fg-subtle hover:bg-active hover:text-fg transition-opacity ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
                 aria-label="Close tab"
             >
                 <X size={11} />
             </button>
-
-            {isActive && <div className="absolute bottom-0 left-0 right-0 h-px bg-electric-violet"></div>}
         </div>
     );
 };

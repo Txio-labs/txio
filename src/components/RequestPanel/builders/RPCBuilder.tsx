@@ -341,17 +341,18 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
   }, [resolution, request, onChange]);
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+    <div className="space-y-6 animate-in fade-in">
       {/* RPC Method Selection */}
-      <div className="bg-slate-100 dark:bg-near-black/40 backdrop-blur-sm p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-1.5 h-6 bg-emerald-500 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.4)]"></div>
-          <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-[0.2em]">RPC Method</h3>
+      <section>
+        <div className="flex items-baseline justify-between mb-3">
+          <h3 className="text-[14px] font-semibold text-fg">RPC method</h3>
+          <span className="text-xs text-fg-subtle">Pick a chain, then search its methods</span>
         </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
 
         {/* Chain selector — scopes the method suggestions and "Insert template" below. */}
-        <div className="mb-4">
-          <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-2">
+        <div>
+          <label className="block text-xs font-medium text-fg-muted mb-1.5">
             Chain
           </label>
           <Select
@@ -359,7 +360,6 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
             onChange={(value) => setChain(value as ChainId)}
             options={RPC_CHAINS.map((c) => ({ label: c.label, value: c.id }))}
             fullWidth
-            variant="glass"
           />
         </div>
 
@@ -367,8 +367,8 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
             All of these speak the same eth_* methods; this only changes
             which RPC endpoint gets hit. */}
         {chain === 'evm' && (
-          <div className="mb-4">
-            <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-2">
+          <div>
+            <label className="block text-xs font-medium text-fg-muted mb-1.5">
               Network
             </label>
             <Select
@@ -381,7 +381,6 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
               }
               options={EVM_CHAINS.map((c) => ({ label: c.name, value: String(c.id) }))}
               fullWidth
-              variant="glass"
             />
           </div>
         )}
@@ -391,18 +390,18 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
             instruction builder that signs and submits via the connected
             wallet, instead of a read-only RPC call. */}
         {chain === 'solana' && (
-          <div className="mb-4">
-            <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-2">
+          <div>
+            <label className="block text-xs font-medium text-fg-muted mb-1.5">
               Mode
             </label>
-            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-xl">
+            <div className="grid grid-cols-2 gap-0.5 p-0.5 h-8 bg-hover border border-line rounded-[9px]">
               <button
                 type="button"
                 onClick={() => setSolanaTxMode(false)}
-                className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-colors ${
+                className={`flex items-center justify-center gap-1.5 rounded-[7px] text-xs font-medium transition-colors ${
                   !isSolanaTxMode
-                    ? 'bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                    ? 'bg-surface text-fg border border-line'
+                    : 'text-fg-subtle hover:text-fg'
                 }`}
               >
                 <TerminalIcon size={12} /> Read (RPC)
@@ -410,10 +409,10 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
               <button
                 type="button"
                 onClick={() => setSolanaTxMode(true)}
-                className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-colors ${
+                className={`flex items-center justify-center gap-1.5 rounded-[7px] text-xs font-medium transition-colors ${
                   isSolanaTxMode
-                    ? 'bg-white dark:bg-white/10 text-purple-500 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                    ? 'bg-surface text-fg border border-line'
+                    : 'text-fg-subtle hover:text-fg'
                 }`}
               >
                 <Zap size={12} /> Transaction
@@ -422,11 +421,13 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
           </div>
         )}
 
+        </div>
+
         <div className={isSolanaTxMode ? 'hidden' : 'relative'} ref={methodFieldRef}>
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 z-10" size={16} />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-fg-subtle z-10" size={15} />
           <input
             type="text"
-            className="w-full bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-white focus:border-electric-violet focus:outline-none transition-all font-mono"
+            className="w-full bg-sunken border border-line rounded-[10px] pl-10 pr-4 h-11 text-[14px] text-fg placeholder:text-fg-subtle focus:border-line-strong focus:ring-4 focus:ring-[var(--hover)] focus:outline-none transition-all font-mono"
             placeholder={`e.g. ${methodsForChain[0] ?? 'method_name'}`}
             value={request.rpcParams.method}
             autoComplete="off"
@@ -474,7 +475,7 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
             createPortal(
               <div
                 ref={methodMenuRef}
-                className="fixed max-h-64 overflow-y-auto custom-scrollbar rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] shadow-2xl z-[200]"
+                className="fixed max-h-64 overflow-y-auto custom-scrollbar rounded-[10px] border border-line bg-elevated shadow-pop z-[200]"
                 style={{ top: menuRect.top, left: menuRect.left, width: menuRect.width }}
               >
                 {filteredMethods.map((m, i) => {
@@ -488,10 +489,10 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
                     onMouseEnter={() => setHighlightedIndex(i)}
                     className={`w-full flex items-center justify-between gap-2 px-4 py-2.5 text-left font-mono text-xs transition-colors ${
                       i === clampedHighlightedIndex
-                        ? 'bg-electric-violet/10 text-electric-violet'
+                        ? 'bg-hover text-fg'
                         : isSelected
-                          ? 'text-electric-violet'
-                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5'
+                          ? 'text-fg'
+                          : 'text-fg-muted hover:bg-hover'
                     }`}
                   >
                     <span className="flex items-center gap-1.5 min-w-0">
@@ -499,7 +500,7 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
                       <span className="truncate">{m}</span>
                     </span>
                     {m in templatesForChain && (
-                      <span className="shrink-0 text-[9px] font-sans font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                      <span className="shrink-0 text-[12px] font-sans font-semibold uppercase tracking-wide text-fg-subtle">
                         template
                       </span>
                     )}
@@ -510,7 +511,7 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
               document.body
             )}
         </div>
-      </div>
+      </section>
 
       {isSolanaTxMode ? (
         <SolanaTransactionBuilder
@@ -521,13 +522,13 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
         />
       ) : (
         <div className="flex flex-col h-96">
-          <div className="flex justify-between items-center mb-3 px-1 gap-3">
-            <label className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em]">
-              Parameters (JSON Array)
+          <div className="flex justify-between items-center mb-2 gap-3">
+            <label className="text-[14px] font-semibold text-fg">
+              Parameters <span className="font-normal text-fg-subtle">JSON array</span>
             </label>
             <div className="flex items-center gap-3">
               {jsonError && (
-                <span className="flex items-center gap-1 text-[10px] text-red-400 font-semibold">
+                <span className="flex items-center gap-1 text-[12px] text-red-600 dark:text-red-400 font-semibold">
                   <AlertCircle size={11} />
                   {jsonError}
                 </span>
@@ -536,7 +537,7 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
                 <button
                   type="button"
                   onClick={() => applyParamsTemplate(request.rpcParams.method)}
-                  className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-electric-violet hover:opacity-80 uppercase tracking-wider transition-colors px-2 py-1 rounded-md hover:bg-electric-violet/[0.06]"
+                  className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-fg hover:opacity-80 transition-colors px-2 py-1 rounded-md hover:bg-active"
                   title="Replace params with the default template for this method"
                 >
                   <FileCode size={11} />
@@ -545,7 +546,7 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
               )}
             </div>
           </div>
-          <div className={`flex-1 relative rounded-xl overflow-hidden ${jsonError ? 'ring-1 ring-red-500/40' : ''}`}>
+          <div className={`flex-1 relative rounded-[10px] overflow-hidden border ${jsonError ? 'border-red-500/40' : 'border-line'}`}>
             <JsonEditor
               value={displayJson}
               onChange={updateRpcParams}
@@ -569,16 +570,16 @@ const SuiNsHint: React.FC<{
 }> = ({ resolution, onApply }) => {
   if (resolution.status === 'resolving') {
     return (
-      <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-100/70 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06] text-xs text-slate-400">
-        <Loader2 size={12} className="animate-spin text-electric-violet" />
-        Resolving <span className="font-mono text-slate-600 dark:text-slate-300">{resolution.name}</span>…
+      <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-hover border border-line text-xs text-fg-subtle">
+        <Loader2 size={12} className="animate-spin text-fg" />
+        Resolving <span className="font-mono text-fg-muted">{resolution.name}</span>…
       </div>
     );
   }
 
   if (resolution.status === 'error') {
     return (
-      <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-rose-500/[0.06] border border-rose-500/20 text-xs text-rose-300">
+      <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-rose-500/[0.06] border border-rose-500/20 text-xs text-rose-600 dark:text-rose-300">
         <AlertCircle size={12} className="shrink-0" />
         <span>
           Could not resolve <span className="font-mono">{resolution.name}</span>
@@ -590,15 +591,15 @@ const SuiNsHint: React.FC<{
 
   if (resolution.status === 'resolved' && resolution.address) {
     return (
-      <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-electric-violet/[0.06] border border-electric-violet/20 text-xs">
-        <Check size={12} className="shrink-0 text-electric-violet" />
-        <span className="font-mono text-slate-400 truncate">{resolution.name}</span>
-        <ArrowRight size={11} className="shrink-0 text-slate-600" />
-        <span className="font-mono text-slate-700 dark:text-slate-200 truncate flex-1">{resolution.address}</span>
+      <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-active border border-line text-xs">
+        <Check size={12} className="shrink-0 text-fg" />
+        <span className="font-mono text-fg-subtle truncate">{resolution.name}</span>
+        <ArrowRight size={11} className="shrink-0 text-fg-muted" />
+        <span className="font-mono text-fg truncate flex-1">{resolution.address}</span>
         <button
           type="button"
           onClick={onApply}
-          className="shrink-0 text-[11px] font-semibold text-electric-violet hover:opacity-80 transition-colors px-2 py-0.5 rounded-md hover:bg-electric-violet/[0.08]"
+          className="shrink-0 text-[12px] font-semibold text-fg hover:opacity-80 transition-colors px-2 py-0.5 rounded-md hover:bg-active"
         >
           Apply
         </button>

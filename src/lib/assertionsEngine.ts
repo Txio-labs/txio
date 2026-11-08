@@ -1,6 +1,7 @@
 import { appStore } from './store';
 import { getByPath } from './hooksEngine';
 import { Assertion, AssertionResult, RequestType } from '../types';
+import type { SimulationSummary } from '../services/transactionService';
 
 export interface AssertionContext {
   requestType: RequestType;
@@ -9,6 +10,12 @@ export interface AssertionContext {
   error?: string;
   result?: any;
   sender?: string;
+  /**
+   * The chain-neutral review of a transaction simulation. When present,
+   * transaction and event checks read it instead of Sui's raw `effects`, so
+   * they mean the same thing on every chain.
+   */
+  summary?: SimulationSummary;
 }
 
 const isEmpty = (value: unknown): boolean =>
@@ -43,6 +50,41 @@ const gasUsedTotal = (gasUsed: any): number | undefined => {
   const rebate = toNumber(gasUsed.storageRebate) ?? 0;
   if (computation === undefined || storage === undefined) return undefined;
   return computation + storage - rebate;
+};
+
+/** Whether the chain's simulation reported events/logs at all (an empty list is then a real "none"). */
+const eventsReported = (summary: SimulationSummary): boolean =>
+  summary.chain === 'sui' || summary.chain === 'aptos' || Boolean(summary.sources.events);
+
+/**
+ * `balance_change` value: `ASSET::expected` or `ASSET@ACCOUNT::expected`. The
+ * actual value is the signed change in whole units as the review reports it
+ * (negative = out, 0 = no change). A change declared by the request rather
+ * than simulated does not count.
+ */
+const balanceChangeActual = (
+  summary: SimulationSummary,
+  raw: string
+): { actual: unknown; expected?: string; note?: string } => {
+  // The last `::`: Aptos coin types (0x1::coin::T) contain the separator themselves.
+  const sep = raw.lastIndexOf('::');
+  const subject = (sep === -1 ? raw : raw.slice(0, sep)).trim();
+  const expected = sep === -1 ? undefined : raw.slice(sep + 2).trim();
+  const at = subject.indexOf('@');
+  const asset = (at === -1 ? subject : subject.slice(0, at)).trim().toLowerCase();
+  const account = at === -1 ? '' : subject.slice(at + 1).trim().toLowerCase();
+  const declaredOnly = summary.sources.balanceChanges?.includes('not a simulation output');
+  if (!summary.balanceChanges || declaredOnly) {
+    return { actual: undefined, expected, note: `${summary.chain}'s simulation does not report balance changes` };
+  }
+  const matches = summary.balanceChanges.filter(
+    (c) => c.asset.toLowerCase() === asset && (!account || (c.account ?? '').toLowerCase() === account)
+  );
+  if (!account && new Set(matches.map((c) => c.account ?? '')).size > 1) {
+    return { actual: undefined, expected, note: `several accounts changed ${asset}; name one as ${asset}@<account>` };
+  }
+  const change = matches[0];
+  return { actual: change ? `${change.direction === 'out' ? '-' : ''}${change.amount}` : '0', expected };
 };
 
 const compare = (
@@ -92,9 +134,27 @@ const compare = (
 const resolveActual = (
   assertion: Assertion,
   ctx: AssertionContext
-): { actual: unknown; expected?: string } => {
-  const { result } = ctx;
+): { actual: unknown; expected?: string; note?: string } => {
+  const { result, summary } = ctx;
   const key = `${assertion.category}:${assertion.target}`;
+
+  if (summary) {
+    const unreported = (what: string) => ({ actual: undefined, expected: assertion.value, note: `${summary.chain}'s simulation does not report ${what}` });
+    switch (key) {
+      case 'transaction:tx_status':
+        return { actual: summary.success ? 'success' : 'failure', expected: assertion.value };
+      case 'transaction:gas_used':
+        return summary.gasUsed === undefined ? unreported('gas used') : { actual: summary.gasUsed, expected: assertion.value };
+      case 'transaction:balance_change':
+        return balanceChangeActual(summary, assertion.value ?? '');
+      case 'event:event_type':
+        return eventsReported(summary) ? { actual: summary.events, expected: assertion.value } : unreported('events');
+      case 'event:event_any':
+        return eventsReported(summary)
+          ? { actual: summary.events.length > 0 ? summary.events : undefined, expected: assertion.value }
+          : unreported('events');
+    }
+  }
 
   switch (key) {
     case 'response:http_status':
@@ -157,6 +217,9 @@ const resolveActual = (
       return { actual: events.length > 0 ? events : undefined, expected: assertion.value };
     }
 
+    case 'transaction:balance_change':
+      return { actual: undefined, expected: assertion.value, note: 'balance changes need a simulation review' };
+
     default:
       return { actual: undefined, expected: assertion.value };
   }
@@ -175,14 +238,15 @@ const OPERATOR_LABEL: Record<Assertion['operator'], string> = {
 const describeAssertion = (
   assertion: Assertion,
   actualLabel: string,
-  expected: string | undefined
+  expected: string | undefined,
+  note?: string
 ): string => {
   const verb = OPERATOR_LABEL[assertion.operator];
   const expectation =
     assertion.operator === 'exists' || assertion.operator === 'not_exists'
       ? `${assertion.target} ${verb}`
       : `${assertion.target} ${verb} "${expected ?? ''}"`;
-  return `${expectation} (got: ${actualLabel || '∅'})`;
+  return `${expectation} (${note ?? `got: ${actualLabel || '∅'}`})`;
 };
 
 /** Evaluates a request's enabled assertions against its execution result. */
@@ -193,8 +257,9 @@ export const evaluateAssertions = (
   (assertions || [])
     .filter((assertion) => assertion.enabled)
     .map((assertion) => {
-      const { actual, expected } = resolveActual(assertion, ctx);
-      const passed = compare(actual, assertion.operator, expected);
+      const { actual, expected, note } = resolveActual(assertion, ctx);
+      // A section the simulation did not report can't satisfy any check, not even "does not exist".
+      const passed = note === undefined && compare(actual, assertion.operator, expected);
       const actualLabel = stringify(actual);
 
       return {
@@ -205,7 +270,7 @@ export const evaluateAssertions = (
         expected,
         actual: actualLabel,
         passed,
-        message: describeAssertion(assertion, actualLabel, expected),
+        message: describeAssertion(assertion, actualLabel, expected, note),
       };
     });
 

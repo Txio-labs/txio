@@ -34,10 +34,10 @@ interface EvmTransactionBuilderProps {
 }
 
 const inputClass =
-  'w-full bg-white dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-slate-700 dark:text-slate-200 focus:border-electric-violet focus:outline-none transition-colors';
-const labelClass = 'block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1.5';
+  'w-full bg-surface border border-line rounded-lg px-3 py-2 text-xs font-mono text-fg focus:border-line-strong focus:outline-none transition-colors';
+const labelClass = 'block text-[12px] font-semibold text-fg-subtle mb-1.5';
 const smallBtn =
-  'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed';
+  'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-line text-[12px] font-semibold text-fg-muted hover:bg-hover disabled:opacity-40 disabled:cursor-not-allowed';
 
 const parseSignature = (signature: string): { fn: AbiFunction | null; error: string | null } => {
   const sig = signature.trim().replace(/^function\s+/, '');
@@ -239,17 +239,17 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
     // will be created. Simulate, review and sign work the same as any transaction.
     const bytes = Math.max(0, (params.data.trim().length - 2) / 2);
     return (
-      <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black/40 space-y-3">
-        <div className="text-sm font-bold text-slate-700 dark:text-slate-200">Contract deployment</div>
-        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs text-slate-500">
+      <div className="p-4 rounded-[10px] border border-line bg-sunken space-y-3">
+        <div className="text-sm font-semibold text-fg">Contract deployment</div>
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs text-fg-subtle">
           <dt>Network</dt>
-          <dd className="font-mono text-slate-700 dark:text-slate-300">{wagmiConfig.chains.find((c) => c.id === params.chainId)?.name ?? `Chain ${params.chainId}`}</dd>
+          <dd className="font-mono text-fg-muted">{wagmiConfig.chains.find((c) => c.id === params.chainId)?.name ?? `Chain ${params.chainId}`}</dd>
           <dt>Creation code</dt>
-          <dd className="font-mono text-slate-700 dark:text-slate-300">{bytes} bytes</dd>
+          <dd className="font-mono text-fg-muted">{bytes} bytes</dd>
           <dt>Value</dt>
-          <dd className="font-mono text-slate-700 dark:text-slate-300">{params.value || '0'}</dd>
+          <dd className="font-mono text-fg-muted">{params.value || '0'}</dd>
         </dl>
-        <p className="text-[11px] text-slate-500">
+        <p className="text-[12px] text-fg-subtle">
           Made by the Contract Builder from your compiled source. Use Simulate to run the creation code on the
           chain, then sign with your wallet. To change it, recompile in the Contract Builder.
         </p>
@@ -258,11 +258,11 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
   }
 
   return (
-    <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-near-black/40 space-y-5">
+    <div className="p-4 rounded-[10px] border border-line bg-sunken space-y-5">
       <div className="flex items-center justify-between">
-        <div className="text-sm font-bold text-slate-700 dark:text-slate-200">EVM contract call</div>
+        <div className="text-sm font-semibold text-fg">EVM contract call</div>
         {activeAddress && (
-          <div className="flex items-center gap-2 px-2.5 py-1 bg-white dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-full text-[10px] font-mono text-emerald-500 dark:text-emerald-400">
+          <div className="flex items-center gap-2 px-2.5 py-1 bg-surface border border-line rounded-full text-[12px] font-mono text-emerald-500 dark:text-emerald-400">
             <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
             Signer: {activeAddress.slice(0, 6)}...{activeAddress.slice(-4)}
           </div>
@@ -310,7 +310,7 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
             disabled={isReadOnly}
             aria-invalid={toInvalid}
           />
-          {toInvalid && <p className="text-[11px] text-rose-500">Not a valid address.</p>}
+          {toInvalid && <p className="text-[12px] text-rose-500">Not a valid address.</p>}
         </div>
 
         {/* 2. ABI */}
@@ -344,12 +344,12 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
             )}
           </div>
           {groups && (
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[12px] text-fg-subtle">
               ABI loaded · {groups.read.length} read · {groups.write.length} write
               {token && ` · ${token.symbol} token`}
             </p>
           )}
-          {abiStatus.error && <p className="text-[11px] text-rose-500">{abiStatus.error}</p>}
+          {abiStatus.error && <p className="text-[12px] text-rose-500">{abiStatus.error}</p>}
           {abiMode === 'paste' && (
             <div className="space-y-2">
               <textarea
@@ -369,15 +369,15 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
         {/* Function picker (ABI) or manual signature */}
         {groups ? (
           <div className="space-y-2">
-            <div className="flex bg-white dark:bg-near-black p-1 rounded-lg border border-slate-200 dark:border-white/5 w-fit" role="tablist">
+            <div className="flex bg-surface p-1 rounded-lg border border-line w-fit" role="tablist">
               {(['read', 'write'] as const).map((t) => (
                 <button
                   key={t}
                   role="tab"
                   aria-selected={tab === t}
                   onClick={() => setTab(t)}
-                  className={`flex items-center gap-1.5 px-3 py-1 text-[11px] font-semibold rounded-md ${
-                    tab === t ? 'bg-electric-violet/10 text-electric-violet' : 'text-slate-500'
+                  className={`flex items-center gap-1.5 px-3 py-1 text-[12px] font-semibold rounded-md ${
+                    tab === t ? 'bg-hover text-fg' : 'text-fg-subtle'
                   }`}
                 >
                   {t === 'read' ? <Eye size={12} /> : <PenLine size={12} />}
@@ -399,7 +399,7 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
             <div className="flex items-center gap-2">
               <span className={labelClass}>Function</span>
               {!params.functionSignature.trim() && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500">
+                <span className="inline-flex items-center gap-1 rounded-full border border-line bg-hover px-2 py-0.5 text-[12px] font-semibold uppercase text-fg-subtle">
                   Raw Calldata mode
                 </span>
               )}
@@ -412,9 +412,9 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
               placeholder="transfer(address to, uint256 amount) — or load the ABI above; leave empty for raw calldata"
               disabled={isReadOnly}
             />
-            {sigError && <p className="text-[11px] text-rose-500">{sigError}</p>}
+            {sigError && <p className="text-[12px] text-rose-500">{sigError}</p>}
             {!params.functionSignature.trim() && (
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[12px] text-fg-subtle">
                 No function signature — this call sends the raw calldata below directly, unencoded.
               </p>
             )}
@@ -433,7 +433,7 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
               return (
                 <div key={i} className="space-y-1">
                   <div className="flex gap-2 items-center">
-                    <span className="w-36 shrink-0 text-[11px] font-mono text-slate-500 truncate" title={`${input.type} ${name}`}>
+                    <span className="w-36 shrink-0 text-[12px] font-mono text-fg-subtle truncate" title={`${input.type} ${name}`}>
                       {name} <span className="opacity-60">{input.type}</span>
                     </span>
                     {input.type === 'bool' ? (
@@ -443,7 +443,7 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
                         aria-label={`Argument ${name}`}
                         onClick={() => setArg(i, value === 'true' ? 'false' : 'true')}
                         disabled={isReadOnly}
-                        className={`h-5 w-9 rounded-full transition-colors relative ${value === 'true' ? 'bg-electric-violet' : 'bg-slate-300 dark:bg-slate-700'}`}
+                        className={`h-5 w-9 rounded-full transition-colors relative ${value === 'true' ? 'bg-inverse' : 'bg-line-strong'}`}
                       >
                         <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${value === 'true' ? 'left-4' : 'left-0.5'}`} />
                       </button>
@@ -451,8 +451,8 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
                       <input
                         aria-label={`Argument ${name}`}
                         aria-invalid={Boolean(problem)}
-                        className={`flex-1 min-w-0 bg-slate-50 dark:bg-near-black border rounded-lg px-3 py-2 text-xs font-mono text-slate-900 dark:text-white outline-none ${
-                          problem ? 'border-rose-500/60' : 'border-slate-200 dark:border-white/10 focus:border-electric-violet'
+                        className={`flex-1 min-w-0 bg-surface border rounded-lg px-3 py-2 text-xs font-mono text-fg outline-none ${
+                          problem ? 'border-rose-500/60' : 'border-line focus:border-line-strong'
                         }`}
                         value={value}
                         onChange={(e) => setArg(i, e.target.value)}
@@ -480,7 +480,7 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
                       </div>
                     )}
                   </div>
-                  {problem && <p className="pl-[9.5rem] text-[11px] text-rose-500">{problem}</p>}
+                  {problem && <p className="pl-[9.5rem] text-[12px] text-rose-500">{problem}</p>}
                 </div>
               );
             })}
@@ -525,7 +525,7 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
             <button
               onClick={runRead}
               disabled={readState.loading || toInvalid || !params.to.trim()}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-electric-violet hover:opacity-90 text-white text-xs font-bold disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-inverse hover:opacity-90 text-white text-xs font-semibold disabled:opacity-40"
             >
               {readState.loading ? <Loader2 size={13} className="animate-spin" /> : <Eye size={13} />} Read
             </button>

@@ -22,6 +22,7 @@ import {
     isMainnetExecution,
     signerAddressFor,
     simulateTransaction,
+    summarizeSimulation,
     walletFamilyForChain
 } from '../services/transactionService';
 import { sendSolanaTransaction } from '@/wallet';
@@ -86,6 +87,7 @@ const resolveRequestVars = (
         evmTxParams: resolveDeep(request.evmTxParams),
         solanaTxParams: resolveDeep(request.solanaTxParams),
         stellarTxParams: resolveDeep(request.stellarTxParams),
+        aptosTxParams: resolveDeep(request.aptosTxParams),
         moveParams: {
             ...mp,
             packageId: resolveVariables(mp.packageId, vars),
@@ -308,7 +310,8 @@ export const RPCBuilder: React.FC = () => {
                 httpStatus: status,
                 duration,
                 result,
-                sender: connectedAddress ?? undefined
+                sender: connectedAddress ?? undefined,
+                summary: resolved.type === RequestType.TRANSACTION ? summarizeSimulation(resolved, res) : undefined
             });
             setTestResults(results);
             logAssertionResults(results, network);
@@ -494,7 +497,7 @@ export const RPCBuilder: React.FC = () => {
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col h-full overflow-hidden bg-white dark:bg-near-black"
+            className="flex flex-col h-full overflow-hidden bg-surface"
         >
             <div className="flex-1 flex flex-col min-h-0">
                 <RequestPanel

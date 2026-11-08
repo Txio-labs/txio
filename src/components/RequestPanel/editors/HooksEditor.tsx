@@ -30,19 +30,19 @@ const HookList: React.FC<{
   return (
     <div>
       <div className="flex justify-between items-center mb-2">
-        <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">
+        <h3 className="text-sm font-semibold text-fg">
           {type === 'pre' ? 'Pre-Run Hooks' : 'Post-Run Hooks'}
         </h3>
         <button
           onClick={onAdd}
-          className="flex items-center gap-1 text-xs text-electric-violet hover:text-slate-900 dark:text-white"
+          className="flex items-center gap-1 text-xs text-fg hover:text-fg"
         >
           <Plus size={12} /> Add
         </button>
       </div>
 
       {rows.length === 0 ? (
-        <div className="bg-slate-50 dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg p-4 text-xs text-slate-500 italic">
+        <div className="bg-surface border border-line rounded-lg p-4 text-xs text-fg-subtle italic">
           {helpText}
         </div>
       ) : (
@@ -50,20 +50,20 @@ const HookList: React.FC<{
           {rows.map((hook) => (
             <div
               key={hook.id}
-              className="group flex items-start gap-3 p-3 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 rounded-lg hover:border-slate-300 dark:hover:border-white/20 transition-all"
+              className="group flex items-start gap-3 p-3 bg-elevated border border-line rounded-lg hover:border-line-strong transition-all"
             >
               <div className="pt-2">
                 <input
                   type="checkbox"
                   checked={hook.enabled}
                   onChange={() => onUpdate(hook.id, { enabled: !hook.enabled })}
-                  className="accent-electric-violet cursor-pointer"
+                  className="accent-zinc-500 cursor-pointer"
                 />
               </div>
 
               <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-3">
                 <div className="sm:col-span-3">
-                  <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">
+                  <label className="text-xs font-medium text-fg-muted uppercase block mb-1">
                     Action
                   </label>
                   <Select
@@ -79,24 +79,24 @@ const HookList: React.FC<{
 
                 {hook.action !== 'cleanup' ? (
                   <div className="sm:col-span-4">
-                    <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">
+                    <label className="text-xs font-medium text-fg-muted uppercase block mb-1">
                       Env Variable Key
                     </label>
                     <input
                       placeholder="e.g. LATEST_OBJECT_ID"
-                      className="w-full bg-white dark:bg-[#111] border border-slate-200 dark:border-white/10 rounded px-2 py-1.5 text-xs text-slate-900 dark:text-white font-mono outline-none focus:border-electric-violet"
+                      className="w-full bg-surface border border-line rounded px-2 py-1.5 text-xs text-fg font-mono outline-none focus:border-line-strong"
                       value={hook.key || ''}
                       onChange={(e) => onUpdate(hook.id, { key: e.target.value })}
                     />
                   </div>
                 ) : (
                   <div className="sm:col-span-4">
-                    <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">
+                    <label className="text-xs font-medium text-fg-muted uppercase block mb-1">
                       Env Variable To Clear
                     </label>
                     <input
                       placeholder="e.g. LATEST_OBJECT_ID"
-                      className="w-full bg-white dark:bg-[#111] border border-slate-200 dark:border-white/10 rounded px-2 py-1.5 text-xs text-slate-900 dark:text-white font-mono outline-none focus:border-electric-violet"
+                      className="w-full bg-surface border border-line rounded px-2 py-1.5 text-xs text-fg font-mono outline-none focus:border-line-strong"
                       value={hook.key || ''}
                       onChange={(e) => onUpdate(hook.id, { key: e.target.value })}
                     />
@@ -105,7 +105,7 @@ const HookList: React.FC<{
 
                 {hook.action !== 'cleanup' && (
                   <div className="sm:col-span-5">
-                    <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">
+                    <label className="text-xs font-medium text-fg-muted uppercase block mb-1">
                       {hook.action === 'fetch_object'
                         ? 'Object ID To Refresh'
                         : type === 'post'
@@ -114,7 +114,7 @@ const HookList: React.FC<{
                     </label>
                     <input
                       placeholder={hook.action === 'fetch_object' ? '0x...' : 'path or literal value'}
-                      className="w-full bg-white dark:bg-[#111] border border-slate-200 dark:border-white/10 rounded px-2 py-1.5 text-xs text-electric-violet font-mono outline-none focus:border-electric-violet"
+                      className="w-full bg-surface border border-line rounded px-2 py-1.5 text-xs text-fg font-mono outline-none focus:border-line-strong"
                       value={hook.value || ''}
                       onChange={(e) => onUpdate(hook.id, { value: e.target.value })}
                     />
@@ -124,7 +124,7 @@ const HookList: React.FC<{
 
               <button
                 onClick={() => onRemove(hook.id)}
-                className="mt-1 text-slate-600 hover:text-red-400 p-1 transition-colors"
+                className="mt-1 text-fg-muted hover:text-red-400 p-1 transition-colors"
               >
                 <X size={14} />
               </button>
@@ -158,8 +158,8 @@ export const HooksEditor: React.FC<HooksEditorProps> = ({ hooks = [], onChange }
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-8">
-      <div className="flex items-center gap-2 text-slate-500">
+    <div className="p-4 md:p-6 w-full space-y-8">
+      <div className="flex items-center gap-2 text-fg-subtle">
         <Workflow size={14} />
         <p className="text-xs">
           Hooks run against your active environment variables — no scripting required.

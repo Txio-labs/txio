@@ -1,5 +1,6 @@
 
 import { Network, ChainId } from "../types";
+import { APTOS_REST_METHODS } from "../services/aptosRest";
 
 // Default Sui fullnode endpoint per network. Mirrors `Network::sui_url` on the
 // backend (backend/api/src/model/network.rs). `Record<Network, ...>` forces
@@ -21,8 +22,9 @@ export const NETWORKS: Record<Network, string> = {
   localnet: 'http://127.0.0.1:9000',
 };
 
-// Built-in secondary mirrors, tried after any user-configured custom
-// endpoints and before the primary NETWORKS default fails over to nothing.
+// Built-in secondary mirrors, tried after user-configured custom endpoints
+// and the primary NETWORKS default. BlockVision rate-limits browser traffic
+// (HTTP 429), so it must not sit in front of the primary.
 // PublicNode fronts through Cloudflare and is occasionally unreachable from
 // specific networks/ISPs/extensions even though it's not down globally —
 // this gives Sui mainnet/testnet calls somewhere else to go automatically
@@ -33,10 +35,12 @@ export const NETWORKS_FALLBACK: Partial<Record<Network, string>> = {
 };
 
 // Default public RPC endpoints for non-Sui chains, keyed by network.
+// eth.llamarpc.com (HTTP 525) and rpc.sepolia.org (HTTP 404) stopped serving;
+// PublicNode answers browser-origin JSON-RPC with CORS for both.
 export const EVM_NETWORKS: Record<Network, string> = {
-  mainnet: 'https://eth.llamarpc.com',
-  testnet: 'https://rpc.sepolia.org',
-  devnet: 'https://rpc.sepolia.org',
+  mainnet: 'https://ethereum-rpc.publicnode.com',
+  testnet: 'https://ethereum-sepolia-rpc.publicnode.com',
+  devnet: 'https://ethereum-sepolia-rpc.publicnode.com',
   localnet: 'http://127.0.0.1:8545',
 };
 
@@ -137,14 +141,13 @@ export const DEFAULT_EVM_CHAIN_ID = 1;
 export const getEvmChain = (id: number | undefined): EvmChainInfo =>
   EVM_CHAINS.find((c) => c.id === id) ?? EVM_CHAINS[0];
 
-// RPC method suggestions, keyed by chain. Partial (not `Record<ChainId, ...>`)
-// because not every ChainId speaks JSON-RPC with known methods — Aptos
-// exposes a REST API rather than JSON-RPC (see APTOS_NETWORKS above) and
-// is intentionally absent. Callers
+// RPC method suggestions, keyed by chain. Aptos is REST, so its "methods"
+// are named endpoints mapped to URLs in services/aptosRest.ts. Callers
 // (RPCBuilder.tsx, RawEditor.tsx, CommandPalette.tsx) fall back to an empty
-// list rather than crashing on the missing entry.
+// list for a chain with no entry.
 export const COMMON_RPC_METHODS: Partial<Record<ChainId, string[]>> = {
   sui: [
+    'getAddressTransactions',
     'suix_getOwnedObjects',
     'sui_getObject',
     'sui_getTransactionBlock',
@@ -160,6 +163,7 @@ export const COMMON_RPC_METHODS: Partial<Record<ChainId, string[]>> = {
     'sui_dryRunTransactionBlock',
   ],
   evm: [
+    'getAddressTransactions',
     'eth_blockNumber',
     'eth_chainId',
     'eth_getBalance',
@@ -175,6 +179,7 @@ export const COMMON_RPC_METHODS: Partial<Record<ChainId, string[]>> = {
     'net_version',
   ],
   stellar: [
+    'getAddressTransactions',
     'getBalance',
     'getHealth',
     'getNetwork',
@@ -189,6 +194,7 @@ export const COMMON_RPC_METHODS: Partial<Record<ChainId, string[]>> = {
     'sendTransaction',
   ],
   solana: [
+    'getAddressTransactions',
     'getBalance',
     'getAccountInfo',
     'getTransaction',
@@ -203,11 +209,13 @@ export const COMMON_RPC_METHODS: Partial<Record<ChainId, string[]>> = {
     'getHealth',
     'sendTransaction',
   ],
+  aptos: [...Object.keys(APTOS_REST_METHODS), 'getAddressTransactions'],
 };
 
 // Sui RPC methods where params[0] is an owner address (eligible for SuiNS auto-resolution).
 // Only meaningful for the 'sui' chain — SuiNS has no equivalent on EVM/Stellar.
 export const ADDRESS_FIRST_PARAM_METHODS: ReadonlySet<string> = new Set([
+  'getAddressTransactions',
   'suix_getOwnedObjects',
   'suix_getAllBalances',
   'suix_getAllCoins',
@@ -218,10 +226,10 @@ export const ADDRESS_FIRST_PARAM_METHODS: ReadonlySet<string> = new Set([
 
 // Pre-filled parameter templates for known RPC methods, keyed by chain.
 // Used when the user picks a method with empty params and via the "Insert template" action.
-// Partial for the same reason as COMMON_RPC_METHODS above — Aptos
-// has no entry here yet.
+// Partial: a chain without templates simply offers none.
 export const RPC_METHOD_TEMPLATES: Readonly<Partial<Record<ChainId, Readonly<Record<string, ReadonlyArray<unknown>>>>>> = {
   sui: {
+    getAddressTransactions: ['<owner address or name.sui>', { limit: 20 }],
     suix_getOwnedObjects: [
       '<owner address or name.sui>',
       { options: { showType: true, showContent: true, showDisplay: true } },
@@ -249,6 +257,7 @@ export const RPC_METHOD_TEMPLATES: Readonly<Partial<Record<ChainId, Readonly<Rec
     sui_dryRunTransactionBlock: ['<base64 bcs bytes>'],
   },
   evm: {
+    getAddressTransactions: ['<0x wallet address>', { limit: 20 }],
     eth_blockNumber: [],
     eth_chainId: [],
     eth_getBalance: ['<0x wallet address>', 'latest'],
@@ -268,6 +277,7 @@ export const RPC_METHOD_TEMPLATES: Readonly<Partial<Record<ChainId, Readonly<Rec
   // request-sending code unwraps it before building the JSON-RPC body
   // (see the `chain === 'stellar'` branch in executeChainRpc).
   stellar: {
+    getAddressTransactions: [{ address: '<G... account or C... contract address>', limit: 20 }],
     // Not a real Soroban RPC method — Soroban RPC can't read plain account
     // balances at all. This is a convenience alias the frontend resolves
     // against Stellar's Horizon REST API instead (see the
@@ -295,6 +305,7 @@ export const RPC_METHOD_TEMPLATES: Readonly<Partial<Record<ChainId, Readonly<Rec
     sendTransaction: [{ transaction: '<base64 tx envelope>' }],
   },
   solana: {
+    getAddressTransactions: ['<base58 wallet address>', { limit: 20 }],
     getBalance: ['<base58 wallet address>'],
     getAccountInfo: ['<base58 address>', { encoding: 'jsonParsed' }],
     getTransaction: ['<base58 tx signature>', { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0 }],
@@ -308,6 +319,10 @@ export const RPC_METHOD_TEMPLATES: Readonly<Partial<Record<ChainId, Readonly<Rec
     getVersion: [],
     getHealth: [],
     sendTransaction: ['<base64 signed transaction>'],
+  },
+  aptos: {
+    ...Object.fromEntries(Object.entries(APTOS_REST_METHODS).map(([name, m]) => [name, m.template])),
+    getAddressTransactions: ['<0x account address>', { limit: 20 }],
   },
 };
 

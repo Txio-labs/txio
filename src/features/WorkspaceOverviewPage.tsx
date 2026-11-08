@@ -57,31 +57,31 @@ const WorkspaceRequestsPanel: React.FC = () => {
     if (allRequests.length === 0) {
         return (
             <div className="py-16 text-center">
-                <Command size={28} className="mx-auto text-slate-300 dark:text-slate-700 mb-3" />
-                <p className="text-sm text-slate-500">No saved requests yet.</p>
-                <p className="text-xs text-slate-400 mt-1">Save a request from the RPC Builder to see it here.</p>
+                <Command size={28} className="mx-auto text-fg-subtle mb-3" />
+                <p className="text-sm text-fg-subtle">No saved requests yet.</p>
+                <p className="text-[14px] text-fg-muted mt-1.5">Save a request from the RPC Builder to see it here.</p>
             </div>
         );
     }
 
     return (
-        <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow overflow-hidden">
-            <div className="divide-y divide-slate-200 dark:divide-white/5">
+        <div className="rounded-card border border-line bg-sunken overflow-hidden">
+            <div className="divide-y divide-line">
                 {allRequests.map(({ node, collectionName }) => {
                     const req = node.requestData;
                     return (
                         <button
                             key={node.id}
                             onClick={() => req && appStore.openTab('rpc', req)}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white dark:hover:bg-white/5 transition-colors"
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-hover transition-colors"
                         >
-                            <Command size={14} className="text-slate-400 shrink-0" />
+                            <Command size={14} className="text-fg-subtle shrink-0" />
                             <div className="min-w-0 flex-1">
-                                <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{node.name}</div>
-                                <div className="text-[10px] text-slate-400">{collectionName}</div>
+                                <div className="text-xs font-semibold text-fg truncate">{node.name}</div>
+                                <div className="text-[12px] text-fg-subtle">{collectionName}</div>
                             </div>
                             {req?.rpcParams?.method && (
-                                <span className="text-[10px] font-mono text-slate-500 shrink-0">{req.rpcParams.method}</span>
+                                <span className="text-[12px] font-mono text-fg-subtle shrink-0">{req.rpcParams.method}</span>
                             )}
                         </button>
                     );
@@ -178,11 +178,11 @@ export const WorkspaceOverviewPage: React.FC = () => {
     ], []);
 
     return (
-        <div className="h-full overflow-y-auto custom-scrollbar bg-white dark:bg-near-black p-6 md:p-8">
+        <div className="h-full overflow-y-auto custom-scrollbar bg-surface p-6 md:p-8">
             <div className="space-y-6">
                 <button
                     onClick={() => appStore.openTab('dashboard')}
-                    className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+                    className="flex items-center gap-1.5 text-xs font-semibold text-fg-subtle hover:text-fg transition-colors"
                 >
                     <ArrowLeft size={12} /> Back to Workspaces
                 </button>
@@ -190,18 +190,18 @@ export const WorkspaceOverviewPage: React.FC = () => {
                 {/* Header */}
                 <div className="flex items-start justify-between flex-wrap gap-4">
                     <div className="flex items-start gap-3">
-                        <div className="w-11 h-11 rounded-xl bg-electric-violet/10 border border-electric-violet/20 flex items-center justify-center text-electric-violet shrink-0">
+                        <div className="w-11 h-11 rounded-[10px] bg-hover border border-line flex items-center justify-center text-fg shrink-0">
                             <Users size={20} />
                         </div>
                         <div>
                             <div className="flex items-center gap-2">
-                                <h1 className="text-xl font-bold text-slate-900 dark:text-white">{currentWorkspace?.name ?? 'Workspace'}</h1>
-                                <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-300">
+                                <h1 className="text-[22px] font-semibold tracking-[-0.03em] text-fg">{currentWorkspace?.name ?? 'Workspace'}</h1>
+                                <span className="text-[12px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-active text-fg-muted">
                                     {currentWorkspace?.type === 'Team' ? 'Team Workspace' : 'Personal Workspace'}
                                 </span>
                             </div>
-                            <p className="text-sm text-slate-500 mt-0.5">Build and manage your blockchain requests.</p>
-                            <div className="flex items-center gap-4 mt-3 text-xs text-slate-500">
+                            <p className="text-sm text-fg-subtle mt-0.5">Build and manage your blockchain requests.</p>
+                            <div className="flex items-center gap-4 mt-3 text-xs text-fg-subtle">
                                 <span className="flex items-center gap-1"><FolderKanban size={11} /> {collectionCount} collections</span>
                                 <span className="flex items-center gap-1"><Globe size={11} /> {networkCount} networks</span>
                             </div>
@@ -211,20 +211,20 @@ export const WorkspaceOverviewPage: React.FC = () => {
                         <div className="relative" ref={wsMenuRef}>
                             <button
                                 onClick={() => setIsWsMenuOpen((o) => !o)}
-                                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-bold transition-colors ${
+                                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-semibold transition-colors ${
                                     isWsMenuOpen
-                                        ? 'border-slate-300 dark:border-white/20 bg-slate-100 dark:bg-white/5'
-                                        : 'border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5'
+                                        ? 'border-line-strong bg-hover'
+                                        : 'border-line text-fg-muted hover:bg-hover'
                                 }`}
                             >
-                                <LayoutGrid size={13} className="text-slate-500" />
+                                <LayoutGrid size={13} className="text-fg-subtle" />
                                 Switch Workspace
-                                <ChevronDown size={11} className={`text-slate-500 transition-transform duration-200 ${isWsMenuOpen ? 'rotate-180' : ''}`} />
+                                <ChevronDown size={11} className={`text-fg-subtle transition-transform duration-200 ${isWsMenuOpen ? 'rotate-180' : ''}`} />
                             </button>
 
                             {isWsMenuOpen && (
-                                <div className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
-                                    <div className="px-3 pt-2.5 pb-1.5 text-[10px] font-mono uppercase tracking-[0.16em] text-slate-400 dark:text-slate-600">
+                                <div className="absolute top-full right-0 mt-2 w-56 bg-elevated border border-line rounded-[10px] shadow-pop overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
+                                    <div className="px-3 pt-2.5 pb-1.5 text-[12px] font-mono text-fg-subtle">
                                         {workspaces.length === 1 ? '1 workspace' : `${workspaces.length} workspaces`}
                                     </div>
                                     <div className="px-1.5 pb-1.5 max-h-64 overflow-y-auto custom-scrollbar space-y-0.5">
@@ -235,21 +235,21 @@ export const WorkspaceOverviewPage: React.FC = () => {
                                                     key={ws.id}
                                                     onClick={() => { appStore.setWorkspace(ws); setIsWsMenuOpen(false); }}
                                                     className={`w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${
-                                                        isActive ? 'bg-electric-violet/10 text-slate-900 dark:text-white font-medium' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.04]'
+                                                        isActive ? 'bg-hover text-fg font-medium' : 'text-fg-muted hover:bg-hover'
                                                     }`}
                                                 >
                                                     <span className="truncate flex-1">{ws.name}</span>
-                                                    {isActive && <Check size={12} className="text-electric-violet shrink-0" />}
+                                                    {isActive && <Check size={12} className="text-fg shrink-0" />}
                                                 </button>
                                             );
                                         })}
                                     </div>
-                                    <div className="p-1.5 bg-slate-50 dark:bg-white/[0.015] border-t border-slate-200 dark:border-white/[0.06]">
+                                    <div className="p-1.5 bg-sunken border-t border-line">
                                         <button
                                             onClick={handleCreateWorkspace}
-                                            className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.04] hover:text-slate-900 dark:hover:text-white transition-colors"
+                                            className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm font-medium text-fg-muted hover:bg-hover hover:text-fg transition-colors"
                                         >
-                                            <Plus size={14} className="text-electric-violet shrink-0" />
+                                            <Plus size={14} className="text-fg shrink-0" />
                                             <span>Create workspace</span>
                                         </button>
                                     </div>
@@ -260,17 +260,17 @@ export const WorkspaceOverviewPage: React.FC = () => {
                         <div className="relative" ref={menuRef}>
                             <button
                                 onClick={() => setIsMenuOpen((o) => !o)}
-                                className="p-2 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                                className="p-2 rounded-lg text-fg-subtle hover:text-fg hover:bg-hover transition-colors"
                             >
                                 <MoreHorizontal size={16} />
                             </button>
                             {isMenuOpen && (
-                                <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 p-1.5">
+                                <div className="absolute top-full right-0 mt-2 w-48 bg-elevated border border-line rounded-[10px] shadow-pop overflow-hidden z-50 p-1.5">
                                     <button
                                         onClick={handleRenameWorkspace}
-                                        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                                        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium text-fg-muted hover:bg-hover transition-colors"
                                     >
-                                        <Pencil size={13} className="text-slate-400" /> Rename workspace
+                                        <Pencil size={13} className="text-fg-subtle" /> Rename workspace
                                     </button>
                                     <button
                                         onClick={handleDeleteWorkspace}
@@ -285,15 +285,15 @@ export const WorkspaceOverviewPage: React.FC = () => {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex items-center gap-1 border-b border-slate-200 dark:border-white/10 overflow-x-auto no-scrollbar">
+                <div className="flex items-center gap-1 border-b border-line overflow-x-auto no-scrollbar">
                     {TABS.map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
-                            className={`px-3 py-2 text-xs font-bold whitespace-nowrap border-b-2 transition-colors -mb-px ${
+                            className={`px-3 py-2 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors -mb-px ${
                                 activeTab === tab
-                                    ? 'border-electric-violet text-slate-900 dark:text-white'
-                                    : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                                    ? 'border-fg/40 text-fg'
+                                    : 'border-transparent text-fg-subtle hover:text-fg'
                             }`}
                         >
                             {tab}
@@ -311,27 +311,27 @@ export const WorkspaceOverviewPage: React.FC = () => {
                                 { label: 'Networks', value: String(networkCount) },
                                 { label: 'Collections', value: String(collectionCount) }
                             ].map((stat) => (
-                                <div key={stat.label} className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow p-4">
-                                    <div className="text-[11px] text-slate-500">{stat.label}</div>
-                                    <div className="text-xl font-bold text-slate-900 dark:text-white mt-1">{stat.value}</div>
+                                <div key={stat.label} className="rounded-card border border-line bg-sunken p-4">
+                                    <div className="text-[12px] text-fg-subtle">{stat.label}</div>
+                                    <div className="text-xl font-semibold text-fg mt-1">{stat.value}</div>
                                 </div>
                             ))}
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Recent activity — real request history */}
-                            <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow p-5">
+                            <div className="rounded-card border border-line bg-sunken p-5">
                                 <div className="flex items-center justify-between mb-3">
-                                    <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Recent Activity</h3>
+                                    <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Recent Activity</h3>
                                     <button
                                         onClick={() => appStore.openTab('history')}
-                                        className="text-[11px] font-bold text-electric-violet hover:opacity-80 transition-colors"
+                                        className="text-[12px] font-semibold text-fg hover:opacity-80 transition-colors"
                                     >
                                         View all
                                     </button>
                                 </div>
                                 {recentHistory.length === 0 ? (
-                                    <div className="text-center py-8 text-xs text-slate-500">No requests executed yet.</div>
+                                    <div className="text-center py-8 text-xs text-fg-subtle">No requests executed yet.</div>
                                 ) : (
                                     <div className="space-y-3">
                                         {recentHistory.map((item) => (
@@ -340,12 +340,12 @@ export const WorkspaceOverviewPage: React.FC = () => {
                                                     className={`w-2 h-2 rounded-full shrink-0 ${item.status && item.status < 400 ? 'bg-emerald-500' : 'bg-red-500'}`}
                                                 />
                                                 <div className="min-w-0 flex-1">
-                                                    <div className="text-xs text-slate-700 dark:text-slate-200 truncate font-medium">
+                                                    <div className="text-xs text-fg truncate font-medium">
                                                         {item.rpcParams?.method || item.name}
                                                     </div>
-                                                    <div className="text-[10px] text-slate-400">{item.network} · {timeAgo(item.timestamp)}</div>
+                                                    <div className="text-[12px] text-fg-subtle">{item.network} · {timeAgo(item.timestamp)}</div>
                                                 </div>
-                                                <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shrink-0 bg-electric-violet/10 text-electric-violet">
+                                                <span className="text-[12px] font-semibold uppercase px-1.5 py-0.5 rounded shrink-0 bg-hover text-fg">
                                                     {item.type}
                                                 </span>
                                             </div>
@@ -355,23 +355,23 @@ export const WorkspaceOverviewPage: React.FC = () => {
                             </div>
 
                             {/* Quick actions */}
-                            <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow p-5">
-                                <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-3">Quick Actions</h3>
+                            <div className="rounded-card border border-line bg-sunken p-5">
+                                <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-3">Quick Actions</h3>
                                 <div className="space-y-2">
                                     {quickActions.map((action, i) => (
                                         <button
                                             key={action.label}
                                             onClick={action.onClick}
-                                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${
+                                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-left transition-colors ${
                                                 i === 0
-                                                    ? 'bg-slate-900 dark:bg-white text-white dark:text-near-black hover:opacity-90'
-                                                    : 'border border-slate-200 dark:border-white/10 hover:bg-white dark:hover:bg-white/5'
+                                                    ? 'bg-inverse text-on-inverse hover:opacity-90'
+                                                    : 'border border-line hover:bg-hover'
                                             }`}
                                         >
-                                            <action.icon size={15} className={i === 0 ? 'text-white' : 'text-slate-500'} />
+                                            <action.icon size={15} className={i === 0 ? 'text-on-inverse' : 'text-fg-subtle'} />
                                             <div className="min-w-0">
-                                                <div className={`text-xs font-bold ${i === 0 ? 'text-white' : 'text-slate-800 dark:text-slate-200'}`}>{action.label}</div>
-                                                <div className={`text-[10px] ${i === 0 ? 'text-white/70' : 'text-slate-500'}`}>{action.desc}</div>
+                                                <div className={`text-xs font-semibold ${i === 0 ? 'text-on-inverse' : 'text-fg'}`}>{action.label}</div>
+                                                <div className={`text-[12px] ${i === 0 ? 'text-on-inverse/70' : 'text-fg-subtle'}`}>{action.desc}</div>
                                             </div>
                                         </button>
                                     ))}
@@ -381,8 +381,8 @@ export const WorkspaceOverviewPage: React.FC = () => {
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Workspace resources */}
-                            <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow p-5">
-                                <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-3">Workspace Resources</h3>
+                            <div className="rounded-card border border-line bg-sunken p-5">
+                                <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted mb-3">Workspace Resources</h3>
                                 <div className="grid grid-cols-2 gap-4">
                                     {[
                                         { label: 'Collections', value: collectionCount, icon: FolderKanban, action: () => appStore.openTab('collections') },
@@ -393,12 +393,12 @@ export const WorkspaceOverviewPage: React.FC = () => {
                                         <button
                                             key={res.label}
                                             onClick={res.action}
-                                            className="flex flex-col gap-2 p-3 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-white dark:hover:bg-white/5 text-left transition-colors"
+                                            className="flex flex-col gap-2 p-3 rounded-[10px] border border-line hover:bg-hover text-left transition-colors"
                                         >
-                                            <res.icon size={16} className="text-slate-400" />
+                                            <res.icon size={16} className="text-fg-subtle" />
                                             <div>
-                                                <div className="text-lg font-bold text-slate-900 dark:text-white leading-none">{res.value}</div>
-                                                <div className="text-[10px] text-slate-500 mt-1">{res.label}</div>
+                                                <div className="text-lg font-semibold text-fg leading-none">{res.value}</div>
+                                                <div className="text-[12px] text-fg-subtle mt-1">{res.label}</div>
                                             </div>
                                         </button>
                                     ))}
@@ -406,30 +406,30 @@ export const WorkspaceOverviewPage: React.FC = () => {
                             </div>
 
                             {/* Recent collections */}
-                            <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow p-5">
+                            <div className="rounded-card border border-line bg-sunken p-5">
                                 <div className="flex items-center justify-between mb-3">
-                                    <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Recent Collections</h3>
+                                    <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Recent Collections</h3>
                                     <button
                                         onClick={() => appStore.openTab('collections')}
-                                        className="text-[11px] font-bold text-electric-violet hover:opacity-80 transition-colors"
+                                        className="text-[12px] font-semibold text-fg hover:opacity-80 transition-colors"
                                     >
                                         View all
                                     </button>
                                 </div>
                                 {recentCollections.length === 0 ? (
-                                    <div className="text-center py-8 text-xs text-slate-500">No collections yet.</div>
+                                    <div className="text-center py-8 text-xs text-fg-subtle">No collections yet.</div>
                                 ) : (
                                     <div className="space-y-2">
                                         {recentCollections.map((c) => (
                                             <button
                                                 key={c.id}
                                                 onClick={() => appStore.openTab('collections')}
-                                                className="w-full flex items-center gap-2.5 text-left hover:bg-white dark:hover:bg-white/5 rounded-lg p-1.5 -m-1.5 transition-colors"
+                                                className="w-full flex items-center gap-2.5 text-left hover:bg-hover rounded-lg p-1.5 -m-1.5 transition-colors"
                                             >
-                                                <FolderKanban size={14} className="text-slate-400 shrink-0" />
+                                                <FolderKanban size={14} className="text-fg-subtle shrink-0" />
                                                 <div className="min-w-0 flex-1">
-                                                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{c.name}</div>
-                                                    <div className="text-[10px] text-slate-400">{(c.children ?? []).length} requests</div>
+                                                    <div className="text-xs font-semibold text-fg truncate">{c.name}</div>
+                                                    <div className="text-[12px] text-fg-subtle">{(c.children ?? []).length} requests</div>
                                                 </div>
                                             </button>
                                         ))}
@@ -444,7 +444,7 @@ export const WorkspaceOverviewPage: React.FC = () => {
                 {activeTab === 'Collections' && <div className="-mx-6 md:-mx-8 -mt-2"><CollectionsPage /></div>}
                 {activeTab === 'Networks' && <div className="-mx-6 md:-mx-8 -mt-2"><NetworksPage /></div>}
                 {activeTab === 'Environments' && (
-                    <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-dark-indigo-glow overflow-hidden">
+                    <div className="rounded-card border border-line bg-sunken overflow-hidden">
                         <EnvironmentList envVariables={envVariables} onUpdateEnv={appStore.updateEnv} />
                     </div>
                 )}

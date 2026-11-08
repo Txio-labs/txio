@@ -54,7 +54,7 @@ export const EntranceAnimation: React.FC<EntranceAnimationProps> = ({ onComplete
   return (
     <div 
       className={`
-        fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-near-black
+        fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-canvas
         transition-opacity duration-1000 ease-in-out overflow-hidden
         ${phase === 'exit' ? 'opacity-0 pointer-events-none' : 'opacity-100'}
       `}
@@ -62,10 +62,10 @@ export const EntranceAnimation: React.FC<EntranceAnimationProps> = ({ onComplete
         <div className="relative flex flex-col items-center justify-center pb-20">
             
             {/* Background Glows */}
-            <div className="absolute w-[800px] h-[800px] bg-electric-violet/5 blur-[120px] rounded-full animate-pulse-slow"></div>
+            <div className="absolute w-[800px] h-[800px] bg-hover blur-[120px] rounded-full animate-pulse-slow"></div>
             
             {/* The Surface Glow (Water Level) */}
-            <div className="absolute top-[58%] left-1/2 -translate-x-1/2 w-[600px] h-6 bg-electric-violet/20 blur-2xl rounded-[100%]"></div>
+            <div className="absolute top-[58%] left-1/2 -translate-x-1/2 w-[600px] h-6 bg-active blur-2xl rounded-[100%]"></div>
 
             {/* Logo Wrapper */}
             <div className="relative group">
@@ -84,11 +84,11 @@ export const EntranceAnimation: React.FC<EntranceAnimationProps> = ({ onComplete
 
             {/* Text Reveal */}
             <div className="mt-16 flex flex-col items-center gap-3 opacity-0 animate-fade-in-text">
-                <h1 className="text-white font-bold text-2xl tracking-[0.6em] lowercase">
+                <h1 className="text-white font-semibold text-2xl tracking-[0.6em] lowercase">
                     txio
                 </h1>
-                <div className="w-24 h-[1px] bg-gradient-to-r from-transparent via-electric-violet to-transparent"></div>
-                <p className="text-soft-purple/40 font-medium text-[10px] tracking-[0.4em] uppercase">
+                <div className="w-24 h-[1px] bg-gradient-to-r from-transparent via-fg-subtle to-transparent"></div>
+                <p className="text-soft-purple/40 font-medium text-[12px]">
                     Advanced Infrastructure
                 </p>
             </div>

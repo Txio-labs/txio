@@ -111,7 +111,7 @@ export const resolveRpcUrlList = (
 ): string[] => {
     const overrides = settings.customRpc[network] || [];
     const fallback = NETWORKS_FALLBACK[network];
-    return [...overrides, ...(fallback ? [fallback] : []), NETWORKS[network]];
+    return [...overrides, NETWORKS[network], ...(fallback ? [fallback] : [])];
 };
 
 /**

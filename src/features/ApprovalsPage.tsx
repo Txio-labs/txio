@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Select } from '@/components/Select';
 import { AlertTriangle, KeyRound, Loader2, RefreshCw, ShieldOff } from 'lucide-react';
 
 import { useWallet } from '@/wallet';
@@ -83,33 +84,32 @@ export const ApprovalsPage: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-near-black font-sans">
-            <div className="px-6 py-5 border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-dark-indigo-glow/50 shrink-0">
+        <div className="flex flex-col h-full bg-surface font-sans">
+            <div className="px-6 md:px-8 pt-7 pb-5 border-b border-line shrink-0">
                 <div className="flex justify-between items-center gap-4 flex-wrap">
                     <div>
-                        <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-3">
-                            <KeyRound size={22} className="text-electric-violet" />
-                            Approvals
+                        <h1 className="text-[22px] font-semibold tracking-[-0.03em] text-fg flex items-center gap-3">
+<span className="h-9 w-9 rounded-[9px] border border-line bg-surface shadow-card flex items-center justify-center text-fg-muted shrink-0"><KeyRound size={16} /></span>
+Approvals
                         </h1>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-[14px] text-fg-muted mt-1.5">
                             Token spend approvals your connected wallet has granted. EVM only — Sui and Solana don&apos;t use the
                             same standing-allowance model, and Stellar has no analog either.
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <select
-                            value={chainId}
-                            onChange={(e) => setChainId(Number(e.target.value))}
-                            className="bg-white dark:bg-near-black border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-electric-violet"
-                        >
-                            {EVM_CHAINS.map((c) => (
-                                <option key={c.id} value={c.id}>{c.name}</option>
-                            ))}
-                        </select>
+                        <div className="w-44">
+                            <Select
+                                value={String(chainId)}
+                                options={EVM_CHAINS.map((c) => ({ label: c.name, value: String(c.id) }))}
+                                onChange={(v) => setChainId(Number(v))}
+                                fullWidth
+                            />
+                        </div>
                         <button
                             onClick={runScan}
                             disabled={!owner || loading}
-                            className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-50 transition-colors"
+                            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-line text-fg-muted hover:bg-hover disabled:opacity-50 transition-colors"
                         >
                             <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
                             Rescan
@@ -121,14 +121,14 @@ export const ApprovalsPage: React.FC = () => {
             <div className="flex-1 overflow-auto custom-scrollbar">
                 {!isEvmConnected ? (
                     <div className="flex flex-col items-center justify-center h-full text-center p-6">
-                        <ShieldOff size={28} className="text-slate-400 mb-3" />
-                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Connect an EVM wallet</p>
-                        <p className="text-xs text-slate-500 mt-1 max-w-xs">
+                        <ShieldOff size={28} className="text-fg-subtle mb-3" />
+                        <p className="text-sm font-semibold text-fg">Connect an EVM wallet</p>
+                        <p className="text-xs text-fg-subtle mt-1 max-w-xs">
                             Approval scanning reads on-chain allowances for your connected EVM address.
                         </p>
                         <button
                             onClick={openModal}
-                            className="mt-4 px-4 py-2 text-xs font-bold rounded-lg bg-slate-900 dark:bg-white text-white dark:text-near-black"
+                            className="mt-4 px-4 py-2 text-xs font-semibold rounded-lg bg-inverse text-on-inverse"
                         >
                             Connect Wallet
                         </button>
@@ -138,53 +138,53 @@ export const ApprovalsPage: React.FC = () => {
                         <AlertTriangle size={14} /> {error}
                     </div>
                 ) : loading && approvals.length === 0 ? (
-                    <div className="flex items-center justify-center h-full text-slate-500 text-xs gap-2">
+                    <div className="flex items-center justify-center h-full text-fg-subtle text-xs gap-2">
                         <Loader2 size={16} className="animate-spin" /> Scanning {evmChainLabelFor(chainId)} for approvals…
                     </div>
                 ) : approvals.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center p-6">
-                        <KeyRound size={28} className="text-slate-400 mb-3" />
-                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">No active approvals found</p>
-                        <p className="text-xs text-slate-500 mt-1 max-w-xs">
+                        <KeyRound size={28} className="text-fg-subtle mb-3" />
+                        <p className="text-sm font-semibold text-fg">No active approvals found</p>
+                        <p className="text-xs text-fg-subtle mt-1 max-w-xs">
                             No non-zero token allowances were found for this wallet on {evmChainLabelFor(chainId)} in the recent
                             block history scanned.
                         </p>
                     </div>
                 ) : (
                     <table className="w-full min-w-[640px]">
-                        <thead className="sticky top-0 bg-white dark:bg-near-black border-b border-slate-200 dark:border-white/5">
+                        <thead className="sticky top-0 bg-surface border-b border-line">
                             <tr>
-                                <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">Token</th>
-                                <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">Spender</th>
-                                <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">Amount</th>
-                                <th className="px-4 py-2.5 text-right text-[10px] font-bold uppercase tracking-wider text-slate-500">Action</th>
+                                <th className="px-4 py-2.5 text-left text-[12px] font-semibold text-fg-subtle">Token</th>
+                                <th className="px-4 py-2.5 text-left text-[12px] font-semibold text-fg-subtle">Spender</th>
+                                <th className="px-4 py-2.5 text-left text-[12px] font-semibold text-fg-subtle">Amount</th>
+                                <th className="px-4 py-2.5 text-right text-[12px] font-semibold text-fg-subtle">Action</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
+                        <tbody className="divide-y divide-line">
                             {approvals.map((approval) => {
                                 const key = `${approval.tokenAddress}:${approval.spender}`;
                                 return (
-                                    <tr key={key} className="hover:bg-slate-50 dark:hover:bg-white/[0.02]">
-                                        <td className="px-4 py-2.5 text-xs font-mono text-slate-700 dark:text-slate-300">
+                                    <tr key={key} className="hover:bg-hover">
+                                        <td className="px-4 py-2.5 text-xs font-mono text-fg-muted">
                                             {approval.tokenSymbol ?? shortenAddress(approval.tokenAddress, 6, 4)}
                                         </td>
-                                        <td className="px-4 py-2.5 text-xs font-mono text-slate-700 dark:text-slate-300" title={approval.spender}>
+                                        <td className="px-4 py-2.5 text-xs font-mono text-fg-muted" title={approval.spender}>
                                             {shortenAddress(approval.spender, 6, 4)}
                                         </td>
                                         <td className="px-4 py-2.5 text-xs">
                                             {approval.isUnlimited ? (
-                                                <span className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[10px] font-bold uppercase text-red-500">
+                                                <span className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[12px] font-semibold uppercase text-red-500">
                                                     Unlimited
                                                 </span>
                                             ) : (
-                                                <span className="font-mono text-slate-700 dark:text-slate-300">{approval.formattedAmount}</span>
+                                                <span className="font-mono text-fg-muted">{approval.formattedAmount}</span>
                                             )}
                                         </td>
                                         <td className="px-4 py-2.5 text-right">
                                             <button
                                                 onClick={() => setPendingRevoke(approval)}
                                                 disabled={revokingKey === key}
-                                                className="px-3 py-1.5 text-[11px] font-bold rounded-lg border border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/15 disabled:opacity-50 transition-colors"
+                                                className="px-3 py-1.5 text-[12px] font-semibold rounded-lg border border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/15 disabled:opacity-50 transition-colors"
                                             >
                                                 {revokingKey === key ? 'Revoking…' : 'Revoke'}
                                             </button>

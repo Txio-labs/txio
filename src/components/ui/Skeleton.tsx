@@ -29,7 +29,7 @@ export const SkeletonText: React.FC<{ className?: string; width?: string }> = ({
 
 /** Stat-card shape: label line + a larger number line, matching AdminPage's StatCard. */
 export const SkeletonStat: React.FC = () => (
-  <div className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-dark-indigo-glow px-4 py-3 min-w-0 space-y-2">
+  <div className="rounded-[10px] border border-line bg-elevated px-4 py-3 min-w-0 space-y-2">
     <Skeleton className="h-2.5 w-16" />
     <Skeleton className="h-6 w-12" />
   </div>

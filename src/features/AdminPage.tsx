@@ -76,36 +76,36 @@ const fetchAdminData = async (): Promise<AdminData> => {
     return { overview, users, requests, collections, rpcLogs, endpointStats };
 };
 
-const StatCard: React.FC<{ label: string; value: number; hint?: string }> = ({ label, value, hint }) => (
-    <div className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-dark-indigo-glow px-4 py-3 min-w-0">
-        <div className="text-[11px] font-medium text-slate-500 truncate">{label}</div>
-        <div className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white mt-0.5 tabular-nums">
-            {value.toLocaleString()}
+const StatCard: React.FC<{ label: string; value: number | undefined; hint?: string }> = ({ label, value, hint }) => (
+    <div className="rounded-[10px] border border-line bg-elevated px-4 py-3 min-w-0">
+        <div className="text-[12px] font-medium text-fg-subtle truncate">{label}</div>
+        <div className="text-2xl font-semibold tracking-tight text-fg mt-0.5 tabular-nums">
+            {typeof value === 'number' ? value.toLocaleString() : '—'}
         </div>
-        {hint && <div className="text-[11px] text-slate-500 mt-0.5 truncate">{hint}</div>}
+        {hint && <div className="text-[12px] text-fg-subtle mt-0.5 truncate">{hint}</div>}
     </div>
 );
 
 const Th: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
-    <th className={`px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500 ${className}`}>
+    <th className={`px-4 py-2.5 text-left text-[12px] font-semibold text-fg-subtle ${className}`}>
         {children}
     </th>
 );
 
 const Td: React.FC<{ children: React.ReactNode; className?: string; title?: string }> = ({ children, className = '', title }) => (
-    <td className={`px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 ${className}`} title={title}>
+    <td className={`px-4 py-2.5 text-xs text-fg-muted ${className}`} title={title}>
         {children}
     </td>
 );
 
 const Badge: React.FC<{ children: React.ReactNode; tone?: 'violet' | 'slate' | 'green' | 'red' }> = ({ children, tone = 'slate' }) => {
     const tones = {
-        violet: 'bg-electric-violet/10 text-electric-violet',
-        slate: 'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400',
+        violet: 'bg-hover text-fg',
+        slate: 'bg-hover text-fg-muted',
         green: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
         red: 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
     };
-    return <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold ${tones[tone]}`}>{children}</span>;
+    return <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[12px] font-semibold ${tones[tone]}`}>{children}</span>;
 };
 
 const DeleteUserDialog: React.FC<{
@@ -141,22 +141,22 @@ const DeleteUserDialog: React.FC<{
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="admin-delete-title"
-                className="w-full max-w-md rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] shadow-2xl"
+                className="w-full max-w-md rounded-[10px] border border-line bg-elevated shadow-card"
                 onClick={(e) => e.stopPropagation()}
                 onKeyDown={(e) => e.key === 'Escape' && !deleting && onCancel()}
             >
                 <div className="p-5 space-y-3">
-                    <h2 id="admin-delete-title" className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-slate-100">
+                    <h2 id="admin-delete-title" className="flex items-center gap-2 text-base font-semibold text-fg">
                         <Trash2 size={16} className="text-rose-500" /> Delete account
                     </h2>
-                    <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-                        This permanently deletes <span className="font-semibold text-slate-900 dark:text-slate-100">{user.email}</span> and
+                    <p className="text-xs leading-relaxed text-fg-muted">
+                        This permanently deletes <span className="font-semibold text-fg">{user.email}</span> and
                         everything they own: {user.collection_count} collection{user.collection_count === 1 ? '' : 's'} with their saved
                         requests, {user.request_count} history entr{user.request_count === 1 ? 'y' : 'ies'}, workspaces and RPC logs.
                         They&apos;ll be signed out everywhere. This can&apos;t be undone.
                     </p>
                     <label className="block space-y-1.5">
-                        <span className="text-[11px] font-medium text-slate-500">Type the email to confirm</span>
+                        <span className="text-[12px] font-medium text-fg-subtle">Type the email to confirm</span>
                         <input
                             autoFocus
                             value={confirmText}
@@ -164,20 +164,20 @@ const DeleteUserDialog: React.FC<{
                             onKeyDown={(e) => e.key === 'Enter' && handleDelete()}
                             placeholder={user.email}
                             disabled={deleting}
-                            className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-near-black px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-rose-500/60"
+                            className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-fg outline-none focus:border-rose-500/60"
                         />
                     </label>
                     {error && (
-                        <p className="flex items-center gap-1.5 text-[11px] text-rose-500">
+                        <p className="flex items-center gap-1.5 text-[12px] text-rose-500">
                             <AlertCircle size={11} /> {error}
                         </p>
                     )}
                 </div>
-                <div className="flex justify-end gap-2 border-t border-slate-200 dark:border-white/10 px-5 py-3">
+                <div className="flex justify-end gap-2 border-t border-line px-5 py-3">
                     <button
                         onClick={onCancel}
                         disabled={deleting}
-                        className="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-50"
+                        className="px-3 py-1.5 text-xs font-semibold rounded-lg text-fg-muted hover:bg-hover disabled:opacity-50"
                     >
                         Cancel
                     </button>
@@ -197,7 +197,7 @@ const DeleteUserDialog: React.FC<{
 
 const EmptyRow: React.FC<{ colSpan: number; label: string }> = ({ colSpan, label }) => (
     <tr>
-        <td colSpan={colSpan} className="px-4 py-10 text-center text-xs text-slate-500">{label}</td>
+        <td colSpan={colSpan} className="px-4 py-10 text-center text-xs text-fg-subtle">{label}</td>
     </tr>
 );
 
@@ -270,11 +270,11 @@ export const AdminPage: React.FC = () => {
 
     if (error?.forbidden) {
         return (
-            <div className="flex h-full items-center justify-center bg-white dark:bg-near-black p-6">
+            <div className="flex h-full items-center justify-center bg-surface p-6">
                 <div className="text-center max-w-sm">
-                    <ShieldCheck size={28} className="mx-auto text-slate-400" />
-                    <h1 className="mt-3 text-base font-semibold text-slate-900 dark:text-slate-100">Admin access required</h1>
-                    <p className="mt-1 text-xs text-slate-500">This account doesn&apos;t have permission to view the admin dashboard.</p>
+                    <ShieldCheck size={28} className="mx-auto text-fg-subtle" />
+                    <h1 className="mt-3 text-base font-semibold text-fg">Admin access required</h1>
+                    <p className="mt-1 text-xs text-fg-subtle">This account doesn&apos;t have permission to view the admin dashboard.</p>
                 </div>
             </div>
         );
@@ -283,15 +283,15 @@ export const AdminPage: React.FC = () => {
     const o = data?.overview;
 
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-near-black font-sans">
-            <div className="px-6 py-5 border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-dark-indigo-glow/50 shrink-0 space-y-5">
+        <div className="flex flex-col h-full bg-surface font-sans">
+            <div className="px-6 py-5 border-b border-line bg-sunken shrink-0 space-y-5">
                 <div className="flex items-start justify-between gap-4">
                     <div>
-                        <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-3">
-                            <ShieldCheck size={22} className="text-electric-violet" />
-                            Admin
+                        <h1 className="text-[22px] font-semibold tracking-[-0.03em] text-fg flex items-center gap-3">
+<span className="h-9 w-9 rounded-[9px] border border-line bg-surface shadow-card flex items-center justify-center text-fg-muted shrink-0"><ShieldCheck size={16} /></span>
+Admin
                         </h1>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-[14px] text-fg-muted mt-1.5">
                             Activity across every account on txio.
                             {loadedAt > 0 && <span className="ml-1">Updated {formatRelative(new Date(loadedAt).toISOString())}.</span>}
                         </p>
@@ -299,7 +299,7 @@ export const AdminPage: React.FC = () => {
                     <button
                         onClick={refresh}
                         disabled={loading}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-50 transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-line text-fg-muted hover:bg-hover disabled:opacity-50 transition-colors"
                     >
                         <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
                         Refresh
@@ -322,7 +322,7 @@ export const AdminPage: React.FC = () => {
                 )}
 
                 <div className="flex flex-wrap gap-3 items-center">
-                    <div className="flex bg-white dark:bg-near-black p-1 rounded-lg border border-slate-200 dark:border-white/5" role="tablist">
+                    <div className="inline-flex bg-hover p-0.5 rounded-[9px] border border-line gap-0.5" role="tablist">
                         {VIEWS.map(({ id, label, icon: Icon }) => (
                             <button
                                 key={id}
@@ -331,8 +331,8 @@ export const AdminPage: React.FC = () => {
                                 onClick={() => setView(id)}
                                 className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                                     view === id
-                                        ? 'bg-electric-violet/10 text-electric-violet'
-                                        : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                                        ? 'bg-hover text-fg'
+                                        : 'text-fg-subtle hover:text-fg'
                                 }`}
                             >
                                 <Icon size={13} />
@@ -342,12 +342,12 @@ export const AdminPage: React.FC = () => {
                         ))}
                     </div>
                     <div className="relative flex-1 min-w-[180px] max-w-md group">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-electric-violet transition-colors" />
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle group-focus-within:text-fg transition-colors" />
                         <input
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             aria-label="Search admin data"
-                            className="w-full bg-white dark:bg-near-black border border-slate-200 dark:border-white/5 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-electric-violet outline-none transition-all"
+                            className="w-full bg-surface border border-line rounded-lg pl-9 pr-4 py-2 text-sm text-fg placeholder:text-fg-subtle focus:border-line-strong outline-none transition-all"
                             placeholder="Search by email, name, method..."
                         />
                     </div>
@@ -363,10 +363,10 @@ export const AdminPage: React.FC = () => {
 
                 {loading && !data && (
                     <table className="w-full min-w-[720px]">
-                        <thead className="sticky top-0 bg-white dark:bg-near-black border-b border-slate-200 dark:border-white/5">
+                        <thead className="sticky top-0 bg-surface border-b border-line">
                             <tr><Th>User</Th><Th>Linked</Th><Th>Collections</Th><Th>Requests</Th><Th>Last active</Th><Th>Joined</Th><Th><span className="sr-only">Actions</span></Th></tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
+                        <tbody className="divide-y divide-line">
                             {Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} columns={7} />)}
                         </tbody>
                     </table>
@@ -376,26 +376,26 @@ export const AdminPage: React.FC = () => {
                     <table className="w-full min-w-[720px]">
                         {view === 'users' && (
                             <>
-                                <thead className="sticky top-0 bg-white dark:bg-near-black border-b border-slate-200 dark:border-white/5">
+                                <thead className="sticky top-0 bg-surface border-b border-line">
                                     <tr><Th>User</Th><Th>Linked</Th><Th>Collections</Th><Th>Requests</Th><Th>Last active</Th><Th>Joined</Th><Th><span className="sr-only">Actions</span></Th></tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
+                                <tbody className="divide-y divide-line">
                                     {users.length === 0 && <EmptyRow colSpan={7} label="No users match." />}
                                     {users.map((u) => (
-                                        <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02]">
+                                        <tr key={u.id} className="hover:bg-hover">
                                             <Td>
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-medium text-slate-900 dark:text-slate-100">{u.name || u.email.split('@')[0]}</span>
+                                                    <span className="font-medium text-fg">{u.name || u.email.split('@')[0]}</span>
                                                     {u.is_admin && <Badge tone="violet">Admin</Badge>}
                                                     {u.tier && u.tier !== 'Free' && <Badge>{u.tier}</Badge>}
                                                 </div>
-                                                <div className="text-[11px] text-slate-500">{u.email}</div>
+                                                <div className="text-[12px] text-fg-subtle">{u.email}</div>
                                             </Td>
                                             <Td>
                                                 <div className="flex gap-1">
                                                     {u.google_linked && <Badge>Google</Badge>}
                                                     {u.github_login && <Badge>@{u.github_login}</Badge>}
-                                                    {!u.google_linked && !u.github_login && <span className="text-slate-400">—</span>}
+                                                    {!u.google_linked && !u.github_login && <span className="text-fg-subtle">—</span>}
                                                 </div>
                                             </Td>
                                             <Td className="tabular-nums">{u.collection_count}</Td>
@@ -409,7 +409,7 @@ export const AdminPage: React.FC = () => {
                                                         onClick={() => setPendingDelete(u)}
                                                         aria-label={`Delete ${u.email}`}
                                                         title="Delete account"
-                                                        className="p-1.5 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                                                        className="p-1.5 rounded-md text-fg-subtle hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
                                                     >
                                                         <Trash2 size={13} />
                                                     </button>
@@ -423,15 +423,15 @@ export const AdminPage: React.FC = () => {
 
                         {view === 'requests' && (
                             <>
-                                <thead className="sticky top-0 bg-white dark:bg-near-black border-b border-slate-200 dark:border-white/5">
+                                <thead className="sticky top-0 bg-surface border-b border-line">
                                     <tr><Th>Status</Th><Th>Request</Th><Th>User</Th><Th>Network</Th><Th>Duration</Th><Th>When</Th></tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
+                                <tbody className="divide-y divide-line">
                                     {requests.length === 0 && <EmptyRow colSpan={6} label="No requests match." />}
                                     {requests.map((r) => {
                                         const ok = r.status !== null && r.status < 400;
                                         return (
-                                            <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02]">
+                                            <tr key={r.id} className="hover:bg-hover">
                                                 <Td>
                                                     <Badge tone={ok ? 'green' : 'red'}>
                                                         {ok ? <CheckCircle2 size={10} /> : <XCircle size={10} />}
@@ -439,17 +439,17 @@ export const AdminPage: React.FC = () => {
                                                     </Badge>
                                                 </Td>
                                                 <Td>
-                                                    <div className="font-medium text-slate-900 dark:text-slate-100 truncate max-w-[260px]">{r.name}</div>
-                                                    <div className="font-mono text-[11px] text-slate-500 truncate max-w-[260px]">
+                                                    <div className="font-medium text-fg truncate max-w-[260px]">{r.name}</div>
+                                                    <div className="font-mono text-[12px] text-fg-subtle truncate max-w-[260px]">
                                                         {r.request_type && <span className="mr-1.5">{r.request_type}</span>}
                                                         {r.method}
                                                     </div>
                                                 </Td>
-                                                <Td>{r.user_email ?? <span className="text-slate-400">deleted user</span>}</Td>
+                                                <Td>{r.user_email ?? <span className="text-fg-subtle">deleted user</span>}</Td>
                                                 <Td>{[r.chain, r.network].filter(Boolean).join(' · ') || '—'}</Td>
                                                 <Td className="tabular-nums">{r.duration_ms !== null ? `${r.duration_ms} ms` : '—'}</Td>
                                                 <Td title={r.executed_at ?? undefined}>
-                                                    <span className="inline-flex items-center gap-1"><Clock size={11} className="text-slate-400" />{formatRelative(r.executed_at)}</span>
+                                                    <span className="inline-flex items-center gap-1"><Clock size={11} className="text-fg-subtle" />{formatRelative(r.executed_at)}</span>
                                                 </Td>
                                             </tr>
                                         );
@@ -460,18 +460,18 @@ export const AdminPage: React.FC = () => {
 
                         {view === 'collections' && (
                             <>
-                                <thead className="sticky top-0 bg-white dark:bg-near-black border-b border-slate-200 dark:border-white/5">
+                                <thead className="sticky top-0 bg-surface border-b border-line">
                                     <tr><Th>Collection</Th><Th>Owner</Th><Th>Requests</Th><Th>Updated</Th><Th>Created</Th></tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
+                                <tbody className="divide-y divide-line">
                                     {collections.length === 0 && <EmptyRow colSpan={5} label="No collections match." />}
                                     {collections.map((c) => (
-                                        <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02]">
+                                        <tr key={c.id} className="hover:bg-hover">
                                             <Td>
-                                                <div className="font-medium text-slate-900 dark:text-slate-100">{c.name}</div>
-                                                {c.description && <div className="text-[11px] text-slate-500 truncate max-w-[320px]">{c.description}</div>}
+                                                <div className="font-medium text-fg">{c.name}</div>
+                                                {c.description && <div className="text-[12px] text-fg-subtle truncate max-w-[320px]">{c.description}</div>}
                                             </Td>
-                                            <Td>{c.owner_email ?? <span className="text-slate-400">deleted user</span>}</Td>
+                                            <Td>{c.owner_email ?? <span className="text-fg-subtle">deleted user</span>}</Td>
                                             <Td className="tabular-nums">{c.request_count}</Td>
                                             <Td title={c.updated_at ?? undefined}>{formatRelative(c.updated_at)}</Td>
                                             <Td title={c.created_at ?? undefined}>{formatRelative(c.created_at)}</Td>
@@ -483,17 +483,17 @@ export const AdminPage: React.FC = () => {
 
                         {view === 'rpc' && (
                             <>
-                                <thead className="sticky top-0 bg-white dark:bg-near-black border-b border-slate-200 dark:border-white/5">
+                                <thead className="sticky top-0 bg-surface border-b border-line">
                                     <tr><Th>Result</Th><Th>Method</Th><Th>Endpoint</Th><Th>User</Th><Th>Duration</Th><Th>Error</Th><Th>When</Th></tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
+                                <tbody className="divide-y divide-line">
                                     {rpcLogs.length === 0 && <EmptyRow colSpan={7} label="No RPC calls match." />}
                                     {rpcLogs.map((l, i) => (
-                                        <tr key={`${l.timestamp}-${i}`} className="hover:bg-slate-50 dark:hover:bg-white/[0.02]">
+                                        <tr key={`${l.timestamp}-${i}`} className="hover:bg-hover">
                                             <Td><Badge tone={l.success ? 'green' : 'red'}>{l.success ? 'OK' : 'Failed'}</Badge></Td>
                                             <Td className="font-mono">{l.method}</Td>
-                                            <Td className="font-mono max-w-[220px] truncate" title={l.endpoint ?? undefined}>{l.endpoint ?? <span className="text-slate-400">—</span>}</Td>
-                                            <Td>{l.user_email ?? <span className="text-slate-400">—</span>}</Td>
+                                            <Td className="font-mono max-w-[220px] truncate" title={l.endpoint ?? undefined}>{l.endpoint ?? <span className="text-fg-subtle">—</span>}</Td>
+                                            <Td>{l.user_email ?? <span className="text-fg-subtle">—</span>}</Td>
                                             <Td className="tabular-nums">{l.duration_ms != null ? `${l.duration_ms} ms` : '—'}</Td>
                                             <Td className="max-w-[220px] truncate text-rose-500" title={l.error ?? undefined}>{l.error ?? ''}</Td>
                                             <Td title={l.timestamp}>{formatRelative(l.timestamp)}</Td>
@@ -505,15 +505,15 @@ export const AdminPage: React.FC = () => {
 
                         {view === 'endpoints' && (
                             <>
-                                <thead className="sticky top-0 bg-white dark:bg-near-black border-b border-slate-200 dark:border-white/5">
+                                <thead className="sticky top-0 bg-surface border-b border-line">
                                     <tr><Th>Endpoint</Th><Th>Total calls</Th><Th>Failures</Th><Th>Failure rate</Th><Th>Avg latency</Th><Th>Recent errors</Th></tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
+                                <tbody className="divide-y divide-line">
                                     {endpointStats.length === 0 && <EmptyRow colSpan={6} label="No endpoint activity recorded yet." />}
                                     {endpointStats.map((s) => {
                                         const failureRate = s.total_calls > 0 ? s.failed_calls / s.total_calls : 0;
                                         return (
-                                            <tr key={s.endpoint} className="hover:bg-slate-50 dark:hover:bg-white/[0.02]">
+                                            <tr key={s.endpoint} className="hover:bg-hover">
                                                 <Td className="font-mono max-w-[280px] truncate" title={s.endpoint}>{s.endpoint}</Td>
                                                 <Td className="tabular-nums">{s.total_calls.toLocaleString()}</Td>
                                                 <Td className="tabular-nums">{s.failed_calls.toLocaleString()}</Td>
@@ -525,7 +525,7 @@ export const AdminPage: React.FC = () => {
                                                 <Td className="tabular-nums">{s.avg_duration_ms != null ? `${Math.round(s.avg_duration_ms)} ms` : '—'}</Td>
                                                 <Td className="max-w-[320px]">
                                                     {s.recent_errors.length === 0 ? (
-                                                        <span className="text-slate-400">—</span>
+                                                        <span className="text-fg-subtle">—</span>
                                                     ) : (
                                                         <div className="flex flex-col gap-0.5">
                                                             {s.recent_errors.slice(0, 3).map((err, i) => (

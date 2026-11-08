@@ -1,4 +1,4 @@
-import type { AssertionResult, ChainId, Network, RequestItem } from '../types';
+import type { Assertion, AssertionResult, ChainId, Network, RequestItem } from '../types';
 import { RequestType } from '../types';
 
 /**
@@ -253,30 +253,212 @@ export const errorCodeFor = (error: unknown): number => {
     return -32002;
 };
 
+/** One check in a `txio run` collection file (see the txio-cli README). */
+export type CliExpectation =
+    | { contains: string }
+    | { path: string; equals: unknown }
+    | { status: 'success' | 'failure' }
+    | { gasUsed: { eq?: string; gte?: string; lte?: string } }
+    | { balanceChange: { account: string; asset: string; direction?: 'in' | 'out' | 'none'; amount?: { eq: string } } }
+    | { event: string };
+
+export interface CliRequest {
+    name: string;
+    chain: string;
+    kind?: 'simulate';
+    method?: string;
+    params?: unknown;
+    tx?: Record<string, unknown>;
+    expect?: CliExpectation[];
+}
+
+export interface CliCollectionExport {
+    file: { name: string; requests: CliRequest[] };
+    /** Requests left out, as "name: reason". */
+    skipped: string[];
+    /** Checks the CLI cannot express, as "request: check", left out of exported requests. */
+    dropped: string[];
+}
+
+/** The CLI's chain names. */
+const CLI_CHAIN: Record<ChainId, string> = { sui: 'sui', evm: 'eth', solana: 'solana', aptos: 'aptos', stellar: 'soroban' };
+/** The CLI's `eth` adapter speaks to Ethereum mainnet or Sepolia (by --network), nothing else. */
+const CLI_EVM_CHAIN_IDS = new Set([1, 11155111]);
+const CLI_APTOS_ARG_TYPES = new Set(['u8', 'u16', 'u32', 'u64', 'u128', 'u256', 'bool', 'address', 'object', 'string', 'vector<u8>', 'json']);
+
+const isUint = (v: string) => /^\d+$/.test(v);
+const isDecimal = (v: string) => /^\d+(\.\d+)?$/.test(v) || /^\.\d+$/.test(v);
+
+/** A typed form value as the JSON the RPC result would hold: `7` → 7, `true` → true, `"x"` → "x", other text stays text. */
+const jsonish = (text: string): unknown => {
+    try {
+        return JSON.parse(text);
+    } catch {
+        return text;
+    }
+};
+
+/** Whole units → base units, exactly; null when it has more decimals than the unit allows. */
+const toBaseUnits = (amount: string, decimals: number): string | null => {
+    const value = amount.trim();
+    if (!isDecimal(value)) return null;
+    const [whole, fraction = ''] = value.split('.');
+    if (fraction.length > decimals) return null;
+    return BigInt(`${whole || '0'}${fraction.padEnd(decimals, '0')}`).toString();
+};
+
+/** The `tx` object of a simulate cell, or why the CLI cannot dry-run this request. */
+const cliTx = (request: RequestItem, chain: ChainId, sender: string | undefined): { tx: Record<string, unknown> } | { reason: string } => {
+    if (chain === 'sui' || chain === 'stellar') return { reason: `the CLI cannot simulate ${chain === 'sui' ? 'Sui' : 'Soroban'} transactions yet` };
+
+    if (chain === 'evm') {
+        const p = request.evmTxParams;
+        if (!p) return { reason: 'no EVM transaction' };
+        if (p.deploy) return { reason: 'contract deployment is not available in the CLI' };
+        if (!CLI_EVM_CHAIN_IDS.has(p.chainId)) return { reason: `the CLI targets Ethereum mainnet or Sepolia only (chain ${p.chainId})` };
+        const tx: Record<string, unknown> = { to: p.to.trim() };
+        if (p.value.trim() && p.value.trim() !== '0') tx.value = p.value.trim();
+        if (p.functionSignature.trim()) {
+            const args: string[] = [];
+            for (const [i, arg] of p.args.entries()) {
+                const decimals = p.argDecimals?.[i];
+                if (!decimals) {
+                    args.push(arg.trim());
+                    continue;
+                }
+                const scaled = toBaseUnits(arg, decimals);
+                if (scaled === null) return { reason: `argument ${i + 1} ("${arg}") is not a decimal with at most ${decimals} places` };
+                args.push(scaled);
+            }
+            tx.sig = p.functionSignature.trim();
+            tx.args = args;
+        } else if (p.data.trim() && p.data.trim() !== '0x') {
+            tx.data = p.data.trim();
+        }
+        if (sender) tx.from = sender;
+        return { tx };
+    }
+
+    if (chain === 'aptos') {
+        const p = request.aptosTxParams;
+        if (!p) return { reason: 'no Aptos transaction' };
+        if (!sender) return { reason: 'link an Aptos wallet: the CLI needs a sender account' };
+        const unsupported = p.arguments.find((a) => !CLI_APTOS_ARG_TYPES.has(a.type));
+        if (unsupported) return { reason: `the CLI does not take ${unsupported.type} arguments` };
+        const tx: Record<string, unknown> = {
+            function: `${p.moduleAddress.trim()}::${p.module.trim()}::${p.function.trim()}`,
+            sender,
+            args: p.arguments.map((a) => `${a.type}:${a.value}`)
+        };
+        if (p.typeArguments.length > 0) tx.typeArgs = p.typeArguments;
+        if (p.maxGasAmount && isUint(p.maxGasAmount.trim())) tx.maxGas = Number(p.maxGasAmount.trim());
+        if (p.gasUnitPrice && isUint(p.gasUnitPrice.trim())) tx.gasPrice = Number(p.gasUnitPrice.trim());
+        return { tx };
+    }
+
+    const p = request.solanaTxParams;
+    if (!p) return { reason: 'no Solana instruction' };
+    if (!sender) return { reason: 'link a Solana wallet: the CLI needs a fee payer' };
+    const tx: Record<string, unknown> = {
+        program: p.programId.trim(),
+        accounts: p.accounts.map((a) => `${a.pubkey.trim()}${a.isSigner ? ':s' : ''}${a.isWritable ? ':w' : ''}`),
+        payer: sender
+    };
+    if (p.data) tx.data = p.dataEncoding === 'hex' ? p.data.trim() : `${p.dataEncoding}:${p.data}`;
+    return { tx };
+};
+
+/** The CLI form of one app check, or null when the CLI has no equivalent. */
+const cliExpectation = (a: Assertion, simulate: boolean): CliExpectation | null => {
+    const value = (a.value ?? '').trim();
+    const key = `${a.category}:${a.target}`;
+    if (!simulate) {
+        if (key !== 'response:json_path' || a.operator !== 'equals') return null;
+        const sep = value.indexOf('::');
+        const path = (sep === -1 ? value : value.slice(0, sep)).trim();
+        if (!path || sep === -1 || /[[\]]/.test(path)) return null;
+        return { path, equals: jsonish(value.slice(sep + 2).trim()) };
+    }
+    switch (key) {
+        case 'transaction:tx_status':
+            return a.operator === 'equals' && (value === 'success' || value === 'failure') ? { status: value } : null;
+        case 'transaction:gas_used': {
+            if (!isUint(value)) return null;
+            const n = BigInt(value);
+            if (a.operator === 'equals') return { gasUsed: { eq: n.toString() } };
+            if (a.operator === 'less_than') return n > BigInt(0) ? { gasUsed: { lte: (n - BigInt(1)).toString() } } : null;
+            if (a.operator === 'greater_than') return { gasUsed: { gte: (n + BigInt(1)).toString() } };
+            return null;
+        }
+        case 'transaction:balance_change': {
+            if (a.operator !== 'equals') return null;
+            const sep = value.lastIndexOf('::');
+            if (sep === -1) return null;
+            const subject = value.slice(0, sep).trim();
+            const expected = value.slice(sep + 2).trim();
+            const at = subject.indexOf('@');
+            const asset = at === -1 ? '' : subject.slice(0, at).trim();
+            const account = at === -1 ? '' : subject.slice(at + 1).trim();
+            const negative = expected.startsWith('-');
+            const magnitude = negative ? expected.slice(1) : expected;
+            if (!asset || !account || !isDecimal(magnitude)) return null;
+            if (/^0*\.?0*$/.test(magnitude)) return { balanceChange: { account, asset, direction: 'none' } };
+            return { balanceChange: { account, asset, direction: negative ? 'out' : 'in', amount: { eq: magnitude } } };
+        }
+        case 'event:event_type':
+            return a.operator === 'contains' && value ? { event: value } : null;
+        default:
+            return null;
+    }
+};
+
 /**
- * The collection file `txio run` reads. RPC requests only: transactions are not
- * expressible there yet, so their names come back in `skipped` for the caller
- * to show instead of silently dropping them.
+ * The collection file `txio run` reads: RPC requests as calls, and EVM, Aptos
+ * and Solana transactions as dry runs (`"kind": "simulate"`). `senders` holds
+ * the linked wallet address per chain, which the CLI needs as the Aptos
+ * sender and the Solana fee payer. Requests and checks the CLI cannot express
+ * come back in `skipped` and `dropped` for the caller to show instead of
+ * silently disappearing.
  */
 export const toCliCollection = (
     name: string,
-    requests: RequestItem[]
-): { file: { name: string; requests: { name: string; chain: string; method: string; params: unknown }[] }; skipped: string[] } => {
-    const file = { name, requests: [] as { name: string; chain: string; method: string; params: unknown }[] };
-    const skipped: string[] = [];
+    requests: RequestItem[],
+    senders: Partial<Record<ChainId, string>> = {}
+): CliCollectionExport => {
+    const out: CliCollectionExport = { file: { name, requests: [] }, skipped: [], dropped: [] };
     for (const request of requests) {
-        if (request.type !== RequestType.RPC || !request.rpcParams?.method) {
-            skipped.push(request.name);
-            continue;
+        const chain = requestChain(request);
+        const simulate = request.type === RequestType.TRANSACTION;
+        let entry: CliRequest;
+        if (simulate) {
+            const built = cliTx(request, chain, senders[chain]);
+            if ('reason' in built) {
+                out.skipped.push(`${request.name}: ${built.reason}`);
+                continue;
+            }
+            entry = { name: request.name, chain: CLI_CHAIN[chain], kind: 'simulate', tx: built.tx };
+        } else {
+            if (request.type !== RequestType.RPC || !request.rpcParams?.method) {
+                out.skipped.push(`${request.name}: no RPC method`);
+                continue;
+            }
+            const evmChainId = request.rpcParams.evmChainId;
+            if (chain === 'evm' && evmChainId !== undefined && !CLI_EVM_CHAIN_IDS.has(evmChainId)) {
+                out.skipped.push(`${request.name}: the CLI targets Ethereum mainnet or Sepolia only (chain ${evmChainId})`);
+                continue;
+            }
+            entry = { name: request.name, chain: CLI_CHAIN[chain], method: request.rpcParams.method, params: request.rpcParams.params ?? [] };
         }
-        file.requests.push({
-            name: request.name,
-            chain: requestChain(request),
-            method: request.rpcParams.method,
-            params: request.rpcParams.params ?? []
-        });
+        const expect: CliExpectation[] = [];
+        for (const assertion of (request.tests ?? []).filter((t) => t.enabled)) {
+            const converted = cliExpectation(assertion, simulate);
+            if (converted) expect.push(converted);
+            else out.dropped.push(`${request.name}: ${assertion.target} ${assertion.operator}${assertion.value ? ` ${assertion.value}` : ''}`);
+        }
+        if (expect.length > 0) entry.expect = expect;
+        out.file.requests.push(entry);
     }
-    return { file, skipped };
+    return out;
 };
 
 export const isTransactionRequest = (request: RequestItem): boolean => request.type === RequestType.TRANSACTION;

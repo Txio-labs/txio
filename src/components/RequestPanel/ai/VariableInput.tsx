@@ -32,8 +32,8 @@ export const VariableInput: React.FC<VariableInputProps> = ({
         disabled={disabled}
         className={`${className} ${
           hasVar 
-            ? (isVarResolved ? 'text-emerald-400 font-bold' : 'text-amber-500 font-bold') 
-            : 'text-slate-700 dark:text-slate-200'
+            ? (isVarResolved ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-amber-500 font-semibold') 
+            : 'text-fg'
         } ${disabled ? 'opacity-50 cursor-not-allowed' : ''} transition-all`}
         value={value}
         onChange={(e) => onChange(e.target.value)}

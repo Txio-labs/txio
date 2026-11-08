@@ -26,12 +26,12 @@ interface StatProps {
 
 const Stat: React.FC<StatProps> = ({ icon: Icon, label, value }) => (
     <div className="flex flex-1 min-w-0 items-center gap-3">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.04] text-slate-400">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-hover text-fg-subtle">
             <Icon size={14} />
         </div>
         <div className="min-w-0">
-            <div className="text-xs text-slate-500">{label}</div>
-            <div className="text-xl font-semibold text-slate-900 dark:text-white tracking-tight mt-0.5">{value}</div>
+            <div className="text-xs text-fg-subtle">{label}</div>
+            <div className="text-xl font-semibold text-fg tracking-tight mt-0.5">{value}</div>
         </div>
     </div>
 );
@@ -46,23 +46,23 @@ interface FieldProps {
 
 const Field: React.FC<FieldProps> = ({ label, htmlFor, error, hint, children }) => (
     <div className="space-y-1.5">
-        <label htmlFor={htmlFor} className="block text-xs font-medium text-slate-400">{label}</label>
+        <label htmlFor={htmlFor} className="block text-xs font-medium text-fg-subtle">{label}</label>
         {children}
         {error ? (
-            <p className="flex items-center gap-1.5 text-[11px] text-rose-400">
+            <p className="flex items-center gap-1.5 text-[12px] text-rose-600 dark:text-rose-400">
                 <AlertCircle size={11} /> {error}
             </p>
         ) : (
-            hint && <p className="text-[11px] text-slate-500">{hint}</p>
+            hint && <p className="text-[12px] text-fg-subtle">{hint}</p>
         )}
     </div>
 );
 
 const inputBase =
-    'w-full bg-white dark:bg-near-black border rounded-lg px-3 py-2 text-sm outline-none transition-colors';
-const editableInput = `${inputBase} border-slate-200 dark:border-white/[0.08] text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-electric-violet/60 focus:bg-slate-50 dark:focus:bg-white/[0.02]`;
-const errorInput = `${inputBase} border-rose-500/40 text-slate-800 dark:text-slate-200 focus:border-rose-500/60`;
-const readonlyInput = `${inputBase} border-slate-200 dark:border-white/[0.08] text-slate-500 cursor-not-allowed`;
+    'w-full bg-surface border rounded-lg px-3 py-2 text-sm outline-none transition-colors';
+const editableInput = `${inputBase} border-line text-fg placeholder:text-fg-subtle focus:border-line-strong focus:bg-slate-50 dark:focus:bg-sunken`;
+const errorInput = `${inputBase} border-rose-500/40 text-fg focus:border-rose-500/60`;
+const readonlyInput = `${inputBase} border-line text-fg-subtle cursor-not-allowed`;
 
 export const GeneralTab: React.FC<TabProps & { onLogout: () => void }> = ({ user, onLogout }) => {
     const { history, collections } = useAppStore();
@@ -109,23 +109,23 @@ export const GeneralTab: React.FC<TabProps & { onLogout: () => void }> = ({ user
     return (
         <div className="space-y-5 animate-in fade-in slide-in-from-right-2 duration-200">
             {/* Profile details, with workspace stats grouped in as its header */}
-            <section className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-dark-indigo-glow overflow-hidden">
-                <div className="flex items-center divide-x divide-slate-200 dark:divide-white/[0.06] px-5 py-4 border-b border-slate-200 dark:border-white/[0.06]">
+            <section className="rounded-[10px] border border-line bg-elevated overflow-hidden">
+                <div className="flex items-center divide-x divide-slate-200 dark:divide-white/[0.06] px-5 py-4 border-b border-line">
                     <Stat icon={Terminal} label="Calls" value={history.length} />
                     <div className="px-5"><Stat icon={FolderOpen} label="Collections" value={collections.length} /></div>
                     <Stat icon={FileText} label="Requests" value={savedRequestCount} />
                 </div>
 
-                <div className="px-5 py-4 border-b border-slate-200 dark:border-white/[0.06]">
-                    <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Profile details</h3>
-                    <p className="text-xs text-slate-500 mt-0.5">Update how you appear across txio.</p>
+                <div className="px-5 py-4 border-b border-line">
+                    <h3 className="text-sm font-semibold text-fg tracking-tight">Profile details</h3>
+                    <p className="text-xs text-fg-subtle mt-0.5">Update how you appear across txio.</p>
                 </div>
 
                 <form className="p-5 space-y-4" onSubmit={handleSave}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Field label="Display name" htmlFor="general-name" error={error ?? undefined}>
                             <div className="relative">
-                                <UserIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                                <UserIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle pointer-events-none" />
                                 <input
                                     id="general-name"
                                     className={`${error ? errorInput : editableInput} pl-9`}
@@ -144,7 +144,7 @@ export const GeneralTab: React.FC<TabProps & { onLogout: () => void }> = ({ user
 
                         <Field label="Email" htmlFor="general-email" hint="Used for sign-in.">
                             <div className="relative">
-                                <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                                <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle pointer-events-none" />
                                 <input
                                     id="general-email"
                                     className={`${readonlyInput} pl-9`}
@@ -157,8 +157,8 @@ export const GeneralTab: React.FC<TabProps & { onLogout: () => void }> = ({ user
 
                         <Field label="GitHub" hint="Publish recipes and sync gists.">
                             <div className={`${readonlyInput} flex items-center gap-2`}>
-                                <Github size={14} className={user.githubAccount ? "text-slate-800 dark:text-slate-200 shrink-0" : "text-slate-500 shrink-0"} />
-                                <span className={user.githubAccount ? "truncate text-slate-800 dark:text-slate-200" : "truncate text-slate-500"}>
+                                <Github size={14} className={user.githubAccount ? "text-fg shrink-0" : "text-fg-subtle shrink-0"} />
+                                <span className={user.githubAccount ? "truncate text-fg" : "truncate text-fg-subtle"}>
                                     {user.githubAccount ? `@${user.githubAccount.login}` : "Not connected"}
                                 </span>
                                 {!user.githubAccount && (
@@ -166,7 +166,7 @@ export const GeneralTab: React.FC<TabProps & { onLogout: () => void }> = ({ user
                                         type="button"
                                         onClick={() => void connectProvider('github')}
                                         aria-label="Connect GitHub"
-                                        className="ml-auto text-[11px] text-electric-violet hover:opacity-80 font-medium transition-colors"
+                                        className="ml-auto text-[12px] text-fg hover:opacity-80 font-medium transition-colors"
                                     >
                                         Connect →
                                     </button>
@@ -177,7 +177,7 @@ export const GeneralTab: React.FC<TabProps & { onLogout: () => void }> = ({ user
                         <Field label="Google" hint="Sign in without a password.">
                             <div className={`${readonlyInput} flex items-center gap-2`}>
                                 <Google size={14} className="shrink-0" />
-                                <span className={user.googleLinked ? "truncate text-slate-800 dark:text-slate-200" : "truncate text-slate-500"}>
+                                <span className={user.googleLinked ? "truncate text-fg" : "truncate text-fg-subtle"}>
                                     {user.googleLinked ? "Connected" : "Not connected"}
                                 </span>
                                 {!user.googleLinked && (
@@ -185,7 +185,7 @@ export const GeneralTab: React.FC<TabProps & { onLogout: () => void }> = ({ user
                                         type="button"
                                         onClick={() => void connectProvider('google')}
                                         aria-label="Connect Google"
-                                        className="ml-auto text-[11px] text-electric-violet hover:opacity-80 font-medium transition-colors"
+                                        className="ml-auto text-[12px] text-fg hover:opacity-80 font-medium transition-colors"
                                     >
                                         Connect →
                                     </button>
@@ -201,10 +201,10 @@ export const GeneralTab: React.FC<TabProps & { onLogout: () => void }> = ({ user
                     </div>
                 </form>
 
-                <div className="flex items-center justify-between gap-4 px-5 py-3 border-t border-slate-200 dark:border-white/[0.06] bg-slate-50 dark:bg-white/[0.015]">
-                    <p className="text-[11px] text-slate-500">
+                <div className="flex items-center justify-between gap-4 px-5 py-3 border-t border-line bg-sunken">
+                    <p className="text-[12px] text-fg-subtle">
                         {error
-                            ? <span className="text-rose-400 inline-flex items-center gap-1.5"><AlertCircle size={11} /> {error}</span>
+                            ? <span className="text-rose-600 dark:text-rose-400 inline-flex items-center gap-1.5"><AlertCircle size={11} /> {error}</span>
                             : isDirty
                                 ? 'You have unsaved changes.'
                                 : saved
@@ -216,8 +216,8 @@ export const GeneralTab: React.FC<TabProps & { onLogout: () => void }> = ({ user
                         disabled={!isDirty && !saved}
                         className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${
                             saved
-                                ? 'bg-emerald-500/[0.15] text-emerald-300 border border-emerald-500/30'
-                                : 'bg-slate-900 dark:bg-white hover:opacity-90 text-white dark:text-near-black'
+                                ? 'bg-emerald-500/[0.15] text-emerald-600 dark:text-emerald-300 border border-emerald-500/30'
+                                : 'bg-inverse hover:opacity-90 text-on-inverse'
                         }`}
                     >
                         {saved && <Check size={13} />}
@@ -229,7 +229,7 @@ export const GeneralTab: React.FC<TabProps & { onLogout: () => void }> = ({ user
             {/* Mobile-only sign out (sidebar holds it on desktop) */}
             <button
                 onClick={onLogout}
-                className="md:hidden flex w-full items-center justify-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/[0.08] px-4 py-2.5 text-sm font-medium text-rose-300 hover:bg-rose-500/[0.12] transition-colors"
+                className="md:hidden flex w-full items-center justify-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/[0.08] px-4 py-2.5 text-sm font-medium text-rose-600 dark:text-rose-300 hover:bg-rose-500/[0.12] transition-colors"
             >
                 <LogOut size={14} />
                 Sign Out

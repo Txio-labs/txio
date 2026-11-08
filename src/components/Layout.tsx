@@ -1,15 +1,12 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import {
     Settings,
-    ChevronDown,
-    Globe,
+    ChevronsUpDown,
     Loader2,
     LayoutGrid,
     Plus,
     Layers,
     Command,
-    Sparkles,
     Search,
     Check,
     Terminal,
@@ -23,11 +20,10 @@ import {
     HelpCircle,
     Bell,
     BellOff,
-    CircleDot,
-    Wallet,
     Activity,
     MoreHorizontal,
     PanelRight,
+    PanelLeft,
     ShieldCheck,
     Menu,
     Code2,
@@ -37,6 +33,9 @@ import {
     XCircle,
     Info,
     X,
+    UserCog,
+    Hammer,
+    ChevronRight,
 } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { Tab } from './ui/Tabs';
@@ -49,8 +48,9 @@ import { useWallet } from '@/wallet';
 import { shortenAddress } from '@/wallet/utils';
 import { RPC_CHAINS } from '@/lib/constants';
 import { ProfileMenu } from './ProfileMenu';
-import logoDark from '../assets/txio2.png';
-import logoLight from '../assets/txio3.png';
+import { cx, IconButton, Kbd, StatusDot, networkTone } from './ui/primitives';
+import { TxioMark } from './ui/TxioMark';
+import { useEnter } from '@/lib/motion';
 
 interface LayoutProps {
     workspace: React.ReactNode;
@@ -64,26 +64,47 @@ interface LayoutProps {
     onCreateWorkspace?: (name: string) => void;
 }
 
-interface NavRailItem {
+interface NavItem {
     id: FeatureId;
     label: string;
-    icon: React.ComponentType<{ size?: number; className?: string }>;
+    icon: React.ComponentType<{ size?: number; className?: string; strokeWidth?: number }>;
 }
 
-const NAV_RAIL_TOP: NavRailItem[] = [
-    { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
-    { id: 'rpc', label: 'Requests', icon: Zap },
-    { id: 'send', label: 'Send', icon: Repeat },
-    { id: 'history', label: 'History', icon: Activity },
-    { id: 'collections', label: 'Collections', icon: FolderKanban },
-    { id: 'workspace_overview', label: 'Workspaces', icon: Briefcase },
-    { id: 'infrastructure', label: 'Networks', icon: NetworkIcon },
-    { id: 'profile', label: 'Wallets', icon: WalletIcon },
-    { id: 'approvals', label: 'Approvals', icon: KeyRound },
-    { id: 'automation', label: 'Automation', icon: ShieldCheck },
+interface NavGroup {
+    label: string;
+    items: NavItem[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
+    {
+        label: 'Build',
+        items: [
+            { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
+            { id: 'rpc', label: 'Requests', icon: Zap },
+            { id: 'move', label: 'Contracts', icon: Hammer },
+            { id: 'collections', label: 'Collections', icon: FolderKanban },
+            { id: 'history', label: 'History', icon: Activity },
+        ],
+    },
+    {
+        label: 'Assets',
+        items: [
+            { id: 'send', label: 'Send', icon: Repeat },
+            { id: 'profile', label: 'Wallets', icon: WalletIcon },
+            { id: 'approvals', label: 'Approvals', icon: KeyRound },
+        ],
+    },
+    {
+        label: 'Operate',
+        items: [
+            { id: 'infrastructure', label: 'Networks', icon: NetworkIcon },
+            { id: 'automation', label: 'Automation', icon: ShieldCheck },
+            { id: 'workspace_overview', label: 'Workspaces', icon: Briefcase },
+        ],
+    },
 ];
 
-const NAV_RAIL_BOTTOM: NavRailItem[] = [
+const NAV_FOOTER: NavItem[] = [
     { id: 'docs', label: 'Documentation', icon: BookOpen },
     { id: 'developers', label: 'Developers', icon: Code2 },
     { id: 'settings', label: 'Settings', icon: Settings },
@@ -92,23 +113,68 @@ const NAV_RAIL_BOTTOM: NavRailItem[] = [
 
 // Only rendered for accounts with the server-side is_admin flag; the backend
 // rejects /admin requests from anyone else regardless of what the UI shows.
-const ADMIN_NAV_ITEM: NavRailItem = { id: 'admin', label: 'Admin', icon: ShieldCheck };
+const ADMIN_NAV_ITEM: NavItem = { id: 'admin', label: 'Admin', icon: UserCog };
+
+const PAGE_TITLES: Partial<Record<FeatureId, string>> = {
+    dashboard: 'Overview',
+    rpc: 'Request',
+    ptb: 'Request',
+    move: 'Contracts',
+    collections: 'Collections',
+    history: 'History',
+    send: 'Send',
+    profile: 'Wallets',
+    account: 'Profile',
+    approvals: 'Approvals',
+    infrastructure: 'Networks',
+    automation: 'Automation',
+    workspace_overview: 'Workspaces',
+    docs: 'Documentation',
+    developers: 'Developers',
+    settings: 'Settings',
+    help: 'Help',
+    admin: 'Admin',
+    new_request: 'New request',
+    new_collection: 'New collection',
+    runner: 'Collection runner',
+    ecosystem: 'Ecosystem',
+    features: 'Features',
+    integrations: 'Integrations',
+    partners: 'Partners',
+};
 
 const NOTIF_META = {
-    success: { icon: CheckCircle2, className: 'text-emerald-500 bg-emerald-500/10' },
-    error: { icon: XCircle, className: 'text-red-500 bg-red-500/10' },
-    info: { icon: Info, className: 'text-sky-500 bg-sky-500/10' }
+    success: { icon: CheckCircle2, className: 'text-emerald-500' },
+    error: { icon: XCircle, className: 'text-red-500' },
+    info: { icon: Info, className: 'text-sky-500' },
 } as const;
 
 function notifTimeAgo(ts: number): string {
-    const diffMs = Date.now() - ts;
-    const secs = Math.floor(diffMs / 1000);
+    const secs = Math.floor((Date.now() - ts) / 1000);
     if (secs < 5) return 'just now';
     if (secs < 60) return `${secs}s ago`;
     const mins = Math.floor(secs / 60);
     if (mins < 60) return `${mins}m ago`;
-    const hrs = Math.floor(mins / 60);
-    return `${hrs}h ago`;
+    return `${Math.floor(mins / 60)}h ago`;
+}
+
+// The Terminal is the execution console for requests: it only makes sense while a
+// request-editing view is open. "new_request" is the type picker shown before a
+// request exists, and "new_collection" isn't a request at all.
+const REQUEST_TAB_TYPES: ReadonlySet<FeatureId> = new Set(['rpc', 'ptb', 'move', 'runner']);
+
+function useClickOutside(ref: React.RefObject<HTMLElement | null>, onOutside: () => void) {
+    const callback = useRef(onOutside);
+    useEffect(() => {
+        callback.current = onOutside;
+    });
+    useEffect(() => {
+        const handler = (event: MouseEvent) => {
+            if (ref.current && !ref.current.contains(event.target as Node)) callback.current();
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [ref]);
 }
 
 export const Layout: React.FC<LayoutProps> = ({
@@ -120,11 +186,11 @@ export const Layout: React.FC<LayoutProps> = ({
     onCloseTab,
     onRenameTab,
     onNewTab,
-    onCreateWorkspace
+    onCreateWorkspace,
 }) => {
     const {
-        theme,
         isInspectorOpen,
+        isSidebarOpen,
         network,
         isSyncing,
         scanStep,
@@ -135,56 +201,83 @@ export const Layout: React.FC<LayoutProps> = ({
         workspaces,
         currentWorkspaceId,
         notifications,
-        user
+        activityLogs,
+        user,
     } = useAppStore();
-    const navRailBottom = user?.isAdmin ? [ADMIN_NAV_ITEM, ...NAV_RAIL_BOTTOM] : NAV_RAIL_BOTTOM;
-    const logo = theme === 'dark' ? logoDark : logoLight;
+    const navFooter = user?.isAdmin ? [ADMIN_NAV_ITEM, ...NAV_FOOTER] : NAV_FOOTER;
     const { currentWallet, isConnected, openModal } = useWallet();
     const [isNotifOpen, setIsNotifOpen] = useState(false);
     const [isWsDropdownOpen, setIsWsDropdownOpen] = useState(false);
     const [isCreateWsModalOpen, setIsCreateWsModalOpen] = useState(false);
     const [isTabMenuOpen, setIsTabMenuOpen] = useState(false);
     const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+    const [isOnline, setIsOnline] = useState(true);
     const notifRef = useRef<HTMLDivElement>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
     const wsMenuRef = useRef<HTMLDivElement>(null);
     const tabMenuRef = useRef<HTMLDivElement>(null);
 
-    const activeTab = storeTabs.find((t) => t.id === (activeTabId ?? storeActiveTabId));
-    const currentWorkspace = workspaces.find((w) => w.id === currentWorkspaceId) || workspaces[0];
+    useClickOutside(notifRef, () => setIsNotifOpen(false));
+    useClickOutside(wsMenuRef, () => setIsWsDropdownOpen(false));
+    useClickOutside(tabMenuRef, () => setIsTabMenuOpen(false));
 
-    // The Terminal is the execution console for requests — it only makes
-    // sense while an actual request-editing view is open (RPC/PTB/Move/
-    // Playground/Collection Runner). "new_request" is just the type-picker
-    // screen shown before a request exists yet, and "new_collection" isn't
-    // a request at all — neither has anything for the Terminal to log.
-    const REQUEST_TAB_TYPES: ReadonlySet<FeatureId> = new Set([
-        'rpc', 'ptb', 'move', 'playground', 'runner'
-    ]);
+    const activeTab = storeTabs.find((t) => t.id === (activeTabId ?? storeActiveTabId));
+    useEnter(contentRef, activeTab?.id ?? 'home');
+    const currentWorkspace = workspaces.find((w) => w.id === currentWorkspaceId) || workspaces[0];
     const isRequestView = Boolean(activeTab && REQUEST_TAB_TYPES.has(activeTab.type));
 
-    // Only a request has a chain — outside one, show no chain rather than
-    // implying a default.
-    const activeChainId = isRequestView ? activeTab?.data?.rpcParams?.chain ?? 'sui' : null;
+    // Only a request has a chain: outside one, show no chain rather than implying a default.
+    // Contracts and the runner pick their own chain, so the chip only shows on a request.
+    const activeChainId = activeTab && (activeTab.type === 'rpc' || activeTab.type === 'ptb') ? activeTab.data?.rpcParams?.chain ?? null : null;
     const activeChainLabel = activeChainId ? RPC_CHAINS.find((c) => c.id === activeChainId)?.label ?? activeChainId : null;
+    const pageTitle = activeTab ? (REQUEST_TAB_TYPES.has(activeTab.type) ? activeTab.title : PAGE_TITLES[activeTab.type] ?? activeTab.title) : 'Overview';
+    const pageSection = activeTab ? NAV_GROUPS.find((g) => g.items.some((i) => i.id === activeTab.type))?.label : 'Build';
 
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
-                setIsNotifOpen(false);
-            }
-            if (wsMenuRef.current && !wsMenuRef.current.contains(event.target as Node)) {
-                setIsWsDropdownOpen(false);
-            }
-            if (tabMenuRef.current && !tabMenuRef.current.contains(event.target as Node)) {
-                setIsTabMenuOpen(false);
-            }
+        const update = () => setIsOnline(navigator.onLine);
+        update();
+        window.addEventListener('online', update);
+        window.addEventListener('offline', update);
+        return () => {
+            window.removeEventListener('online', update);
+            window.removeEventListener('offline', update);
         };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // On a phone the inspector is a full-screen overlay, so it must not open over the
+    // app on first load just because it's docked open on desktop.
+    useEffect(() => {
+        if (window.matchMedia?.('(max-width: 767px)').matches && appStore.getSnapshot().isInspectorOpen) {
+            appStore.toggleInspector();
+        }
+    }, []);
+
+    const recentErrorCount = (activityLogs ?? []).filter((log) => log.type === 'error').length;
+    const collapsed = !isSidebarOpen;
+
+    const navButton = (item: NavItem, isActive: boolean) => (
+        <button
+            key={item.id}
+            onClick={() => {
+                appStore.openTab(item.id);
+                setIsMobileNavOpen(false);
+            }}
+            title={item.label}
+            aria-label={item.label}
+            aria-current={isActive ? 'page' : undefined}
+            className={cx(
+                'group relative w-full flex items-center gap-2.5 h-8 rounded-[7px] text-[14px] transition-colors',
+                collapsed ? 'md:justify-center md:px-0 px-2.5' : 'px-2.5',
+                isActive ? 'bg-active text-fg font-medium' : 'text-fg-muted hover:text-fg hover:bg-hover'
+            )}
+        >
+            <item.icon size={15} strokeWidth={isActive ? 2.2 : 1.8} className={isActive ? 'text-fg' : 'text-fg-subtle group-hover:text-fg-muted'} />
+            <span className={cx('truncate', collapsed && 'md:hidden')}>{item.label}</span>
+        </button>
+    );
+
     return (
-        <div className="flex flex-col h-screen bg-slate-50 dark:bg-near-black text-slate-700 dark:text-slate-200 overflow-hidden font-sans relative selection:bg-electric-violet/30">
+        <div className="flex h-screen bg-canvas text-fg overflow-hidden font-sans text-[14px] relative">
             <CommandPalette />
             <NetworkSwitcherModal
                 isOpen={pendingNetworkSwitch !== null}
@@ -196,11 +289,11 @@ export const Layout: React.FC<LayoutProps> = ({
             <PromptModal
                 isOpen={isCreateWsModalOpen}
                 onClose={() => setIsCreateWsModalOpen(false)}
-                title="Create Workspace"
-                description="Give your new workspace a name."
+                title="Create workspace"
+                description="Workspaces hold collections, environments and history. Invite your team later."
                 label="Workspace name"
-                placeholder="e.g. My Team"
-                confirmLabel="Create"
+                placeholder="e.g. Protocol team"
+                confirmLabel="Create workspace"
                 icon={LayoutGrid}
                 onSubmit={(name) => {
                     setIsCreateWsModalOpen(false);
@@ -208,269 +301,259 @@ export const Layout: React.FC<LayoutProps> = ({
                 }}
             />
 
-            {/* Top Energy Line */}
-            <div className="absolute top-0 left-0 right-0 h-[1px] bg-slate-400 z-50 shadow-[0_0_15px_rgba(163,163,163,0.4)]"></div>
-
             {isSyncing && (
-                <div className="fixed inset-0 z-[110] bg-white/90 dark:bg-near-black/90 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in duration-300">
-                    <div className="relative">
-                        <Loader2 className="text-electric-violet animate-spin mb-4 drop-shadow-[0_0_10px_rgba(56,189,248,0.8)]" size={48} />
-                        <div className="absolute inset-0 bg-electric-violet/20 blur-xl rounded-full animate-pulse"></div>
-                    </div>
-                    <p className="text-slate-900 dark:text-white text-sm font-mono tracking-wider font-bold">{scanStep || 'Syncing...'}</p>
+                <div className="fixed inset-0 z-[110] bg-canvas/85 backdrop-blur-md flex flex-col items-center justify-center gap-3 animate-in fade-in">
+                    <Loader2 className="text-fg-muted animate-spin" size={28} />
+                    <p className="text-fg text-xs font-mono">{scanStep || 'Syncing…'}</p>
                 </div>
             )}
 
-            <div className="flex-1 flex min-h-0">
-                {/* Below md the rail can't sit permanently beside a full-width
-                    main view, so it's hidden by default and opens as an
-                    off-canvas drawer from the hamburger trigger in the header. */}
-                {isMobileNavOpen && (
-                    <button
-                        onClick={() => setIsMobileNavOpen(false)}
-                        aria-label="Close navigation"
-                        className="md:hidden fixed inset-0 z-30 bg-near-black/50 animate-in fade-in duration-150"
-                    />
+            {isMobileNavOpen && (
+                <button
+                    onClick={() => setIsMobileNavOpen(false)}
+                    aria-label="Close navigation"
+                    className="md:hidden fixed inset-0 z-30 bg-black/50 animate-in fade-in"
+                />
+            )}
+
+            {/* Sidebar */}
+            <nav
+                aria-label="Main navigation"
+                className={cx(
+                    'fixed inset-y-0 left-0 z-40 md:static md:z-auto shrink-0 flex flex-col bg-canvas transition-[width,transform] duration-200 w-[264px] md:translate-x-0',
+                    collapsed ? 'md:w-[60px]' : 'md:w-[244px]',
+                    isMobileNavOpen ? 'translate-x-0 border-r border-line' : '-translate-x-full'
                 )}
-                {/* Icon + label nav rail */}
-                <nav
-                    className={`fixed inset-y-0 left-0 z-40 md:static md:z-20 w-[76px] shrink-0 flex flex-col items-center bg-slate-50 dark:bg-near-black border-r border-slate-200 dark:border-white/10 py-3 transition-transform duration-200 md:translate-x-0 ${
-                        isMobileNavOpen ? 'translate-x-0' : '-translate-x-full'
-                    }`}
-                >
-                    <button
-                        className="flex flex-col items-center gap-1 mb-4 group cursor-pointer"
-                        onClick={() => { appStore.setActiveTab(null); setIsMobileNavOpen(false); }}
-                        title="TXIO"
-                    >
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
-                            <img src={logo.src} alt="txio" className="w-full h-full object-contain" />
-                        </div>
-                        <span className="text-[9px] font-black tracking-[0.2em] text-slate-900 dark:text-slate-100 group-hover:text-electric-violet transition-colors">
-                            TXIO
-                        </span>
-                    </button>
-
-                    <div className="w-8 h-px bg-slate-200 dark:bg-white/10 mb-3" />
-
-                    <div className="flex-1 flex flex-col items-center gap-1 w-full px-2">
-                        {NAV_RAIL_TOP.map((item) => {
-                            const isActive = activeTab?.type === item.id || (!activeTab && item.id === 'dashboard');
-                            return (
-                                <button
-                                    key={item.id}
-                                    onClick={() => { appStore.openTab(item.id); setIsMobileNavOpen(false); }}
-                                    title={item.label}
-                                    className={`w-full flex flex-col items-center gap-1 py-2 rounded-lg transition-all ${
-                                        isActive
-                                            ? 'bg-electric-violet/10 text-electric-violet'
-                                            : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
-                                    }`}
-                                >
-                                    <item.icon size={16} />
-                                    <span className="text-[9px] font-bold leading-none text-center">{item.label}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    <div className="flex flex-col items-center gap-1 w-full px-2 mb-1">
+            >
+                {/* Workspace switcher */}
+                <div className={cx('relative px-2.5 pt-2.5 pb-1', collapsed && 'md:px-2')} ref={wsMenuRef}>
+                    <div className="flex items-center gap-1">
                         <button
-                            onClick={() => { openModal(); setIsMobileNavOpen(false); }}
-                            title={isConnected ? 'Open wallet manager' : 'Connect wallet'}
-                            aria-label={isConnected ? 'Open wallet manager' : 'Connect wallet'}
-                            className="w-full flex flex-col items-center gap-1 py-2 rounded-lg transition-all text-slate-500 hover:text-electric-violet hover:bg-electric-violet/10"
+                            onClick={() => setIsWsDropdownOpen((o) => !o)}
+                            className={cx(
+                                'flex-1 min-w-0 flex items-center gap-2.5 h-10 rounded-[9px] px-1.5 hover:bg-hover transition-colors text-left',
+                                collapsed && 'md:justify-center md:px-0'
+                            )}
+                            aria-label="txio TXIO"
+                            title="Switch workspace"
                         >
-                            <Wallet size={15} />
-                            <span className="text-[9px] font-bold leading-none text-center">Wallet</span>
+                            <span className="h-7 w-7 rounded-[8px] bg-surface border border-line shadow-card flex items-center justify-center shrink-0">
+                                <TxioMark size={18} />
+                            </span>
+                            <span className={cx('min-w-0 flex-1', collapsed && 'md:hidden')}>
+                                <span className="block text-[14px] font-semibold text-fg truncate leading-tight">
+                                    {currentWorkspace?.name ?? 'Txio'}
+                                </span>
+                                <span className="block text-[12px] text-fg-subtle truncate leading-tight mt-0.5">
+                                    {user ? user.email ?? user.name : 'Local workspace'}
+                                </span>
+                            </span>
+                            <ChevronsUpDown size={13} className={cx('text-fg-subtle shrink-0', collapsed && 'md:hidden')} />
                         </button>
-                        {navRailBottom.map((item) => {
-                            const isActive = activeTab?.type === item.id;
-                            return (
-                                <button
-                                    key={item.id}
-                                    onClick={() => { appStore.openTab(item.id); setIsMobileNavOpen(false); }}
-                                    title={item.label}
-                                    className={`w-full flex flex-col items-center gap-1 py-2 rounded-lg transition-all ${
-                                        isActive
-                                            ? 'bg-electric-violet/10 text-electric-violet'
-                                            : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
-                                    }`}
-                                >
-                                    <item.icon size={15} />
-                                    <span className="text-[9px] font-bold leading-none text-center">{item.label}</span>
-                                </button>
-                            );
-                        })}
+                        <IconButton
+                            label="Close menu"
+                            size="sm"
+                            className="md:hidden"
+                            onClick={() => setIsMobileNavOpen(false)}
+                        >
+                            <X size={14} />
+                        </IconButton>
                     </div>
-                </nav>
 
-                <div className="flex-1 flex flex-col min-w-0">
-                    {/* Top bar: workspace, chain, network, search, notifications, wallet, profile */}
-                    <header className="h-12 bg-slate-50 dark:bg-near-black border-b border-slate-200 dark:border-white/10 flex items-center px-3 shrink-0 z-20 gap-1.5">
-                            <button
-                                onClick={() => setIsMobileNavOpen(true)}
-                                aria-label="Open navigation"
-                                className="md:hidden p-1.5 -ml-1 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors shrink-0"
-                            >
-                                <Menu size={16} />
-                            </button>
-
-                            {currentWorkspace && (
-                                <div className="relative shrink-0" ref={wsMenuRef}>
+                    {isWsDropdownOpen && (
+                        <div className="absolute left-2.5 top-full mt-1 w-[248px] bg-elevated border border-line rounded-card shadow-pop overflow-hidden z-50 animate-in fade-in zoom-in-95">
+                            <div className="px-3 pt-2.5 pb-1.5 text-[12px] font-medium text-fg-subtle">
+                                Workspaces
+                            </div>
+                            <div className="px-1 pb-1 max-h-64 overflow-y-auto custom-scrollbar">
+                                {workspaces.map((ws, i) => {
+                                    const isActive = ws.id === currentWorkspace?.id;
+                                    return (
+                                        <button
+                                            key={ws.id}
+                                            onClick={() => {
+                                                appStore.setWorkspace(ws);
+                                                setIsWsDropdownOpen(false);
+                                            }}
+                                            className="w-full flex items-center gap-2.5 rounded-[7px] px-2 h-8 text-left text-[14px] text-fg hover:bg-hover transition-colors"
+                                        >
+                                            <span className="h-5 w-5 rounded-[5px] bg-active text-[12px] font-semibold flex items-center justify-center text-fg-muted">
+                                                {ws.name.slice(0, 1).toUpperCase()}
+                                            </span>
+                                            <span className="truncate flex-1">{ws.name}</span>
+                                            {isActive ? <Check size={13} className="text-fg shrink-0" /> : i < 9 && <Kbd>{i + 1}</Kbd>}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            {onCreateWorkspace && (
+                                <div className="p-1 border-t border-line">
                                     <button
-                                        onClick={() => setIsWsDropdownOpen((o) => !o)}
-                                        className={`flex items-center gap-1.5 px-2 py-1 rounded-full bg-white dark:bg-dark-indigo-glow border text-xs shadow-sm transition-colors ${
-                                            isWsDropdownOpen ? 'border-slate-300 dark:border-white/20' : 'border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'
-                                        }`}
-                                        title="Switch workspace"
+                                        onClick={() => {
+                                            setIsWsDropdownOpen(false);
+                                            setIsCreateWsModalOpen(true);
+                                        }}
+                                        className="w-full flex items-center gap-2.5 rounded-[7px] px-2 h-8 text-left text-[14px] text-fg-muted hover:bg-hover hover:text-fg transition-colors"
                                     >
-                                        <LayoutGrid size={11} className="text-slate-500" />
-                                        <span className="hidden sm:inline text-slate-600 dark:text-slate-300 font-medium truncate max-w-[120px]">{currentWorkspace.name}</span>
-                                        <ChevronDown size={10} className={`hidden sm:block text-slate-500 transition-transform duration-200 shrink-0 ${isWsDropdownOpen ? 'rotate-180' : ''}`} />
+                                        <Plus size={14} className="shrink-0" />
+                                        <span>Create workspace</span>
                                     </button>
-
-                                    {isWsDropdownOpen && (
-                                        <div className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
-                                            <div className="px-3 pt-2.5 pb-1.5 text-[10px] font-mono uppercase tracking-[0.16em] text-slate-400 dark:text-slate-600">
-                                                {workspaces.length === 1 ? '1 workspace' : `${workspaces.length} workspaces`}
-                                            </div>
-                                            <div className="px-1.5 pb-1.5 max-h-64 overflow-y-auto custom-scrollbar space-y-0.5">
-                                                {workspaces.map((ws) => {
-                                                    const isActive = ws.id === currentWorkspace.id;
-                                                    return (
-                                                        <button
-                                                            key={ws.id}
-                                                            onClick={() => { appStore.setWorkspace(ws); setIsWsDropdownOpen(false); }}
-                                                            className={`w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${
-                                                                isActive ? 'bg-electric-violet/10 text-slate-900 dark:text-white font-medium' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.04]'
-                                                            }`}
-                                                        >
-                                                            <span className="truncate flex-1">{ws.name}</span>
-                                                            {isActive && <Check size={12} className="text-electric-violet shrink-0" />}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                            {onCreateWorkspace && (
-                                                <div className="p-1.5 bg-slate-50 dark:bg-white/[0.015] border-t border-slate-200 dark:border-white/[0.06]">
-                                                    <button
-                                                        onClick={() => {
-                                                            setIsWsDropdownOpen(false);
-                                                            setIsCreateWsModalOpen(true);
-                                                        }}
-                                                        className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.04] hover:text-slate-900 dark:hover:text-white transition-colors"
-                                                    >
-                                                        <Plus size={14} className="text-electric-violet shrink-0" />
-                                                        <span>Create workspace</span>
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
                                 </div>
                             )}
+                        </div>
+                    )}
+                </div>
 
+                {/* Search + new */}
+                <div className={cx('px-2.5 pb-2 space-y-1', collapsed && 'md:px-2')}>
+                    <button
+                        onClick={() => appStore.setCommandPalette(true)}
+                        className={cx(
+                            'w-full flex items-center gap-2 h-8 rounded-[7px] border border-line bg-surface hover:border-line-strong px-2.5 text-fg-subtle transition-colors shadow-card',
+                            collapsed && 'md:justify-center md:px-0'
+                        )}
+                        title="Search requests, collections, networks... (Ctrl+K)"
+                    >
+                        <Search size={13} className="shrink-0" />
+                        <span className={cx('flex-1 text-left text-[14px] truncate', collapsed && 'md:hidden')}>Search…</span>
+                        <span className={cx('flex items-center gap-0.5', collapsed && 'md:hidden')}>
+                            <Kbd>⌘</Kbd>
+                            <Kbd>K</Kbd>
+                        </span>
+                    </button>
+                    <button
+                        onClick={() => {
+                            onNewTab?.();
+                            setIsMobileNavOpen(false);
+                        }}
+                        className={cx(
+                            'w-full flex items-center gap-2 h-8 rounded-[7px] px-2.5 text-fg-muted hover:text-fg hover:bg-hover transition-colors',
+                            collapsed && 'md:justify-center md:px-0'
+                        )}
+                        title="New request"
+                    >
+                        <Plus size={14} className="shrink-0" />
+                        <span className={cx('flex-1 text-left text-[14px]', collapsed && 'md:hidden')}>New request</span>
+                    </button>
+                </div>
+
+                <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-2.5 pb-2 flex flex-col">
+                    {NAV_GROUPS.map((group) => (
+                        <div key={group.label} className="mb-3">
+                            <div className={cx('px-2.5 h-6 flex items-center text-[12px] font-medium text-fg-subtle', collapsed && 'md:hidden')}>
+                                {group.label}
+                            </div>
+                            {collapsed && <div className="hidden md:block mx-3 my-2 h-px bg-line" />}
+                            <div className="space-y-px">
+                                {group.items.map((item) =>
+                                    navButton(item, activeTab?.type === item.id || (!activeTab && item.id === 'dashboard'))
+                                )}
+                            </div>
+                        </div>
+                    ))}
+
+                    <div className="mt-auto pt-2 space-y-px">
+                        {navFooter.map((item) => navButton(item, activeTab?.type === item.id))}
+                    </div>
+                </div>
+
+                {/* Footer: status + account */}
+                <div className={cx('border-t border-line px-2.5 py-2 flex items-center gap-2', collapsed && 'md:flex-col md:px-2')}>
+                    <ProfileMenu compact={collapsed} />
+                    <div className={cx('flex-1', collapsed && 'md:hidden')} />
+                    <IconButton
+                        label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                        size="sm"
+                        className="hidden md:inline-flex"
+                        onClick={() => appStore.toggleSidebar()}
+                    >
+                        <PanelLeft size={14} />
+                    </IconButton>
+                </div>
+            </nav>
+
+            {/* Main frame */}
+            <div className="flex-1 flex min-w-0 md:py-2 md:pr-2 gap-2">
+                <main className="flex-1 flex flex-col min-w-0 bg-surface md:rounded-panel md:border md:border-line md:shadow-card overflow-hidden relative">
+                    <header className="h-12 flex items-center gap-2 px-3 border-b border-line shrink-0">
+                        <IconButton label="Open navigation" className="md:hidden -ml-1" onClick={() => setIsMobileNavOpen(true)}>
+                            <Menu size={16} />
+                        </IconButton>
+
+                        <div className="flex items-center gap-1.5 min-w-0 text-[14px]">
+                            {pageSection && <span className="hidden sm:inline text-fg-subtle">{pageSection}</span>}
+                            {pageSection && <ChevronRight size={13} className="hidden sm:inline text-fg-subtle/70 shrink-0" />}
+                            <span className="font-medium text-fg truncate">{pageTitle}</span>
                             {activeChainLabel && (
-                            <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-full bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/10 text-xs shadow-sm shrink-0">
-                                <Globe size={11} className="text-slate-500" />
-                                <span className="text-slate-600 dark:text-slate-300 font-medium truncate max-w-[110px]">{activeChainLabel}</span>
-                            </div>
+                                <span className="hidden sm:inline-flex items-center gap-1.5 ml-1.5 h-[22px] px-2 rounded-md border border-line bg-sunken text-[12px] text-fg-muted">
+                                    {activeChainLabel}
+                                </span>
                             )}
+                        </div>
 
-                            <div className="flex-1 flex justify-center px-2 min-w-0">
-                                <button
-                                    onClick={() => appStore.setCommandPalette(true)}
-                                    className="flex items-center justify-center sm:justify-start gap-1.5 bg-white dark:bg-dark-indigo-glow border border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/20 hover:bg-slate-100 dark:hover:bg-[#111] p-1.5 sm:px-2.5 sm:py-1 rounded-full text-xs text-slate-400 w-8 sm:w-full sm:max-w-md transition-all group shadow-inner shrink-0 sm:shrink"
-                                    title="Search requests, collections, networks... (Ctrl+K)"
-                                >
-                                    <Search size={11} className="group-hover:text-electric-violet shrink-0" />
-                                    <span className="hidden sm:inline whitespace-nowrap truncate">Search requests, collections, networks...</span>
-                                    <div className="ml-auto hidden md:flex items-center gap-0.5">
-                                        <span className="bg-slate-100 dark:bg-white/5 px-1 rounded text-[9px] text-slate-500 group-hover:text-slate-600 dark:text-slate-300">⌘</span>
-                                        <span className="bg-slate-100 dark:bg-white/5 px-1 rounded text-[9px] text-slate-500 group-hover:text-slate-600 dark:text-slate-300">K</span>
+                        <div className="flex-1" />
+
+                        <button
+                            onClick={() => appStore.openTab('infrastructure')}
+                            className="hidden sm:inline-flex items-center gap-1.5 h-7 px-2.5 rounded-[7px] border border-line hover:border-line-strong text-xs text-fg-muted hover:text-fg transition-colors capitalize"
+                            title="Network"
+                        >
+                            <StatusDot tone={networkTone(network)} />
+                            {network}
+                        </button>
+
+                        {isRequestView && (
+                            <IconButton label="Terminal" active={isTerminalOpen} onClick={() => appStore.toggleTerminal()}>
+                                <Terminal size={15} />
+                            </IconButton>
+                        )}
+
+                        <div className="relative" ref={notifRef}>
+                            <IconButton label="Notifications" active={isNotifOpen} onClick={() => setIsNotifOpen((o) => !o)} className="relative">
+                                <Bell size={15} />
+                                {notifications.length > 0 && (
+                                    <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-fg ring-2 ring-surface" />
+                                )}
+                            </IconButton>
+                            {isNotifOpen && (
+                                <div className="absolute top-full right-0 mt-1.5 w-80 bg-elevated border border-line rounded-card shadow-pop overflow-hidden z-50 animate-in fade-in zoom-in-95">
+                                    <div className="flex items-center justify-between px-3.5 h-10 border-b border-line">
+                                        <h3 className="text-[14px] font-semibold">Notifications</h3>
+                                        {notifications.length > 0 && (
+                                            <button
+                                                onClick={() => appStore.clearNotifications()}
+                                                className="text-xs text-fg-subtle hover:text-fg transition-colors"
+                                            >
+                                                Clear all
+                                            </button>
+                                        )}
                                     </div>
-                                </button>
-                            </div>
-
-                            {isInspectorOpen ? (
-                                <button
-                                    onClick={() => appStore.toggleInspector()}
-                                    aria-label="Close inspector"
-                                    title="Close inspector"
-                                    className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-white/10 transition-colors shrink-0 text-slate-500 hover:text-electric-violet"
-                                >
-                                    <PanelRight size={14} />
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={() => appStore.toggleInspector()}
-                                    aria-label="Open wallet panel"
-                                    title="Open wallet panel"
-                                    className={`p-1.5 rounded transition-colors shrink-0 relative ${
-                                        isConnected
-                                            ? 'text-electric-violet hover:bg-electric-violet/10'
-                                            : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-electric-violet'
-                                    }`}
-                                >
-                                    <WalletIcon size={14} />
-                                    {isConnected && currentWallet && (
-                                        <CircleDot size={7} className="absolute -top-0.5 -right-0.5 text-emerald-500 fill-emerald-500" />
-                                    )}
-                                </button>
-                            )}
-
-                            <div className="relative shrink-0" ref={notifRef}>
-                                <button
-                                    onClick={() => setIsNotifOpen((o) => !o)}
-                                    className={`p-1.5 rounded hover:bg-slate-100 dark:hover:bg-white/10 transition-colors relative ${isNotifOpen ? 'text-electric-violet' : 'text-slate-500'}`}
-                                    title="Notifications"
-                                >
-                                    <Bell size={14} />
-                                    {notifications.length > 0 && (
-                                        <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-electric-violet flex items-center justify-center text-[7px] font-bold text-near-black">
-                                            {notifications.length}
-                                        </span>
-                                    )}
-                                </button>
-                                {isNotifOpen && (
-                                    <div className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
-                                        <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-slate-200 dark:border-white/10">
-                                            <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200">Notifications</h3>
-                                            {notifications.length > 0 && (
-                                                <button
-                                                    onClick={() => appStore.clearNotifications()}
-                                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors"
-                                                >
-                                                    Clear all
-                                                </button>
-                                            )}
-                                        </div>
-                                        <div className="max-h-80 overflow-y-auto custom-scrollbar">
-                                            {notifications.length === 0 ? (
-                                                <div className="flex flex-col items-center justify-center gap-2 py-10 px-4">
-                                                    <BellOff size={22} className="text-slate-300 dark:text-slate-700" />
-                                                    <p className="text-xs text-slate-500">You're all caught up</p>
-                                                </div>
-                                            ) : (
-                                                <div className="p-1.5 space-y-0.5">
-                                                    {notifications.slice().reverse().map((n) => {
+                                    <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                                        {notifications.length === 0 ? (
+                                            <div className="flex flex-col items-center justify-center gap-2 py-10 px-4">
+                                                <BellOff size={18} className="text-fg-subtle" />
+                                                <p className="text-xs text-fg-subtle">You&apos;re all caught up</p>
+                                            </div>
+                                        ) : (
+                                            <div className="p-1">
+                                                {notifications
+                                                    .slice()
+                                                    .reverse()
+                                                    .map((n) => {
                                                         const meta = NOTIF_META[n.type];
                                                         return (
                                                             <div
                                                                 key={n.id}
-                                                                className="group flex items-start gap-2.5 px-2.5 py-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-white/[0.04] transition-colors"
+                                                                className="group flex items-start gap-2.5 px-2.5 py-2 rounded-[7px] hover:bg-hover transition-colors"
                                                             >
-                                                                <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${meta.className}`}>
-                                                                    <meta.icon size={13} />
-                                                                </div>
+                                                                <meta.icon size={14} className={cx('mt-0.5 shrink-0', meta.className)} />
                                                                 <div className="min-w-0 flex-1">
-                                                                    <p className="text-xs text-slate-700 dark:text-slate-200 leading-snug">{n.message}</p>
-                                                                    <p className="text-[10px] text-slate-400 mt-0.5">{notifTimeAgo(n.timestamp)}</p>
+                                                                    <p className="text-[14px] text-fg leading-snug">{n.message}</p>
+                                                                    <p className="text-[12px] text-fg-subtle mt-0.5">{notifTimeAgo(n.timestamp)}</p>
                                                                 </div>
                                                                 <button
                                                                     onClick={() => appStore.dismissNotification(n.id)}
-                                                                    className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-opacity shrink-0 mt-0.5"
+                                                                    className="opacity-0 group-hover:opacity-100 text-fg-subtle hover:text-fg transition-opacity shrink-0 mt-0.5"
                                                                     aria-label="Dismiss"
                                                                 >
                                                                     <X size={12} />
@@ -478,164 +561,162 @@ export const Layout: React.FC<LayoutProps> = ({
                                                             </div>
                                                         );
                                                     })}
-                                                </div>
-                                            )}
-                                        </div>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                            </div>
+                                </div>
+                            )}
+                        </div>
 
-                            <button
-                                onClick={openModal}
-                                className={`flex items-center gap-1.5 px-2 py-1 rounded-full border text-xs font-medium transition-all shadow-sm shrink-0 ${
-                                    isConnected
-                                        ? 'bg-white dark:bg-dark-indigo-glow border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-white/20'
-                                        : 'bg-electric-violet/10 border-electric-violet/20 text-electric-violet hover:bg-electric-violet/20'
-                                }`}
-                                aria-label={isConnected ? 'Open wallet manager' : 'Connect wallet'}
-                                title={isConnected ? 'Open wallet manager' : 'Connect wallet'}
-                            >
-                                <Wallet size={11} />
-                                {isConnected && currentWallet ? (
-                                    <>
-                                        <span>Wallets</span>
-                                        <span className="hidden md:inline font-mono text-slate-400">{shortenAddress(currentWallet.address)}</span>
-                                        <CircleDot size={8} className="text-emerald-500 fill-emerald-500" />
-                                        <ChevronDown size={10} className="text-slate-500 shrink-0" />
-                                    </>
-                                ) : (
-                                    <span>Connect wallet</span>
-                                )}
-                            </button>
+                        <button
+                            onClick={openModal}
+                            className={cx(
+                                'inline-flex items-center gap-2 h-8 px-3 rounded-control text-[14px] font-medium transition-all shrink-0',
+                                isConnected
+                                    ? 'border border-line bg-surface hover:border-line-strong text-fg shadow-card'
+                                    : 'bg-inverse text-on-inverse hover:opacity-90'
+                            )}
+                            aria-label={isConnected ? 'Open wallet manager' : 'Connect wallet'}
+                            title={isConnected ? 'Open wallet manager' : 'Connect wallet'}
+                        >
+                            {isConnected && currentWallet ? (
+                                <>
+                                    <StatusDot tone="success" />
+                                    <span className="font-mono text-xs">{shortenAddress(currentWallet.address)}</span>
+                                </>
+                            ) : (
+                                <>
+                                    <WalletIcon size={14} />
+                                    <span className="hidden sm:inline">Connect wallet</span>
+                                </>
+                            )}
+                        </button>
 
-                            <ProfileMenu />
+                        <IconButton
+                            label={isInspectorOpen ? 'Close inspector' : 'Open wallet panel'}
+                            active={isInspectorOpen}
+                            onClick={() => appStore.toggleInspector()}
+                        >
+                            <PanelRight size={15} />
+                        </IconButton>
                     </header>
 
-                    <div className="flex-1 flex overflow-hidden">
-                        <main className="flex-1 flex flex-col min-w-0 bg-slate-50 dark:bg-near-black relative">
-                            <div className="h-9 bg-slate-50 dark:bg-near-black border-b border-slate-200 dark:border-white/10 flex items-center">
-                                <div className="flex items-center overflow-x-auto no-scrollbar min-w-0 flex-1">
-                                    {tabs.map(tab => (
-                                        <Tab
-                                            key={tab.id}
-                                            id={tab.id}
-                                            title={tab.title}
-                                            isActive={tab.id === activeTabId}
-                                            onSelect={() => onSelectTab && onSelectTab(tab.id)}
-                                            onClose={() => onCloseTab && onCloseTab(tab.id)}
-                                            onRename={(newTitle) => onRenameTab && onRenameTab(tab.id, newTitle)}
-                                            icon={tab.type === 'ptb' || (tab.type === 'rpc' && tab.data?.type === RequestType.TRANSACTION) ? <Layers size={12}/> : tab.type === 'rpc' ? <Command size={12}/> : undefined}
-                                        />
-                                    ))}
-                                </div>
-
-                                <div className="flex items-center shrink-0 border-l border-slate-200 dark:border-white/10">
-                                    <button
-                                        onClick={onNewTab}
-                                        className="p-2 text-slate-500 hover:text-electric-violet hover:bg-slate-100 dark:hover:bg-white/5 transition-colors shrink-0"
-                                    >
-                                        <Plus size={14} />
-                                    </button>
-
-                                    {tabs.length > 0 && (
-                                        <div className="relative shrink-0" ref={tabMenuRef}>
+                    {tabs.length > 0 && (
+                        <div className="h-10 flex items-end gap-1 px-2 border-b border-line bg-sunken/50 shrink-0">
+                            <div role="tablist" className="flex items-end gap-0.5 overflow-x-auto no-scrollbar min-w-0 flex-1 h-full pt-1.5">
+                                {tabs.map((tab) => (
+                                    <Tab
+                                        key={tab.id}
+                                        id={tab.id}
+                                        title={tab.title}
+                                        isActive={tab.id === activeTabId}
+                                        onSelect={() => onSelectTab && onSelectTab(tab.id)}
+                                        onClose={() => onCloseTab && onCloseTab(tab.id)}
+                                        onRename={(newTitle) => onRenameTab && onRenameTab(tab.id, newTitle)}
+                                        icon={
+                                            tab.type === 'ptb' || (tab.type === 'rpc' && tab.data?.type === RequestType.TRANSACTION) ? (
+                                                <Layers size={12} />
+                                            ) : tab.type === 'rpc' ? (
+                                                <Command size={12} />
+                                            ) : undefined
+                                        }
+                                    />
+                                ))}
+                            </div>
+                            <div className="flex items-center gap-0.5 self-center shrink-0">
+                                <IconButton label="New tab" size="sm" onClick={onNewTab}>
+                                    <Plus size={14} />
+                                </IconButton>
+                                <div className="relative" ref={tabMenuRef}>
+                                    <IconButton label="Tab options" size="sm" active={isTabMenuOpen} onClick={() => setIsTabMenuOpen((v) => !v)}>
+                                        <MoreHorizontal size={14} />
+                                    </IconButton>
+                                    {isTabMenuOpen && (
+                                        <div className="absolute top-full right-0 mt-1 w-52 bg-elevated border border-line rounded-card shadow-pop overflow-hidden z-50 p-1 animate-in fade-in zoom-in-95">
                                             <button
-                                                onClick={() => setIsTabMenuOpen((v) => !v)}
-                                                className="p-2 text-slate-500 hover:text-electric-violet hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
-                                                title="Tab options"
+                                                onClick={() => {
+                                                    appStore.closeAllTabs();
+                                                    setIsTabMenuOpen(false);
+                                                }}
+                                                className="w-full flex items-center justify-between gap-3 px-2.5 h-8 rounded-[7px] text-left text-[14px] text-fg hover:bg-hover transition-colors"
                                             >
-                                                <MoreHorizontal size={14} />
+                                                <span>Close all</span>
+                                                <span className="text-[12px] text-fg-subtle">Ctrl+K W</span>
                                             </button>
-
-                                            {isTabMenuOpen && (
-                                                <div className="absolute top-full right-0 mt-1 w-48 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 p-1.5">
-                                                    <button
-                                                        onClick={() => {
-                                                            appStore.closeAllTabs();
-                                                            setIsTabMenuOpen(false);
-                                                        }}
-                                                        className="w-full flex items-center justify-between gap-3 px-2.5 py-2 rounded-lg text-left text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.04] transition-colors"
-                                                    >
-                                                        <span>Close All</span>
-                                                        <span className="text-[10px] text-slate-400">Ctrl+K W</span>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            appStore.closeSavedTabs();
-                                                            setIsTabMenuOpen(false);
-                                                        }}
-                                                        className="w-full flex items-center justify-between gap-3 px-2.5 py-2 rounded-lg text-left text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.04] transition-colors"
-                                                    >
-                                                        <span>Close Saved</span>
-                                                        <span className="text-[10px] text-slate-400">Ctrl+K U</span>
-                                                    </button>
-                                                </div>
-                                            )}
+                                            <button
+                                                onClick={() => {
+                                                    appStore.closeSavedTabs();
+                                                    setIsTabMenuOpen(false);
+                                                }}
+                                                className="w-full flex items-center justify-between gap-3 px-2.5 h-8 rounded-[7px] text-left text-[14px] text-fg hover:bg-hover transition-colors"
+                                            >
+                                                <span>Close saved</span>
+                                                <span className="text-[12px] text-fg-subtle">Ctrl+K U</span>
+                                            </button>
                                         </div>
                                     )}
                                 </div>
                             </div>
-
-                            <div className="flex-1 overflow-hidden relative">
-                                {workspace}
-                            </div>
-
-                            {isRequestView && <TerminalPanel />}
-                        </main>
-
-                        {isInspectorOpen && (
-                            <>
-                                {/* Below md the panel can't dock beside a full-width main
-                                    view without clipping its own content, so it becomes a
-                                    full-screen overlay instead — same panel, same close
-                                    button, just not squeezed into the row. */}
-                                <button
-                                    onClick={() => appStore.toggleInspector()}
-                                    aria-label="Close inspector overlay"
-                                    className="md:hidden fixed inset-0 z-30 bg-near-black/50 animate-in fade-in duration-150"
-                                />
-                                <aside className="fixed inset-y-0 right-0 z-40 w-full max-w-sm md:static md:z-10 md:w-80 md:max-w-none bg-slate-50 dark:bg-near-black border-l border-slate-200 dark:border-white/10 flex flex-col shrink-0 shadow-2xl animate-in slide-in-from-right duration-200 md:animate-none">
-                                    {inspector}
-                                </aside>
-                            </>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            <footer className="h-7 bg-slate-50 dark:bg-near-black border-t border-slate-200 dark:border-white/10 flex items-center justify-between px-3 text-[10px] text-slate-500 select-none z-20">
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => appStore.openTab('settings')}
-                        className="flex items-center gap-1 hover:text-electric-violet cursor-pointer transition-colors"
-                    >
-                        <Settings size={10} /> v2.6.0-beta
-                    </button>
-                    <button
-                        onClick={() => appStore.showToast('System operational. No errors.', 'success')}
-                        className="hover:text-emerald-400 cursor-pointer transition-colors flex items-center gap-1"
-                    >
-                        <div className="w-1 h-1 bg-emerald-500 rounded-full"></div> System Optimal
-                    </button>
-                    {isRequestView && (
-                        <button
-                            onClick={() =>
-                                appStore.toggleTerminal()
-                            }
-                            className={`flex items-center gap-1 cursor-pointer transition-colors ${
-                                isTerminalOpen
-                                    ? 'text-electric-violet'
-                                    : 'hover:text-slate-600 dark:text-slate-300'
-                            }`}
-                        >
-                            <Terminal size={10} /> Terminal
-                        </button>
+                        </div>
                     )}
-                </div>
-                <div className="flex items-center gap-4">
-                     <span className="font-mono text-slate-600">GAS: <span className="text-amber-500">AUTO</span></span>
-                </div>
-            </footer>
+
+                    <div ref={contentRef} className="flex-1 overflow-hidden relative">
+                        {workspace}
+                    </div>
+
+                    {isRequestView && <TerminalPanel />}
+
+                    <footer className="h-7 flex items-center gap-4 px-3 border-t border-line text-[12px] text-fg-subtle shrink-0 select-none">
+                        {!isOnline ? (
+                            <span className="flex items-center gap-1.5 text-red-500">
+                                <StatusDot tone="danger" /> Offline
+                            </span>
+                        ) : recentErrorCount > 0 ? (
+                            <button
+                                onClick={() => appStore.openTab('workspace_overview')}
+                                className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 hover:underline"
+                                title="See workspace activity"
+                            >
+                                <StatusDot tone="warning" />
+                                {recentErrorCount} recent error{recentErrorCount === 1 ? '' : 's'}
+                            </button>
+                        ) : (
+                            <span className="flex items-center gap-1.5">
+                                <StatusDot tone="success" /> Online
+                            </span>
+                        )}
+                        {isRequestView && (
+                            <button
+                                onClick={() => appStore.toggleTerminal()}
+                                className={cx('flex items-center gap-1 transition-colors', isTerminalOpen ? 'text-fg' : 'hover:text-fg')}
+                            >
+                                <Terminal size={11} /> Terminal
+                            </button>
+                        )}
+                        <div className="flex-1" />
+                        <button onClick={() => appStore.setCommandPalette(true)} className="hidden sm:flex items-center gap-1.5 hover:text-fg transition-colors">
+                            Commands <Kbd>⌘K</Kbd>
+                        </button>
+                        <button onClick={() => appStore.openTab('settings')} className="hover:text-fg transition-colors font-mono">
+                            v2.6.0
+                        </button>
+                    </footer>
+                </main>
+
+                {isInspectorOpen && (
+                    <>
+                        {/* Below md the panel becomes a full-screen overlay instead of a docked column. */}
+                        <button
+                            onClick={() => appStore.toggleInspector()}
+                            aria-label="Close inspector overlay"
+                            className="md:hidden fixed inset-0 z-30 bg-black/50 animate-in fade-in"
+                        />
+                        <aside className="fixed inset-y-0 right-0 z-40 w-full sm:max-w-sm md:static md:z-10 md:w-[320px] md:max-w-none bg-surface md:rounded-panel border-l md:border border-line md:shadow-card flex flex-col shrink-0 overflow-hidden animate-in slide-in-from-right md:animate-none">
+                            {inspector}
+                        </aside>
+                    </>
+                )}
+            </div>
         </div>
     );
 };

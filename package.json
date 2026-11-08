@@ -18,6 +18,7 @@
     "@creit.tech/xbull-wallet-connect": "^0.4.0",
     "@dicebear/collection": "^9.4.2",
     "@dicebear/core": "^9.3.0",
+    "@gsap/react": "^2.1.2",
     "@ledgerhq/hw-app-eth": "^6.42.0",
     "@ledgerhq/hw-transport-webhid": "^6.29.0",
     "@lobstrco/signer-extension-api": "^2.0.0",
