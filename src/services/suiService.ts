@@ -54,11 +54,6 @@ export const resolveChainRpcUrl = (
   network: Network,
   evmChainId?: number
 ): string => {
-  // Aptos is REST, with one built-in fullnode per network and no overrides.
-  if (chain === 'aptos') {
-    return APTOS_NETWORKS[network];
-  }
-
   // A specific EVM mainnet (e.g. Base, Arbitrum) overrides the generic
   // network-tier EVM default — these are distinct chains, not
   // mainnet/testnet variants of "the" EVM chain.
@@ -75,10 +70,6 @@ export const resolveChainRpcUrls = (
   network: Network,
   evmChainId?: number
 ): string[] => {
-  if (chain === 'aptos') {
-    return [APTOS_NETWORKS[network]];
-  }
-
   if (chain === 'evm' && evmChainId) {
     return [getEvmChain(evmChainId).rpcUrl];
   }
@@ -368,7 +359,7 @@ const executeAptosRest = async (
   method: string,
   params: any[]
 ): Promise<{ result: any; duration: number; status: number }> => {
-  const endpoint = APTOS_NETWORKS[network];
+  const endpoint = resolveChainRpcUrl('aptos', network);
   const startTime = performance.now();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), RPC_TIMEOUT_MS);
@@ -406,7 +397,8 @@ export const getChainRpcHealth = async (
   }
 
   const url = resolveChainRpcUrl(chain, network, evmChainId);
-  const method = chain === 'evm' ? 'eth_blockNumber' : chain === 'aptos' ? 'getLedgerInfo' : 'getHealth';
+  const method =
+    chain === 'evm' ? 'eth_blockNumber' : chain === 'starknet' ? 'starknet_blockNumber' : chain === 'aptos' ? 'getLedgerInfo' : 'getHealth';
   const params: any[] = chain === 'evm' ? [] : [];
 
   try {

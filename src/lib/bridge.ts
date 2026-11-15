@@ -26,7 +26,9 @@ const SIDESHIFT_CHAIN_SLUG: Partial<Record<ChainId, string>> = {
     sui: 'sui',
     stellar: 'stellar',
     solana: 'solana',
-    evm: 'ethereum'
+    evm: 'ethereum',
+    aptos: 'aptos',
+    starknet: 'starknet'
 };
 
 /** SideShift's own coin symbol for a chain's native asset. */
@@ -34,7 +36,9 @@ const SIDESHIFT_NATIVE_COIN: Partial<Record<ChainId, string>> = {
     sui: 'sui',
     stellar: 'xlm',
     solana: 'sol',
-    evm: 'eth'
+    evm: 'eth',
+    aptos: 'apt',
+    starknet: 'strk'
 };
 
 export class BridgeUnsupportedChainError extends Error {

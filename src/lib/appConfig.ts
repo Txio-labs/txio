@@ -1,5 +1,5 @@
 import { AppSettings, ChainId, Network, NotificationPreferences, RpcEndpointOverrides } from '../types';
-import { EVM_NETWORKS, NETWORKS, NETWORKS_FALLBACK, SOLANA_NETWORKS, STELLAR_NETWORKS } from './constants';
+import { EVM_NETWORKS, NETWORKS, NETWORKS_FALLBACK, APTOS_NETWORKS, SOLANA_NETWORKS, STARKNET_NETWORKS, STELLAR_NETWORKS } from './constants';
 
 export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
     emailDigests: true,
@@ -54,6 +54,8 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     evmCustomRpc: { ...EMPTY_CUSTOM_RPC },
     stellarCustomRpc: { ...EMPTY_CUSTOM_RPC },
     solanaCustomRpc: { ...EMPTY_CUSTOM_RPC },
+    starknetCustomRpc: { ...EMPTY_CUSTOM_RPC },
+    aptosCustomRpc: { ...EMPTY_CUSTOM_RPC },
     explorer: 'suiscan',
     evmExplorer: 'family',
     stellarExplorer: 'stellarexpert',
@@ -76,7 +78,9 @@ export const normalizeAppSettings = (
         customRpc: normalizeRpcOverrides(settings?.customRpc),
         evmCustomRpc: normalizeRpcOverrides(settings?.evmCustomRpc),
         stellarCustomRpc: normalizeRpcOverrides(settings?.stellarCustomRpc),
-        solanaCustomRpc: normalizeRpcOverrides(settings?.solanaCustomRpc)
+        solanaCustomRpc: normalizeRpcOverrides(settings?.solanaCustomRpc),
+        starknetCustomRpc: normalizeRpcOverrides(settings?.starknetCustomRpc),
+        aptosCustomRpc: normalizeRpcOverrides(settings?.aptosCustomRpc)
     };
 
     // Backward-compat: older persisted state only had Sui `explorer`.
@@ -115,22 +119,20 @@ export const resolveRpcUrlList = (
 };
 
 /**
- * Chain-aware RPC URL resolution, honoring per-chain custom overrides where
- * they exist. Aptos has no default/override RPC infrastructure yet (it's a
- * REST API, not JSON-RPC, so it needs a different request-building path) —
- * it's intentionally left out here.
+ * Chain-aware RPC URL resolution, honoring per-chain custom overrides. For
+ * Aptos these are fullnode REST base URLs rather than JSON-RPC endpoints.
  */
 export const resolveChainCustomRpcUrl = (
-    chain: Extract<ChainId, 'sui' | 'evm' | 'stellar' | 'solana'>,
+    chain: ChainId,
     network: Network,
-    settings: Pick<AppSettings, 'customRpc' | 'evmCustomRpc' | 'stellarCustomRpc' | 'solanaCustomRpc'> = DEFAULT_APP_SETTINGS
+    settings: Pick<AppSettings, 'customRpc' | 'evmCustomRpc' | 'stellarCustomRpc' | 'solanaCustomRpc' | 'starknetCustomRpc' | 'aptosCustomRpc'> = DEFAULT_APP_SETTINGS
 ) => resolveChainRpcUrlList(chain, network, settings)[0];
 
 /** Every endpoint to try for this chain+network, in priority order, ending with the built-in default. */
 export const resolveChainRpcUrlList = (
-    chain: Extract<ChainId, 'sui' | 'evm' | 'stellar' | 'solana'>,
+    chain: ChainId,
     network: Network,
-    settings: Pick<AppSettings, 'customRpc' | 'evmCustomRpc' | 'stellarCustomRpc' | 'solanaCustomRpc'> = DEFAULT_APP_SETTINGS
+    settings: Pick<AppSettings, 'customRpc' | 'evmCustomRpc' | 'stellarCustomRpc' | 'solanaCustomRpc' | 'starknetCustomRpc' | 'aptosCustomRpc'> = DEFAULT_APP_SETTINGS
 ): string[] => {
     if (chain === 'sui') {
         return resolveRpcUrlList(network, settings);
@@ -142,6 +144,15 @@ export const resolveChainRpcUrlList = (
 
     if (chain === 'solana') {
         return [...(settings.solanaCustomRpc[network] || []), SOLANA_NETWORKS[network]];
+    }
+
+    if (chain === 'aptos') {
+        // Aptos is REST, not JSON-RPC: these are fullnode base URLs ending in /v1.
+        return [...(settings.aptosCustomRpc?.[network] || []), APTOS_NETWORKS[network]];
+    }
+
+    if (chain === 'starknet') {
+        return [...(settings.starknetCustomRpc[network] || []), STARKNET_NETWORKS[network]];
     }
 
     return [...(settings.stellarCustomRpc[network] || []), STELLAR_NETWORKS[network]];

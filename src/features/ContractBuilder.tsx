@@ -1,4 +1,5 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 import { motion } from 'framer-motion';
 import { encodeDeployData, isHex, type Abi, type AbiFunction } from 'viem';
 import {
@@ -12,6 +13,20 @@ import { ChainId, RequestItem, RequestType } from '@/types';
 import { compileSolidity, MAX_RUNTIME_BYTES, type CompileResult, type CompiledContract } from '@/services/compile/solidity';
 import { coerceEvmArgs, DEFAULT_EVM_TX } from '@/services/adapters/evmAdapter';
 import { getEvmTxChain } from '@/services/adapters/evmAdapter';
+import {
+    compileRemote,
+    getToolchains,
+    type AptosArtifact,
+    type RemoteCompileChain,
+    type SolanaArtifact,
+    type StarknetArtifact,
+    type StellarArtifact,
+    type SuiArtifact,
+    type ToolchainStatus
+} from '@/services/compile/remote';
+import { deployAptos, deploySolana, deployStarknet, deployStellar, deploySui, newSolanaProgramKeypair, type DeployResult } from '@/services/deploy';
+import { useWallet } from '@/wallet/hooks/useWallet';
+import type { WalletChainFamily } from '@/wallet/types';
 
 interface ChainContractConfig {
     label: string;
@@ -22,36 +37,39 @@ interface ChainContractConfig {
     editions: string[];
     defaultContractName: string;
     defaultCode: string;
-    /** Whether this chain has a real compiler wired in. Only EVM does today. */
-    canCompile: boolean;
-    /** Shown when `canCompile` is false. */
-    unavailableReason?: string;
+    /** 'browser': solc in the page. 'server': txio-compiler (see services/compile/remote). */
+    compiler: 'browser' | 'server';
 }
 
-// Only chains with a Move/Solidity/Rust contract-building flow implemented
-// here. Aptos has no ChainAdapter/contract-builder support yet,
-// so they're intentionally absent — `Partial` (not `Record<ChainId, ...>`)
-// keeps that honest, and CONTRACT_BUILDER_CHAINS below is what the chain
-// selector actually iterates, so unsupported chains can't be picked.
-const CHAIN_CONTRACT_CONFIG: Partial<Record<ChainId, ChainContractConfig>> = {
+const SERVER_CHAINS = ['sui', 'aptos', 'stellar', 'solana', 'starknet'] as const;
+const isServerChain = (chain: ChainId): chain is RemoteCompileChain => (SERVER_CHAINS as readonly string[]).includes(chain);
+
+// Every chain has a compiler and a deploy path. Solidity compiles in the
+// browser; Move, Soroban, Solana and Cairo compile on txio-compiler, and the
+// result is deployed with the connected wallet.
+const CHAIN_CONTRACT_CONFIG: Record<ChainId, ChainContractConfig> = {
     sui: {
         label: 'Sui',
         fileExt: 'move',
-        compilerLabel: 'Move Compiler',
-        compilerVersion: 'v1.1.2',
+        compilerLabel: 'Sui Move',
+        compilerVersion: 'sui move build',
         editionLabel: 'Move Edition',
-        editions: ['2024 (Beta)', 'Legacy'],
-        defaultContractName: 'AssetBridge',
+        editions: ['2024'],
+        defaultContractName: 'Counter',
         defaultCode:
-            'public entry fun initialize_market(admin: address) {\n' +
-            '    // Initialize the market configuration\n' +
-            '}\n\n' +
-            'public fun mint_collection_token(amount: u64, treasury_cap: &mut TreasuryCap<T>): Coin<T> {\n' +
-            '    let token = coin::mint_balance(amount, treasury_cap);\n' +
-            '    return token\n' +
-            '}',
-        canCompile: false,
-        unavailableReason: 'Compiling Move needs the Sui toolchain, which runs on a server. That service is not built yet, so nothing here is compiled or deployed.'
+            'module counter::counter {\n' +
+            '    public struct Counter has key {\n' +
+            '        id: UID,\n' +
+            '        value: u64,\n' +
+            '    }\n\n' +
+            '    public fun create(ctx: &mut TxContext) {\n' +
+            '        transfer::share_object(Counter { id: object::new(ctx), value: 0 })\n' +
+            '    }\n\n' +
+            '    public fun increment(counter: &mut Counter) {\n' +
+            '        counter.value = counter.value + 1;\n' +
+            '    }\n' +
+            '}\n',
+        compiler: 'server'
     },
     evm: {
         label: 'Ethereum / EVM',
@@ -74,95 +92,129 @@ const CHAIN_CONTRACT_CONFIG: Partial<Record<ChainId, ChainContractConfig>> = {
             '        return amount;\n' +
             '    }\n' +
             '}',
-        canCompile: true,
+        compiler: 'browser'
     },
     stellar: {
         label: 'Stellar',
         fileExt: 'rs',
         compilerLabel: 'Soroban SDK',
-        compilerVersion: 'v21.7.0',
+        compilerVersion: 'stellar contract build',
         editionLabel: 'Rust Edition',
-        editions: ['2021', '2018'],
-        defaultContractName: 'AssetBridge',
+        editions: ['2021'],
+        defaultContractName: 'Counter',
         defaultCode:
             '#![no_std]\n' +
-            'use soroban_sdk::{contract, contractimpl, Address, Env};\n\n' +
+            'use soroban_sdk::{contract, contractimpl, symbol_short, Env, Symbol};\n\n' +
+            'const COUNT: Symbol = symbol_short!("COUNT");\n\n' +
             '#[contract]\n' +
-            'pub struct AssetBridge;\n\n' +
+            'pub struct Counter;\n\n' +
             '#[contractimpl]\n' +
-            'impl AssetBridge {\n' +
-            '    pub fn initialize_market(env: Env, admin: Address) {\n' +
-            '        // Initialize the market configuration\n' +
+            'impl Counter {\n' +
+            '    pub fn increment(env: Env) -> u64 {\n' +
+            '        let count: u64 = env.storage().instance().get(&COUNT).unwrap_or(0) + 1;\n' +
+            '        env.storage().instance().set(&COUNT, &count);\n' +
+            '        count\n' +
             '    }\n\n' +
-            '    pub fn mint_collection_token(env: Env, amount: i128) -> i128 {\n' +
-            '        amount\n' +
+            '    pub fn value(env: Env) -> u64 {\n' +
+            '        env.storage().instance().get(&COUNT).unwrap_or(0)\n' +
             '    }\n' +
-            '}',
-        canCompile: false,
-        unavailableReason: 'Compiling Soroban contracts needs the Rust toolchain, which runs on a server. That service is not built yet, so nothing here is compiled or deployed.'
+            '}\n',
+        compiler: 'server'
     },
     solana: {
         label: 'Solana',
         fileExt: 'rs',
-        compilerLabel: 'Anchor',
-        compilerVersion: 'v0.30.1',
+        compilerLabel: 'Anchor / solana-program',
+        compilerVersion: 'cargo build-sbf',
         editionLabel: 'Rust Edition',
-        editions: ['2021', '2018'],
+        editions: ['2021'],
         defaultContractName: 'AssetBridge',
         defaultCode:
             'use anchor_lang::prelude::*;\n\n' +
-            'declare_id!("11111111111111111111111111111111111111111");\n\n' +
+            '// Replaced with a fresh program id each time you compile.\n' +
+            'declare_id!("11111111111111111111111111111111");\n\n' +
             '#[program]\n' +
             'pub mod asset_bridge {\n' +
             '    use super::*;\n\n' +
             '    pub fn initialize_market(_ctx: Context<InitializeMarket>) -> Result<()> {\n' +
-            '        // Initialize the market configuration\n' +
             '        Ok(())\n' +
-            '    }\n\n' +
-            '    pub fn mint_collection_token(_ctx: Context<MintCollectionToken>, amount: u64) -> Result<u64> {\n' +
-            '        Ok(amount)\n' +
             '    }\n' +
             '}\n\n' +
             '#[derive(Accounts)]\n' +
-            'pub struct InitializeMarket {}\n\n' +
-            '#[derive(Accounts)]\n' +
-            'pub struct MintCollectionToken {}',
-        canCompile: false,
-        unavailableReason: 'Compiling Solana programs needs the Rust toolchain, which runs on a server. That service is not built yet, so nothing here is compiled or deployed.'
+            'pub struct InitializeMarket {}\n',
+        compiler: 'server'
+    },
+    aptos: {
+        label: 'Aptos',
+        fileExt: 'move',
+        compilerLabel: 'Aptos Move',
+        compilerVersion: 'aptos move build-publish-payload',
+        editionLabel: 'Move Edition',
+        editions: ['2'],
+        defaultContractName: 'Counter',
+        defaultCode:
+            'module counter::counter {\n' +
+            '    use std::signer;\n\n' +
+            '    struct Counter has key { value: u64 }\n\n' +
+            '    public entry fun increment(account: &signer) acquires Counter {\n' +
+            '        let addr = signer::address_of(account);\n' +
+            '        if (!exists<Counter>(addr)) {\n' +
+            '            move_to(account, Counter { value: 0 });\n' +
+            '        };\n' +
+            '        let counter = borrow_global_mut<Counter>(addr);\n' +
+            '        counter.value = counter.value + 1;\n' +
+            '    }\n\n' +
+            '    #[view]\n' +
+            '    public fun value(addr: address): u64 acquires Counter {\n' +
+            '        if (exists<Counter>(addr)) borrow_global<Counter>(addr).value else 0\n' +
+            '    }\n' +
+            '}\n',
+        compiler: 'server'
+    },
+    starknet: {
+        label: 'Starknet',
+        fileExt: 'cairo',
+        compilerLabel: 'Cairo',
+        compilerVersion: 'scarb build',
+        editionLabel: 'Cairo Edition',
+        editions: ['2024_07'],
+        defaultContractName: 'Counter',
+        defaultCode:
+            '#[starknet::interface]\n' +
+            'pub trait ICounter<TContractState> {\n' +
+            '    fn increment(ref self: TContractState);\n' +
+            '    fn get(self: @TContractState) -> u64;\n' +
+            '}\n\n' +
+            '#[starknet::contract]\n' +
+            'mod Counter {\n' +
+            '    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};\n\n' +
+            '    #[storage]\n' +
+            '    struct Storage {\n' +
+            '        count: u64,\n' +
+            '    }\n\n' +
+            '    #[abi(embed_v0)]\n' +
+            '    impl CounterImpl of super::ICounter<ContractState> {\n' +
+            '        fn increment(ref self: ContractState) {\n' +
+            '            self.count.write(self.count.read() + 1);\n' +
+            '        }\n\n' +
+            '        fn get(self: @ContractState) -> u64 {\n' +
+            '            self.count.read()\n' +
+            '        }\n' +
+            '    }\n' +
+            '}\n',
+        compiler: 'server'
     }
 };
 
-// Chains the Contract Builder's chain selector offers — every chain that has
-// an entry in CHAIN_CONTRACT_CONFIG above, in RPC_CHAINS' display order.
-// Filtering RPC_CHAINS (rather than iterating ChainId directly) means a
-// chain added to ChainId without a contract-builder config here — like
-// Aptos today — simply doesn't appear as an option, instead of
-// appearing and then crashing on the missing config lookup.
+// Chains the Contract Builder offers, in RPC_CHAINS' display order.
 export const CONTRACT_BUILDER_CHAINS = RPC_CHAINS.filter((c) => c.id in CHAIN_CONTRACT_CONFIG);
 
-const DEFAULT_CONTRACT_NAMES: Record<ChainId, string> = {
-    sui: CHAIN_CONTRACT_CONFIG.sui!.defaultContractName,
-    evm: CHAIN_CONTRACT_CONFIG.evm!.defaultContractName,
-    stellar: CHAIN_CONTRACT_CONFIG.stellar!.defaultContractName,
-    solana: CHAIN_CONTRACT_CONFIG.solana!.defaultContractName,
-    aptos: ''
-};
+const mapChains = <T,>(pick: (c: ChainContractConfig) => T) =>
+    Object.fromEntries(Object.entries(CHAIN_CONTRACT_CONFIG).map(([id, c]) => [id, pick(c)])) as Record<ChainId, T>;
 
-const DEFAULT_CODE_BY_CHAIN: Record<ChainId, string> = {
-    sui: CHAIN_CONTRACT_CONFIG.sui!.defaultCode,
-    evm: CHAIN_CONTRACT_CONFIG.evm!.defaultCode,
-    stellar: CHAIN_CONTRACT_CONFIG.stellar!.defaultCode,
-    solana: CHAIN_CONTRACT_CONFIG.solana!.defaultCode,
-    aptos: ''
-};
-
-const DEFAULT_EDITION_BY_CHAIN: Record<ChainId, string> = {
-    sui: CHAIN_CONTRACT_CONFIG.sui!.editions[0],
-    evm: CHAIN_CONTRACT_CONFIG.evm!.editions[0],
-    stellar: CHAIN_CONTRACT_CONFIG.stellar!.editions[0],
-    solana: CHAIN_CONTRACT_CONFIG.solana!.editions[0],
-    aptos: ''
-};
+const DEFAULT_CONTRACT_NAMES = mapChains((c) => c.defaultContractName);
+const DEFAULT_CODE_BY_CHAIN = mapChains((c) => c.defaultCode);
+const DEFAULT_EDITION_BY_CHAIN = mapChains((c) => c.editions[0]);
 
 const STORAGE_KEY = 'txio_contract_builder';
 
@@ -183,7 +235,17 @@ type CompileState =
     | { status: 'idle' }
     | { status: 'compiling'; logs: string[] }
     | { status: 'done'; logs: string[]; result: CompileResult }
+    /** A server-compiled artifact (every chain but EVM). */
+    | { status: 'built'; logs: string[]; chain: RemoteCompileChain; artifact: unknown }
     | { status: 'failed'; logs: string[]; message: string };
+
+type DeployState =
+    | { status: 'idle' }
+    | { status: 'deploying'; logs: string[] }
+    | { status: 'deployed'; logs: string[]; result: DeployResult }
+    | { status: 'failed'; logs: string[]; message: string };
+
+type ToolchainState = { status: 'loading' } | { status: 'ready'; chains: ToolchainStatus } | { status: 'unreachable'; message: string };
 
 export const ContractBuilder: React.FC = () => {
     const [chain, setChain] = useState<ChainId>('evm');
@@ -202,10 +264,37 @@ export const ContractBuilder: React.FC = () => {
     const [deployError, setDeployError] = useState<string | null>(null);
     const abortRef = useRef<AbortController | null>(null);
     const { network } = useAppStore();
+    const { linkedWallets, openModal } = useWallet();
+    const { mutateAsync: suiSignAndExecute } = useSignAndExecuteTransaction();
+    const [toolchains, setToolchains] = useState<ToolchainState>({ status: 'loading' });
+    const [deploy, setDeploy] = useState<DeployState>({ status: 'idle' });
+    const [starknetCtorArgs, setStarknetCtorArgs] = useState<string[]>([]);
+    // Solana: the program id is fixed at compile time (declare_id!), so the
+    // keypair that will own that address is generated just before compiling.
+    const solanaKeypairRef = useRef<import('@solana/web3.js').Keypair | null>(null);
 
-    // Non-null: `chain` only ever holds a value from CONTRACT_BUILDER_CHAINS
-    // (see the Select below), which is filtered to CHAIN_CONTRACT_CONFIG's keys.
-    const config = CHAIN_CONTRACT_CONFIG[chain]!;
+    useEffect(() => {
+        const controller = new AbortController();
+        getToolchains(controller.signal)
+            .then((chains) => setToolchains({ status: 'ready', chains }))
+            .catch((err: Error) => {
+                if (err.name !== 'AbortError') setToolchains({ status: 'unreachable', message: err.message });
+            });
+        return () => controller.abort();
+    }, []);
+
+    const config = CHAIN_CONTRACT_CONFIG[chain];
+    const wallet = linkedWallets[chain as WalletChainFamily] ?? null;
+    const serverAvailable = toolchains.status === 'ready' && isServerChain(chain) && Boolean(toolchains.chains[chain]?.available);
+    const canCompile = config.compiler === 'browser' || serverAvailable;
+    const unavailableReason =
+        config.compiler === 'browser'
+            ? undefined
+            : toolchains.status === 'loading'
+              ? 'Checking the compiler service…'
+              : toolchains.status === 'unreachable'
+                ? toolchains.message
+                : `The compiler service has no ${config.compilerLabel} toolchain installed (${isServerChain(chain) ? toolchains.chains[chain]?.tool ?? '' : ''}).`;
     const contractName = contractNames[chain];
     const code = codeByChain[chain];
     const edition = editionByChain[chain];
@@ -215,7 +304,8 @@ export const ContractBuilder: React.FC = () => {
     const setCode = (nextCode: string) => {
         setCodeByChain((prev) => ({ ...prev, [chain]: nextCode }));
         // The compiled artifact belongs to the source that produced it.
-        if (compile.status === 'done') setCompile({ status: 'idle' });
+        if (compile.status === 'done' || compile.status === 'built') setCompile({ status: 'idle' });
+        setDeploy({ status: 'idle' });
     };
     const setEdition = (nextEdition: string) =>
         setEditionByChain((prev) => ({ ...prev, [chain]: nextEdition }));
@@ -224,6 +314,7 @@ export const ContractBuilder: React.FC = () => {
         abortRef.current?.abort();
         setChain(nextChain);
         setCompile({ status: 'idle' });
+        setDeploy({ status: 'idle' });
         setDeployError(null);
     };
 
@@ -250,8 +341,95 @@ export const ContractBuilder: React.FC = () => {
     const constructorInputs = ((artifact?.abi ?? []) as { type?: string; inputs?: { name: string; type: string }[] }[])
         .find((item) => item.type === 'constructor')?.inputs ?? [];
 
+    const handleRemoteCompile = async (target: RemoteCompileChain) => {
+        abortRef.current?.abort();
+        const controller = new AbortController();
+        abortRef.current = controller;
+        setDeploy({ status: 'idle' });
+        setCompile({ status: 'compiling', logs: [`Compiling ${contractName || 'contract'}.${config.fileExt} with ${config.compilerVersion}…`] });
+        try {
+            let programId: string | undefined;
+            if (target === 'solana') {
+                solanaKeypairRef.current = await newSolanaProgramKeypair();
+                programId = solanaKeypairRef.current.publicKey.toBase58();
+            }
+            if (target === 'aptos' && !linkedWallets.aptos) {
+                throw new Error('Connect an Aptos wallet first: the package is compiled for your account address.');
+            }
+            const res = await compileRemote(
+                target,
+                { name: contractName || 'contract', source: code, programId, sender: linkedWallets.aptos?.address },
+                controller.signal
+            );
+            const logs = res.logs.trim().split('\n').slice(-60);
+            if (!res.ok || !res.artifact) {
+                setCompile({ status: 'failed', logs, message: 'Compilation failed. See the compiler output above.' });
+                return;
+            }
+            setStarknetCtorArgs([]);
+            setSelectedName(target === 'starknet' ? (res.artifact as StarknetArtifact).contracts[0]?.name ?? '' : '');
+            setCompile({ status: 'built', logs: [...logs, programId ? `Program id: ${programId}` : 'Build succeeded.'], chain: target, artifact: res.artifact });
+        } catch (error) {
+            if ((error as { name?: string }).name === 'AbortError') return;
+            setCompile({ status: 'failed', logs: [], message: error instanceof Error ? error.message : 'Compilation failed.' });
+        }
+    };
+
+    const starknetContracts = compile.status === 'built' && compile.chain === 'starknet' ? (compile.artifact as StarknetArtifact).contracts : [];
+    const starknetContract = starknetContracts.find((c) => c.name === selectedName) ?? starknetContracts[0];
+    const starknetCtorInputs = (() => {
+        if (!starknetContract) return [] as { name: string; type: string }[];
+        const raw = starknetContract.sierra.abi;
+        const abi = (typeof raw === 'string' ? JSON.parse(raw) : raw) as { type: string; inputs?: { name: string; type: string }[] }[];
+        return abi.find((i) => i.type === 'constructor')?.inputs ?? [];
+    })();
+
+    const handleRemoteDeploy = async () => {
+        if (compile.status !== 'built') return;
+        const logs: string[] = [];
+        const log = (line: string) => {
+            logs.push(line);
+            setDeploy({ status: 'deploying', logs: [...logs] });
+        };
+        setDeploy({ status: 'deploying', logs });
+        try {
+            let result: DeployResult;
+            switch (compile.chain) {
+                case 'stellar':
+                    result = await deployStellar((compile.artifact as StellarArtifact).wasm, wallet, network, log);
+                    break;
+                case 'solana': {
+                    const keypair = solanaKeypairRef.current;
+                    if (!keypair) throw new Error('Compile again: the program keypair is missing.');
+                    result = await deploySolana((compile.artifact as SolanaArtifact).program, keypair, wallet, network, log);
+                    break;
+                }
+                case 'sui':
+                    result = await deploySui(
+                        compile.artifact as SuiArtifact,
+                        wallet,
+                        (args) => suiSignAndExecute(args as never) as Promise<{ digest: string }>,
+                        network,
+                        log
+                    );
+                    break;
+                case 'aptos':
+                    result = await deployAptos(compile.artifact as AptosArtifact, wallet, network, log);
+                    break;
+                case 'starknet':
+                    if (!starknetContract) throw new Error('No contract to deploy.');
+                    result = await deployStarknet(starknetContract, starknetCtorArgs, wallet, network, log);
+                    break;
+            }
+            setDeploy({ status: 'deployed', logs, result });
+        } catch (error) {
+            setDeploy({ status: 'failed', logs, message: error instanceof Error ? error.message : 'Deployment failed.' });
+        }
+    };
+
     const handleCompile = async () => {
-        if (!config.canCompile || !code.trim()) return;
+        if (!canCompile || !code.trim()) return;
+        if (isServerChain(chain)) return handleRemoteCompile(chain);
         abortRef.current?.abort();
         const controller = new AbortController();
         abortRef.current = controller;
@@ -328,7 +506,17 @@ export const ContractBuilder: React.FC = () => {
 
     const isCompiling = compile.status === 'compiling';
     const errors = compile.status === 'done' ? compile.result.diagnostics.filter((d) => d.severity === 'error') : [];
-    const canDeploy = compile.status === 'done' && compile.result.ok && Boolean(artifact);
+    const isRemote = config.compiler === 'server';
+    const canDeploy = isRemote
+        ? compile.status === 'built' && deploy.status !== 'deploying' && Boolean(wallet)
+        : compile.status === 'done' && compile.result.ok && Boolean(artifact);
+    const deployTitle = canDeploy
+        ? undefined
+        : !canCompile
+          ? unavailableReason
+          : isRemote && compile.status === 'built' && !wallet
+            ? `Connect a ${config.label} wallet to deploy`
+            : 'Compile without errors first';
 
     return (
         <div className="h-full flex bg-surface text-fg-muted font-sans overflow-hidden">
@@ -367,7 +555,7 @@ export const ContractBuilder: React.FC = () => {
                 <div className="p-4 border-t border-line bg-sunken">
                     <div className="flex items-center justify-between text-[12px] font-semibold text-fg-muted">
                         <span>{config.compilerLabel} {config.compilerVersion}</span>
-                        <div className={`w-2 h-2 rounded-full ${config.canCompile ? 'bg-emerald-400' : 'bg-slate-600'}`} title={config.canCompile ? 'Compiler available' : 'No compiler for this chain yet'} />
+                        <div className={`w-2 h-2 rounded-full ${canCompile ? 'bg-emerald-400' : 'bg-slate-600'}`} title={canCompile ? 'Compiler available' : unavailableReason} />
                     </div>
                 </div>
             </aside>
@@ -402,19 +590,19 @@ export const ContractBuilder: React.FC = () => {
                         </button>
                         <button
                             onClick={() => void handleCompile()}
-                            disabled={!config.canCompile || isCompiling || !code.trim()}
-                            title={config.canCompile ? undefined : config.unavailableReason}
+                            disabled={!canCompile || isCompiling || !code.trim()}
+                            title={canCompile ? undefined : unavailableReason}
                             className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-active hover:bg-active text-xs font-semibold transition-all disabled:opacity-40"
                         >
                             {isCompiling ? <Loader2 size={14} className="animate-spin" /> : <Hammer size={14} />} Compile
                         </button>
                         <button
-                            onClick={handleDeploy}
+                            onClick={isRemote ? () => void handleRemoteDeploy() : handleDeploy}
                             disabled={!canDeploy}
-                            title={canDeploy ? undefined : config.canCompile ? 'Compile without errors first' : config.unavailableReason}
+                            title={deployTitle}
                             className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-inverse text-on-inverse text-xs font-semibold shadow-card shadow-card hover:bg-soft-purple transition-all disabled:opacity-40"
                         >
-                            <Play size={14} /> Review deployment
+                            {deploy.status === 'deploying' ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />} {isRemote ? 'Deploy' : 'Review deployment'}
                         </button>
                     </div>
                 </header>
@@ -422,10 +610,10 @@ export const ContractBuilder: React.FC = () => {
                 {/* Canvas Content */}
                 <div className="flex-1 p-12 relative z-10 overflow-y-auto custom-scrollbar">
                     <div className="w-full space-y-6">
-                        {!config.canCompile && (
+                        {!canCompile && (
                             <div role="note" className="p-4 rounded-[10px] bg-hover border border-line text-fg-subtle flex items-start gap-3 text-sm">
                                 <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
-                                <span>{config.unavailableReason} You can still write and save a draft here.</span>
+                                <span>{unavailableReason} You can still write and save a draft here.</span>
                             </div>
                         )}
                         <motion.div
@@ -464,7 +652,54 @@ export const ContractBuilder: React.FC = () => {
                             </section>
                         )}
 
-                        {canDeploy && artifact && (
+                        {compile.status === 'built' && (
+                            <section aria-label="Built artifact" className="rounded-card border border-line bg-sunken p-4 space-y-3">
+                                <div className="text-[12px] font-semibold text-fg-subtle">Ready to deploy</div>
+                                {starknetContracts.length > 1 && (
+                                    <select
+                                        aria-label="Contract to deploy"
+                                        value={starknetContract?.name}
+                                        onChange={(e) => { setSelectedName(e.target.value); setStarknetCtorArgs([]); }}
+                                        className="bg-hover border border-line rounded-lg px-2 py-1 text-xs"
+                                    >
+                                        {starknetContracts.map((c) => <option key={c.name}>{c.name}</option>)}
+                                    </select>
+                                )}
+                                {starknetCtorInputs.map((input, i) => (
+                                    <label key={i} className="block text-[12px] font-semibold uppercase text-fg-muted">
+                                        {input.name} <span className="font-mono normal-case text-fg-subtle">{input.type.replace(/\b(?:[a-z_][a-z0-9_]*::)+/g, '')}</span>
+                                        <input
+                                            aria-label={`Constructor argument ${input.name}`}
+                                            value={starknetCtorArgs[i] ?? ''}
+                                            onChange={(e) => setStarknetCtorArgs((prev) => { const next = [...prev]; next[i] = e.target.value; return next; })}
+                                            className="mt-1 w-full bg-hover border border-line rounded-lg px-3 py-2 text-xs font-mono normal-case text-fg outline-none focus:border-line-strong"
+                                        />
+                                    </label>
+                                ))}
+                                {!wallet ? (
+                                    <p className="text-xs text-fg-subtle">
+                                        <button type="button" onClick={openModal} className="underline text-fg">Connect a {config.label} wallet</button> to deploy. It pays the fees and owns the result.
+                                    </p>
+                                ) : (
+                                    <p className="text-[12px] text-fg-subtle">
+                                        Deploys to {config.label} {network} from {wallet.address.slice(0, 6)}…{wallet.address.slice(-4)}. Your wallet asks you to approve each transaction{network === 'mainnet' ? ', and it spends real funds' : ''}.
+                                    </p>
+                                )}
+                                {deploy.status !== 'idle' && (
+                                    <pre className="text-xs font-mono text-fg-subtle whitespace-pre-wrap">{deploy.logs.join('\n')}</pre>
+                                )}
+                                {deploy.status === 'failed' && <p role="alert" className="text-xs text-rose-600 dark:text-rose-400">{deploy.message}</p>}
+                                {deploy.status === 'deployed' && (
+                                    <div className="text-xs space-y-1">
+                                        <div className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1"><Check size={12} /> Deployed</div>
+                                        <div className="font-mono break-all text-fg">{deploy.result.address}</div>
+                                        {deploy.result.explorerUrl && <a href={deploy.result.explorerUrl} target="_blank" rel="noreferrer" className="underline text-fg-subtle">View on explorer</a>}
+                                    </div>
+                                )}
+                            </section>
+                        )}
+
+                        {!isRemote && canDeploy && artifact && (
                             <section aria-label="Compiled contract" className="rounded-card border border-line bg-sunken p-4 space-y-3">
                                 <div className="flex items-center justify-between gap-4">
                                     <div className="text-[12px] font-semibold text-fg-subtle">Compiled</div>
@@ -531,7 +766,11 @@ export const ContractBuilder: React.FC = () => {
                                     <option key={option}>{option}</option>
                                 ))}
                             </select>
-                            {config.canCompile && <p className="text-[12px] text-fg-muted">Compiles with the built-in solc {config.compilerVersion} (optimizer on). This setting is not applied yet.</p>}
+                            {config.compiler === 'browser' ? (
+                                <p className="text-[12px] text-fg-muted">Compiles with the built-in solc {config.compilerVersion} (optimizer on). This setting is not applied yet.</p>
+                            ) : (
+                                <p className="text-[12px] text-fg-muted">Built on txio-compiler with {config.compilerVersion}.</p>
+                            )}
                         </div>
                     </div>
                 </div>

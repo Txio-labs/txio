@@ -24,7 +24,7 @@ export const isNetwork = (
 
 // Chains the RPC Method Builder can target. Kept in sync with
 // `WalletChainFamily` (wallet/types.ts), which the wallet layer already uses.
-export type ChainId = 'sui' | 'evm' | 'stellar' | 'solana' | 'aptos';
+export type ChainId = 'sui' | 'evm' | 'stellar' | 'solana' | 'aptos' | 'starknet';
 
 export type FeatureId = 'dashboard' | 'rpc' | 'ptb' | 'move' | 'playground' | 'workspace_overview' | 'history' | 'settings' | 'new_request' | 'new_collection' | 'profile' | 'account' | 'runner' | 'collections' | 'docs' | 'ecosystem' | 'features' | 'help' | 'integrations' | 'infrastructure' | 'partners' | 'admin' | 'approvals' | 'send' | 'automation' | 'developers';
 
@@ -124,6 +124,10 @@ export interface AppSettings {
     stellarCustomRpc: RpcEndpointOverrides;
     /** Custom Solana RPC endpoint overrides, per network. First entry is tried first. */
     solanaCustomRpc: RpcEndpointOverrides;
+    /** Custom Starknet RPC endpoint overrides, per network. First entry is tried first. */
+    starknetCustomRpc: RpcEndpointOverrides;
+    /** Custom Aptos fullnode REST endpoints (…/v1), per network. First entry is tried first. */
+    aptosCustomRpc: RpcEndpointOverrides;
     /** Preferred Sui block explorer. */
     explorer: SuiExplorer;
     /** Preferred EVM explorer family: chain-native (Etherscan-family) or Blockscout. */
@@ -317,6 +321,23 @@ export interface AptosTxParams {
   gasUnitPrice?: string;
 }
 
+// One call in a Starknet multicall. With `rawCalldata`, `args` are felts sent
+// as-is; otherwise they are values for the function's ABI inputs, in order,
+// and are encoded against the contract's on-chain ABI at send time.
+export interface StarknetCall {
+  id: string;
+  contractAddress: string;
+  entrypoint: string;
+  args: string[];
+  rawCalldata?: boolean;
+}
+
+// Starknet invoke transaction: one or more calls executed atomically by the
+// connected account contract.
+export interface StarknetTxParams {
+  calls: StarknetCall[];
+}
+
 export interface RequestItem {
   id: string;
   type: RequestType;
@@ -341,6 +362,7 @@ export interface RequestItem {
   evmTxParams?: EvmTxParams;
   stellarTxParams?: StellarTxParams;
   aptosTxParams?: AptosTxParams;
+  starknetTxParams?: StarknetTxParams;
   // Present for RequestType.SWAP requests — see SwapParams.
   swapParams?: SwapParams;
   isLoading?: boolean;

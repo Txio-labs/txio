@@ -32,6 +32,7 @@ import {
     Segmented,
     StatusDot,
     cx,
+    networkTone,
 } from '@/components/ui/primitives';
 
 const timeAgo = (ts: number) => {
@@ -140,7 +141,7 @@ export const Dashboard: React.FC = () => {
             <section data-enter className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5 mb-8">
                 <div>
                     <div className="flex items-center gap-2 text-xs text-fg-subtle mb-3">
-                        <StatusDot tone="success" pulse />
+                        <StatusDot tone={networkTone(network)} pulse={network === 'mainnet'} />
                         <span className="capitalize">{network}</span>
                         <span className="text-fg-subtle/60">·</span>
                         <span>{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</span>

@@ -38,10 +38,10 @@ describe('NetworkStatusWidget', () => {
 
     render(<NetworkStatusWidget />);
 
-    for (const label of ['Sui', 'Ethereum / EVM', 'Stellar', 'Solana', 'Aptos']) {
+    for (const label of ['Sui', 'Ethereum / EVM', 'Stellar', 'Solana', 'Aptos', 'Starknet']) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
-    await waitFor(() => expect(getChainRpcHealth).toHaveBeenCalledTimes(5));
+    await waitFor(() => expect(getChainRpcHealth).toHaveBeenCalledTimes(6));
   });
 
   it('shows real latency and a Healthy status once health checks resolve', async () => {

@@ -1,3 +1,4 @@
+import { resolveChainRpcUrl } from '@/services/suiService';
 import { APTOS_NETWORKS } from '@/lib/constants';
 import type { NameResolver } from './index';
 
@@ -29,7 +30,7 @@ export const aptosNamesResolver: NameResolver = {
 
         let response: Response;
         try {
-            response = await fetch(`${APTOS_NETWORKS[ctx.network]}/view`, {
+            response = await fetch(`${resolveChainRpcUrl('aptos', ctx.network)}/view`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

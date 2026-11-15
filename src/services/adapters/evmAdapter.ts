@@ -11,7 +11,8 @@ import {
     parseAbiItem,
     parseEther,
     type AbiFunction,
-    type Hex
+    type Hex,
+    type PublicClient
 } from 'viem';
 import {
     getConnection,
@@ -135,7 +136,10 @@ export const evmExplorerUrl = (hash: string, evmChainId?: number): string | unde
 };
 
 const simulateEvm = async (p: EvmTxParams, from: string | null): Promise<TxResult> => {
-    const client = getPublicClient(wagmiConfig, { chainId: p.chainId as never });
+    // Widened to a plain PublicClient: the per-chain union across every
+    // configured chain (Celo and zkSync add their own tx formats) is too
+    // large for TypeScript to represent.
+    const client = getPublicClient(wagmiConfig, { chainId: p.chainId as never }) as unknown as PublicClient;
     if (!client) throw new Error(`No RPC client configured for chain ${p.chainId}.`);
     const { data, fn } = buildEvmCalldata(p);
     const value = parseEther(p.value.trim() || '0');

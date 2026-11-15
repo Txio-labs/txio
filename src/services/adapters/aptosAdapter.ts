@@ -1,3 +1,4 @@
+import { resolveChainRpcUrl } from '@/services/suiService';
 import type { ChainAdapter, DescribedTransaction, TxContext, TxResult } from '../chainAdapter';
 import { ChainExecutionError } from '../chainAdapter';
 import type { AptosTxParams, BuilderArg, MoveParamType, Network, RequestItem } from '../../types';
@@ -20,7 +21,7 @@ export const aptosExplorerUrl = (network: Network, txHash: string): string | und
 };
 
 /** REST fullnode endpoint for a network — Aptos is REST, not JSON-RPC. */
-export const resolveAptosRpcUrl = (network: Network): string => APTOS_NETWORKS[network];
+export const resolveAptosRpcUrl = (network: Network): string => resolveChainRpcUrl('aptos', network);
 
 /** Loads the SDK lazily, same pattern as the Stellar/Sui adapters. */
 const loadAptos = () => import('@aptos-labs/ts-sdk');

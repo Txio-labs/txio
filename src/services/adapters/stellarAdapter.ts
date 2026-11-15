@@ -14,7 +14,7 @@ export const stellarExplorerUrl = (network: Network, txId: string): string =>
 
 const loadStellar = () => import('@stellar/stellar-sdk');
 
-const stellarPassphrase = async (network: Network) => {
+export const stellarPassphrase = async (network: Network) => {
     const { Networks } = await loadStellar();
     return network === 'mainnet' ? Networks.PUBLIC : Networks.TESTNET;
 };

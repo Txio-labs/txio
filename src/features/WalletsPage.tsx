@@ -29,10 +29,11 @@ const CHAIN_META: Record<WalletChainFamily, { label: string; color: string }> = 
     evm: { label: 'EVM', color: '#a5a8f7' },
     solana: { label: 'Solana', color: '#14f195' },
     aptos: { label: 'Aptos', color: '#2ed3b7' },
-    stellar: { label: 'Stellar', color: '#f5d060' }
+    stellar: { label: 'Stellar', color: '#f5d060' },
+    starknet: { label: 'Starknet', color: '#ec796b' }
 };
 
-const CHAIN_FAMILY_ORDER: WalletChainFamily[] = ['sui', 'evm', 'solana', 'aptos', 'stellar'];
+const CHAIN_FAMILY_ORDER: WalletChainFamily[] = ['sui', 'evm', 'solana', 'aptos', 'stellar', 'starknet'];
 
 const ChainDot: React.FC<{ family: WalletChainFamily; size?: number }> = ({ family, size = 8 }) => (
     <span

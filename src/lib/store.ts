@@ -2273,6 +2273,14 @@ export const appStore = {
                             hasTxParams && chain === 'stellar'
                                 ? (entry.tx_params as typeof DEFAULT_STELLAR_TX)
                                 : undefined,
+                        aptosTxParams:
+                            hasTxParams && chain === 'aptos'
+                                ? (entry.tx_params as RequestItem['aptosTxParams'])
+                                : undefined,
+                        starknetTxParams:
+                            hasTxParams && chain === 'starknet'
+                                ? (entry.tx_params as RequestItem['starknetTxParams'])
+                                : undefined,
                         executionResult:
                             entry.result ?? undefined,
                         walletFamily:

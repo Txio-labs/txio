@@ -134,6 +134,7 @@ type SolanaProviderApi = {
     // top, letting the wallet itself submit to the RPC it trusts.
     signTransaction?: (transaction: unknown) => Promise<unknown>;
     signAndSendTransaction?: (transaction: unknown) => Promise<{ signature: string }>;
+    signAllTransactions?: (transactions: unknown[]) => Promise<unknown[]>;
 };
 
 const withTimeout = async <T>(
@@ -696,3 +697,20 @@ export const disconnectSolanaWallet = async (
         }
     }
 };
+
+/**
+ * Signs many transactions with one wallet prompt when the wallet supports
+ * signAllTransactions, else one prompt per transaction. Used for program
+ * deployment, which writes the binary in hundreds of small transactions.
+ */
+export async function signAllSolanaTransactions<T>(walletId: WalletId, transactions: T[]): Promise<T[]> {
+    const provider = getSolanaProviderById(walletId);
+    if (!provider?.publicKey) throw new Error('Wallet is not connected or does not support Solana.');
+    if (provider.signAllTransactions) {
+        return (await withTimeout(provider.signAllTransactions(transactions), 'Sign transactions', 180_000)) as T[];
+    }
+    if (!provider.signTransaction) throw new Error('This wallet cannot sign transactions without sending them.');
+    const signed: T[] = [];
+    for (const tx of transactions) signed.push((await withTimeout(provider.signTransaction(tx), 'Sign transaction', 60_000)) as T);
+    return signed;
+}

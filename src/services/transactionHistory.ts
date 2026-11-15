@@ -1,7 +1,7 @@
 import type { ConnectedWallet } from '@/wallet/types';
 import type { ChainId, Network } from '@/types';
 import { APTOS_NETWORKS, STELLAR_NETWORKS, getEvmChain } from '@/lib/constants';
-import { executeChainRpc } from './suiService';
+import { executeChainRpc, resolveChainRpcUrl } from './suiService';
 
 export interface TxHistoryItem {
   hash: string;
@@ -26,6 +26,7 @@ export type HistorySource =
   | 'solana-rpc'
   | 'aptos-indexer'
   | 'aptos-rest'
+  | 'starknet-rpc'
   | 'unsupported';
 
 export interface TransactionHistoryResult {
@@ -336,6 +337,7 @@ const EVM_TX_EXPLORERS: Record<number, string> = {
   1101: 'https://zkevm.polygonscan.com/tx/',
   1284: 'https://moonscan.io/tx/',
   5000: 'https://mantlescan.xyz/tx/',
+  143: 'https://monadscan.com/tx/',
   8453: 'https://basescan.org/tx/',
   42161: 'https://arbiscan.io/tx/',
   42220: 'https://celoscan.io/tx/',
@@ -360,6 +362,8 @@ const BLOCKSCOUT_APIS: Record<number, string> = {
 
 const EVM_NATIVE_SYMBOL: Record<number, string> = {
   25: 'CRO',
+  143: 'MON',
+  10143: 'MON',
   56: 'BNB',
   100: 'xDAI',
   137: 'POL',
@@ -375,6 +379,119 @@ const parseEvmChainId = (caip2: string): number | null => {
   return match ? Number(match[1]) : null;
 };
 
+const ERC20_TRANSFER = 'event Transfer(address indexed from, address indexed to, uint256 value)';
+// Public RPCs cap eth_getLogs ranges very differently (Monad: 100 blocks,
+// Linea: 10,000+), so windows grow until the RPC refuses or enough are found.
+const EVM_LOG_WINDOWS = [BigInt(100), BigInt(1_000), BigInt(10_000), BigInt(50_000)];
+
+/**
+ * Keyless fallback for chains without a reachable explorer API: ERC-20
+ * Transfer logs to and from the address, read from the chain's own RPC over
+ * recent blocks. Native-currency transfers and plain contract calls emit no
+ * log, so they are not listed; the warning says so.
+ */
+async function getEvmLogsHistory(address: string, chainId: number, chainName: string, limit: number): Promise<TransactionHistoryResult> {
+  try {
+    const { createPublicClient, http, parseAbiItem, erc20Abi, getAddress } = await import('viem');
+    const { wagmiConfig } = await import('@/wallet/config');
+    const { EVM_CHAINS: RPC_CHAINS } = await import('@/lib/constants');
+    const chain = wagmiConfig.chains.find((c) => c.id === chainId);
+    const rpcUrl = RPC_CHAINS.find((c) => c.id === chainId)?.rpcUrl ?? chain?.rpcUrls.default.http[0];
+    if (!rpcUrl) return { items: [], source: 'unsupported', warning: `No RPC is configured for ${chainName}.` };
+    const client = createPublicClient({ transport: http(rpcUrl) });
+    const me = getAddress(address);
+    const event = parseAbiItem(ERC20_TRANSFER);
+    const latest = await client.getBlockNumber();
+
+    type TransferLog = {
+      address: `0x${string}`;
+      blockNumber: bigint | null;
+      transactionHash: `0x${string}` | null;
+      args: { from?: string; to?: string; value?: bigint };
+    };
+    let logs: TransferLog[] = [];
+    let scanned = BigInt(0);
+    for (const span of EVM_LOG_WINDOWS) {
+      const fromBlock = latest > span ? latest - span : BigInt(0);
+      try {
+        const [sent, received] = await Promise.all([
+          client.getLogs({ event, args: { from: me }, fromBlock, toBlock: latest }),
+          client.getLogs({ event, args: { to: me }, fromBlock, toBlock: latest }),
+        ]);
+        logs = [...sent, ...received] as unknown as TransferLog[];
+        scanned = latest - fromBlock;
+      } catch {
+        break; // The RPC caps the block range; keep what the smaller window found.
+      }
+      if (new Set(logs.map((l) => l.transactionHash)).size >= limit || fromBlock === BigInt(0)) break;
+    }
+
+    const sorted = logs.sort((a, b) => Number((b.blockNumber ?? BigInt(0)) - (a.blockNumber ?? BigInt(0))));
+    const byTx = new Map<string, (typeof sorted)[number]>();
+    for (const log of sorted) if (log.transactionHash && !byTx.has(log.transactionHash)) byTx.set(log.transactionHash, log);
+    const picked = [...byTx.values()].slice(0, limit);
+
+    const tokens = [...new Set(picked.map((l) => l.address))];
+    const meta = new Map<string, { symbol: string; decimals: number }>();
+    await Promise.all(
+      tokens.map(async (token) => {
+        try {
+          const [symbol, decimals] = await Promise.all([
+            client.readContract({ address: token, abi: erc20Abi, functionName: 'symbol' } as never) as Promise<string>,
+            client.readContract({ address: token, abi: erc20Abi, functionName: 'decimals' } as never) as Promise<number>,
+          ]);
+          meta.set(token, { symbol, decimals: Number(decimals) });
+        } catch {
+          // Not a standard ERC-20 (e.g. an NFT); amount stays raw.
+        }
+      })
+    );
+    const times = new Map<bigint, number | null>();
+    await Promise.all(
+      [...new Set(picked.map((l) => l.blockNumber))].filter((b): b is bigint => b !== null).map(async (n) => {
+        try {
+          times.set(n, Number((await client.getBlock({ blockNumber: n })).timestamp));
+        } catch {
+          times.set(n, null);
+        }
+      })
+    );
+    const explorer = EVM_TX_EXPLORERS[chainId] ?? (chain?.blockExplorers?.default.url ? `${chain.blockExplorers.default.url.replace(/\/$/, '')}/tx/` : null);
+
+    const items: TxHistoryItem[] = picked.map((log) => {
+      const from = String(log.args.from ?? '');
+      const to = String(log.args.to ?? '');
+      const direction: TxHistoryItem['direction'] = from === me ? (to === me ? 'self' : 'out') : 'in';
+      const token = meta.get(log.address);
+      const value = log.args.value ?? BigInt(0);
+      return {
+        hash: log.transactionHash ?? '',
+        timestamp: log.blockNumber !== null ? times.get(log.blockNumber) ?? null : null,
+        direction,
+        counterparty: direction === 'in' ? from : to,
+        amount: token ? `${formatUnits(value, token.decimals)} ${token.symbol}` : `${value.toString()} (${log.address})`,
+        status: 'success',
+        explorerUrl: explorer && log.transactionHash ? `${explorer}${log.transactionHash}` : null,
+        label: 'token transfer',
+      };
+    });
+    if (scanned === BigInt(0)) {
+      return {
+        items: [],
+        source: 'unsupported',
+        warning: `${chainName}'s public RPC refused log queries, and no keyless explorer API is known for it. Set NEXT_PUBLIC_ETHERSCAN_API_KEY to load history.`,
+      };
+    }
+    return {
+      items,
+      source: 'eth-logs-fallback',
+      warning: `Showing token transfers from the last ${scanned.toLocaleString()} ${chainName} blocks, read from the chain's RPC. Native ${EVM_NATIVE_SYMBOL[chainId] ?? 'ETH'} transfers and other calls need an explorer API key (NEXT_PUBLIC_ETHERSCAN_API_KEY).`,
+    };
+  } catch (error) {
+    return { items: [], source: 'eth-logs-fallback', warning: `Failed to load transaction history: ${errorMessage(error)}` };
+  }
+}
+
 async function getEvmHistory(address: string, network: Network, limit: number, evmChainId?: number): Promise<TransactionHistoryResult> {
   const chainId = evmChainId ?? (network === 'mainnet' ? 1 : 11155111);
   const apiKey = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY;
@@ -383,11 +500,7 @@ async function getEvmHistory(address: string, network: Network, limit: number, e
   const chainName = chainId === 11155111 ? 'Sepolia' : getEvmChain(chainId).name;
 
   if (!apiKey && !blockscout) {
-    return {
-      items: [],
-      source: 'unsupported',
-      warning: `History for ${chainName} needs an Etherscan API key (NEXT_PUBLIC_ETHERSCAN_API_KEY). No keyless explorer API is known for this chain.`,
-    };
+    return getEvmLogsHistory(address, chainId, chainName, limit);
   }
 
   const qs = `module=account&action=txlist&address=${encodeURIComponent(address)}&startblock=0&endblock=99999999&sort=desc&page=1&offset=${limit}`;
@@ -491,7 +604,7 @@ function aptosItem(tx: any, address: string, network: Network): TxHistoryItem {
  */
 async function getAptosHistory(rawAddress: string, network: Network, limit: number): Promise<TransactionHistoryResult> {
   const address = normalizeAptosAddress(rawAddress);
-  const rest = APTOS_NETWORKS[network];
+  const rest = resolveChainRpcUrl('aptos', network);
   const gql = aptosGraphqlUrl(network);
 
   if (gql) {
@@ -537,15 +650,155 @@ async function getAptosHistory(rawAddress: string, network: Network, limit: numb
   }
 }
 
+/* ------------------------------------------------------------------- Starknet */
+
+// Starknet RPC has no "transactions of an account" call. Every v3 transaction
+// pays its fee in STRK, so the STRK contract's Transfer events where the
+// account is the sender list every transaction it sent; Transfer events where
+// it is the receiver add incoming STRK. Events come oldest-first per window,
+// so windows walk back from the chain head until enough are found.
+const STARKNET_HISTORY_WINDOWS = [5_000, 50_000, 500_000];
+const STARKNET_MAX_PAGES = 10;
+
+type StarknetTransferEvent = { tx: string; block: number; from: string; to: string; amount: bigint };
+
+async function starknetTransfers(network: Network, keys: string[][], fromBlock: number): Promise<StarknetTransferEvent[]> {
+  const { getStarknetProvider, STRK_TOKEN_ADDRESS } = await import('./starknet');
+  const provider = await getStarknetProvider(network);
+  const out: StarknetTransferEvent[] = [];
+  let token: string | undefined;
+  for (let page = 0; page < STARKNET_MAX_PAGES; page++) {
+    const res = await provider.getEvents({
+      address: STRK_TOKEN_ADDRESS,
+      from_block: { block_number: fromBlock },
+      to_block: 'latest',
+      keys,
+      chunk_size: 1000,
+      continuation_token: token,
+    });
+    for (const e of res.events as any[]) {
+      const [low = '0x0', high = '0x0'] = e.data ?? [];
+      out.push({
+        tx: e.transaction_hash,
+        block: Number(e.block_number ?? 0),
+        from: e.keys?.[1] ?? '',
+        to: e.keys?.[2] ?? '',
+        amount: BigInt(low) + (BigInt(high) << BigInt(128)),
+      });
+    }
+    token = res.continuation_token;
+    if (!token) break;
+  }
+  return out;
+}
+
+const sameFelt = (a: string, b: string) => {
+  try {
+    return BigInt(a) === BigInt(b);
+  } catch {
+    return false;
+  }
+};
+
+async function getStarknetHistory(address: string, network: Network, limit: number): Promise<TransactionHistoryResult> {
+  if (network === 'localnet') {
+    return { items: [], source: 'starknet-rpc', warning: 'History is not available for a local Starknet node.' };
+  }
+  try {
+    const { getStarknetProvider, starknetTxExplorerUrl } = await import('./starknet');
+    const { hash: snHash } = await import('starknet');
+    const provider = await getStarknetProvider(network);
+    const transfer = snHash.getSelectorFromName('Transfer');
+    const latest = await provider.getBlockNumber();
+
+    let events: StarknetTransferEvent[] = [];
+    for (const span of STARKNET_HISTORY_WINDOWS) {
+      const from = Math.max(0, latest - span);
+      const [sent, received] = await Promise.all([
+        starknetTransfers(network, [[transfer], [address]], from),
+        starknetTransfers(network, [[transfer], [], [address]], from),
+      ]);
+      events = [...sent, ...received];
+      if (new Set(events.map((e) => e.tx)).size >= limit || from === 0) break;
+    }
+
+    // Newest first, one row per transaction.
+    const byTx = new Map<string, StarknetTransferEvent[]>();
+    for (const e of events.sort((a, b) => b.block - a.block)) byTx.set(e.tx, [...(byTx.get(e.tx) ?? []), e]);
+    const txs = [...byTx].slice(0, limit);
+
+    const blockTimes = new Map<number, number | null>();
+    await Promise.all(
+      [...new Set(txs.map(([, evs]) => evs[0].block))].map(async (n) => {
+        try {
+          const block = (await provider.getBlockWithTxHashes(n)) as { timestamp?: number };
+          blockTimes.set(n, block.timestamp ?? null);
+        } catch {
+          blockTimes.set(n, null);
+        }
+      })
+    );
+
+    const items = await Promise.all(
+      txs.map(async ([tx, evs]): Promise<TxHistoryItem> => {
+        let status: TxHistoryItem['status'] = 'unknown';
+        let fee: bigint | null = null;
+        let sender: string | null = null;
+        try {
+          const receipt = (await provider.getTransactionReceipt(tx)) as any;
+          status = receipt.execution_status === 'REVERTED' ? 'failed' : receipt.execution_status === 'SUCCEEDED' ? 'success' : 'unknown';
+          fee = receipt.actual_fee?.amount != null ? BigInt(receipt.actual_fee.amount) : null;
+        } catch {
+          // Keep the row; status stays unknown.
+        }
+        // Drop the fee payment (the account's own transfer equal to the fee) so the
+        // row shows what the transaction moved, not what it cost.
+        const feeIndex = fee === null ? -1 : evs.findIndex((e) => sameFelt(e.from, address) && e.amount === fee);
+        const moves = evs.filter((_, i) => i !== feeIndex);
+        const main = moves[0];
+        if (evs.some((e) => sameFelt(e.from, address))) sender = address;
+        const direction: TxHistoryItem['direction'] = !main
+          ? sender ? 'out' : 'unknown'
+          : sameFelt(main.from, address) && sameFelt(main.to, address)
+            ? 'self'
+            : sameFelt(main.from, address)
+              ? 'out'
+              : 'in';
+        return {
+          hash: tx,
+          timestamp: blockTimes.get(evs[0].block) ?? null,
+          direction,
+          counterparty: main ? (direction === 'in' ? main.from : main.to) : null,
+          amount: main ? `${formatUnits(main.amount, 18)} STRK` : null,
+          status,
+          explorerUrl: starknetTxExplorerUrl(network, tx) ?? null,
+          label: main ? 'STRK transfer' : 'contract call',
+        };
+      })
+    );
+
+    return {
+      items,
+      source: 'starknet-rpc',
+      warning:
+        items.length < limit
+          ? `Showing activity from the last ${STARKNET_HISTORY_WINDOWS[STARKNET_HISTORY_WINDOWS.length - 1].toLocaleString()} blocks: transactions this account sent, and STRK it received.`
+          : undefined,
+    };
+  } catch (error) {
+    return { items: [], source: 'starknet-rpc', warning: `Failed to load transaction history: ${errorMessage(error)}` };
+  }
+}
+
 /* ---------------------------------------------------------------------- Entry */
 
-const CHAIN_NAMES: Record<string, string> = { sui: 'Sui', evm: 'EVM', solana: 'Solana', aptos: 'Aptos', stellar: 'Stellar' };
+const CHAIN_NAMES: Record<string, string> = { sui: 'Sui', evm: 'EVM', solana: 'Solana', aptos: 'Aptos', stellar: 'Stellar', starknet: 'Starknet' };
 
 /** Which chains an address string could belong to, judging by its format. */
 export function guessAddressChains(address: string): ChainId[] {
   const a = address.trim();
   if (/^0x[0-9a-fA-F]{40}$/.test(a)) return ['evm'];
-  if (/^0x[0-9a-fA-F]{1,64}$/.test(a)) return ['sui', 'aptos'];
+  if (/^0x[0-9a-fA-F]{1,64}$/.test(a)) return ['sui', 'aptos', 'starknet'];
   if (/\.sui$/i.test(a)) return ['sui'];
   if (/^[GC][A-Z2-7]{55}$/.test(a)) return ['stellar'];
   if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(a)) return ['solana'];
@@ -558,6 +811,7 @@ const ADDRESS_FORMAT: Record<string, { test: (a: string) => boolean; expected: s
   aptos: { test: (a) => /^0x[0-9a-fA-F]{1,64}$/.test(a), expected: 'a 0x address (up to 64 hex characters)' },
   stellar: { test: (a) => /^[GC][A-Z2-7]{55}$/.test(a), expected: 'a G… account or C… contract address' },
   solana: { test: (a) => /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(a), expected: 'a base58 address' },
+  starknet: { test: (a) => /^0x[0-9a-fA-F]{1,64}$/.test(a), expected: 'a 0x address (up to 64 hex characters)' },
 };
 
 /** A readable reason the address can't be used on `chain`, or null when it fits. */
@@ -586,6 +840,8 @@ export async function getAddressHistory(query: HistoryQuery): Promise<Transactio
       return getSolanaHistory(address, query.network, limit);
     case 'aptos':
       return getAptosHistory(address, query.network, limit);
+    case 'starknet':
+      return getStarknetHistory(address, query.network, limit);
     default:
       return { items: [], source: 'unsupported', warning: 'Transaction history is not supported for this chain.' };
   }

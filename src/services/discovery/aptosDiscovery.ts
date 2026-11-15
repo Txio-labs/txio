@@ -1,3 +1,4 @@
+import { resolveChainRpcUrl } from '@/services/suiService';
 import { APTOS_NETWORKS } from '@/lib/constants';
 import type { Network } from '../../types';
 import {
@@ -134,7 +135,7 @@ export const aptosDiscoveryAdapter: ChainDiscoveryAdapter = {
             });
         }
 
-        const parsed = parseAptosModules(await fetchModules(APTOS_NETWORKS[network], address));
+        const parsed = parseAptosModules(await fetchModules(resolveChainRpcUrl('aptos', network), address));
         if (parsed.length === 0) {
             throw new DiscoveryError(`No modules are published at ${address} on ${network}.`, {
                 code: 'NOT_FOUND',

@@ -2,10 +2,13 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React, { useState } from 'react';
 
-vi.mock('@/lib/store', () => ({
-    appStore: { showToast: vi.fn(), addToHistory: vi.fn() },
-    useAppStore: () => ({ history: [], collections: [] })
-}));
+vi.mock('@/lib/store', async () => {
+    const { DEFAULT_APP_SETTINGS } = await import('@/lib/appConfig');
+    return {
+        appStore: { showToast: vi.fn(), addToHistory: vi.fn(), getSnapshot: () => ({ settings: DEFAULT_APP_SETTINGS }) },
+        useAppStore: () => ({ history: [], collections: [] })
+    };
+});
 
 import { TransactionEditor } from './TransactionEditor';
 import { AptosTransactionBuilder } from './AptosTransactionBuilder';

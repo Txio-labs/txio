@@ -1,6 +1,6 @@
 /**
  * Networks page — stat cards and the network table are driven by REAL data:
- * endpoints come from NETWORKS/EVM_NETWORKS/STELLAR_NETWORKS/SOLANA_NETWORKS
+ * endpoints come from NETWORKS/EVM_NETWORKS/STELLAR_NETWORKS/SOLANA_NETWORKS/STARKNET_NETWORKS
  * in @/lib/constants, and status/latency come from live `getChainRpcHealth`
  * checks against each endpoint (same mechanism the RPC Builder's header
  * uses), not fabricated numbers. Aptos speaks REST rather than JSON-RPC, so
@@ -9,8 +9,8 @@
  * The "Add Network" panel adds a backup RPC endpoint to an existing
  * chain+environment pair (the same AppSettings.*CustomRpc arrays the
  * Settings page's "Network & RPC" editor and the RPC failover client both
- * already read) — not a genuinely new chain. Aptos has no custom-endpoint
- * setting yet, so it isn't offered there.
+ * already read) — not a genuinely new chain. For Aptos the endpoint is a
+ * fullnode REST base URL ending in /v1.
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import {
@@ -33,17 +33,19 @@ import { getChainRpcHealth } from '@/services/suiService';
 import { Select } from '@/components/Select';
 import { ChainIcon } from '@/components/ui/ChainIcon';
 
-type ChainFamily = 'sui' | 'evm' | 'solana' | 'stellar' | 'aptos';
-type RpcChain = Exclude<ChainFamily, 'aptos'>;
+type ChainFamily = 'sui' | 'evm' | 'solana' | 'stellar' | 'aptos' | 'starknet';
+type RpcChain = ChainFamily;
 type NetworkStatus = 'online' | 'degraded' | 'offline' | 'checking';
 
-type RpcSettingsKey = 'customRpc' | 'evmCustomRpc' | 'stellarCustomRpc' | 'solanaCustomRpc';
+type RpcSettingsKey = 'customRpc' | 'evmCustomRpc' | 'stellarCustomRpc' | 'solanaCustomRpc' | 'starknetCustomRpc' | 'aptosCustomRpc';
 
 const SETTINGS_KEY_FOR_CHAIN: Record<RpcChain, RpcSettingsKey> = {
     sui: 'customRpc',
     evm: 'evmCustomRpc',
     solana: 'solanaCustomRpc',
-    stellar: 'stellarCustomRpc'
+    stellar: 'stellarCustomRpc',
+    starknet: 'starknetCustomRpc',
+    aptos: 'aptosCustomRpc'
 };
 
 const CHAIN_META: Record<ChainFamily, { label: string; color: string }> = {
@@ -51,7 +53,8 @@ const CHAIN_META: Record<ChainFamily, { label: string; color: string }> = {
     evm: { label: 'Ethereum', color: '#a5a8f7' },
     solana: { label: 'Solana', color: '#14f195' },
     stellar: { label: 'Stellar', color: '#f5d060' },
-    aptos: { label: 'Aptos', color: '#2dd8a3' }
+    aptos: { label: 'Aptos', color: '#2dd8a3' },
+    starknet: { label: 'Starknet', color: '#ec796b' }
 };
 
 const DEGRADED_LATENCY_MS = 1500;
@@ -81,11 +84,12 @@ const CHAIN_ID_LABELS: Record<ChainFamily, Partial<Record<Network, string>>> = {
     evm: { mainnet: '1', testnet: '11155111', devnet: '11155111', localnet: '31337' },
     solana: { mainnet: 'mainnet-beta', testnet: 'testnet', devnet: 'devnet', localnet: 'localnet' },
     stellar: { mainnet: 'public', testnet: 'testnet', devnet: 'testnet', localnet: 'standalone' },
-    aptos: { mainnet: '1', testnet: '2', devnet: '—', localnet: '4' }
+    aptos: { mainnet: '1', testnet: '2', devnet: '—', localnet: '4' },
+    starknet: { mainnet: 'SN_MAIN', testnet: 'SN_SEPOLIA', devnet: 'SN_SEPOLIA', localnet: 'SN_SEPOLIA' }
 };
 
 const endpointsFor = (chain: ChainFamily, net: Network, settings: AppSettings): string[] =>
-    chain === 'aptos' ? [APTOS_NETWORKS[net]] : resolveChainRpcUrlList(chain, net, settings);
+    resolveChainRpcUrlList(chain, net, settings);
 
 /** Rows reflect the endpoint actually used first — a custom override when one is set. */
 const buildRows = (settings: AppSettings): NetworkRow[] =>

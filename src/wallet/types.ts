@@ -3,7 +3,8 @@ export type WalletChainFamily =
     | 'sui'
     | 'stellar'
     | 'solana'
-    | 'aptos';
+    | 'aptos'
+    | 'starknet';
 
 export type WalletConnectionStatus =
     | 'disconnected'
@@ -61,7 +62,9 @@ export type WalletId =
     | 'martian'
     | 'pontem'
     | 'rise-wallet'
-    | 'nightly-aptos';
+    | 'nightly-aptos'
+    | 'ready-wallet'
+    | 'braavos';
 
 export interface WalletDescriptor {
     id: WalletId;

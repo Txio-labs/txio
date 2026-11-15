@@ -23,7 +23,8 @@ const BASE_UNIT: Record<ChainId, string> = {
     sui: 'MIST',
     solana: 'lamports',
     aptos: 'octas',
-    stellar: 'stroops'
+    stellar: 'stroops',
+    starknet: 'fri'
 };
 
 const chainLabel = (chain: ChainId) => RPC_CHAINS.find((c) => c.id === chain)?.label ?? chain;

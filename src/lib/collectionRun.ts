@@ -281,7 +281,7 @@ export interface CliCollectionExport {
 }
 
 /** The CLI's chain names. */
-const CLI_CHAIN: Record<ChainId, string> = { sui: 'sui', evm: 'eth', solana: 'solana', aptos: 'aptos', stellar: 'soroban' };
+const CLI_CHAIN: Partial<Record<ChainId, string>> = { sui: 'sui', evm: 'eth', solana: 'solana', aptos: 'aptos', stellar: 'soroban', starknet: 'starknet' };
 /** The CLI's `eth` adapter speaks to Ethereum mainnet or Sepolia (by --network), nothing else. */
 const CLI_EVM_CHAIN_IDS = new Set([1, 11155111]);
 const CLI_APTOS_ARG_TYPES = new Set(['u8', 'u16', 'u32', 'u64', 'u128', 'u256', 'bool', 'address', 'object', 'string', 'vector<u8>', 'json']);
@@ -356,6 +356,15 @@ const cliTx = (request: RequestItem, chain: ChainId, sender: string | undefined)
         return { tx };
     }
 
+    if (chain === 'starknet') {
+        const calls = request.starknetTxParams?.calls ?? [];
+        if (!sender) return { reason: 'link a Starknet wallet: the CLI simulates from your account contract' };
+        if (calls.length !== 1) return { reason: 'the CLI simulates a single call, not a multicall' };
+        const [call] = calls;
+        if (!call.rawCalldata) return { reason: 'the CLI takes raw calldata (felts); switch the call to "Enter raw calldata"' };
+        return { tx: { to: call.contractAddress.trim(), function: call.entrypoint.trim(), args: call.args.map((a) => a.trim()), sender } };
+    }
+
     const p = request.solanaTxParams;
     if (!p) return { reason: 'no Solana instruction' };
     if (!sender) return { reason: 'link a Solana wallet: the CLI needs a fee payer' };
@@ -428,6 +437,11 @@ export const toCliCollection = (
     const out: CliCollectionExport = { file: { name, requests: [] }, skipped: [], dropped: [] };
     for (const request of requests) {
         const chain = requestChain(request);
+        const cliChain = CLI_CHAIN[chain];
+        if (!cliChain) {
+            out.skipped.push(`${request.name}: the CLI does not support ${chain} yet`);
+            continue;
+        }
         const simulate = request.type === RequestType.TRANSACTION;
         let entry: CliRequest;
         if (simulate) {
@@ -436,7 +450,7 @@ export const toCliCollection = (
                 out.skipped.push(`${request.name}: ${built.reason}`);
                 continue;
             }
-            entry = { name: request.name, chain: CLI_CHAIN[chain], kind: 'simulate', tx: built.tx };
+            entry = { name: request.name, chain: cliChain, kind: 'simulate', tx: built.tx };
         } else {
             if (request.type !== RequestType.RPC || !request.rpcParams?.method) {
                 out.skipped.push(`${request.name}: no RPC method`);
@@ -447,7 +461,7 @@ export const toCliCollection = (
                 out.skipped.push(`${request.name}: the CLI targets Ethereum mainnet or Sepolia only (chain ${evmChainId})`);
                 continue;
             }
-            entry = { name: request.name, chain: CLI_CHAIN[chain], method: request.rpcParams.method, params: request.rpcParams.params ?? [] };
+            entry = { name: request.name, chain: cliChain, method: request.rpcParams.method, params: request.rpcParams.params ?? [] };
         }
         const expect: CliExpectation[] = [];
         for (const assertion of (request.tests ?? []).filter((t) => t.enabled)) {

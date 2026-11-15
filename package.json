@@ -26,6 +26,7 @@
     "@mysten/dapp-kit": "^1.1.8",
     "@mysten/sui": "^2.22.0",
     "@solana/web3.js": "^1.99.0",
+    "@starknet-io/get-starknet-core": "6.1.0",
     "@stellar/freighter-api": "^6.0.1",
     "@stellar/stellar-sdk": "^16.0.1",
     "@tanstack/react-query": "^5.101.3",
@@ -38,6 +39,7 @@
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "solc": "^0.8.28",
+    "starknet": "10.8.0",
     "viem": "^2.55.0",
     "wagmi": "^3.7.3"
   },

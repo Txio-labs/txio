@@ -111,6 +111,30 @@ const transactionSnippet = (request: RequestItem, network: Network): string => {
       ].join('\n');
     }
 
+    case 'starknet': {
+      const calls = request.starknetTxParams?.calls ?? [];
+      if (calls.length === 0) return '// Add a call to generate code.';
+      // ABI calls are encoded with the contract's on-chain ABI (Contract.populate),
+      // the same way Txio encodes them; raw calls pass felts through.
+      const body = calls
+        .map((c) => {
+          const address = JSON.stringify(c.contractAddress || '<0x contract address>');
+          const entrypoint = JSON.stringify(c.entrypoint || '<function>');
+          const args = c.args.map((a) => JSON.stringify(a)).join(', ');
+          if (c.rawCalldata) return `  { contractAddress: ${address}, entrypoint: ${entrypoint}, calldata: [${args}] }`;
+          return `  new Contract({ abi: (await provider.getClassAt(${address})).abi, address: ${address} }).populate(${entrypoint}, [${args}])`;
+        })
+        .join(',\n');
+      return [
+        `import { Account, Contract, RpcProvider } from 'starknet';`,
+        ``,
+        `const provider = new RpcProvider({ nodeUrl: ${JSON.stringify(resolveChainRpcUrl('starknet', network))} });`,
+        `const account = new Account({ provider, address: process.env.ACCOUNT_ADDRESS, signer: process.env.PRIVATE_KEY });`,
+        `const { transaction_hash } = await account.execute([\n${body}\n]);`,
+        `await provider.waitForTransaction(transaction_hash);`
+      ].join('\n');
+    }
+
     default: {
       const { packageId, module, function: func, typeArguments, arguments: args, gasBudget } = request.moveParams;
       const lines = [

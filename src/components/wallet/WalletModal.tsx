@@ -31,13 +31,14 @@ import { WalletGlyph } from './WalletGlyph';
 // Same chain-identity colors used across the dashboard mockups, terminal
 // previews, and the Wallets page, so the wallet picker reads as one language
 // with the rest of the app instead of a generic bolted-on Web3Modal.
-const CHAIN_FAMILY_ORDER: WalletChainFamily[] = ['sui', 'evm', 'solana', 'aptos', 'stellar'];
+const CHAIN_FAMILY_ORDER: WalletChainFamily[] = ['sui', 'evm', 'solana', 'aptos', 'stellar', 'starknet'];
 const CHAIN_FAMILY_COLOR: Record<WalletChainFamily, string> = {
     sui: '#6fbcf0',
     evm: '#a5a8f7',
     solana: '#14f195',
     aptos: '#2ed3b7',
-    stellar: '#f5d060'
+    stellar: '#f5d060',
+    starknet: '#ec796b'
 };
 
 type CategoryId = 'all' | WalletChainFamily;

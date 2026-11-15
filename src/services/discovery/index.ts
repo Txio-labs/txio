@@ -5,6 +5,7 @@ import { suiDiscoveryAdapter } from './suiDiscovery';
 import { aptosDiscoveryAdapter } from './aptosDiscovery';
 import { solanaDiscoveryAdapter } from './solanaDiscovery';
 import { stellarDiscoveryAdapter } from './stellarDiscovery';
+import { starknetDiscoveryAdapter } from './starknetDiscovery';
 import { getCachedPackage, setCachedPackage } from './cache';
 
 export type {
@@ -29,7 +30,8 @@ const DISCOVERY_ADAPTERS: Partial<Record<ChainId, ChainDiscoveryAdapter>> = {
     sui: suiDiscoveryAdapter,
     aptos: aptosDiscoveryAdapter,
     solana: solanaDiscoveryAdapter,
-    stellar: stellarDiscoveryAdapter
+    stellar: stellarDiscoveryAdapter,
+    starknet: starknetDiscoveryAdapter
 };
 
 export const getDiscoveryAdapter = (chain: ChainId): ChainDiscoveryAdapter => {

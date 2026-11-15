@@ -6,7 +6,8 @@ import { ledgerConnector } from './hardware/ledgerConnector';
 import {
     createConfig,
     fallback,
-    http
+    http,
+    type Transport
 } from 'wagmi';
 import {
     arbitrum,
@@ -15,17 +16,35 @@ import {
     avalancheFuji,
     base,
     baseSepolia,
+    blast,
+    boba,
     bsc,
     bscTestnet,
+    celo,
+    cronos,
+    fantom,
+    gnosis,
+    linea,
     mainnet,
+    mantle,
+    monad,
+    monadTestnet,
+    moonbeam,
     optimism,
     optimismSepolia,
     polygon,
     polygonAmoy,
+    polygonZkEvm,
+    scroll,
     sepolia,
+    zksync,
     zora
 } from 'wagmi/chains';
+import { EVM_CHAINS as RPC_EVM_CHAINS } from '@/lib/constants';
 
+// Every EVM chain the RPC picker offers (lib/constants EVM_CHAINS) must be
+// here too, or wallets can't switch to it and transactions on it fail with
+// "Unsupported EVM chain". A test keeps the two lists in sync.
 export const EVM_CHAINS = [
     mainnet,
     base,
@@ -35,14 +54,31 @@ export const EVM_CHAINS = [
     avalanche,
     bsc,
     zora,
+    monad,
+    linea,
+    scroll,
+    blast,
+    zksync,
+    polygonZkEvm,
+    mantle,
+    celo,
+    gnosis,
+    cronos,
+    fantom,
+    moonbeam,
+    boba,
     sepolia,
     baseSepolia,
     polygonAmoy,
     arbitrumSepolia,
     optimismSepolia,
     avalancheFuji,
-    bscTestnet
+    bscTestnet,
+    monadTestnet
 ] as const;
+
+/** The verified keyless RPC from lib/constants, else the chain's own default. */
+const rpcFor = (chainId: number) => http(RPC_EVM_CHAINS.find((c) => c.id === chainId)?.rpcUrl);
 
 export const EVM_CONNECTOR_IDS = {
     metamask: 'metaMaskSDK',
@@ -80,20 +116,9 @@ export const wagmiConfig = createConfig({
             ],
             { rank: true }
         ),
-        [base.id]: http(),
-        [polygon.id]: http(),
-        [arbitrum.id]: http(),
-        [optimism.id]: http(),
-        [avalanche.id]: http(),
-        [bsc.id]: http(),
-        [zora.id]: http(),
-        [sepolia.id]: http(),
-        [baseSepolia.id]: http(),
-        [polygonAmoy.id]: http(),
-        [arbitrumSepolia.id]: http(),
-        [optimismSepolia.id]: http(),
-        [avalancheFuji.id]: http(),
-        [bscTestnet.id]: http()
+        ...(Object.fromEntries(
+            EVM_CHAINS.filter((c) => c.id !== mainnet.id).map((c) => [c.id, rpcFor(c.id)])
+        ) as Record<(typeof EVM_CHAINS)[number]['id'], Transport>)
     }
 });
 

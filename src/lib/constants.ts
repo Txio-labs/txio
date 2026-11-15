@@ -78,6 +78,17 @@ export const SOLANA_NETWORKS: Record<Network, string> = {
   localnet: 'http://127.0.0.1:8899',
 };
 
+// Starknet JSON-RPC (spec 0.10). PublicNode serves mainnet and Sepolia with
+// CORS and no API key (verified live). Starknet has no public devnet, so
+// devnet maps to Sepolia like EVM does. Localnet is starknet-devnet's
+// default RPC address.
+export const STARKNET_NETWORKS: Record<Network, string> = {
+  mainnet: 'https://starknet-rpc.publicnode.com',
+  testnet: 'https://starknet-sepolia-rpc.publicnode.com',
+  devnet: 'https://starknet-sepolia-rpc.publicnode.com',
+  localnet: 'http://127.0.0.1:5050/rpc',
+};
+
 // Aptos fullnode REST API endpoints (NOT JSON-RPC — Aptos exposes a REST
 // API, so this is intentionally not part of resolveChainRpcUrl/
 // resolveChainCustomRpcUrl in appConfig.ts, which speak JSON-RPC). No public
@@ -96,6 +107,7 @@ export const RPC_CHAINS: ReadonlyArray<{ id: ChainId; label: string }> = [
   { id: 'stellar', label: 'Stellar' },
   { id: 'solana', label: 'Solana' },
   { id: 'aptos', label: 'Aptos' },
+  { id: 'starknet', label: 'Starknet' },
 ];
 
 export const DEFAULT_RPC_CHAIN: ChainId = 'sui';
@@ -119,6 +131,7 @@ export const EVM_CHAINS: ReadonlyArray<EvmChainInfo> = [
   { id: 25, name: 'Cronos', rpcUrl: 'https://evm.cronos.org', explorerUrl: 'https://cronoscan.com' },
   { id: 56, name: 'BNB Smart Chain', rpcUrl: 'https://bsc-dataseed1.bnbchain.org', explorerUrl: 'https://bscscan.com' },
   { id: 100, name: 'Gnosis', rpcUrl: 'https://rpc.gnosischain.com', explorerUrl: 'https://gnosisscan.io' },
+  { id: 143, name: 'Monad', rpcUrl: 'https://rpc.monad.xyz', explorerUrl: 'https://monadscan.com' },
   { id: 137, name: 'Polygon', rpcUrl: 'https://polygon.drpc.org', explorerUrl: 'https://polygonscan.com' },
   { id: 250, name: 'Fantom Opera', rpcUrl: 'https://fantom.drpc.org', explorerUrl: 'https://ftmscan.com' },
   { id: 288, name: 'Boba Network', rpcUrl: 'https://mainnet.boba.network', explorerUrl: 'https://bobascan.com' },
@@ -210,6 +223,23 @@ export const COMMON_RPC_METHODS: Partial<Record<ChainId, string[]>> = {
     'sendTransaction',
   ],
   aptos: [...Object.keys(APTOS_REST_METHODS), 'getAddressTransactions'],
+  starknet: [
+    'getAddressTransactions',
+    'starknet_blockNumber',
+    'starknet_chainId',
+    'starknet_specVersion',
+    'starknet_syncing',
+    'starknet_getBlockWithTxHashes',
+    'starknet_getTransactionByHash',
+    'starknet_getTransactionReceipt',
+    'starknet_getTransactionStatus',
+    'starknet_getNonce',
+    'starknet_getClassHashAt',
+    'starknet_getClassAt',
+    'starknet_getStorageAt',
+    'starknet_call',
+    'starknet_getEvents',
+  ],
 };
 
 // Sui RPC methods where params[0] is an owner address (eligible for SuiNS auto-resolution).
@@ -323,6 +353,32 @@ export const RPC_METHOD_TEMPLATES: Readonly<Partial<Record<ChainId, Readonly<Rec
   aptos: {
     ...Object.fromEntries(Object.entries(APTOS_REST_METHODS).map(([name, m]) => [name, m.template])),
     getAddressTransactions: ['<0x account address>', { limit: 20 }],
+  },
+  // Block ids are "latest", "pre_confirmed", or { block_number } / { block_hash }.
+  starknet: {
+    getAddressTransactions: ['<0x account address>', { limit: 20 }],
+    starknet_blockNumber: [],
+    starknet_chainId: [],
+    starknet_specVersion: [],
+    starknet_syncing: [],
+    starknet_getBlockWithTxHashes: ['latest'],
+    starknet_getTransactionByHash: ['<0x tx hash>'],
+    starknet_getTransactionReceipt: ['<0x tx hash>'],
+    starknet_getTransactionStatus: ['<0x tx hash>'],
+    starknet_getNonce: ['latest', '<0x contract address>'],
+    starknet_getClassHashAt: ['latest', '<0x contract address>'],
+    starknet_getClassAt: ['latest', '<0x contract address>'],
+    starknet_getStorageAt: ['<0x contract address>', '<0x storage key>', 'latest'],
+    // Defaults to the STRK token's balanceOf(<account>) on mainnet.
+    starknet_call: [
+      {
+        contract_address: '0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d',
+        entry_point_selector: '0x2e4263afad30923c891518314c3c95dbe830a16874e8abc5777a9a20b54c76e',
+        calldata: ['<0x account address>'],
+      },
+      'latest',
+    ],
+    starknet_getEvents: [{ filter: { address: '<0x contract address>', from_block: 'latest', to_block: 'latest', chunk_size: 10 } }],
   },
 };
 

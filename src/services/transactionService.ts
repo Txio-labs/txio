@@ -7,6 +7,7 @@ import { evmAdapter, DEFAULT_EVM_TX, getEvmTxChain, checkEvmArg, coerceEvmArgs, 
 import { solanaAdapter, DEFAULT_SOLANA_TX } from './adapters/solanaAdapter';
 import { stellarAdapter, DEFAULT_STELLAR_TX, toStellarScVal } from './adapters/stellarAdapter';
 import { aptosAdapter, DEFAULT_APTOS_TX } from './adapters/aptosAdapter';
+import { starknetAdapter, newStarknetTxParams } from './adapters/starknetAdapter';
 import { resolveRequestNames } from './nameResolution';
 
 /**
@@ -28,29 +29,39 @@ export { DEFAULT_EVM_TX, getEvmTxChain, checkEvmArg, coerceEvmArgs, buildEvmCall
 export { DEFAULT_SOLANA_TX };
 export { DEFAULT_STELLAR_TX, toStellarScVal };
 export { DEFAULT_APTOS_TX };
+export { newStarknetTxParams };
 
-/** Every chain's adapter, keyed by ChainId — the registry the dispatcher below looks up. */
-const ADAPTERS: Record<ChainId, ChainAdapter> = {
+/**
+ * Every chain's adapter, keyed by ChainId — the registry the dispatcher below
+ * looks up. Built on first use, not at module load: some adapters import
+ * suiService, which imports the store, which imports this module. Reading the
+ * adapter bindings eagerly would capture `undefined` when an adapter module
+ * is the first one loaded.
+ */
+const adapters = (): Record<ChainId, ChainAdapter> => ({
     sui: suiAdapter,
     evm: evmAdapter,
     solana: solanaAdapter,
     stellar: stellarAdapter,
-    aptos: aptosAdapter
-};
+    aptos: aptosAdapter,
+    starknet: starknetAdapter
+});
 
 /** The adapter for a given chain — throws rather than returning undefined for an unregistered chain. */
 export const getAdapter = (chain: ChainId): ChainAdapter => {
-    const adapter = ADAPTERS[chain];
+    const adapter = adapters()[chain];
     if (!adapter) throw new Error(`No chain adapter registered for "${chain}".`);
     return adapter;
 };
 
+/** Getters for the same reason as `adapters()`: the import cycle above. */
 export const TX_CHAIN_LABELS: Record<ChainId, string> = {
-    sui: suiAdapter.label,
-    evm: evmAdapter.label,
-    solana: solanaAdapter.label,
-    stellar: stellarAdapter.label,
-    aptos: aptosAdapter.label
+    get sui() { return suiAdapter.label; },
+    get evm() { return evmAdapter.label; },
+    get solana() { return solanaAdapter.label; },
+    get stellar() { return stellarAdapter.label; },
+    get aptos() { return aptosAdapter.label; },
+    get starknet() { return starknetAdapter.label; }
 };
 
 export const getTxChain = (request: RequestItem): ChainId => request.rpcParams?.chain ?? 'sui';
@@ -75,6 +86,8 @@ export const getTxParamsForHistory = (request: RequestItem): unknown => {
             return request.stellarTxParams;
         case 'aptos':
             return request.aptosTxParams;
+        case 'starknet':
+            return request.starknetTxParams;
     }
 };
 
@@ -89,7 +102,8 @@ export const withTxChain = (request: RequestItem, chain: ChainId): RequestItem =
     ...(chain === 'evm' && !request.evmTxParams ? { evmTxParams: { ...DEFAULT_EVM_TX } } : {}),
     ...(chain === 'solana' && !request.solanaTxParams ? { solanaTxParams: { ...DEFAULT_SOLANA_TX } } : {}),
     ...(chain === 'stellar' && !request.stellarTxParams ? { stellarTxParams: { ...DEFAULT_STELLAR_TX } } : {}),
-    ...(chain === 'aptos' && !request.aptosTxParams ? { aptosTxParams: { ...DEFAULT_APTOS_TX } } : {})
+    ...(chain === 'aptos' && !request.aptosTxParams ? { aptosTxParams: { ...DEFAULT_APTOS_TX } } : {}),
+    ...(chain === 'starknet' && !request.starknetTxParams ? { starknetTxParams: newStarknetTxParams() } : {})
 });
 
 // ---------------------------------------------------------------------------

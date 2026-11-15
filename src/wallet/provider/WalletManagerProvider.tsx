@@ -48,6 +48,7 @@ import {
 } from '../stellar';
 import { connectSolanaWallet, detectSolanaWallets, restoreSolanaWallet, disconnectSolanaWallet } from '../solana';
 import { connectAptosWallet, detectAptosWallets, restoreAptosWallet, disconnectAptosWallet } from '../aptos';
+import { connectStarknetWallet, detectStarknetWallets, restoreStarknetWallet, disconnectStarknetWallet } from '../starknet';
 import {
     clearLinkedWallet,
     persistActiveSignerFamily,
@@ -162,6 +163,7 @@ export function WalletManagerProvider({
     );
     const [solanaSession, setSolanaSession] = useState<ConnectedWallet | null>(null);
     const [aptosSession, setAptosSession] = useState<ConnectedWallet | null>(null);
+    const [starknetSession, setStarknetSession] = useState<ConnectedWallet | null>(null);
     const [
         preferredWalletId,
         setPreferredWalletId
@@ -191,6 +193,7 @@ export function WalletManagerProvider({
     });
     const [solanaAvailability, setSolanaAvailability] = useState({'phantom-solana': false, solflare: false, backpack: false, glow: false, 'nightly-solana': false});
     const [aptosAvailability, setAptosAvailability] = useState({petra: false, martian: false, pontem: false, 'rise-wallet': false, 'nightly-aptos': false});
+    const [starknetAvailability, setStarknetAvailability] = useState({'ready-wallet': false, braavos: false});
     const [injected, setInjected] = useState(() => detectInjectedWallets());
 
     const restoreAttemptedRef =
@@ -287,6 +290,9 @@ export function WalletManagerProvider({
     const refreshAptosAvailability = useCallback(() => {
         detectAptosWallets().then(setAptosAvailability).catch(() => setAptosAvailability({petra: false, martian: false, pontem: false, 'rise-wallet': false, 'nightly-aptos': false}));
     }, []);
+    const refreshStarknetAvailability = useCallback(() => {
+        detectStarknetWallets().then(setStarknetAvailability).catch(() => setStarknetAvailability({'ready-wallet': false, braavos: false}));
+    }, []);
     const refreshInjectedAvailability = useCallback(() => {
         setInjected(detectInjectedWallets());
     }, []);
@@ -298,9 +304,10 @@ export function WalletManagerProvider({
             refreshStellarAvailability();
             refreshSolanaAvailability();
             refreshAptosAvailability();
+            refreshStarknetAvailability();
             refreshInjectedAvailability();
         });
-    }, [refreshStellarAvailability, refreshSolanaAvailability, refreshAptosAvailability, refreshInjectedAvailability]);
+    }, [refreshStellarAvailability, refreshSolanaAvailability, refreshAptosAvailability, refreshStarknetAvailability, refreshInjectedAvailability]);
 
     // window.ethereum (and EIP-6963 providers) can be injected by extensions
     // after this component's first render, so a one-shot detectInjectedWallets()
@@ -344,6 +351,7 @@ export function WalletManagerProvider({
                 refreshStellarAvailability();
                 refreshSolanaAvailability();
                 refreshAptosAvailability();
+                refreshStarknetAvailability();
                 refreshInjectedAvailability();
             });
         }
@@ -352,6 +360,7 @@ export function WalletManagerProvider({
         refreshStellarAvailability,
         refreshSolanaAvailability,
         refreshAptosAvailability,
+        refreshStarknetAvailability,
         refreshInjectedAvailability
     ]);
 
@@ -456,7 +465,8 @@ export function WalletManagerProvider({
             connectedSuiWallet,
             stellarSession,
             solanaSession,
-            aptosSession
+            aptosSession,
+            starknetSession
         ];
 
         for (const wallet of candidates) {
@@ -471,7 +481,8 @@ export function WalletManagerProvider({
         connectedSuiWallet,
         stellarSession,
         solanaSession,
-        aptosSession
+        aptosSession,
+        starknetSession
     ]);
 
     const currentWallet = useMemo(() => {
@@ -728,7 +739,9 @@ export function WalletManagerProvider({
                         ? restoreAptosWallet(
                               snapshot.walletId
                           )
-                        : restoreStellarWallet(
+                        : family === 'starknet'
+                          ? restoreStarknetWallet(snapshot.walletId)
+                          : restoreStellarWallet(
                               snapshot.walletId
                           );
 
@@ -758,6 +771,8 @@ export function WalletManagerProvider({
                         setAptosSession(
                             wallet
                         );
+                    } else if (family === 'starknet') {
+                        setStarknetSession(wallet);
                     } else {
                         setStellarSession(
                             wallet
@@ -897,6 +912,9 @@ export function WalletManagerProvider({
                 } else if (descriptor.chainFamily === 'aptos') {
                     const wallet = await connectAptosWallet(walletId);
                     setAptosSession(wallet);
+                } else if (descriptor.chainFamily === 'starknet') {
+                    const wallet = await connectStarknetWallet(walletId);
+                    setStarknetSession(wallet);
                 } else {
                     const wallet = await connectStellarWallet(walletId);
                     setStellarSession(wallet);
@@ -994,6 +1012,9 @@ export function WalletManagerProvider({
                         targetWallet.id
                     );
                     setAptosSession(null);
+                } else if (targetFamily === 'starknet') {
+                    await disconnectStarknetWallet(targetWallet.id);
+                    setStarknetSession(null);
                 } else {
                     if (targetWallet.id === 'xbull') {
                         closeXBullBridge();
@@ -1279,6 +1300,12 @@ export function WalletManagerProvider({
                     case 'nightly-aptos':
                         availability = aptosAvailability['nightly-aptos'] ? 'installed' : 'not-installed';
                         break;
+                    case 'ready-wallet':
+                        availability = starknetAvailability['ready-wallet'] ? 'installed' : 'not-installed';
+                        break;
+                    case 'braavos':
+                        availability = starknetAvailability.braavos ? 'installed' : 'not-installed';
+                        break;
                     default:
                         availability =
                             'not-installed';
@@ -1311,6 +1338,7 @@ export function WalletManagerProvider({
         stellarAvailability,
         solanaAvailability,
         aptosAvailability,
+        starknetAvailability,
         suiWallets,
         injected
     ]);

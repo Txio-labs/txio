@@ -9,5 +9,6 @@ export * from './storage';
 export * from './stellar';
 export * from './solana';
 export * from './aptos';
+export * from './starknet';
 export * from './types';
 export * from './utils';

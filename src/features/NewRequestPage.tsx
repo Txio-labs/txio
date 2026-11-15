@@ -20,6 +20,7 @@ export const TRANSACTION_OPTIONS: Partial<Record<ChainId, { title: string; subti
   solana: { title: 'Solana Transaction', subtitle: 'Program instruction, simulated then signed' },
   stellar: { title: 'Stellar Transaction', subtitle: 'Soroban contract call, simulated then signed' },
   aptos: { title: 'Aptos Transaction', subtitle: 'Entry function, simulated then signed' },
+  starknet: { title: 'Starknet Transaction', subtitle: 'Contract calls or multicall, simulated then signed' },
 };
 
 const LAST_CHAIN_KEY = 'txio_newRequestChain';

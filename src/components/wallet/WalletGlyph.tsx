@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+    WalletArgent,
     WalletBackpack,
     WalletCoinbase,
     WalletGlow,
@@ -42,7 +43,8 @@ const BRAND_ICONS: Partial<
     ledger: WalletLedger,
     solflare: WalletSolflare,
     backpack: WalletBackpack,
-    glow: WalletGlow
+    glow: WalletGlow,
+    'ready-wallet': WalletArgent
 };
 
 const GLYPH_STYLES: Record<
@@ -187,6 +189,14 @@ const GLYPH_STYLES: Record<
     'nightly-aptos': {
         ring: 'from-indigo-600/70 to-slate-400/40',
         fill: 'from-indigo-700 to-slate-500'
+    },
+    'ready-wallet': {
+        ring: 'from-orange-500/70 to-rose-300/40',
+        fill: 'from-orange-600 to-rose-400'
+    },
+    braavos: {
+        ring: 'from-amber-500/70 to-yellow-300/40',
+        fill: 'from-amber-600 to-yellow-500'
     }
 };
 
@@ -198,7 +208,8 @@ const FAMILY_MARKS: Record<
     sui: 'S',
     stellar: '✦',
     solana: '◎',
-    aptos: '∞'
+    aptos: '∞',
+    starknet: '◆'
 };
 
 export function WalletGlyph({

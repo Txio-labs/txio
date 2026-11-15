@@ -48,6 +48,7 @@ import { useWallet } from '@/wallet';
 import { shortenAddress } from '@/wallet/utils';
 import { RPC_CHAINS } from '@/lib/constants';
 import { ProfileMenu } from './ProfileMenu';
+import { NetworkMenu } from './NetworkMenu';
 import { cx, IconButton, Kbd, StatusDot, networkTone } from './ui/primitives';
 import { TxioMark } from './ui/TxioMark';
 import { useEnter } from '@/lib/motion';
@@ -493,14 +494,7 @@ export const Layout: React.FC<LayoutProps> = ({
 
                         <div className="flex-1" />
 
-                        <button
-                            onClick={() => appStore.openTab('infrastructure')}
-                            className="hidden sm:inline-flex items-center gap-1.5 h-7 px-2.5 rounded-[7px] border border-line hover:border-line-strong text-xs text-fg-muted hover:text-fg transition-colors capitalize"
-                            title="Network"
-                        >
-                            <StatusDot tone={networkTone(network)} />
-                            {network}
-                        </button>
+                        <NetworkMenu />
 
                         {isRequestView && (
                             <IconButton label="Terminal" active={isTerminalOpen} onClick={() => appStore.toggleTerminal()}>

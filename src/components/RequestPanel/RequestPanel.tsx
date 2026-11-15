@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { ResponsePanel } from './response/ResponsePanel';
 import { RequestPanelProps, ActiveTab } from './types';
 import { HeaderBar } from './HeaderBar';
 import { RequestTabs } from './RequestTabs';
@@ -27,6 +28,39 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
   txProgress = null
 }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('builder');
+  // Share of the split the editor takes (the response pane gets the rest).
+  const [split, setSplit] = useState(0.55);
+  const [dragging, setDragging] = useState(false);
+  const splitRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      const saved = Number(localStorage.getItem('txio_response_split'));
+      if (saved > 0.2 && saved < 0.8) queueMicrotask(() => setSplit(saved));
+    } catch {
+      /* storage unavailable */
+    }
+  }, []);
+
+  const onDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging || !splitRef.current) return;
+    const box = splitRef.current.getBoundingClientRect();
+    const horizontal = window.matchMedia('(min-width: 1280px)').matches;
+    const ratio = horizontal ? (e.clientX - box.left) / box.width : (e.clientY - box.top) / box.height;
+    setSplit(Math.min(0.8, Math.max(0.25, ratio)));
+  };
+
+  const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    setDragging(false);
+    e.currentTarget.releasePointerCapture?.(e.pointerId);
+    try {
+      localStorage.setItem('txio_response_split', String(split));
+    } catch {
+      /* storage unavailable */
+    }
+  };
+
+  const showResponse = request.type === RequestType.RPC;
 
   const chain = request.rpcParams.chain;
   const evmChainId = request.type === RequestType.RPC ? request.rpcParams.evmChainId : undefined;
@@ -134,9 +168,33 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
         onTabChange={setActiveTab}
       />
 
-      <div className="flex-1 overflow-auto custom-scrollbar">
-        {renderLeft()}
-      </div>
+      {showResponse ? (
+        <div ref={splitRef} className={`flex-1 min-h-0 flex flex-col xl:flex-row ${dragging ? 'select-none' : ''}`}>
+          <div className="min-h-0 min-w-0 overflow-auto custom-scrollbar" style={{ flexBasis: `${split * 100}%`, flexGrow: 0, flexShrink: 0 }}>
+            {renderLeft()}
+          </div>
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize response panel"
+            onPointerDown={(e) => {
+              setDragging(true);
+              e.currentTarget.setPointerCapture(e.pointerId);
+            }}
+            onPointerMove={onDrag}
+            onPointerUp={endDrag}
+            onDoubleClick={() => setSplit(0.55)}
+            className="group relative shrink-0 h-px xl:h-auto xl:w-px bg-line cursor-row-resize xl:cursor-col-resize"
+          >
+            <span className={`absolute inset-x-0 -top-1.5 -bottom-1.5 xl:inset-y-0 xl:-left-1.5 xl:-right-1.5 transition-colors ${dragging ? 'bg-fg/10' : 'group-hover:bg-fg/5'}`} />
+          </div>
+          <div className="flex-1 min-h-[220px] min-w-0">
+            <ResponsePanel outcome={outcome} isLoading={isLoading} />
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 overflow-auto custom-scrollbar">{renderLeft()}</div>
+      )}
     </div>
   );
 };

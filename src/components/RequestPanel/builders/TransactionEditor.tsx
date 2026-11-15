@@ -9,6 +9,7 @@ import { EvmTransactionBuilder } from './EvmTransactionBuilder';
 import { SolanaTransactionBuilder } from './SolanaTransactionBuilder';
 import { StellarTransactionBuilder } from './StellarTransactionBuilder';
 import { AptosTransactionBuilder } from './AptosTransactionBuilder';
+import { StarknetTransactionBuilder } from './StarknetTransactionBuilder';
 import { TxTracker } from '../response/TxTracker';
 import { RequestOutcome, TxProgress } from '../response/types';
 
@@ -58,6 +59,8 @@ export const TransactionEditor: React.FC<TransactionEditorProps> = ({
         return <StellarTransactionBuilder request={request} activeAddress={activeAddress} network={network} isReadOnly={isReadOnly} onChange={onChange} />;
       case 'aptos':
         return <AptosTransactionBuilder request={request} activeAddress={activeAddress} network={network} isReadOnly={isReadOnly} onChange={onChange} />;
+      case 'starknet':
+        return <StarknetTransactionBuilder request={request} activeAddress={activeAddress} network={network} isReadOnly={isReadOnly} onChange={onChange} />;
       case 'sui':
         return (
           <TransactionBuilder

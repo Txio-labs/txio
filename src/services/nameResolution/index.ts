@@ -3,6 +3,8 @@ import { RequestType } from '../../types';
 import { ensResolver } from './ens';
 import { aptosNamesResolver } from './aptosNames';
 import { federationResolver } from './federation';
+import { starknetIdResolver } from './starknetId';
+import { solanaNamesResolver } from './solanaNames';
 import { looksLikeSuiNs, resolveSuiAddress } from '../suiService';
 
 /** JSON-RPC style code for a name that could not be resolved. */
@@ -37,7 +39,9 @@ export interface NameResolution {
 const RESOLVERS: Partial<Record<ChainId, NameResolver>> = {
     evm: ensResolver,
     aptos: aptosNamesResolver,
-    stellar: federationResolver
+    stellar: federationResolver,
+    starknet: starknetIdResolver,
+    solana: solanaNamesResolver
 };
 
 /**
@@ -158,6 +162,29 @@ export const resolveRequestNames = async (
                             a.type === 'address' ? { ...a, value: await resolveNamesDeep(a.value, resolver, ctx, seen) } : a
                         )
                     )
+                }
+            };
+        } else if (chain === 'starknet' && request.starknetTxParams) {
+            // ABI-typed arguments only: raw calldata is felts, never names.
+            next = {
+                ...request,
+                starknetTxParams: {
+                    calls: await Promise.all(
+                        request.starknetTxParams.calls.map(async (c) => ({
+                            ...c,
+                            contractAddress: await resolveNamesDeep(c.contractAddress, resolver, ctx, seen),
+                            args: c.rawCalldata ? c.args : await resolveNamesDeep(c.args, resolver, ctx, seen)
+                        }))
+                    )
+                }
+            };
+        } else if (chain === 'solana' && request.solanaTxParams) {
+            const p = request.solanaTxParams;
+            next = {
+                ...request,
+                solanaTxParams: {
+                    ...p,
+                    accounts: await Promise.all(p.accounts.map(async (a) => ({ ...a, pubkey: await resolveNamesDeep(a.pubkey, resolver, ctx, seen) })))
                 }
             };
         }

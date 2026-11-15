@@ -2,10 +2,10 @@
 import React, { useState } from 'react';
 import { Settings, Server, Layout, Shield, Monitor, Globe, ChevronRight, Plus, X, ArrowUp, ArrowDown } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
-import { EVM_NETWORKS, NETWORKS, SOLANA_NETWORKS, STELLAR_NETWORKS } from '@/lib/constants';
+import { APTOS_NETWORKS, EVM_NETWORKS, NETWORKS, SOLANA_NETWORKS, STARKNET_NETWORKS, STELLAR_NETWORKS } from '@/lib/constants';
 import { AppSettings, ALL_NETWORKS, Network } from '../types';
 
-type RpcSettingsKey = 'customRpc' | 'evmCustomRpc' | 'stellarCustomRpc' | 'solanaCustomRpc';
+type RpcSettingsKey = 'customRpc' | 'evmCustomRpc' | 'stellarCustomRpc' | 'solanaCustomRpc' | 'starknetCustomRpc' | 'aptosCustomRpc';
 
 /**
  * Editable, ordered list of failover RPC endpoints for one (chain, network)
@@ -316,7 +316,9 @@ Settings
                         { chainLabel: 'Sui', defaults: NETWORKS, settingsKey: 'customRpc' as const },
                         { chainLabel: 'EVM', defaults: EVM_NETWORKS, settingsKey: 'evmCustomRpc' as const },
                         { chainLabel: 'Stellar', defaults: STELLAR_NETWORKS, settingsKey: 'stellarCustomRpc' as const },
-                        { chainLabel: 'Solana', defaults: SOLANA_NETWORKS, settingsKey: 'solanaCustomRpc' as const }
+                        { chainLabel: 'Solana', defaults: SOLANA_NETWORKS, settingsKey: 'solanaCustomRpc' as const },
+                        { chainLabel: 'Starknet', defaults: STARKNET_NETWORKS, settingsKey: 'starknetCustomRpc' as const },
+                        { chainLabel: 'Aptos (REST, ends in /v1)', defaults: APTOS_NETWORKS, settingsKey: 'aptosCustomRpc' as const }
                     ] as { chainLabel: string; defaults: Record<Network, string>; settingsKey: RpcSettingsKey }[]).map(({ chainLabel, defaults, settingsKey }) => (
                         <div key={chainLabel} className="bg-elevated border border-line rounded-[10px] p-6 space-y-6">
                             <h3 className="text-sm font-semibold text-fg">{chainLabel}</h3>

@@ -457,6 +457,14 @@ const normalizeSavedRequest = (
             hasTxParams && chain === 'stellar'
                 ? (request.tx_params as RequestItem['stellarTxParams'])
                 : undefined,
+        aptosTxParams:
+            hasTxParams && chain === 'aptos'
+                ? (request.tx_params as RequestItem['aptosTxParams'])
+                : undefined,
+        starknetTxParams:
+            hasTxParams && chain === 'starknet'
+                ? (request.tx_params as RequestItem['starknetTxParams'])
+                : undefined,
         localVars: [],
         timestamp: request.last_executed_at
             ? Date.parse(

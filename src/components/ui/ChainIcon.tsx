@@ -1,5 +1,5 @@
 import React from 'react';
-import { NetworkAptos, NetworkEthereum, NetworkSolana, NetworkStellar, NetworkSui } from '@web3icons/react';
+import { NetworkAptos, NetworkEthereum, NetworkSolana, NetworkStarknet, NetworkStellar, NetworkSui } from '@web3icons/react';
 import type { ChainId } from '@/types';
 
 const ICONS: Record<ChainId, React.ComponentType<{ size?: number | string; variant?: 'mono' | 'branded' | 'background'; className?: string }>> = {
@@ -7,7 +7,8 @@ const ICONS: Record<ChainId, React.ComponentType<{ size?: number | string; varia
     evm: NetworkEthereum,
     solana: NetworkSolana,
     stellar: NetworkStellar,
-    aptos: NetworkAptos
+    aptos: NetworkAptos,
+    starknet: NetworkStarknet
 };
 
 /** A chain's real logo in a neutral tile, sized for lists and cards. */

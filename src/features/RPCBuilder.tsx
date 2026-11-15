@@ -88,6 +88,7 @@ const resolveRequestVars = (
         solanaTxParams: resolveDeep(request.solanaTxParams),
         stellarTxParams: resolveDeep(request.stellarTxParams),
         aptosTxParams: resolveDeep(request.aptosTxParams),
+        starknetTxParams: resolveDeep(request.starknetTxParams),
         moveParams: {
             ...mp,
             packageId: resolveVariables(mp.packageId, vars),
@@ -490,6 +491,22 @@ export const RPCBuilder: React.FC = () => {
             setIsLoading(false);
         }
     };
+
+    // Cmd/Ctrl+Enter sends (or simulates) the request from anywhere in the editor.
+    const sendRef = React.useRef<(() => Promise<void>) | null>(null);
+    useEffect(() => {
+        sendRef.current = handleSend;
+    });
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
+                e.preventDefault();
+                void sendRef.current?.();
+            }
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, []);
 
     if (!request) return null;
 

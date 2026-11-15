@@ -620,6 +620,42 @@ export const WALLET_DESCRIPTORS: WalletDescriptor[] =
             installUrl:
                 'https://nightly.app/download',
             iconSeed: 'nightly'
+        },
+        {
+            id: 'ready-wallet',
+            name: 'Ready (Argent X)',
+            shortName: 'RD',
+            chainFamily: 'starknet',
+            methods: ['wallet-standard'],
+            tags: [
+                'starknet',
+                'ready',
+                'argent',
+                'browser'
+            ],
+            description:
+                'Starknet smart-account wallet, formerly Argent X.',
+            installUrl:
+                'https://www.ready.co/',
+            badge: 'Starknet',
+            iconSeed: 'ready-wallet'
+        },
+        {
+            id: 'braavos',
+            name: 'Braavos',
+            shortName: 'BV',
+            chainFamily: 'starknet',
+            methods: ['wallet-standard'],
+            tags: [
+                'starknet',
+                'braavos',
+                'browser'
+            ],
+            description:
+                'Starknet smart-account wallet with hardware-signer support.',
+            installUrl:
+                'https://braavos.app/',
+            iconSeed: 'braavos'
         }
     ];
 

@@ -6,6 +6,8 @@ import type {
 } from './types';
 import type { AppSettings, Network } from '../types';
 import { getSuiAccountExplorerUrl } from '../lib/appConfig';
+import { starknetAccountExplorerUrl } from '../services/starknet';
+import { wagmiConfig } from './config';
 
 declare global {
     interface Window {
@@ -341,9 +343,12 @@ export const getWalletExplorerUrl = (
             prefs.evmExplorer === 'blockscout'
                 ? EVM_BLOCKSCOUT_EXPLORERS
                 : EVM_FAMILY_EXPLORERS;
+        const chainId = Number(wallet.chain.id.replace('eip155:', ''));
+        const fallbackExplorer = wagmiConfig.chains.find((c) => c.id === chainId)?.blockExplorers?.default.url;
         const base =
             map[wallet.chain.id] ??
-            EVM_FAMILY_EXPLORERS[wallet.chain.id];
+            EVM_FAMILY_EXPLORERS[wallet.chain.id] ??
+            (fallbackExplorer ? `${fallbackExplorer.replace(/\/$/, '')}/address/` : undefined);
         return base ? `${base}${wallet.address}` : null;
     }
 
@@ -383,6 +388,11 @@ export const getWalletExplorerUrl = (
         return `https://explorer.aptoslabs.com/account/${wallet.address}${query}`;
     }
 
+    if (wallet.family === 'starknet') {
+        const network = wallet.chain.network === 'mainnet' ? 'mainnet' : wallet.chain.network === 'testnet' ? 'testnet' : null;
+        return network ? starknetAccountExplorerUrl(network, wallet.address) ?? null : null;
+    }
+
     if (wallet.family !== 'stellar') {
         return null;
     }
@@ -406,7 +416,8 @@ const FAMILY_LABELS: Record<WalletChainFamily, string> = {
     sui: 'Sui',
     stellar: 'Stellar',
     solana: 'Solana',
-    aptos: 'Aptos'
+    aptos: 'Aptos',
+    starknet: 'Starknet'
 };
 
 export const getFamilyLabel = (family: WalletChainFamily): string => FAMILY_LABELS[family];
