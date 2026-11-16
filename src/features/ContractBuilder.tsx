@@ -27,6 +27,7 @@ import {
 import { deployAptos, deploySolana, deployStarknet, deployStellar, deploySui, newSolanaProgramKeypair, type DeployResult } from '@/services/deploy';
 import { useWallet } from '@/wallet/hooks/useWallet';
 import { CONTRACT_TEMPLATES, type TemplateCategory } from './contractTemplates';
+import { confirmDialog } from '@/components/DialogHost';
 import type { WalletChainFamily } from '@/wallet/types';
 
 interface ChainContractConfig {
@@ -295,6 +296,14 @@ type DeployState =
 
 type ToolchainState = { status: 'loading' } | { status: 'ready'; chains: ToolchainStatus } | { status: 'unreachable'; message: string };
 
+/** The sidebar's template groups; each chain has one template per group (see ./contractTemplates). */
+const TEMPLATE_GROUPS: { id: TemplateCategory; name: string; icon: typeof Box }[] = [
+    { id: 'core', name: 'Standard Assets', icon: Box },
+    { id: 'defi', name: 'DeFi Primitives', icon: Zap },
+    { id: 'identity', name: 'Identity & Auth', icon: Shield },
+    { id: 'social', name: 'Social Graph', icon: Share2 }
+];
+
 export const ContractBuilder: React.FC = () => {
     const [chain, setChain] = useState<ChainId>('evm');
 
@@ -388,9 +397,16 @@ export const ContractBuilder: React.FC = () => {
             activeIdByChain: { ...activeIdByChain, [chain]: draft.id }
         });
     };
-    const deleteModule = (id: string) => {
+    const deleteModule = async (id: string) => {
         const target = chainDrafts.find((d) => d.id === id);
-        if (!target || !window.confirm(`Delete ${target.name || 'Untitled'}.${config.fileExt}? This can't be undone.`)) return;
+        if (!target) return;
+        const ok = await confirmDialog({
+            title: `Delete ${target.name || 'Untitled'}.${config.fileExt}?`,
+            description: 'This removes the draft from this browser. It cannot be undone.',
+            confirmLabel: 'Delete',
+            destructive: true
+        });
+        if (!ok) return;
         const remaining = chainDrafts.filter((d) => d.id !== id);
         const list = remaining.length ? remaining : [defaultDraft(chain)];
         changeModules({
@@ -417,12 +433,6 @@ export const ContractBuilder: React.FC = () => {
         setDeployError(null);
     };
 
-    const templateGroups: { id: TemplateCategory; name: string; icon: typeof Box }[] = [
-        { id: 'core', name: 'Standard Assets', icon: Box },
-        { id: 'defi', name: 'DeFi Primitives', icon: Zap },
-        { id: 'identity', name: 'Identity & Auth', icon: Shield },
-        { id: 'social', name: 'Social Graph', icon: Share2 }
-    ];
     const chainTemplates = CONTRACT_TEMPLATES[chain];
     // A template opens as a new module, so it never overwrites a draft.
     const newModuleFromTemplate = (category: string) => {
@@ -667,7 +677,7 @@ export const ContractBuilder: React.FC = () => {
                     <div className="space-y-4">
                         <div className="text-[12px] font-semibold text-fg-muted px-2">Contract Templates</div>
                         <div className="space-y-1">
-                            {chainTemplates && templateGroups.map((group) => {
+                            {chainTemplates && TEMPLATE_GROUPS.map((group) => {
                                 const template = chainTemplates[group.id];
                                 return (
                                     <button
@@ -818,7 +828,7 @@ export const ContractBuilder: React.FC = () => {
                                     <Select
                                         value=""
                                         onChange={newModuleFromTemplate}
-                                        options={templateGroups.map((g) => ({
+                                        options={TEMPLATE_GROUPS.map((g) => ({
                                             label: `${g.name}: ${chainTemplates?.[g.id].name ?? ''}`,
                                             value: g.id
                                         }))}

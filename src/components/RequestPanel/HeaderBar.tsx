@@ -6,6 +6,7 @@ import { appStore, useAppStore } from '@/lib/store';
 import { resolveChainRpcUrl, getChainRpcHealth } from '../../services/suiService';
 import { STELLAR_NETWORK_NAMES } from '@/lib/constants';
 import { RequestOutcome } from './response/types';
+import { promptDialog } from '@/components/DialogHost';
 
 interface HeaderBarProps {
   requestType: RequestType;
@@ -113,8 +114,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
   const handleCreateAndSave = async () => {
     if (!request) return;
-    const name = window.prompt('Name your new collection:', 'My Collection');
-    if (!name || !name.trim()) return;
+    const name = await promptDialog({ title: 'New collection', label: 'Name', initialValue: 'My Collection', confirmLabel: 'Create and save' });
+    if (!name) return;
 
     setIsSaving(true);
     const newCollection = await appStore.createCollection(name.trim());

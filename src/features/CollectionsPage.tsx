@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useAppStore, appStore } from '@/lib/store';
 import { CollectionNode, RequestType } from '@/types';
+import { confirmDialog } from '@/components/DialogHost';
 
 type ChainFamily = 'sui' | 'evm' | 'solana' | 'aptos' | 'stellar';
 
@@ -335,11 +336,17 @@ export const CollectionsPage: React.FC = () => {
                                             Permanently deletes &ldquo;{selected.name}&rdquo; and all {countRequests(selected)} of its requests. This cannot be undone.
                                         </p>
                                         <button
-                                            onClick={() => {
-                                                if (window.confirm(`Delete "${selected.name}"? This deletes all ${countRequests(selected)} of its requests. This cannot be undone.`)) {
-                                                    appStore.deleteCollection(selected.id);
-                                                    setSelectedId(null);
-                                                }
+                                            onClick={async () => {
+                                                const target = selected;
+                                                const ok = await confirmDialog({
+                                                    title: `Delete "${target.name}"?`,
+                                                    description: `This deletes all ${countRequests(target)} of its requests. It cannot be undone.`,
+                                                    confirmLabel: 'Delete collection',
+                                                    destructive: true
+                                                });
+                                                if (!ok) return;
+                                                appStore.deleteCollection(target.id);
+                                                setSelectedId(null);
                                             }}
                                             className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold transition-colors"
                                         >

@@ -14,6 +14,7 @@ import { Toaster } from './Toaster';
 import { useAppStore } from '@/lib/store';
 import { resolveRpcUrl } from '@/lib/appConfig';
 import { ALL_NETWORKS } from '@/types';
+import { DialogHost } from './DialogHost';
 
 export function Providers({ children }: { children: React.ReactNode }) {
     const { network, settings } = useAppStore();
@@ -49,6 +50,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
                             <WalletStoreBridge />
                             <WalletModal />
                             <Toaster />
+                            <DialogHost />
                             <Suspense fallback={null}>
                                 <RedirectManager />
                             </Suspense>

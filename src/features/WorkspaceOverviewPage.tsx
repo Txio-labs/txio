@@ -33,6 +33,7 @@ import { NetworksPage } from './NetworksPage';
 import { WalletsPage } from './WalletsPage';
 import { EnvironmentList } from '@/components/SideBar/EnvironmentList';
 import { PromptModal } from '@/components/PromptModal';
+import { confirmDialog } from '@/components/DialogHost';
 
 function flattenRequests(nodes: CollectionNode[], collectionName: string): { node: CollectionNode; collectionName: string }[] {
     const out: { node: CollectionNode; collectionName: string }[] = [];
@@ -156,9 +157,15 @@ export const WorkspaceOverviewPage: React.FC = () => {
             appStore.showToast('Cannot delete your only workspace', 'error');
             return;
         }
-        if (window.confirm(`Delete "${currentWorkspace.name}"? This deletes all of its collections, requests, and history. This cannot be undone.`)) {
-            void appStore.deleteWorkspace(currentWorkspace.id);
-        }
+        const workspace = currentWorkspace;
+        void confirmDialog({
+            title: `Delete "${workspace.name}"?`,
+            description: 'This deletes all of its collections, requests and history. It cannot be undone.',
+            confirmLabel: 'Delete workspace',
+            destructive: true
+        }).then((ok) => {
+            if (ok) void appStore.deleteWorkspace(workspace.id);
+        });
     };
 
     const collectionCount = collections.length;

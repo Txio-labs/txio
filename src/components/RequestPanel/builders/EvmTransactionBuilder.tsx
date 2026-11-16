@@ -25,6 +25,7 @@ import {
   saveContract,
   type SavedContract
 } from '@/services/evmContract';
+import { promptDialog } from '@/components/DialogHost';
 
 interface EvmTransactionBuilderProps {
   request: RequestItem;
@@ -213,10 +214,10 @@ export const EvmTransactionBuilder: React.FC<EvmTransactionBuilderProps> = ({
     }
   };
 
-  const saveCurrent = () => {
+  const saveCurrent = async () => {
     if (!abi || !isAddress(params.to.trim())) return;
-    const name = window.prompt('Name this contract:', token?.symbol ?? 'My contract');
-    if (!name?.trim()) return;
+    const name = await promptDialog({ title: 'Save contract', label: 'Name', initialValue: token?.symbol ?? 'My contract' });
+    if (!name) return;
     setSaved(saveContract({ chainId: params.chainId, address: params.to.trim(), name: name.trim(), abi: params.abi! }));
     appStore.showToast(`Saved ${name.trim()}`, 'success');
   };

@@ -34,6 +34,7 @@ vi.mock('@/services/compile/solidity', async (orig) => ({
 
 import { CONTRACT_BUILDER_CHAINS, ContractBuilder } from './ContractBuilder';
 import { CONTRACT_TEMPLATES } from './contractTemplates';
+import { DialogHost } from '@/components/DialogHost';
 import { evmAdapter } from '@/services/adapters/evmAdapter';
 import { DEFAULT_EVM_TX } from '@/services/adapters/evmAdapter';
 import { DEFAULT_MOVE_CALL } from '@/lib/constants';
@@ -163,10 +164,14 @@ describe('ContractBuilder', () => {
         expect(saved.modulesByChain.evm.find((d: { id: string }) => d.id === saved.activeIdByChain.evm).code).toBe('contract Mine {}');
     });
 
-    it('keeps several modules per chain: new, switch, delete', () => {
+    it('keeps several modules per chain: new, switch, delete', async () => {
         localStorage.clear();
-        vi.spyOn(window, 'confirm').mockReturnValue(true);
-        render(<ContractBuilder />);
+        render(
+            <>
+                <ContractBuilder />
+                <DialogHost />
+            </>
+        );
         const source = () => screen.getByLabelText('Contract source') as HTMLTextAreaElement;
         fireEvent.change(source(), { target: { value: 'contract First {}' } });
 
@@ -182,9 +187,20 @@ describe('ContractBuilder', () => {
         const saved = JSON.parse(localStorage.getItem('txio_contract_builder')!);
         expect(saved.modulesByChain.evm.map((d: { code: string }) => d.code)).toEqual(['contract First {}', 'contract Second {}']);
 
+        // Deleting asks in an in-app dialog, never window.confirm.
+        const confirmSpy = vi.spyOn(window, 'confirm');
         fireEvent.click(within(list()).getAllByRole('button', { name: /^delete/i })[0]);
-        expect(within(list()).getAllByRole('button', { name: /\.sol$/ })).toHaveLength(1);
+        const dialog = await screen.findByRole('dialog');
+        expect(within(dialog).getByText(/Delete AssetBridge\.sol\?/)).toBeTruthy();
+        fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+        await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+        expect(within(list()).getAllByRole('button', { name: /\.sol$/ })).toHaveLength(2);
+
+        fireEvent.click(within(list()).getAllByRole('button', { name: /^delete/i })[0]);
+        fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete' }));
+        await waitFor(() => expect(within(list()).getAllByRole('button', { name: /\.sol$/ })).toHaveLength(1));
         expect(source().value).toBe('contract Second {}');
+        expect(confirmSpy).not.toHaveBeenCalled();
         vi.restoreAllMocks();
     });
 

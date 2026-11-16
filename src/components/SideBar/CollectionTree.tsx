@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Folder, Plus, ChevronRight, ChevronDown, Play, Trash2 } from 'lucide-react';
 import { CollectionNode } from '../../types';
 import { appStore } from '@/lib/store';
+import { confirmDialog } from '@/components/DialogHost';
 
 interface CollectionTreeProps {
   collections: CollectionNode[];
@@ -129,9 +130,14 @@ export const CollectionTree: React.FC<CollectionTreeProps> = ({
                       // Confirm before deleting, since this permanently
                       // removes the collection and all of its requests.
                       e.stopPropagation();
-                      if (window.confirm(`Delete collection "${node.name}"? This cannot be undone.`)) {
-                        appStore.deleteCollection(node.id);
-                      }
+                      void confirmDialog({
+                        title: `Delete collection "${node.name}"?`,
+                        description: 'This deletes the collection and all of its requests. It cannot be undone.',
+                        confirmLabel: 'Delete collection',
+                        destructive: true
+                      }).then((ok) => {
+                        if (ok) appStore.deleteCollection(node.id);
+                      });
                     }}
                     className="p-1 hover:bg-hover rounded text-fg-subtle hover:text-red-400 transition-colors"
                     title="Delete Collection"
