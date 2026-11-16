@@ -87,4 +87,23 @@ describe('ResponsePanel', () => {
 
     expect(screen.getByText('1 match')).toBeInTheDocument();
   });
+
+  it('offers no Decoded view when there is nothing decoded', () => {
+    render(<ResponsePanel outcome={successOutcome} isLoading={false} decoded={null} />);
+    expect(screen.queryByRole('tab', { name: 'Decoded' })).not.toBeInTheDocument();
+  });
+
+  it('shows the decoded form in its own view and copies what is shown', () => {
+    const writeText = vi.fn();
+    Object.assign(navigator, { clipboard: { writeText } });
+    const outcome: RequestOutcome = { ...successOutcome, result: { envelopeXdr: 'AAAAAgAAAAA=' } };
+    render(<ResponsePanel outcome={outcome} isLoading={false} decoded={{ envelopeXdr: { type: 'envelopeTypeTx' } }} />);
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Decoded' }));
+    expect(screen.getByText('"envelopeTypeTx"')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTitle('Copy'));
+    expect(writeText.mock.calls[0][0]).toContain('envelopeTypeTx');
+    expect(writeText.mock.calls[0][0]).not.toContain('AAAAAgAAAAA=');
+  });
 });

@@ -14,11 +14,16 @@ import {
 } from 'lucide-react';
 import { RequestOutcome } from './types';
 
-type ResponseTab = 'json' | 'headers' | 'logs' | 'raw' | 'timing';
+type ResponseTab = 'json' | 'decoded' | 'headers' | 'logs' | 'raw' | 'timing';
 
 interface ResponsePanelProps {
   outcome: RequestOutcome | null;
   isLoading: boolean;
+  /**
+   * A readable form of the result (e.g. Stellar XDR decoded to JSON). When
+   * present, the panel offers it as a "Decoded" view beside the raw body.
+   */
+  decoded?: unknown;
 }
 
 const escapeHtml = (text: string) =>
@@ -115,8 +120,8 @@ const ToolButton: React.FC<{ title: string; onClick: () => void; active?: boolea
   </button>
 );
 
-export const ResponsePanel: React.FC<ResponsePanelProps> = ({ outcome, isLoading }) => {
-  const [tab, setTab] = useState<ResponseTab>('json');
+export const ResponsePanel: React.FC<ResponsePanelProps> = ({ outcome, isLoading, decoded }) => {
+  const [selectedTab, setTab] = useState<ResponseTab>('json');
   const [expanded, setExpanded] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -132,33 +137,48 @@ export const ResponsePanel: React.FC<ResponsePanelProps> = ({ outcome, isLoading
     }
   }, [outcome, expanded]);
 
+  const decodedText = useMemo(() => {
+    if (decoded === undefined || decoded === null || !outcome || outcome.error) return '';
+    try {
+      return JSON.stringify(decoded, null, expanded ? 2 : 0);
+    } catch {
+      return '';
+    }
+  }, [decoded, outcome, expanded]);
+
+  // A stale "Decoded" choice falls back to the body when the new result has nothing decoded.
+  const tab: ResponseTab = selectedTab === 'decoded' && !decodedText ? 'json' : selectedTab;
+  // What the body viewer, search, copy and download act on.
+  const viewText = tab === 'decoded' ? decodedText : bodyText;
+
   const sizeBytes = useMemo(() => new Blob([bodyText]).size, [bodyText]);
-  const lines = useMemo(() => bodyText.split('\n'), [bodyText]);
-  const html = useMemo(() => markMatches(highlightJSON(bodyText), searchTerm), [bodyText, searchTerm]);
+  const lines = useMemo(() => viewText.split('\n'), [viewText]);
+  const html = useMemo(() => markMatches(highlightJSON(viewText), searchTerm), [viewText, searchTerm]);
 
   const matchCount = useMemo(() => {
     if (!searchTerm) return 0;
-    return bodyText.toLowerCase().split(searchTerm.toLowerCase()).length - 1;
-  }, [bodyText, searchTerm]);
+    return viewText.toLowerCase().split(searchTerm.toLowerCase()).length - 1;
+  }, [viewText, searchTerm]);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(bodyText);
+    navigator.clipboard.writeText(viewText);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
 
   const handleDownload = () => {
-    const blob = new Blob([bodyText], { type: 'application/json' });
+    const blob = new Blob([viewText], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `txio-response-${Date.now()}.json`;
+    a.download = `txio-response${tab === 'decoded' ? '-decoded' : ''}-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   const tabs: { id: ResponseTab; label: string }[] = [
     { id: 'json', label: 'Body' },
+    ...(decodedText ? [{ id: 'decoded' as const, label: 'Decoded' }] : []),
     { id: 'raw', label: 'Raw' },
     { id: 'headers', label: 'Headers' },
     { id: 'timing', label: 'Timing' },
@@ -264,7 +284,7 @@ export const ResponsePanel: React.FC<ResponsePanelProps> = ({ outcome, isLoading
             </div>
           )}
 
-          {tab === 'json' && !outcome.error && (
+          {(tab === 'json' || tab === 'decoded') && !outcome.error && (
             <>
               {searchOpen && (
                 <div className="flex items-center gap-2 px-3 h-10 border-b border-line shrink-0">

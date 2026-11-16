@@ -12,6 +12,7 @@ import { CodeSnippet } from './editors/CodeSnippet';
 import { AdvancedEditor } from './editors/AdvancedEditor';
 import { TransactionNotice } from './editors/TransactionNotice';
 import { RequestType } from '../../types';
+import { useStellarDecodedResult } from './response/useStellarDecodedResult';
 
 export const RequestPanel: React.FC<RequestPanelProps> = ({
   request,
@@ -28,6 +29,7 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
   txProgress = null
 }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('builder');
+  const decoded = useStellarDecodedResult(request.rpcParams?.chain === 'stellar' ? outcome : null);
   // Share of the split the editor takes (the response pane gets the rest).
   const [split, setSplit] = useState(0.55);
   const [dragging, setDragging] = useState(false);
@@ -189,7 +191,7 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
             <span className={`absolute inset-x-0 -top-1.5 -bottom-1.5 xl:inset-y-0 xl:-left-1.5 xl:-right-1.5 transition-colors ${dragging ? 'bg-fg/10' : 'group-hover:bg-fg/5'}`} />
           </div>
           <div className="flex-1 min-h-[220px] min-w-0">
-            <ResponsePanel outcome={outcome} isLoading={isLoading} />
+            <ResponsePanel outcome={outcome} isLoading={isLoading} decoded={decoded} />
           </div>
         </div>
       ) : (
