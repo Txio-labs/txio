@@ -303,6 +303,10 @@ export interface StellarTxParams {
   contractId: string;
   function: string;
   args: StellarArg[];
+  // Set when the function was picked from the contract spec: arguments are
+  // then converted with the spec's own types (structs, enums, vecs, maps,
+  // options) in spec order, and `type` on each arg is ignored.
+  fromSpec?: boolean;
 }
 
 // Aptos Move entry-function call. Aptos is Move-based like Sui, so this

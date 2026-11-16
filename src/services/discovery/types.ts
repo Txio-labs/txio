@@ -32,6 +32,14 @@ export interface DiscoveredParameter {
     resolution: ParameterResolution;
     /** True when `type` references one of the function's own type parameters (generics). */
     isMutable?: boolean;
+    /** Documentation from the contract source, when the chain publishes it. */
+    doc?: string;
+    /** Placeholder text for the input field. */
+    placeholder?: string;
+    /** True when the input takes structured JSON rather than one line of text. */
+    multiline?: boolean;
+    /** A valid value to start from, in the same format as the input. */
+    example?: string;
     /** For a `coin`/`object` param: the fully-qualified struct type it must match, if known statically (not generic). */
     objectType?: string;
     /** Index into the function's type parameters this argument's generic slot corresponds to, if any. */
@@ -63,6 +71,8 @@ export interface DiscoveredFunction {
     typeParameters: DiscoveredTypeParameter[];
     parameters: DiscoveredParameter[];
     returnTypes: string[];
+    /** Documentation from the contract source, when the chain publishes it. */
+    doc?: string;
     /** Solana only: the accounts this instruction expects, in order. */
     accounts?: DiscoveredAccount[];
     /** Solana only: the instruction's leading data bytes (Anchor's 8-byte discriminator). */
@@ -83,6 +93,8 @@ export interface DiscoveredPackage {
         name?: string;
         version?: string;
         source?: string;
+        /** Stellar: true for a Stellar Asset Contract, whose interface is built in rather than read from Wasm. */
+        builtIn?: boolean;
     };
 }
 

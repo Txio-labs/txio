@@ -1,5 +1,6 @@
+// @vitest-environment node
 import { describe, it, expect, vi } from 'vitest';
-import { xdr } from '@stellar/stellar-sdk';
+import { contract, xdr } from '@stellar/stellar-sdk';
 import { isStellarContractId, parseStellarSpec, stellarArgTypeFor, stellarDiscoveryAdapter } from './stellarDiscovery';
 
 const input = (name: string, type: xdr.ScSpecTypeDef) => new xdr.ScSpecFunctionInputV0({ doc: '', name, type });
@@ -27,6 +28,24 @@ describe('parseStellarSpec', () => {
             ['ids', 'vec<u32>', 'vector', 'unsupported']
         ]);
         expect(fns[0].returnTypes).toEqual(['bool']);
+    });
+});
+
+describe('parseStellarSpec with the full spec', () => {
+    it('makes structured parameters enterable as JSON, with an example and docs', () => {
+        const ids = xdr.ScSpecTypeDef.scSpecTypeVec(new xdr.ScSpecTypeVec({ elementType: xdr.ScSpecTypeDef.scSpecTypeU32() }));
+        const memo = xdr.ScSpecTypeDef.scSpecTypeOption(new xdr.ScSpecTypeOption({ valueType: xdr.ScSpecTypeDef.scSpecTypeString() }));
+        const f = new xdr.ScSpecFunctionV0({
+            doc: 'Sends tokens.',
+            name: 'send',
+            inputs: [new xdr.ScSpecFunctionInputV0({ doc: 'Token IDs', name: 'ids', type: ids }), input('memo', memo)],
+            outputs: []
+        });
+        const spec = new contract.Spec([xdr.ScSpecEntry.scSpecEntryFunctionV0(f)]);
+        const [parsed] = parseStellarSpec(spec.funcs(), spec);
+        expect(parsed.doc).toBe('Sends tokens.');
+        expect(parsed.parameters[0]).toMatchObject({ type: 'vec<u32>', resolution: 'user_input', multiline: true, example: '[\n  1\n]', doc: 'Token IDs' });
+        expect(parsed.parameters[1]).toMatchObject({ type: 'option<string>', required: false, multiline: false, placeholder: 'text (empty for none)' });
     });
 });
 

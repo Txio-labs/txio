@@ -1,6 +1,6 @@
-import type { xdr } from '@stellar/stellar-sdk';
+import type { contract, xdr } from '@stellar/stellar-sdk';
 import type { Network, StellarArgType } from '../../types';
-import { resolveChainRpcUrl } from '../suiService';
+import { exampleValue, isTextInput, loadStellarSpec, placeholderFor, SpecLoadError, type LoadedSpec } from '../stellar/spec';
 import {
     DiscoveryError,
     type ChainDiscoveryAdapter,
@@ -55,8 +55,23 @@ const kindFor = (type: string): ParameterKind => {
     return stellarArgTypeFor(type) ? 'primitive' : 'unknown';
 };
 
-/** Turns a contract's spec functions into the normalized discovery shape. Pure, no I/O. */
-export const parseStellarSpec = (funcs: xdr.ScSpecFunctionV0[]): DiscoveredFunction[] =>
+const specInputHints = (spec: contract.Spec, type: xdr.ScSpecTypeDef) => {
+    const multiline = !isTextInput(spec, type);
+    return {
+        placeholder: placeholderFor(spec, type),
+        multiline,
+        ...(multiline ? { example: JSON.stringify(exampleValue(spec, type), null, 2) } : {})
+    };
+};
+
+const docOf = (value: { doc(): string | Buffer }): string | undefined => value.doc().toString().trim() || undefined;
+
+/**
+ * Turns a contract's spec functions into the normalized discovery shape.
+ * With the full `spec`, every parameter is enterable (structured types take
+ * JSON) and gets a placeholder; without it, only simple types are. Pure, no I/O.
+ */
+export const parseStellarSpec = (funcs: xdr.ScSpecFunctionV0[], spec?: contract.Spec): DiscoveredFunction[] =>
     funcs
         .map((fn) => ({ fn, name: fn.name().toString() }))
         // `__constructor` and other reserved names can't be invoked by a transaction.
@@ -67,14 +82,17 @@ export const parseStellarSpec = (funcs: xdr.ScSpecFunctionV0[]): DiscoveredFunct
             visibility: 'Public',
             isEntry: true,
             typeParameters: [],
+            doc: docOf(fn),
             parameters: fn.inputs().map((input) => {
                 const type = renderStellarType(input.type());
                 return {
                     name: input.name().toString(),
                     type,
                     kind: kindFor(type),
-                    required: true,
-                    resolution: stellarArgTypeFor(type) ? 'user_input' : 'unsupported'
+                    required: !type.startsWith('option<'),
+                    resolution: spec || stellarArgTypeFor(type) ? 'user_input' : 'unsupported',
+                    doc: docOf(input),
+                    ...(spec ? specInputHints(spec, input.type()) : {})
                 };
             }),
             returnTypes: fn.outputs().map(renderStellarType)
@@ -93,30 +111,26 @@ export const stellarDiscoveryAdapter: ChainDiscoveryAdapter = {
             });
         }
 
-        const { rpc, contract } = await import('@stellar/stellar-sdk');
-        let wasm: Buffer;
+        let loaded: LoadedSpec;
         try {
-            wasm = await new rpc.Server(resolveChainRpcUrl('stellar', network)).getContractWasmByContractId(contractId);
+            loaded = await loadStellarSpec(contractId, network, { fresh: true });
         } catch (cause) {
-            // Stellar Asset Contracts are built into the network and have no Wasm to read a spec from.
-            throw new DiscoveryError(
-                `No Wasm contract found at ${contractId} on ${network}. Stellar Asset Contracts have no published spec; use Manual mode for those.`,
-                { code: 'NOT_FOUND', chain: 'stellar', cause }
-            );
+            if (cause instanceof SpecLoadError) {
+                throw new DiscoveryError(cause.message, {
+                    code: cause.code === 'NO_SPEC' ? 'METADATA_UNAVAILABLE' : 'NOT_FOUND',
+                    chain: 'stellar',
+                    cause
+                });
+            }
+            throw new DiscoveryError(`Could not reach ${network} Soroban RPC.`, { code: 'RPC_FAILURE', chain: 'stellar', cause });
         }
 
-        let functions: DiscoveredFunction[];
-        try {
-            functions = parseStellarSpec(contract.Spec.fromWasm(wasm).funcs());
-        } catch (cause) {
-            throw new DiscoveryError('This contract’s Wasm has no readable contract spec.', {
-                code: 'METADATA_UNAVAILABLE',
-                chain: 'stellar',
-                cause
-            });
-        }
-
+        const functions = parseStellarSpec(loaded.spec.funcs(), loaded.spec);
         const modules: DiscoveredModule[] = [{ name: 'contract', functions }];
-        return { chain: 'stellar', network, identifier: contractId, modules, metadata: { source: 'contractspecv0' } };
+        const metadata =
+            loaded.source === 'stellar-asset'
+                ? { name: 'Stellar Asset Contract', source: 'built-in token interface', builtIn: true }
+                : { source: 'contractspecv0' };
+        return { chain: 'stellar', network, identifier: contractId, modules, metadata };
     }
 };

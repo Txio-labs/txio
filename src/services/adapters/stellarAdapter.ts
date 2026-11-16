@@ -6,6 +6,7 @@ import { signStellarTransaction } from '@/wallet/stellar';
 import type { ConnectedWallet } from '@/wallet/types';
 import { toJsonSafe } from './evmAdapter';
 import { STELLAR_PASSPHRASES, stellarExpertUrl } from '@/lib/constants';
+import { describeContractError, loadStellarSpec, specArgsToScVals, specResultToNative } from '../stellar/spec';
 import type { TxProgress } from '../../components/RequestPanel/response/types';
 
 export const DEFAULT_STELLAR_TX: StellarTxParams = { contractId: '', function: '', args: [] };
@@ -58,13 +59,23 @@ const buildStellarTx = async (p: StellarTxParams, source: string, network: Netwo
     const { rpc, Account, Contract, TransactionBuilder, BASE_FEE } = await loadStellar();
     const server = new rpc.Server(resolveChainRpcUrl('stellar', network));
     const networkPassphrase = await stellarPassphrase(network);
+    const spec = p.fromSpec ? (await loadStellarSpec(p.contractId.trim(), network)).spec : null;
+    // Convert the arguments before any account lookup, so bad input fails fast.
+    const scArgs = spec ? specArgsToScVals(spec, p.function.trim(), p.args) : await Promise.all(p.args.map(toStellarScVal));
     const account = placeholderAccount ? new Account(source, '0') : await server.getAccount(source);
-    const scArgs = await Promise.all(p.args.map(toStellarScVal));
     const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase })
         .addOperation(new Contract(p.contractId.trim()).call(p.function.trim(), ...scArgs))
         .setTimeout(60)
         .build();
-    return { server, tx, networkPassphrase };
+    const decode = (retval: Parameters<typeof specResultToNative>[2], fallback: (v: never) => unknown) =>
+        spec ? specResultToNative(spec, p.function.trim(), retval) : fallback(retval as never);
+    return { server, tx, networkPassphrase, spec, decode };
+};
+
+/** Adds the contract's own error name to a host error, when the spec declares it. */
+const withContractError = (message: string, spec: Awaited<ReturnType<typeof buildStellarTx>>['spec']): string => {
+    const named = spec ? describeContractError(spec, message) : undefined;
+    return named ? `${message}\n\nContract error: ${named}` : message;
 };
 
 /** Minimal view of a Soroban diagnostic event, so extraction can be tested without XDR fixtures. */
@@ -146,7 +157,7 @@ const simulateStellar = async (p: StellarTxParams, source: string | null, networ
     const sim = await built.server.simulateTransaction(built.tx);
     if (rpc.Api.isSimulationError(sim)) {
         // The RPC error text already carries the host's event log (newest first).
-        throw new Error(`Simulation failed: ${sim.error}`);
+        throw new Error(withContractError(`Simulation failed: ${sim.error}`, built.spec));
     }
     const retval = sim.result?.retval;
     const transfers = extractSorobanTransfers(
@@ -157,7 +168,7 @@ const simulateStellar = async (p: StellarTxParams, source: string | null, networ
     const stateChanges = (sim as { stateChanges?: { type: number | string; key: unknown; before: unknown; after: unknown }[] }).stateChanges;
     return {
         result: toJsonSafe({
-            returnValue: retval ? scValToNative(retval) : null,
+            returnValue: retval ? built.decode(retval, scValToNative) : null,
             minResourceFee: sim.minResourceFee,
             latestLedger: sim.latestLedger,
             source: from,
@@ -185,9 +196,14 @@ const executeStellar = async (
 ): Promise<TxResult> => {
     const { rpc, scValToNative, TransactionBuilder } = await loadStellar();
     const start = performance.now();
-    const { server, tx, networkPassphrase } = await buildStellarTx(p, wallet.address, network);
+    const { server, tx, networkPassphrase, spec, decode } = await buildStellarTx(p, wallet.address, network);
     // prepareTransaction simulates and attaches the Soroban footprint + fees.
-    const prepared = await server.prepareTransaction(tx);
+    let prepared: Awaited<ReturnType<typeof server.prepareTransaction>>;
+    try {
+        prepared = await server.prepareTransaction(tx);
+    } catch (err) {
+        throw new Error(withContractError(err instanceof Error ? err.message : String(err), spec));
+    }
     onProgress?.({ stage: 'awaiting-signature' });
     const signedXdr = await signStellarTransaction(wallet.id, prepared.toXDR(), networkPassphrase, wallet.address);
     const sent = await server.sendTransaction(TransactionBuilder.fromXDR(signedXdr, networkPassphrase));
@@ -206,7 +222,7 @@ const executeStellar = async (
                     hash: sent.hash,
                     explorerUrl,
                     ledger: got.ledger,
-                    returnValue: got.returnValue ? scValToNative(got.returnValue) : null
+                    returnValue: got.returnValue ? decode(got.returnValue, scValToNative) : null
                 }),
                 duration: Math.round(performance.now() - start),
                 status: 200

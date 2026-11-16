@@ -7,6 +7,7 @@ import { getDiscoveryAdapter } from '@/services/discovery';
 import { setCachedPackage } from '@/services/discovery/cache';
 import { DiscoveryError, type DiscoveredFunction } from '@/services/discovery/types';
 import { isStellarContractId, stellarArgTypeFor } from '@/services/discovery/stellarDiscovery';
+import { loadStellarSpec, validateSpecArg, type LoadedSpec } from '@/services/stellar/spec';
 import { StellarXdrInspector } from './StellarXdrInspector';
 
 interface StellarTransactionBuilderProps {
@@ -21,7 +22,7 @@ type LoadState =
   | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'loaded'; functions: DiscoveredFunction[] };
+  | { status: 'loaded'; functions: DiscoveredFunction[]; spec: LoadedSpec['spec'] | null; builtIn: boolean };
 
 const ARG_TYPES: StellarArgType[] = ['address', 'i128', 'u128', 'i64', 'u64', 'i32', 'u32', 'bool', 'string', 'symbol', 'bytes'];
 
@@ -57,7 +58,11 @@ export const StellarTransactionBuilder: React.FC<StellarTransactionBuilderProps>
         // Soroban contracts can be upgraded in place, so always re-read the spec.
         const pkg = await getDiscoveryAdapter('stellar').discoverPackage(id, network);
         setCachedPackage('stellar', network, id, pkg);
-        if (ticket === requestRef.current) setLoad({ status: 'loaded', functions: pkg.modules[0]?.functions ?? [] });
+        // Discovery just loaded the spec, so this is a cache hit; it backs field validation.
+        const spec = await loadStellarSpec(id, network).then((l) => l.spec, () => null);
+        if (ticket === requestRef.current) {
+          setLoad({ status: 'loaded', functions: pkg.modules[0]?.functions ?? [], spec, builtIn: Boolean(pkg.metadata?.builtIn) });
+        }
       } catch (error) {
         const message = error instanceof DiscoveryError || error instanceof Error ? error.message : 'Could not load the contract spec.';
         if (ticket === requestRef.current) setLoad({ status: 'error', message });
@@ -80,6 +85,7 @@ export const StellarTransactionBuilder: React.FC<StellarTransactionBuilderProps>
 
   const view: LoadState = isStellarContractId(contractId) ? load : { status: 'idle' };
   const functions = !manual && view.status === 'loaded' ? view.functions : null;
+  const loadedSpec = !manual && view.status === 'loaded' ? view.spec : null;
   const selectedFunction = functions?.find((f) => f.name === params.function) ?? null;
   const unsupportedParams = selectedFunction?.parameters.filter((p) => p.resolution === 'unsupported') ?? [];
 
@@ -88,6 +94,7 @@ export const StellarTransactionBuilder: React.FC<StellarTransactionBuilderProps>
     if (!fn) return;
     update({
       function: fn.name,
+      fromSpec: true,
       args: fn.parameters.map((p) => ({ id: crypto.randomUUID(), type: stellarArgTypeFor(p.type) ?? 'string', value: '' }))
     });
   };
@@ -127,7 +134,11 @@ export const StellarTransactionBuilder: React.FC<StellarTransactionBuilderProps>
           </button>
           <button
             type="button"
-            onClick={() => setManual((m) => !m)}
+            onClick={() => {
+              // Manual arguments carry their own types; spec conversion no longer applies.
+              if (!manual && params.fromSpec) update({ fromSpec: false });
+              setManual((m) => !m);
+            }}
             disabled={isReadOnly}
             className="text-[12px] text-fg hover:opacity-80 disabled:opacity-50"
           >
@@ -167,6 +178,11 @@ export const StellarTransactionBuilder: React.FC<StellarTransactionBuilderProps>
         {!manual && view.status === 'loading' && (
           <p className="mt-1.5 text-[12px] text-fg-subtle">Loading contract spec from {network} Soroban RPC…</p>
         )}
+        {!manual && view.status === 'loaded' && view.builtIn && (
+          <p className="mt-1.5 text-[12px] text-fg-subtle">
+            Stellar Asset Contract. It has no Wasm, so Txio uses the built-in token interface.
+          </p>
+        )}
         {!manual && view.status === 'error' && (
           <p role="alert" className="mt-1.5 text-[12px] text-rose-500">
             {view.message} You can still{' '}
@@ -186,12 +202,19 @@ export const StellarTransactionBuilder: React.FC<StellarTransactionBuilderProps>
             fullWidth
             disabled={isReadOnly || functions.length === 0}
           />
-        ) : (
+        ) : null}
+        {functions && selectedFunction ? (
+          <p className="mt-1.5 text-[12px] text-fg-subtle">
+            {selectedFunction.doc ? `${selectedFunction.doc} ` : ''}
+            Returns <span className="font-mono">{selectedFunction.returnTypes.join(', ') || 'nothing'}</span>.
+          </p>
+        ) : null}
+        {functions ? null : (
           <input
             id="stellar-fn"
             className={fieldClass}
             value={params.function}
-            onChange={(e) => update({ function: e.target.value })}
+            onChange={(e) => update({ function: e.target.value, fromSpec: false })}
             placeholder="function_name"
             disabled={isReadOnly}
           />
@@ -210,19 +233,44 @@ export const StellarTransactionBuilder: React.FC<StellarTransactionBuilderProps>
               {selectedFunction.parameters.map((p, idx) => {
                 const arg = params.args[idx];
                 if (!arg) return null;
+                const problem =
+                  loadedSpec && params.fromSpec && arg.value.trim() ? validateSpecArg(loadedSpec, selectedFunction.name, idx, arg.value) : null;
+                const fieldProps = {
+                  'aria-label': `Argument ${idx + 1} (${p.type})`,
+                  'aria-invalid': problem ? true : undefined,
+                  className: `${fieldClass}${problem ? ' border-rose-500/60' : ''}`,
+                  value: arg.value,
+                  placeholder: p.placeholder ?? PLACEHOLDERS[arg.type] ?? arg.type,
+                  disabled: isReadOnly || p.resolution === 'unsupported'
+                };
                 return (
                   <div key={arg.id}>
-                    <div className="text-[12px] font-mono text-fg-subtle mb-1">
-                      {p.name}: {p.type}
+                    <div className="flex items-baseline justify-between gap-2 mb-1">
+                      <span className="text-[12px] font-mono text-fg-subtle">
+                        {p.name}: {p.type}
+                      </span>
+                      {p.example && !isReadOnly && (
+                        <button
+                          type="button"
+                          onClick={() => updateArg(idx, { value: p.example! })}
+                          className="text-[12px] text-fg hover:opacity-80"
+                        >
+                          Insert example
+                        </button>
+                      )}
                     </div>
-                    <input
-                      aria-label={`Argument ${idx + 1} (${p.type})`}
-                      className={fieldClass}
-                      value={arg.value}
-                      onChange={(e) => updateArg(idx, { value: e.target.value })}
-                      placeholder={PLACEHOLDERS[arg.type] ?? arg.type}
-                      disabled={isReadOnly || p.resolution === 'unsupported'}
-                    />
+                    {p.doc && <p className="text-[12px] text-fg-subtle mb-1">{p.doc}</p>}
+                    {p.multiline ? (
+                      <textarea
+                        {...fieldProps}
+                        rows={Math.min(8, Math.max(3, (p.placeholder ?? '').split('\n').length))}
+                        spellCheck={false}
+                        onChange={(e) => updateArg(idx, { value: e.target.value })}
+                      />
+                    ) : (
+                      <input {...fieldProps} onChange={(e) => updateArg(idx, { value: e.target.value })} />
+                    )}
+                    {problem && <p className="mt-1 text-[12px] text-rose-500">{problem}</p>}
                   </div>
                 );
               })}
