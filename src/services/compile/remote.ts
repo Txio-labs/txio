@@ -7,7 +7,16 @@ import type { ChainId } from '@/types';
 
 export type RemoteCompileChain = Extract<ChainId, 'sui' | 'aptos' | 'stellar' | 'solana' | 'starknet'>;
 
-export const COMPILER_URL = (process.env.NEXT_PUBLIC_COMPILER_URL || 'http://localhost:8090').replace(/\/$/, '');
+/**
+ * The compile service. Development falls back to a local txio-compiler; a
+ * production build without NEXT_PUBLIC_COMPILER_URL has none, rather than
+ * pointing every visitor's browser at their own localhost.
+ */
+export const COMPILER_URL: string | null =
+    process.env.NEXT_PUBLIC_COMPILER_URL?.replace(/\/$/, '') ||
+    (process.env.NODE_ENV === 'production' ? null : 'http://localhost:8090');
+
+const NOT_CONFIGURED = 'Compiling isn’t available on this site yet.';
 
 export interface SuiArtifact {
     modules: string[];
@@ -53,6 +62,7 @@ export class CompilerUnavailableError extends Error {
 
 /** Which chains the compiler host can build. Throws CompilerUnavailableError when it is unreachable. */
 export async function getToolchains(signal?: AbortSignal): Promise<ToolchainStatus> {
+    if (!COMPILER_URL) throw new CompilerUnavailableError(NOT_CONFIGURED);
     let res: Response;
     try {
         res = await fetch(`${COMPILER_URL}/toolchains`, { signal });
@@ -69,6 +79,7 @@ export async function compileRemote<A>(
     body: { name: string; source: string; programId?: string; sender?: string },
     signal?: AbortSignal
 ): Promise<RemoteCompileResult<A>> {
+    if (!COMPILER_URL) throw new CompilerUnavailableError(NOT_CONFIGURED);
     let res: Response;
     try {
         res = await fetch(`${COMPILER_URL}/compile`, {
