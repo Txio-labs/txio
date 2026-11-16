@@ -9,7 +9,7 @@ import { cx, Kbd, StatusDot, networkTone } from './ui/primitives';
 export const NETWORK_INFO: Record<Network, { label: string; hint: string }> = {
     mainnet: { label: 'Mainnet', hint: 'Live network. Transactions move real funds.' },
     testnet: { label: 'Testnet', hint: 'Public test network with free test tokens.' },
-    devnet: { label: 'Devnet', hint: 'Developer network. State can be reset.' },
+    devnet: { label: 'Devnet', hint: 'Developer network. State can be reset. On Stellar this is Futurenet.' },
     localnet: { label: 'Localnet', hint: 'A node running on your own machine.' },
 };
 

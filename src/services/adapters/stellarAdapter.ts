@@ -5,19 +5,18 @@ import { resolveChainRpcUrl } from '../suiService';
 import { signStellarTransaction } from '@/wallet/stellar';
 import type { ConnectedWallet } from '@/wallet/types';
 import { toJsonSafe } from './evmAdapter';
+import { STELLAR_PASSPHRASES, stellarExpertUrl } from '@/lib/constants';
 import type { TxProgress } from '../../components/RequestPanel/response/types';
 
 export const DEFAULT_STELLAR_TX: StellarTxParams = { contractId: '', function: '', args: [] };
 
-export const stellarExplorerUrl = (network: Network, txId: string): string =>
-    `https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/tx/${txId}`;
+/** Undefined on networks stellar.expert does not index (Futurenet, local). */
+export const stellarExplorerUrl = (network: Network, txId: string): string | undefined => stellarExpertUrl(network, 'tx', txId);
 
 const loadStellar = () => import('@stellar/stellar-sdk');
 
-export const stellarPassphrase = async (network: Network) => {
-    const { Networks } = await loadStellar();
-    return network === 'mainnet' ? Networks.PUBLIC : Networks.TESTNET;
-};
+// Async for its existing callers; the passphrases are constants.
+export const stellarPassphrase = async (network: Network): Promise<string> => STELLAR_PASSPHRASES[network];
 
 /** Converts a typed form argument into a Soroban ScVal. */
 export const toStellarScVal = async (arg: StellarArg) => {

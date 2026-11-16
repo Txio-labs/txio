@@ -1,6 +1,6 @@
 import type { ConnectedWallet } from '@/wallet/types';
 import type { ChainId, Network } from '@/types';
-import { APTOS_NETWORKS, STELLAR_NETWORKS, getEvmChain } from '@/lib/constants';
+import { APTOS_NETWORKS, STELLAR_HORIZON_URLS, STELLAR_NETWORKS, getEvmChain, stellarExpertUrl } from '@/lib/constants';
 import { executeChainRpc, resolveChainRpcUrl } from './suiService';
 
 export interface TxHistoryItem {
@@ -68,10 +68,6 @@ const formatUnits = (raw: bigint | number | string, decimals: number, maxFractio
 
 /* -------------------------------------------------------------------- Stellar */
 
-const STELLAR_HORIZON_URLS = {
-  public: 'https://horizon.stellar.org',
-  testnet: 'https://horizon-testnet.stellar.org',
-};
 
 /**
  * Stellar: Horizon's payments feed gives counterparty and amount for payments,
@@ -85,7 +81,6 @@ const STELLAR_HORIZON_URLS = {
  */
 async function getSorobanContractHistory(contractId: string, network: Network, limit: number): Promise<TransactionHistoryResult> {
   const rpc = STELLAR_NETWORKS[network];
-  const explorer = `https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/tx/`;
   const call = async (method: string, params?: unknown) => {
     const response = await fetch(rpc, {
       method: 'POST',
@@ -122,7 +117,7 @@ async function getSorobanContractHistory(contractId: string, network: Network, l
         counterparty: null,
         amount: null,
         status: e.inSuccessfulContractCall === false ? 'failed' : 'success',
-        explorerUrl: `${explorer}${e.txHash}`,
+        explorerUrl: stellarExpertUrl(network, 'tx', e.txHash) ?? null,
         label: e.type ? `${e.type} event` : null,
       }));
     return {
@@ -139,9 +134,7 @@ async function getStellarHistory(address: string, network: Network, limit: numbe
   if (/^C[A-Z2-7]{55}$/.test(address)) {
     return getSorobanContractHistory(address, network, limit);
   }
-  const isTestnet = network !== 'mainnet';
-  const horizon = isTestnet ? STELLAR_HORIZON_URLS.testnet : STELLAR_HORIZON_URLS.public;
-  const explorer = `https://stellar.expert/explorer/${isTestnet ? 'testnet' : 'public'}/tx/`;
+  const horizon = STELLAR_HORIZON_URLS[network];
   try {
     const payRes = await fetch(
       `${horizon}/accounts/${encodeURIComponent(address)}/payments?order=desc&limit=${limit}&include_failed=true`,
@@ -174,7 +167,7 @@ async function getStellarHistory(address: string, network: Network, limit: numbe
           counterparty: direction === 'out' ? to : direction === 'in' ? from : null,
           amount,
           status: p.transaction_successful === false ? 'failed' : 'success',
-          explorerUrl: p.transaction_hash ? `${explorer}${p.transaction_hash}` : null,
+          explorerUrl: p.transaction_hash ? (stellarExpertUrl(network, 'tx', p.transaction_hash) ?? null) : null,
           label: String(p.type ?? '').replace(/_/g, ' ') || null,
         };
       });
@@ -197,7 +190,7 @@ async function getStellarHistory(address: string, network: Network, limit: numbe
         counterparty: null,
         amount: null,
         status: r.successful === false ? 'failed' : 'success',
-        explorerUrl: r.hash ? `${explorer}${r.hash}` : null,
+        explorerUrl: r.hash ? (stellarExpertUrl(network, 'tx', r.hash) ?? null) : null,
         label: r.operation_count ? `${r.operation_count} operation${r.operation_count === 1 ? '' : 's'}` : null,
       })),
     };

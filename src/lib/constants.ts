@@ -1,6 +1,7 @@
 
 import { Network, ChainId } from "../types";
 import { APTOS_REST_METHODS } from "../services/aptosRest";
+import { HORIZON_METHODS } from "../services/stellar/horizon";
 
 // Default Sui fullnode endpoint per network. Mirrors `Network::sui_url` on the
 // backend (backend/api/src/model/network.rs). `Record<Network, ...>` forces
@@ -46,23 +47,59 @@ export const EVM_NETWORKS: Record<Network, string> = {
 
 // `soroban-rpc.stellar.org` / `soroban-rpc.testnet.stellar.org` no longer
 // resolve (NXDOMAIN) — Stellar's Soroban RPC now lives at sorobanrpc.com.
+// Stellar has no "devnet": the app's devnet slot is Futurenet, Stellar's
+// network for upcoming protocol features. Localnet is a standalone
+// quickstart node (`stellar container start local`).
 export const STELLAR_NETWORKS: Record<Network, string> = {
   mainnet: 'https://mainnet.sorobanrpc.com',
   testnet: 'https://soroban-testnet.stellar.org',
-  devnet: 'https://soroban-testnet.stellar.org',
-  localnet: 'http://127.0.0.1:8000',
+  devnet: 'https://rpc-futurenet.stellar.org',
+  localnet: 'http://127.0.0.1:8000/rpc',
+};
+
+/** Stellar's own name for each app network. */
+export const STELLAR_NETWORK_NAMES: Record<Network, string> = {
+  mainnet: 'Mainnet',
+  testnet: 'Testnet',
+  devnet: 'Futurenet',
+  localnet: 'Local',
+};
+
+/** Network passphrases. Signatures and transaction hashes depend on them. */
+export const STELLAR_PASSPHRASES: Record<Network, string> = {
+  mainnet: 'Public Global Stellar Network ; September 2015',
+  testnet: 'Test SDF Network ; September 2015',
+  devnet: 'Test SDF Future Network ; October 2022',
+  localnet: 'Standalone Network ; February 2017',
+};
+
+/** Friendbot funds new accounts on the test networks. */
+export const STELLAR_FRIENDBOT_URLS: Partial<Record<Network, string>> = {
+  testnet: 'https://friendbot.stellar.org',
+  devnet: 'https://friendbot-futurenet.stellar.org',
+  localnet: 'http://127.0.0.1:8000/friendbot',
+};
+
+/** stellar.expert path segment; it indexes only mainnet and testnet. */
+const STELLAR_EXPERT_PATHS: Partial<Record<Network, string>> = { mainnet: 'public', testnet: 'testnet' };
+
+/** stellar.expert link for a tx/account/contract, or undefined on networks it does not index. */
+export const stellarExpertUrl = (network: Network, kind: 'tx' | 'account' | 'contract', id: string): string | undefined => {
+  const path = STELLAR_EXPERT_PATHS[network];
+  return path ? `https://stellar.expert/explorer/${path}/${kind}/${id}` : undefined;
 };
 
 // Stellar's Horizon REST API — NOT the same service as Soroban RPC above.
 // Soroban RPC only understands smart-contract/ledger operations; plain
 // account balances, account details, and payment history live on Horizon
 // (GET /accounts/{address}). Mirrors the CLI's SorobanAdapter::horizon_url.
-// No public Horizon mirror exists for devnet/localnet — those return
-// undefined so callers can surface a clear "not available" error instead of
-// silently hitting a dead/wrong host.
-export const STELLAR_HORIZON_URLS: Partial<Record<Network, string>> = {
+// Devnet is Futurenet (see STELLAR_NETWORKS); localnet is the quickstart
+// node, which serves Horizon at its root.
+export const STELLAR_HORIZON_URLS: Record<Network, string> = {
   mainnet: 'https://horizon.stellar.org',
   testnet: 'https://horizon-testnet.stellar.org',
+  devnet: 'https://horizon-futurenet.stellar.org',
+  localnet: 'http://127.0.0.1:8000',
 };
 
 // api.mainnet-beta.solana.com / api.testnet.solana.com return HTTP 403
@@ -205,6 +242,7 @@ export const COMMON_RPC_METHODS: Partial<Record<ChainId, string[]>> = {
     'getVersionInfo',
     'simulateTransaction',
     'sendTransaction',
+    ...Object.keys(HORIZON_METHODS),
   ],
   solana: [
     'getAddressTransactions',
@@ -333,6 +371,8 @@ export const RPC_METHOD_TEMPLATES: Readonly<Partial<Record<ChainId, Readonly<Rec
     getVersionInfo: [{}],
     simulateTransaction: [{ transaction: '<base64 tx envelope>' }],
     sendTransaction: [{ transaction: '<base64 tx envelope>' }],
+    // Horizon REST reads (see services/stellar/horizon.ts): positional params, not one object.
+    ...Object.fromEntries(Object.entries(HORIZON_METHODS).map(([name, m]) => [name, m.template])),
   },
   solana: {
     getAddressTransactions: ['<base58 wallet address>', { limit: 20 }],

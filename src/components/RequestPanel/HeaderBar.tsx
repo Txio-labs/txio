@@ -4,6 +4,7 @@ import { Play, Zap, Loader2, Server, Terminal, Layers, FolderPlus, Check, Chevro
 import { RequestType, Network, ChainId, RPCHealthMetric, RequestItem, ALL_NETWORKS } from '../../types';
 import { appStore, useAppStore } from '@/lib/store';
 import { resolveChainRpcUrl, getChainRpcHealth } from '../../services/suiService';
+import { STELLAR_NETWORK_NAMES } from '@/lib/constants';
 import { RequestOutcome } from './response/types';
 
 interface HeaderBarProps {
@@ -47,6 +48,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   const networkMenuRef = useRef<HTMLDivElement>(null);
   const chain: ChainId = chainProp ?? 'sui';
   const endpoint = resolveChainRpcUrl(chain, network, evmChainId);
+  // Stellar names its networks itself: devnet is Futurenet.
+  const networkLabel = (n: Network) => (chain === 'stellar' ? STELLAR_NETWORK_NAMES[n] : n);
 
   const handleNetworkSwitch = (newNetwork: Network) => {
     setIsNetworkMenuOpen(false);
@@ -179,7 +182,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
               title="Switch network"
             >
               <span className={`h-1.5 w-1.5 rounded-full ${netDot(network)}`} />
-              <span>{network}</span>
+              <span>{networkLabel(network)}</span>
               <ChevronDown size={12} className={`text-fg-subtle transition-transform duration-200 ${isNetworkMenuOpen ? 'rotate-180' : ''}`} />
             </button>
 
@@ -195,7 +198,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                   >
                     <span className="flex items-center gap-2">
                       <span className={`h-1.5 w-1.5 rounded-full ${netDot(net)}`} />
-                      {net}
+                      {networkLabel(net)}
                     </span>
                     {network === net && <Check size={13} className="text-fg" />}
                   </button>

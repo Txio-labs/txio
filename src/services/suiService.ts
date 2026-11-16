@@ -4,6 +4,7 @@ import { resolveChainCustomRpcUrl, resolveChainRpcUrlList, resolveRpcUrl, resolv
 import { appStore } from '@/lib/store';
 import { APTOS_NETWORKS, getEvmChain, STELLAR_HORIZON_URLS } from '@/lib/constants';
 import { aptosErrorMessage, callAptosRest } from './aptosRest';
+import { callHorizon, horizonErrorMessage, isHorizonMethod } from './stellar/horizon';
 import {
   Network,
   ChainId,
@@ -157,13 +158,6 @@ const getStellarBalanceViaHorizon = async (
   const startTime = performance.now();
   const horizonUrl = STELLAR_HORIZON_URLS[network];
 
-  if (!horizonUrl) {
-    throw new SuiRpcError(
-      `Horizon (balance lookups) has no public endpoint for the "${network}" network. Use mainnet or testnet.`,
-      { status: 0, endpoint: '', duration: 0 }
-    );
-  }
-
   if (typeof address !== 'string' || !address.trim()) {
     throw new SuiRpcError(
       'getBalance requires a Stellar address as its first parameter.',
@@ -283,6 +277,10 @@ export const executeChainRpc = async (
     return getStellarBalanceViaHorizon(network, params[0]);
   }
 
+  if (chain === 'stellar' && isHorizonMethod(method)) {
+    return executeHorizon(network, method, params);
+  }
+
   const endpoints = resolveChainRpcUrls(chain, network, evmChainId);
   const primaryUrl = endpoints[0];
   const startTime = performance.now();
@@ -290,7 +288,10 @@ export const executeChainRpc = async (
   // Soroban RPC (Stellar) takes a single params OBJECT per call, not a
   // positional array like Sui/EVM. Templates store that one object as the
   // sole array element; unwrap it here before building the request body.
-  const requestParams = chain === 'stellar' ? (params[0] ?? {}) : params;
+  let requestParams = chain === 'stellar' ? (params[0] ?? {}) : params;
+  if (chain === 'stellar') {
+    requestParams = await resolveRelativeStartLedger(network, requestParams);
+  }
 
   try {
     const { response, data, duration, url } = await postJsonRpcWithFailover(endpoints, {
@@ -377,6 +378,56 @@ const executeAptosRest = async (
       throw new SuiRpcError(`Aptos request timed out after ${RPC_TIMEOUT_MS / 1000}s.`, { status: 504, endpoint, duration });
     }
     throw new SuiRpcError(error instanceof Error && error.message ? error.message : 'Unable to reach the Aptos fullnode.', {
+      status: 0,
+      endpoint,
+      duration
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
+/**
+ * Soroban RPC keeps only a rolling window of recent ledgers, so a fixed
+ * `startLedger` in a saved request goes stale. `"latest"` or `"latest-N"`
+ * resolves to the node's latest ledger (minus N) when the request runs.
+ */
+export const RELATIVE_LEDGER = /^latest(?:\s*-\s*(\d+))?$/;
+
+const resolveRelativeStartLedger = async (network: Network, params: any): Promise<any> => {
+  const start = params?.startLedger;
+  if (typeof start !== 'string') return params;
+  const match = RELATIVE_LEDGER.exec(start.trim());
+  if (!match) return params;
+  const { result } = await executeChainRpc('stellar', network, 'getLatestLedger', [{}]);
+  const latest = Number(result?.sequence);
+  if (!Number.isFinite(latest)) return params;
+  return { ...params, startLedger: Math.max(1, latest - Number(match[1] ?? 0)) };
+};
+
+const executeHorizon = async (
+  network: Network,
+  method: string,
+  params: any[]
+): Promise<{ result: any; duration: number; status: number }> => {
+  const endpoint = STELLAR_HORIZON_URLS[network];
+  const startTime = performance.now();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), RPC_TIMEOUT_MS);
+  try {
+    const { ok, status, data, url } = await callHorizon(endpoint, method, params, controller.signal);
+    const duration = Math.round(performance.now() - startTime);
+    if (!ok) {
+      throw new SuiRpcError(horizonErrorMessage(data, status), { status, endpoint: url, duration });
+    }
+    return { result: data, duration, status };
+  } catch (error) {
+    if (error instanceof SuiRpcError) throw error;
+    const duration = Math.round(performance.now() - startTime);
+    if ((error as Error)?.name === 'AbortError') {
+      throw new SuiRpcError(`Horizon request timed out after ${RPC_TIMEOUT_MS / 1000}s.`, { status: 504, endpoint, duration });
+    }
+    throw new SuiRpcError(error instanceof Error && error.message ? error.message : 'Unable to reach Horizon.', {
       status: 0,
       endpoint,
       duration

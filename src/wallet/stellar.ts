@@ -9,6 +9,8 @@ import {
     signTransaction as lobstrSignTransaction
 } from '@lobstrco/signer-extension-api';
 import { xBullWalletConnect } from '@creit.tech/xbull-wallet-connect';
+import type { Network } from '@/types';
+import { STELLAR_HORIZON_URLS, STELLAR_NETWORK_NAMES } from '@/lib/constants';
 
 import type {
     ConnectedWallet,
@@ -19,7 +21,9 @@ import type {
 
 export type StellarNetworkName =
     | 'public'
-    | 'testnet';
+    | 'testnet'
+    | 'futurenet'
+    | 'local';
 
 const CONNECT_TIMEOUT_MS = 30_000;
 
@@ -68,11 +72,18 @@ let stellarNetwork: StellarNetworkName =
         ? 'testnet'
         : 'public';
 
-/** Maps the app's Network to Stellar's own public/testnet split — Stellar has no separate devnet/localnet, so anything but mainnet targets its testnet. */
+const APP_NETWORK_FOR: Record<StellarNetworkName, Network> = {
+    public: 'mainnet',
+    testnet: 'testnet',
+    futurenet: 'devnet',
+    local: 'localnet'
+};
+
+/** Maps the app's Network to Stellar's networks: devnet is Futurenet, localnet a standalone node. */
 export const stellarNetworkFor = (
-    appNetwork: 'mainnet' | 'testnet' | 'devnet' | 'localnet'
+    appNetwork: Network
 ): StellarNetworkName =>
-    appNetwork === 'mainnet' ? 'public' : 'testnet';
+    appNetwork === 'mainnet' ? 'public' : appNetwork === 'devnet' ? 'futurenet' : appNetwork === 'localnet' ? 'local' : 'testnet';
 
 export const setStellarNetwork = (
     network: StellarNetworkName
@@ -80,35 +91,22 @@ export const setStellarNetwork = (
     stellarNetwork = network;
 };
 
-const STELLAR_NETWORKS: Record<
-    StellarNetworkName,
-    {
-        chain: WalletChainInfo;
-        horizonUrl: string;
-    }
-> = {
-    public: {
-        chain: {
-            id: 'stellar:public',
-            family: 'stellar',
-            name: 'Stellar',
-            network: 'public',
-            isSupported: true
-        },
-        horizonUrl:
-            'https://horizon.stellar.org'
+const stellarChain = (network: StellarNetworkName): { chain: WalletChainInfo; horizonUrl: string } => ({
+    chain: {
+        id: `stellar:${network}`,
+        family: 'stellar',
+        name: network === 'public' ? 'Stellar' : `Stellar ${STELLAR_NETWORK_NAMES[APP_NETWORK_FOR[network]]}`,
+        network,
+        isSupported: true
     },
-    testnet: {
-        chain: {
-            id: 'stellar:testnet',
-            family: 'stellar',
-            name: 'Stellar Testnet',
-            network: 'testnet',
-            isSupported: true
-        },
-        horizonUrl:
-            'https://horizon-testnet.stellar.org'
-    }
+    horizonUrl: STELLAR_HORIZON_URLS[APP_NETWORK_FOR[network]]
+});
+
+const STELLAR_NETWORKS: Record<StellarNetworkName, { chain: WalletChainInfo; horizonUrl: string }> = {
+    public: stellarChain('public'),
+    testnet: stellarChain('testnet'),
+    futurenet: stellarChain('futurenet'),
+    local: stellarChain('local')
 };
 
 const getChainConfig = () =>

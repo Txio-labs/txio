@@ -397,8 +397,11 @@ export const getWalletExplorerUrl = (
         return null;
     }
 
-    const networkPath =
-        wallet.chain.network === 'testnet' ? 'testnet' : 'public';
+    // Neither explorer indexes Futurenet or a local node.
+    if (wallet.chain.network !== 'testnet' && wallet.chain.network !== 'public') {
+        return null;
+    }
+    const networkPath = wallet.chain.network;
 
     if (prefs.stellarExplorer === 'stellarchain') {
         const host =

@@ -7,6 +7,7 @@ import type { Network } from '@/types';
 import type { ConnectedWallet } from '@/wallet/types';
 import { resolveChainRpcUrl } from './suiService';
 import { stellarExplorerUrl, stellarPassphrase } from './adapters/stellarAdapter';
+import { stellarExpertUrl } from '@/lib/constants';
 import { signStellarTransaction } from '@/wallet/stellar';
 import { signAllSolanaTransactions } from '@/wallet/solana';
 import { signAndSubmitAptosTransaction } from '@/wallet/aptos';
@@ -72,8 +73,8 @@ export async function deployStellar(wasmB64: string, wallet: ConnectedWallet | n
     log(`Deployed ${contractId}`);
     return {
         address: contractId,
-        explorerUrl: `https://stellar.expert/explorer/${network === 'mainnet' ? 'public' : 'testnet'}/contract/${contractId}`,
-        transactions: [upload.hash, created.hash].map((h) => stellarExplorerUrl(network, h))
+        explorerUrl: stellarExpertUrl(network, 'contract', contractId),
+        transactions: [upload.hash, created.hash].map((h) => stellarExplorerUrl(network, h) ?? h)
     };
 }
 

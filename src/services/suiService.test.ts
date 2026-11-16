@@ -8,6 +8,7 @@ import {
 } from 'vitest';
 
 import {
+    executeChainRpc,
     resolveSuiAddress
 } from './suiService';
 
@@ -95,5 +96,37 @@ describe('resolveSuiAddress', () => {
 
         expect(secondResult).toBe('0x222222');
         expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+});
+describe('executeChainRpc on Soroban RPC', () => {
+    beforeEach(() => {
+        fetchMock.mockReset();
+        vi.stubGlobal('fetch', fetchMock);
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it('resolves a "latest-N" startLedger against the latest ledger when the request runs', async () => {
+        fetchMock.mockImplementation(async (_url, init) => {
+            const { method } = JSON.parse(String(init?.body));
+            return jsonResponse({ jsonrpc: '2.0', id: 1, result: method === 'getLatestLedger' ? { sequence: 5000 } : { events: [] } });
+        });
+
+        await executeChainRpc('stellar', 'testnet', 'getEvents', [{ startLedger: 'latest-1000', filters: [] }]);
+
+        const bodies = fetchMock.mock.calls.map(([, init]) => JSON.parse(String(init?.body)));
+        expect(bodies.map((b) => b.method)).toEqual(['getLatestLedger', 'getEvents']);
+        expect(bodies[1].params).toEqual({ startLedger: 4000, filters: [] });
+    });
+
+    it('leaves a numeric startLedger alone', async () => {
+        fetchMock.mockImplementation(async () => jsonResponse({ jsonrpc: '2.0', id: 1, result: { events: [] } }));
+
+        await executeChainRpc('stellar', 'testnet', 'getEvents', [{ startLedger: 123 }]);
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body)).params).toEqual({ startLedger: 123 });
     });
 });

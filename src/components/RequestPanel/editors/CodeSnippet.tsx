@@ -4,7 +4,8 @@ import { RequestItem, RequestType, Network } from '../../../types';
 import { resolveChainRpcUrl } from '@/services/suiService';
 import { getTxChain } from '@/services/transactionService';
 import { APTOS_REST_METHODS } from '@/services/aptosRest';
-import { getEvmChain } from '@/lib/constants';
+import { getEvmChain, STELLAR_HORIZON_URLS } from '@/lib/constants';
+import { HORIZON_METHODS } from '@/services/stellar/horizon';
 
 interface CodeSnippetProps {
   request: RequestItem;
@@ -30,6 +31,16 @@ const rpcSnippet = (request: RequestItem, network: Network): string => {
     const url = `${resolveChainRpcUrl('aptos', network)}${path}`;
     if (spec.http === 'GET') return `curl ${sq(url)}`;
     return `curl -X POST ${sq(url)} \\\n  -H "Content-Type: application/json" \\\n  -d ${sq(JSON.stringify(spec.body?.(params) ?? {}, null, 2))}`;
+  }
+
+  if (chain === 'stellar' && HORIZON_METHODS[method]) {
+    let path: string;
+    try {
+      path = HORIZON_METHODS[method].path(params);
+    } catch (error) {
+      return `# ${error instanceof Error ? error.message : 'Fill in the params to generate a request.'}`;
+    }
+    return `curl ${sq(`${STELLAR_HORIZON_URLS[network]}${path === '/' ? '' : path}`)}`;
   }
 
   const endpoint = resolveChainRpcUrl(chain, network, request.rpcParams.evmChainId);
