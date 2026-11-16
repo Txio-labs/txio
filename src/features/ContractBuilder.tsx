@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { encodeDeployData, isHex, type Abi, type AbiFunction } from 'viem';
 import {
     Code2, Box, Zap, Shield, Play, Save, Share2,
-    Plus, Loader2, Check, AlertTriangle, Hammer
+    Plus, Loader2, Check, AlertTriangle, Hammer, FileCode, Trash2
 } from 'lucide-react';
 import { appStore, useAppStore } from '@/lib/store';
 import { Select } from '@/components/Select';
@@ -218,17 +218,64 @@ const DEFAULT_EDITION_BY_CHAIN = mapChains((c) => c.editions[0]);
 
 const STORAGE_KEY = 'txio_contract_builder';
 
+/** One contract draft. A chain can hold several ("Your Modules"). */
+export interface ContractDraft {
+    id: string;
+    name: string;
+    code: string;
+}
+
 interface SavedDrafts {
+    modulesByChain?: Partial<Record<ChainId, ContractDraft[]>>;
+    activeIdByChain?: Partial<Record<ChainId, string>>;
+    // Earlier format: one draft per chain.
     codeByChain?: Partial<Record<ChainId, string>>;
     contractNames?: Partial<Record<ChainId, string>>;
 }
 
-const readDrafts = (): SavedDrafts => {
+const newDraftId = () => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`);
+
+const defaultDraft = (chain: ChainId, name = DEFAULT_CONTRACT_NAMES[chain]): ContractDraft => ({
+    id: newDraftId(),
+    name,
+    code: DEFAULT_CODE_BY_CHAIN[chain]
+});
+
+/** Saved drafts per chain, upgrading the earlier one-draft-per-chain format. Every chain gets at least one draft. */
+const loadDrafts = (): { modulesByChain: Record<ChainId, ContractDraft[]>; activeIdByChain: Record<ChainId, string> } => {
+    let saved: SavedDrafts = {};
     try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') as SavedDrafts;
+        saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') as SavedDrafts;
     } catch {
-        return {};
+        // Unreadable or blocked storage: start from the defaults.
     }
+    const modulesByChain = mapChains(() => [] as ContractDraft[]);
+    const activeIdByChain = mapChains(() => '');
+    for (const chain of Object.keys(modulesByChain) as ChainId[]) {
+        const list = (saved.modulesByChain?.[chain] ?? []).filter((d) => d && typeof d.id === 'string' && typeof d.code === 'string');
+        if (list.length === 0) {
+            const legacyCode = saved.codeByChain?.[chain];
+            const legacyName = saved.contractNames?.[chain];
+            list.push(
+                legacyCode !== undefined || legacyName !== undefined
+                    ? { id: newDraftId(), name: legacyName ?? DEFAULT_CONTRACT_NAMES[chain], code: legacyCode ?? DEFAULT_CODE_BY_CHAIN[chain] }
+                    : defaultDraft(chain)
+            );
+        }
+        modulesByChain[chain] = list;
+        const active = saved.activeIdByChain?.[chain];
+        activeIdByChain[chain] = list.some((d) => d.id === active) ? active! : list[0].id;
+    }
+    return { modulesByChain, activeIdByChain };
+};
+
+/** A name not used by another draft on the chain: "Counter", "Counter2", … */
+const uniqueDraftName = (base: string, drafts: ContractDraft[]) => {
+    const taken = new Set(drafts.map((d) => d.name));
+    if (!taken.has(base)) return base;
+    let n = 2;
+    while (taken.has(`${base}${n}`)) n++;
+    return `${base}${n}`;
 };
 
 type CompileState =
@@ -251,10 +298,10 @@ export const ContractBuilder: React.FC = () => {
     const [chain, setChain] = useState<ChainId>('evm');
     const [activeModule, setActiveModule] = useState('core');
 
-    // Kept per-chain so switching chains doesn't clobber what you wrote for
-    // another one — this is a workspace across chains, not just Sui/Move.
-    const [contractNames, setContractNames] = useState<Record<ChainId, string>>(() => ({ ...DEFAULT_CONTRACT_NAMES, ...readDrafts().contractNames }));
-    const [codeByChain, setCodeByChain] = useState<Record<ChainId, string>>(() => ({ ...DEFAULT_CODE_BY_CHAIN, ...readDrafts().codeByChain }));
+    // Drafts are kept per chain so switching chains doesn't clobber what you
+    // wrote for another one; each chain can hold several (Your Modules).
+    const [drafts, setDrafts] = useState(loadDrafts);
+    const { modulesByChain, activeIdByChain } = drafts;
     const [editionByChain, setEditionByChain] = useState(DEFAULT_EDITION_BY_CHAIN);
 
     const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'failed'>('idle');
@@ -295,14 +342,66 @@ export const ContractBuilder: React.FC = () => {
               : toolchains.status === 'unreachable'
                 ? toolchains.message
                 : `The compiler service has no ${config.compilerLabel} toolchain installed (${isServerChain(chain) ? toolchains.chains[chain]?.tool ?? '' : ''}).`;
-    const contractName = contractNames[chain];
-    const code = codeByChain[chain];
+    const chainDrafts = modulesByChain[chain];
+    const activeDraft = chainDrafts.find((d) => d.id === activeIdByChain[chain]) ?? chainDrafts[0];
+    const contractName = activeDraft.name;
+    const code = activeDraft.code;
     const edition = editionByChain[chain];
 
-    const setContractName = (name: string) =>
-        setContractNames((prev) => ({ ...prev, [chain]: name }));
+    const persist = (next: typeof drafts) => {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+            return true;
+        } catch {
+            return false;
+        }
+    };
+    const updateActiveDraft = (changes: Partial<ContractDraft>) =>
+        setDrafts((prev) => ({
+            ...prev,
+            modulesByChain: {
+                ...prev.modulesByChain,
+                [chain]: prev.modulesByChain[chain].map((d) => (d.id === activeDraft.id ? { ...d, ...changes } : d))
+            }
+        }));
+    // A different draft: its source has no compiled artifact yet.
+    const resetBuild = () => {
+        abortRef.current?.abort();
+        setCompile({ status: 'idle' });
+        setDeploy({ status: 'idle' });
+        setDeployError(null);
+    };
+    // Adding, opening or deleting a module is saved right away, with every draft as it stands.
+    const changeModules = (next: typeof drafts) => {
+        setDrafts(next);
+        persist(next);
+        resetBuild();
+    };
+    const openModule = (id: string) => {
+        if (id === activeDraft.id) return;
+        changeModules({ ...drafts, activeIdByChain: { ...activeIdByChain, [chain]: id } });
+    };
+    const newModule = () => {
+        const draft = defaultDraft(chain, uniqueDraftName(DEFAULT_CONTRACT_NAMES[chain], chainDrafts));
+        changeModules({
+            modulesByChain: { ...modulesByChain, [chain]: [...chainDrafts, draft] },
+            activeIdByChain: { ...activeIdByChain, [chain]: draft.id }
+        });
+    };
+    const deleteModule = (id: string) => {
+        const target = chainDrafts.find((d) => d.id === id);
+        if (!target || !window.confirm(`Delete ${target.name || 'Untitled'}.${config.fileExt}? This can't be undone.`)) return;
+        const remaining = chainDrafts.filter((d) => d.id !== id);
+        const list = remaining.length ? remaining : [defaultDraft(chain)];
+        changeModules({
+            modulesByChain: { ...modulesByChain, [chain]: list },
+            activeIdByChain: { ...activeIdByChain, [chain]: id === activeDraft.id ? list[0].id : activeDraft.id }
+        });
+    };
+
+    const setContractName = (name: string) => updateActiveDraft({ name });
     const setCode = (nextCode: string) => {
-        setCodeByChain((prev) => ({ ...prev, [chain]: nextCode }));
+        updateActiveDraft({ code: nextCode });
         // The compiled artifact belongs to the source that produced it.
         if (compile.status === 'done' || compile.status === 'built') setCompile({ status: 'idle' });
         setDeploy({ status: 'idle' });
@@ -327,12 +426,7 @@ export const ContractBuilder: React.FC = () => {
 
     // Drafts are kept in this browser only; nothing is uploaded.
     const handleSave = () => {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({ codeByChain, contractNames }));
-            setSaveStatus('success');
-        } catch {
-            setSaveStatus('failed');
-        }
+        setSaveStatus(persist(drafts) ? 'success' : 'failed');
         setTimeout(() => setSaveStatus('idle'), 2000);
     };
 
@@ -581,10 +675,40 @@ export const ContractBuilder: React.FC = () => {
 
                     <div className="space-y-4">
                         <div className="text-[12px] font-semibold text-fg-muted px-2">Your Modules</div>
-                        <div className="p-4 rounded-[10px] border border-dashed border-line text-center space-y-2 group cursor-pointer hover:border-line-strong transition-all">
+                        <ul aria-label={`Your ${config.label} modules`} className="space-y-1">
+                            {chainDrafts.map((d) => (
+                                <li key={d.id} className="group/module flex items-center gap-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => openModule(d.id)}
+                                        aria-current={d.id === activeDraft.id ? 'true' : undefined}
+                                        className={`flex-1 min-w-0 flex items-center gap-2 px-3 py-2 rounded-[10px] text-sm font-semibold text-left transition-all ${
+                                            d.id === activeDraft.id ? 'bg-hover text-fg' : 'text-fg-subtle hover:bg-hover'
+                                        }`}
+                                    >
+                                        <FileCode size={14} className="shrink-0" />
+                                        <span className="truncate">{d.name || 'Untitled'}.{config.fileExt}</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => deleteModule(d.id)}
+                                        aria-label={`Delete ${d.name || 'Untitled'}`}
+                                        title="Delete this draft"
+                                        className="shrink-0 p-1.5 rounded-md text-fg-subtle opacity-0 group-hover/module:opacity-100 focus:opacity-100 hover:text-rose-500 transition-all"
+                                    >
+                                        <Trash2 size={13} />
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                        <button
+                            type="button"
+                            onClick={newModule}
+                            className="w-full p-4 rounded-[10px] border border-dashed border-line text-center space-y-2 group hover:border-line-strong transition-all"
+                        >
                             <Plus size={16} className="mx-auto text-fg-muted group-hover:text-fg" />
                             <div className="text-[12px] font-semibold text-fg-muted">New {config.label} Module</div>
-                        </div>
+                        </button>
                     </div>
                 </div>
 
@@ -652,6 +776,26 @@ export const ContractBuilder: React.FC = () => {
                     <div className="w-full space-y-6">
                         {/* Side panels are hidden below 72rem; their controls live here instead. */}
                         <section aria-label="Contract settings" className="@6xl/builder:hidden rounded-card border border-line bg-sunken p-4 space-y-4">
+                            <div className="space-y-1">
+                                <span className="text-[12px] font-semibold text-fg-muted uppercase">Module</span>
+                                <div className="flex gap-2">
+                                    <div className="flex-1 min-w-0">
+                                        <Select
+                                            value={activeDraft.id}
+                                            onChange={openModule}
+                                            options={chainDrafts.map((d) => ({ label: `${d.name || 'Untitled'}.${config.fileExt}`, value: d.id }))}
+                                            fullWidth
+                                            ariaLabel="Module"
+                                        />
+                                    </div>
+                                    <button type="button" onClick={newModule} aria-label={`New ${config.label} module`} title={`New ${config.label} module`} className="shrink-0 px-2.5 rounded-lg border border-line hover:bg-hover text-fg-muted">
+                                        <Plus size={14} />
+                                    </button>
+                                    <button type="button" onClick={() => deleteModule(activeDraft.id)} aria-label={`Delete ${activeDraft.name || 'Untitled'}`} title="Delete this draft" className="shrink-0 px-2.5 rounded-lg border border-line hover:bg-hover text-fg-muted hover:text-rose-500">
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                            </div>
                             <div className="grid gap-4 @xl:grid-cols-2">
                                 <div className="space-y-1">
                                     <span className="text-[12px] font-semibold text-fg-muted uppercase">Template</span>

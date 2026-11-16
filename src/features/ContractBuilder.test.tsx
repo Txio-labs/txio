@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import React from 'react';
 
 const mocks = vi.hoisted(() => ({
@@ -158,7 +158,40 @@ describe('ContractBuilder', () => {
         render(<ContractBuilder />);
         fireEvent.change(screen.getByLabelText('Contract source'), { target: { value: 'contract Mine {}' } });
         fireEvent.click(screen.getByRole('button', { name: /save draft/i }));
-        expect(JSON.parse(localStorage.getItem('txio_contract_builder')!).codeByChain.evm).toBe('contract Mine {}');
+        const saved = JSON.parse(localStorage.getItem('txio_contract_builder')!);
+        expect(saved.modulesByChain.evm.find((d: { id: string }) => d.id === saved.activeIdByChain.evm).code).toBe('contract Mine {}');
+    });
+
+    it('keeps several modules per chain: new, switch, delete', () => {
+        localStorage.clear();
+        vi.spyOn(window, 'confirm').mockReturnValue(true);
+        render(<ContractBuilder />);
+        const source = () => screen.getByLabelText('Contract source') as HTMLTextAreaElement;
+        fireEvent.change(source(), { target: { value: 'contract First {}' } });
+
+        fireEvent.click(screen.getAllByRole('button', { name: /new ethereum \/ evm module/i })[0]);
+        const list = () => screen.getByRole('list', { name: /your ethereum \/ evm modules/i });
+        expect(within(list()).getAllByRole('button', { name: /\.sol$/ })).toHaveLength(2);
+        expect(source().value).not.toBe('contract First {}');
+        fireEvent.change(source(), { target: { value: 'contract Second {}' } });
+
+        // The first module kept its code.
+        fireEvent.click(within(list()).getAllByRole('button', { name: /\.sol$/ })[0]);
+        expect(source().value).toBe('contract First {}');
+        const saved = JSON.parse(localStorage.getItem('txio_contract_builder')!);
+        expect(saved.modulesByChain.evm.map((d: { code: string }) => d.code)).toEqual(['contract First {}', 'contract Second {}']);
+
+        fireEvent.click(within(list()).getAllByRole('button', { name: /^delete/i })[0]);
+        expect(within(list()).getAllByRole('button', { name: /\.sol$/ })).toHaveLength(1);
+        expect(source().value).toBe('contract Second {}');
+        vi.restoreAllMocks();
+    });
+
+    it('opens drafts saved in the earlier one-per-chain format', () => {
+        localStorage.setItem('txio_contract_builder', JSON.stringify({ codeByChain: { evm: 'contract Old {}' }, contractNames: { evm: 'Old' } }));
+        render(<ContractBuilder />);
+        expect((screen.getByLabelText('Contract source') as HTMLTextAreaElement).value).toBe('contract Old {}');
+        localStorage.clear();
     });
 });
 
