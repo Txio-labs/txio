@@ -75,7 +75,8 @@ export const APTOS_TEMPLATES: ChainTemplates = {
         primary_fungible_store::transfer(from, metadata(), to, amount);
     }
 
-    fun authorized_refs(owner: &signer): &Refs acquires Refs {
+    // inline: only an inline function may return a reference into global storage.
+    inline fun authorized_refs(owner: &signer): &Refs acquires Refs {
         let asset = metadata();
         assert!(object::is_owner(asset, signer::address_of(owner)), error::permission_denied(ENOT_OWNER));
         borrow_global<Refs>(object::object_address(&asset))
