@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FolderPlus, Save } from 'lucide-react';
 import { appStore } from '@/lib/store';
+import { StarterCollections } from '@/components/StarterCollections';
 
 interface NewCollectionPageProps {
   tabId: string;
@@ -80,6 +81,10 @@ export const NewCollectionPage: React.FC<NewCollectionPageProps> = ({ tabId }) =
             <Save size={16} />
             {isSubmitting ? 'Saving...' : 'Save Collection'}
           </button>
+        </div>
+
+        <div className="mt-10 pt-8 border-t border-line">
+          <StarterCollections onInstalled={() => appStore.closeTab(tabId)} />
         </div>
       </div>
     </div>

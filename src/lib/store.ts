@@ -1719,6 +1719,37 @@ export const appStore = {
         }
     },
 
+    // Creates a collection and saves each request into it, in order. Returns
+    // the collection, or undefined if the collection itself failed. Requests
+    // that fail to save are skipped and counted in the toast.
+    async installCollection(name: string, description: string, requests: RequestItem[]) {
+        const created = await appStore.createCollection(name, description);
+        if (!created) return undefined;
+
+        const children: CollectionNode[] = [];
+        let failed = 0;
+        for (const request of requests) {
+            try {
+                children.push(await apiService.addRequest(created.id, request));
+            } catch {
+                failed += 1;
+            }
+        }
+
+        const withChildren = { ...created, children: [...(created.children ?? []), ...children], isExpanded: true };
+        state = {
+            ...state,
+            collections: state.collections.map((c) => (c.id === created.id ? withChildren : c))
+        };
+        emit();
+
+        appStore.showToast(
+            failed ? `Added "${name}". ${failed} of ${requests.length} requests failed to save.` : `Added "${name}" with ${children.length} requests`,
+            failed ? 'error' : 'success'
+        );
+        return withChildren;
+    },
+
     async deleteCollection(id: string) {
         try {
             await apiService.deleteCollection(id);
