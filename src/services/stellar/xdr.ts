@@ -56,6 +56,13 @@ const normalizeNative = (value: unknown, depth = 0): unknown => {
 
 /** A contract value (ScVal) as a native JSON value, or its structural form if conversion fails. */
 const scValToJson = (sdk: StellarSdk, scVal: unknown, depth: number): unknown => {
+    // Ledger-key-only values have no native form (scValToNative gives undefined).
+    if (isUnion(scVal)) {
+        const kind = scVal.switch();
+        const name = typeof kind === 'number' ? null : kind.name;
+        if (name === 'scvLedgerKeyContractInstance') return 'ContractInstance';
+        if (name === 'scvLedgerKeyNonce') return { nonce: structural(sdk, scVal.value(), depth + 1) };
+    }
     try {
         return normalizeNative(sdk.scValToNative(scVal as never), depth);
     } catch {
@@ -293,4 +300,149 @@ export const summarizeStellarEnvelope = (sdk: StellarSdk, base64: string, networ
         signatures: parsed.signatures.length,
         operations
     };
+};
+
+// ── Simulation debugger ──────────────────────────────────────────────────────
+// Readable forms of what `simulateTransaction` reports. Inputs are the SDK's
+// parsed XDR objects; outputs are plain JSON.
+
+type Xdr = StellarSdk['xdr'];
+
+export interface SorobanEventSummary {
+    /** contract | system | diagnostic */
+    type: string;
+    contract: string | null;
+    topics: unknown[];
+    data: unknown;
+    /** False for events from a call that later failed (they would not be emitted on-chain). */
+    inSuccessfulContractCall: boolean;
+}
+
+export const summarizeDiagnosticEvent = (sdk: StellarSdk, diagnostic: InstanceType<Xdr['DiagnosticEvent']>): SorobanEventSummary => {
+    const event = diagnostic.event();
+    const id = event.contractId();
+    const body = event.body().v0();
+    return {
+        type: event.type().name,
+        contract: id ? sdk.StrKey.encodeContract(Buffer.from(id as unknown as Uint8Array)) : null,
+        topics: body.topics().map((t) => scValToJson(sdk, t, 0)),
+        data: scValToJson(sdk, body.data(), 0),
+        inSuccessfulContractCall: diagnostic.inSuccessfulContractCall()
+    };
+};
+
+export interface SorobanInvocationNode {
+    /** For contract calls. */
+    contract?: string;
+    function?: string;
+    args?: unknown[];
+    /** For anything else (contract creation): its kind and fields. */
+    type?: string;
+    details?: unknown;
+    calls: SorobanInvocationNode[];
+}
+
+const invocationNode = (sdk: StellarSdk, invocation: InstanceType<Xdr['SorobanAuthorizedInvocation']>): SorobanInvocationNode => {
+    const fn = invocation.function();
+    const calls = invocation.subInvocations().map((sub) => invocationNode(sdk, sub));
+    if (fn.switch().name === 'sorobanAuthorizedFunctionTypeContractFn') {
+        const call = fn.contractFn();
+        return {
+            contract: String(structural(sdk, call.contractAddress(), 0)),
+            function: call.functionName().toString(),
+            args: call.args().map((a) => scValToJson(sdk, a, 0)),
+            calls
+        };
+    }
+    return { type: fn.switch().name, details: structural(sdk, fn.value(), 0), calls };
+};
+
+export interface SorobanAuthSummary {
+    /** Who must sign: "source account", or the address that signs its own entry. */
+    signer: string;
+    invocation: SorobanInvocationNode;
+}
+
+export const summarizeAuthEntry = (sdk: StellarSdk, entry: InstanceType<Xdr['SorobanAuthorizationEntry']>): SorobanAuthSummary => {
+    const credentials = entry.credentials();
+    return {
+        signer:
+            credentials.switch().name === 'sorobanCredentialsAddress'
+                ? String(structural(sdk, credentials.address().address(), 0))
+                : 'source account',
+        invocation: invocationNode(sdk, entry.rootInvocation())
+    };
+};
+
+export interface SorobanResourceSummary {
+    instructions: number;
+    diskReadBytes: number;
+    writeBytes: number;
+    /** Stroops. */
+    resourceFee: string;
+    footprint: { readOnly: unknown[]; readWrite: unknown[] };
+}
+
+export const summarizeSorobanData = (sdk: StellarSdk, data: InstanceType<Xdr['SorobanTransactionData']>): SorobanResourceSummary => {
+    const resources = data.resources();
+    const footprint = resources.footprint();
+    // Protocol 23 renamed readBytes to diskReadBytes.
+    const r = resources as unknown as { diskReadBytes?: () => number; readBytes?: () => number };
+    return {
+        instructions: resources.instructions(),
+        diskReadBytes: r.diskReadBytes?.() ?? r.readBytes?.() ?? 0,
+        writeBytes: resources.writeBytes(),
+        resourceFee: data.resourceFee().toString(),
+        footprint: {
+            readOnly: footprint.readOnly().map((k) => structural(sdk, k, 0)),
+            readWrite: footprint.readWrite().map((k) => structural(sdk, k, 0))
+        }
+    };
+};
+
+export interface SorobanStateChange {
+    type: string;
+    key: unknown;
+    before: unknown;
+    after: unknown;
+}
+
+const CHANGE_TYPES: Record<number, string> = { 1: 'created', 2: 'updated', 3: 'deleted' };
+
+export const summarizeStateChange = (
+    sdk: StellarSdk,
+    change: { type: number | string; key: unknown; before: unknown; after: unknown }
+): SorobanStateChange => ({
+    type: typeof change.type === 'number' ? (CHANGE_TYPES[change.type] ?? String(change.type)) : change.type,
+    key: structural(sdk, change.key, 0),
+    before: change.before ? structural(sdk, change.before, 0) : null,
+    after: change.after ? structural(sdk, change.after, 0) : null
+});
+
+const short = (s: string) => (s.length > 14 ? `${s.slice(0, 6)}…${s.slice(-4)}` : s);
+const brief = (v: unknown): string => {
+    const text = typeof v === 'string' ? v : JSON.stringify(v);
+    return /^[GCM][A-Z2-7]{55}$/.test(text) ? short(text) : text.length > 48 ? `${text.slice(0, 45)}…` : text;
+};
+
+/** One line per event for review screens: "CDLZFC…CYSC transfer, GA…, GB… → 7". */
+export const describeSorobanEvent = (e: SorobanEventSummary): string =>
+    `${e.contract ? short(e.contract) : e.type} ${e.topics.map(brief).join(', ')} → ${brief(e.data)}`;
+
+/** One line per ledger key: "contract data CDLZFC…CYSC Balance(GA…) (persistent)". */
+export const describeLedgerKey = (key: unknown): string => {
+    const k = key as Record<string, unknown> | null;
+    if (!k || typeof k !== 'object') return String(key);
+    switch (k.type) {
+        case 'contractData':
+            return `contract data ${short(String(k.contract))} ${brief(k.key)}${k.durability ? ` (${String(k.durability)})` : ''}`;
+        case 'contractCode':
+            return `contract code ${short(String(k.hash))}`;
+        case 'account':
+            return `account ${short(String(k.accountId))}`;
+        case 'trustline':
+            return `trustline ${short(String(k.accountId))} ${brief(k.asset)}`;
+        default:
+            return `${String(k.type)} ${brief(k)}`;
+    }
 };

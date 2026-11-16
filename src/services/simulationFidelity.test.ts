@@ -97,6 +97,38 @@ describe('summarizeSimulation: hide what the chain does not report', () => {
         expect(hidden.balanceChanges).toBeUndefined();
     });
 
+    it('Stellar lists footprint, events, state changes and auth from the simulation', () => {
+        const summary = summarizeSimulation(
+            req('stellar'),
+            ok({
+                minResourceFee: '1000',
+                source: 'GSRC',
+                sourceNote: 'Simulated from a throwaway account; connect a wallet to simulate as yourself.',
+                resources: {
+                    instructions: 1,
+                    diskReadBytes: 0,
+                    writeBytes: 0,
+                    resourceFee: '1000',
+                    footprint: { readOnly: [{ type: 'contractCode', hash: 'abcdef0123456789abcdef' }], readWrite: [] }
+                },
+                auth: [{ signer: 'source account', invocation: { contract: 'CTOKEN', function: 'transfer', args: [], calls: [] } }],
+                events: [{ type: 'contract', contract: 'CTOKEN', topics: ['transfer'], data: '7', inSuccessfulContractCall: false }],
+                stateChanges: [{ type: 'updated', key: { type: 'account', accountId: 'GSRC' }, before: null, after: null }]
+            })
+        );
+        expect(summary.touched).toEqual(['read: contract code abcdef…cdef']);
+        expect(summary.events).toEqual(['CTOKEN transfer → 7 (failed call)']);
+        expect(summary.stateDiff).toEqual(['updated: account GSRC']);
+        expect(summary.warnings).toEqual([
+            'Simulated from a throwaway account; connect a wallet to simulate as yourself.',
+            'Needs authorization from the source account for CTOKEN.transfer.'
+        ]);
+    });
+
+    it('Stellar without state changes leaves stateDiff undefined', () => {
+        expect(summarizeSimulation(req('stellar'), ok({ minResourceFee: '1' })).stateDiff).toBeUndefined();
+    });
+
     it('EVM: no logs and no state diff yields no such sections', () => {
         const summary = summarizeSimulation(
             req('evm', { evmTxParams: { chainId: 1, to: '0x0000000000000000000000000000000000000001', value: '0', functionSignature: '', args: [], data: '0x' } }),

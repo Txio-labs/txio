@@ -50,11 +50,16 @@ export const toStellarScVal = async (arg: StellarArg) => {
     }
 };
 
-const buildStellarTx = async (p: StellarTxParams, source: string, network: Network) => {
-    const { rpc, Contract, TransactionBuilder, BASE_FEE } = await loadStellar();
+/**
+ * `placeholderAccount`: simulate from an account that need not exist on-chain
+ * (sequence 0). Soroban simulation does not check the source account, so
+ * read-only calls can be simulated without a wallet.
+ */
+const buildStellarTx = async (p: StellarTxParams, source: string, network: Network, placeholderAccount = false) => {
+    const { rpc, Account, Contract, TransactionBuilder, BASE_FEE } = await loadStellar();
     const server = new rpc.Server(resolveChainRpcUrl('stellar', network));
     const networkPassphrase = await stellarPassphrase(network);
-    const account = await server.getAccount(source);
+    const account = placeholderAccount ? new Account(source, '0') : await server.getAccount(source);
     const scArgs = await Promise.all(p.args.map(toStellarScVal));
     const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase })
         .addOperation(new Contract(p.contractId.trim()).call(p.function.trim(), ...scArgs))
@@ -118,27 +123,53 @@ export const extractSorobanTransfers = (
     return transfers;
 };
 
-const simulateStellar = async (p: StellarTxParams, source: string, network: Network): Promise<TxResult> => {
-    const { rpc, scValToNative } = await loadStellar();
+/**
+ * Simulates a contract call and reports everything Soroban RPC returns, in
+ * readable form: return value, resource usage and footprint, the auth tree
+ * each signer must approve, every event, and ledger state changes.
+ * `source` null: simulate from a throwaway account (read-only calls only;
+ * calls that need the caller's authorization will fail).
+ */
+const simulateStellar = async (p: StellarTxParams, source: string | null, network: Network): Promise<TxResult> => {
+    const sdk = await loadStellar();
+    const { rpc, scValToNative, StrKey } = sdk;
+    const xdrHelpers = await import('../stellar/xdr');
     const start = performance.now();
-    const { server, tx } = await buildStellarTx(p, source, network);
-    const sim = await server.simulateTransaction(tx);
+    const from = source ?? sdk.Keypair.random().publicKey();
+    let built: Awaited<ReturnType<typeof buildStellarTx>>;
+    try {
+        built = await buildStellarTx(p, from, network, source === null);
+    } catch (err) {
+        // A connected but unfunded wallet: simulation still works from a placeholder account.
+        if (source === null || !(err instanceof Error) || !/not found/i.test(err.message)) throw err;
+        built = await buildStellarTx(p, from, network, true);
+    }
+    const sim = await built.server.simulateTransaction(built.tx);
     if (rpc.Api.isSimulationError(sim)) {
+        // The RPC error text already carries the host's event log (newest first).
         throw new Error(`Simulation failed: ${sim.error}`);
     }
     const retval = sim.result?.retval;
-    const { StrKey } = await loadStellar();
     const transfers = extractSorobanTransfers(
         sim.events as unknown as SorobanEventLike[],
         scValToNative as (value: never) => unknown,
         (id) => StrKey.encodeContract(Buffer.from(id))
     );
+    const stateChanges = (sim as { stateChanges?: { type: number | string; key: unknown; before: unknown; after: unknown }[] }).stateChanges;
     return {
         result: toJsonSafe({
             returnValue: retval ? scValToNative(retval) : null,
             minResourceFee: sim.minResourceFee,
             latestLedger: sim.latestLedger,
-            source,
+            source: from,
+            ...(source === null ? { sourceNote: 'Simulated from a throwaway account; connect a wallet to simulate as yourself.' } : {}),
+            ...(rpc.Api.isSimulationRestore(sim)
+                ? { restoreRequired: { note: 'Archived ledger entries must be restored before this call can run.', minResourceFee: sim.restorePreamble.minResourceFee } }
+                : {}),
+            resources: xdrHelpers.summarizeSorobanData(sdk, sim.transactionData.build()),
+            auth: (sim.result?.auth ?? []).map((entry) => xdrHelpers.summarizeAuthEntry(sdk, entry)),
+            events: sim.events.map((e) => xdrHelpers.summarizeDiagnosticEvent(sdk, e)),
+            ...(stateChanges ? { stateChanges: stateChanges.map((c) => xdrHelpers.summarizeStateChange(sdk, c)) } : {}),
             // Present only when the simulation emitted transfer events.
             ...(transfers.length > 0 ? { transfers } : {})
         }),
@@ -270,14 +301,8 @@ export class StellarAdapter implements ChainAdapter {
     }
 
     async simulate(request: RequestItem, ctx: TxContext): Promise<TxResult> {
+        // No wallet: read-only calls still simulate, from a throwaway source account.
         const signer = ctx.wallet && ctx.wallet.family === 'stellar' ? ctx.wallet.address : null;
-        if (!signer) {
-            throw new ChainExecutionError('Connect a Stellar wallet: Soroban simulation needs an existing source account.', {
-                code: 'MISSING_WALLET',
-                chain: this.chain,
-                stage: 'simulate'
-            });
-        }
         try {
             return await simulateStellar(request.stellarTxParams!, signer, ctx.network);
         } catch (err) {

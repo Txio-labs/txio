@@ -1,9 +1,20 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import * as sdk from '@stellar/stellar-sdk';
-import { decodeStellarRpcResult, decodeStellarXdr, detectStellarXdrType, summarizeStellarEnvelope } from './xdr';
+import {
+    decodeStellarRpcResult,
+    decodeStellarXdr,
+    describeLedgerKey,
+    describeSorobanEvent,
+    detectStellarXdrType,
+    summarizeAuthEntry,
+    summarizeDiagnosticEvent,
+    summarizeSorobanData,
+    summarizeStateChange,
+    summarizeStellarEnvelope
+} from './xdr';
 
-const { Account, Address, Contract, Keypair, Networks, TransactionBuilder, nativeToScVal, xdr } = sdk;
+const { Account, Address, Contract, Keypair, Networks, SorobanDataBuilder, StrKey, TransactionBuilder, nativeToScVal, xdr } = sdk;
 
 const CONTRACT = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC';
 // Deterministic test keys (never funded anywhere).
@@ -117,5 +128,98 @@ describe('decodeStellarRpcResult', () => {
 
     it('returns null when nothing in the result is XDR', () => {
         expect(decodeStellarRpcResult(sdk, { status: 'healthy', latestLedger: 100 })).toBeNull();
+    });
+});
+
+describe('simulation debugger helpers', () => {
+    const balanceKey = xdr.LedgerKey.contractData(
+        new xdr.LedgerKeyContractData({
+            contract: new Address(CONTRACT).toScAddress(),
+            key: nativeToScVal('Balance', { type: 'symbol' }),
+            durability: xdr.ContractDataDurability.persistent()
+        })
+    );
+    const accountKey = xdr.LedgerKey.account(new xdr.LedgerKeyAccount({ accountId: sender.xdrAccountId() }));
+
+    it('summarizes resources and the ledger footprint', () => {
+        const data = new SorobanDataBuilder()
+            .setResources(1_500_000, 2_048, 512)
+            .setResourceFee(98_765)
+            .setReadOnly([accountKey])
+            .setReadWrite([balanceKey])
+            .build();
+        const summary = summarizeSorobanData(sdk, data);
+        expect(summary).toMatchObject({ instructions: 1_500_000, diskReadBytes: 2_048, writeBytes: 512, resourceFee: '98765' });
+        expect(summary.footprint.readOnly.map(describeLedgerKey)).toEqual([`account ${sender.publicKey().slice(0, 6)}…${sender.publicKey().slice(-4)}`]);
+        expect(summary.footprint.readWrite.map(describeLedgerKey)).toEqual(['contract data CDLZFC…CYSC Balance (persistent)']);
+    });
+
+    it('summarizes an auth entry as signer plus invocation tree', () => {
+        const contractFn = (fn: string, args: InstanceType<typeof xdr.ScVal>[]) =>
+            xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeContractFn(
+                new xdr.InvokeContractArgs({ contractAddress: new Address(CONTRACT).toScAddress(), functionName: fn, args })
+            );
+        const entry = new xdr.SorobanAuthorizationEntry({
+            credentials: xdr.SorobanCredentials.sorobanCredentialsSourceAccount(),
+            rootInvocation: new xdr.SorobanAuthorizedInvocation({
+                function: contractFn('swap', [nativeToScVal(5, { type: 'u32' })]),
+                subInvocations: [
+                    new xdr.SorobanAuthorizedInvocation({
+                        function: contractFn('transfer', [new Address(sender.publicKey()).toScVal()]),
+                        subInvocations: []
+                    })
+                ]
+            })
+        });
+        expect(summarizeAuthEntry(sdk, entry)).toEqual({
+            signer: 'source account',
+            invocation: {
+                contract: CONTRACT,
+                function: 'swap',
+                args: [5],
+                calls: [{ contract: CONTRACT, function: 'transfer', args: [sender.publicKey()], calls: [] }]
+            }
+        });
+    });
+
+    it('summarizes a contract event and flags events from failed calls', () => {
+        const diagnostic = new xdr.DiagnosticEvent({
+            inSuccessfulContractCall: false,
+            event: new xdr.ContractEvent({
+                ext: new xdr.ExtensionPoint(0),
+                contractId: StrKey.decodeContract(CONTRACT) as never,
+                type: xdr.ContractEventType.contract(),
+                body: new xdr.ContractEventBody(
+                    0,
+                    new xdr.ContractEventV0({
+                        topics: [nativeToScVal('transfer', { type: 'symbol' })],
+                        data: nativeToScVal(7n, { type: 'i128' })
+                    })
+                )
+            })
+        });
+        const summary = summarizeDiagnosticEvent(sdk, diagnostic);
+        expect(summary).toEqual({ type: 'contract', contract: CONTRACT, topics: ['transfer'], data: '7', inSuccessfulContractCall: false });
+        expect(describeSorobanEvent(summary)).toBe('CDLZFC…CYSC transfer → 7');
+    });
+
+    it('names the contract instance key instead of showing null', () => {
+        const instanceKey = xdr.LedgerKey.contractData(
+            new xdr.LedgerKeyContractData({
+                contract: new Address(CONTRACT).toScAddress(),
+                key: xdr.ScVal.scvLedgerKeyContractInstance(),
+                durability: xdr.ContractDataDurability.persistent()
+            })
+        );
+        const data = new SorobanDataBuilder().setReadOnly([instanceKey]).build();
+        expect(summarizeSorobanData(sdk, data).footprint.readOnly.map(describeLedgerKey)).toEqual([
+            'contract data CDLZFC…CYSC ContractInstance (persistent)'
+        ]);
+    });
+
+    it('names state change types and decodes keys', () => {
+        const change = summarizeStateChange(sdk, { type: 2, key: balanceKey, before: null, after: null });
+        expect(change.type).toBe('updated');
+        expect(describeLedgerKey(change.key)).toBe('contract data CDLZFC…CYSC Balance (persistent)');
     });
 });

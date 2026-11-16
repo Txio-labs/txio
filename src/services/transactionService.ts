@@ -9,6 +9,14 @@ import { stellarAdapter, DEFAULT_STELLAR_TX, toStellarScVal } from './adapters/s
 import { aptosAdapter, DEFAULT_APTOS_TX } from './adapters/aptosAdapter';
 import { starknetAdapter, newStarknetTxParams } from './adapters/starknetAdapter';
 import { resolveRequestNames } from './nameResolution';
+import {
+    describeLedgerKey,
+    describeSorobanEvent,
+    type SorobanAuthSummary,
+    type SorobanEventSummary,
+    type SorobanResourceSummary,
+    type SorobanStateChange
+} from './stellar/xdr';
 
 /**
  * One entry point for building, simulating and executing transactions on
@@ -517,13 +525,26 @@ export const summarizeSimulation = (
         };
     }
 
-    // stellar — a Soroban simulation returns a resource fee, a return value and
-    // contract events. Token transfers come from `transfer` events involving the
+    // stellar — a Soroban simulation returns a resource fee, a return value,
+    // the ledger footprint, auth entries, every event and (newer RPCs) state
+    // changes. Token transfers come from `transfer` events involving the
     // source account; a failure is surfaced instead of a fabricated diff.
     if (!success) {
         warnings.push('Simulation failed — this call would revert on-chain.');
     }
-    const stellar = txResult.result as { minResourceFee?: string; source?: string; transfers?: StellarTransferEvent[] } | undefined;
+    const stellar = txResult.result as
+        | {
+              minResourceFee?: string;
+              source?: string;
+              sourceNote?: string;
+              restoreRequired?: { note: string; minResourceFee?: string };
+              transfers?: StellarTransferEvent[];
+              resources?: SorobanResourceSummary;
+              auth?: SorobanAuthSummary[];
+              events?: SorobanEventSummary[];
+              stateChanges?: SorobanStateChange[];
+          }
+        | undefined;
     const fee = stellar?.minResourceFee ? `${formatBaseUnits(stellar.minResourceFee, 7)} XLM` : null;
     const account = stellar?.source;
     const balanceChanges: SimulationBalanceChange[] | undefined =
@@ -537,13 +558,38 @@ export const summarizeSimulation = (
                       direction: t.from === account ? ('out' as const) : ('in' as const)
                   }))
             : undefined;
+    if (stellar?.sourceNote) warnings.push(stellar.sourceNote);
+    if (stellar?.restoreRequired) warnings.push(stellar.restoreRequired.note);
+    for (const entry of stellar?.auth ?? []) {
+        const root = entry.invocation;
+        const call = root.function ? `${short(root.contract ?? '')}.${root.function}` : (root.type ?? 'a contract operation');
+        warnings.push(`Needs authorization from ${entry.signer === 'source account' ? 'the source account' : short(entry.signer)} for ${call}.`);
+    }
+    const footprint = stellar?.resources?.footprint;
+    const touched = footprint
+        ? [
+              ...footprint.readWrite.map((k) => `write: ${describeLedgerKey(k)}`),
+              ...footprint.readOnly.map((k) => `read: ${describeLedgerKey(k)}`)
+          ].slice(0, MAX_LIST)
+        : [];
+    const events = (stellar?.events ?? [])
+        .slice(0, MAX_LIST)
+        .map((e) => `${describeSorobanEvent(e)}${e.inSuccessfulContractCall ? '' : ' (failed call)'}`);
+    const stateDiff = stellar?.stateChanges
+        ? stellar.stateChanges.slice(0, MAX_LIST).map((c) => `${c.type}: ${describeLedgerKey(c.key)}`)
+        : undefined;
     return {
         ...base,
         balanceChanges: balanceChanges && balanceChanges.length > 0 ? balanceChanges : undefined,
         fee,
-        touched: [],
-        events: [],
-        sources: { balanceChanges: balanceChanges && balanceChanges.length > 0 ? 'contract transfer events (token base units)' : undefined },
+        touched,
+        events,
+        ...(stateDiff ? { stateDiff } : {}),
+        sources: {
+            balanceChanges: balanceChanges && balanceChanges.length > 0 ? 'contract transfer events (token base units)' : undefined,
+            events: stellar?.events ? 'Soroban simulation events (contract and diagnostic)' : undefined,
+            stateDiff: stateDiff ? 'Soroban simulation state changes' : undefined
+        },
         warnings
     };
 };
