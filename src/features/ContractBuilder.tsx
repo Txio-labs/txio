@@ -518,10 +518,46 @@ export const ContractBuilder: React.FC = () => {
             ? `Connect a ${config.label} wallet to deploy`
             : 'Compile without errors first';
 
+    // Shared by the Properties panel and the compact strip shown when the
+    // builder is too narrow for side panels.
+    const propertiesFields = (
+        <div className="space-y-4">
+            <label className="block space-y-1">
+                <span className="text-[12px] font-semibold text-fg-muted uppercase">Contract Name</span>
+                <input
+                    type="text"
+                    value={contractName}
+                    onChange={(e) => setContractName(e.target.value)}
+                    className="w-full bg-hover border border-line rounded-[10px] px-4 py-2 text-sm font-semibold focus:border-line-strong transition-all outline-none text-fg"
+                    placeholder="Enter contract name"
+                />
+            </label>
+            <div className="space-y-1">
+                <label className="block space-y-1">
+                    <span className="text-[12px] font-semibold text-fg-muted uppercase">{config.editionLabel}</span>
+                    <select
+                        value={edition}
+                        onChange={(e) => setEdition(e.target.value)}
+                        className="w-full bg-hover border border-line rounded-[10px] px-4 py-2 text-sm font-semibold outline-none"
+                    >
+                        {config.editions.map((option) => (
+                            <option key={option}>{option}</option>
+                        ))}
+                    </select>
+                </label>
+                {config.compiler === 'browser' ? (
+                    <p className="text-[12px] text-fg-muted">Compiles with the built-in solc {config.compilerVersion} (optimizer on). This setting is not applied yet.</p>
+                ) : (
+                    <p className="text-[12px] text-fg-muted">Built on txio-compiler with {config.compilerVersion}.</p>
+                )}
+            </div>
+        </div>
+    );
+
     return (
-        <div className="h-full flex bg-surface text-fg-muted font-sans overflow-hidden">
+        <div className="@container/builder h-full flex bg-surface text-fg-muted font-sans overflow-hidden">
             {/* Module Sidebar */}
-            <aside className="w-64 border-r border-line flex flex-col bg-sunken">
+            <aside className="hidden @6xl/builder:flex w-64 shrink-0 border-r border-line flex-col bg-sunken">
                 <div className="p-6 space-y-6 flex-1 overflow-y-auto custom-scrollbar">
                     <div className="space-y-4">
                         <div className="text-[12px] font-semibold text-fg-muted px-2">Contract Templates</div>
@@ -564,7 +600,8 @@ export const ContractBuilder: React.FC = () => {
             <main className="@container flex-1 min-w-0 flex flex-col relative overflow-hidden">
                 {/* Header */}
                 <header className="min-h-14 py-2 border-b border-line flex flex-wrap items-center gap-x-4 gap-y-2 px-4 @3xl:px-6 bg-surface backdrop-blur-md relative z-10">
-                    <div className="flex-1 min-w-0 flex items-center gap-4">
+                    {/* flex-auto (not flex-1) so the title's own width counts toward wrapping: the controls drop to a second row before the title is squeezed away. */}
+                    <div className="flex-auto min-w-0 flex items-center gap-4">
                         <div className="flex items-center gap-2 min-w-0">
                             <div className="w-2 h-2 rounded-full bg-inverse shrink-0" />
                             <span className="text-sm font-semibold text-fg truncate">{contractName || 'Untitled_Contract'}.{config.fileExt}</span>
@@ -586,33 +623,53 @@ export const ContractBuilder: React.FC = () => {
                     </div>
 
                     <div className="ml-auto shrink-0 flex items-center gap-2 @3xl:gap-3">
-                        <button onClick={handleSave} aria-label="Save draft" className="shrink-0 whitespace-nowrap flex items-center gap-2 px-2.5 @3xl:px-4 py-1.5 rounded-lg bg-hover hover:bg-active text-xs font-semibold transition-all">
-                            <Save size={14} /> <span className="hidden @3xl:inline">Save draft</span>
+                        <button onClick={handleSave} aria-label="Save draft" className="shrink-0 whitespace-nowrap flex items-center gap-2 px-2.5 @min-[60rem]:px-4 py-1.5 rounded-lg bg-hover hover:bg-active text-xs font-semibold transition-all">
+                            <Save size={14} /> <span className="hidden @min-[60rem]:inline">Save draft</span>
                         </button>
                         <button
                             onClick={() => void handleCompile()}
                             disabled={!canCompile || isCompiling || !code.trim()}
                             title={canCompile ? 'Compile' : unavailableReason}
                             aria-label="Compile"
-                            className="shrink-0 whitespace-nowrap flex items-center gap-2 px-2.5 @3xl:px-4 py-1.5 rounded-lg bg-active hover:bg-active text-xs font-semibold transition-all disabled:opacity-40"
+                            className="shrink-0 whitespace-nowrap flex items-center gap-2 px-2.5 @min-[60rem]:px-4 py-1.5 rounded-lg bg-active hover:bg-active text-xs font-semibold transition-all disabled:opacity-40"
                         >
-                            {isCompiling ? <Loader2 size={14} className="animate-spin" /> : <Hammer size={14} />} <span className="hidden @3xl:inline">Compile</span>
+                            {isCompiling ? <Loader2 size={14} className="animate-spin" /> : <Hammer size={14} />} <span className="hidden @min-[60rem]:inline">Compile</span>
                         </button>
                         <button
                             onClick={isRemote ? () => void handleRemoteDeploy() : handleDeploy}
                             disabled={!canDeploy}
                             title={deployTitle ?? (isRemote ? 'Deploy' : 'Review deployment')}
                             aria-label={isRemote ? 'Deploy' : 'Review deployment'}
-                            className="shrink-0 whitespace-nowrap flex items-center gap-2 px-2.5 @3xl:px-4 py-1.5 rounded-lg bg-inverse text-on-inverse text-xs font-semibold shadow-card hover:bg-soft-purple transition-all disabled:opacity-40"
+                            className="shrink-0 whitespace-nowrap flex items-center gap-2 px-2.5 @min-[60rem]:px-4 py-1.5 rounded-lg bg-inverse text-on-inverse text-xs font-semibold shadow-card hover:bg-soft-purple transition-all disabled:opacity-40"
                         >
-                            {deploy.status === 'deploying' ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />} <span className="hidden @3xl:inline">{isRemote ? 'Deploy' : 'Review deployment'}</span>
+                            {deploy.status === 'deploying' ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />} <span className="hidden @min-[60rem]:inline">{isRemote ? 'Deploy' : 'Review deployment'}</span>
                         </button>
                     </div>
                 </header>
 
                 {/* Canvas Content */}
-                <div className="flex-1 p-12 relative z-10 overflow-y-auto custom-scrollbar">
+                <div className="flex-1 p-4 @3xl:p-8 @5xl:p-12 relative z-10 overflow-y-auto custom-scrollbar">
                     <div className="w-full space-y-6">
+                        {/* Side panels are hidden below 72rem; their controls live here instead. */}
+                        <section aria-label="Contract settings" className="@6xl/builder:hidden rounded-card border border-line bg-sunken p-4 space-y-4">
+                            <div className="grid gap-4 @xl:grid-cols-2">
+                                <div className="space-y-1">
+                                    <span className="text-[12px] font-semibold text-fg-muted uppercase">Template</span>
+                                    <Select
+                                        value={activeModule}
+                                        onChange={setActiveModule}
+                                        options={modules.map((m) => ({ label: m.name, value: m.id }))}
+                                        fullWidth
+                                        ariaLabel="Contract template"
+                                    />
+                                </div>
+                                <div className="flex items-center @xl:self-end @xl:pb-2.5 gap-2 text-[12px] font-semibold text-fg-muted">
+                                    <div className={`w-2 h-2 shrink-0 rounded-full ${canCompile ? 'bg-emerald-400' : 'bg-slate-600'}`} title={canCompile ? 'Compiler available' : unavailableReason} />
+                                    <span>{config.compilerLabel} {config.compilerVersion}</span>
+                                </div>
+                            </div>
+                            {propertiesFields}
+                        </section>
                         {!canCompile && (
                             <div role="note" className="p-4 rounded-[10px] bg-hover border border-line text-fg-subtle flex items-start gap-3 text-sm">
                                 <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
@@ -744,38 +801,10 @@ export const ContractBuilder: React.FC = () => {
             </main>
 
             {/* Inspector */}
-            <aside className="w-80 border-l border-line bg-sunken p-6 space-y-8">
+            <aside className="hidden @6xl/builder:block w-80 shrink-0 border-l border-line bg-sunken p-6 space-y-8 overflow-y-auto custom-scrollbar">
                 <div className="space-y-4">
                     <h3 className="text-xs font-semibold text-fg-subtle">Properties</h3>
-                    <div className="space-y-4">
-                        <div className="space-y-1">
-                            <label className="text-[12px] font-semibold text-fg-muted uppercase">Contract Name</label>
-                            <input
-                                type="text"
-                                value={contractName}
-                                onChange={(e) => setContractName(e.target.value)}
-                                className="w-full bg-hover border border-line rounded-[10px] px-4 py-2 text-sm font-semibold focus:border-line-strong transition-all outline-none text-fg"
-                                placeholder="Enter contract name"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-[12px] font-semibold text-fg-muted uppercase">{config.editionLabel}</label>
-                            <select
-                                value={edition}
-                                onChange={(e) => setEdition(e.target.value)}
-                                className="w-full bg-hover border border-line rounded-[10px] px-4 py-2 text-sm font-semibold outline-none"
-                            >
-                                {config.editions.map((option) => (
-                                    <option key={option}>{option}</option>
-                                ))}
-                            </select>
-                            {config.compiler === 'browser' ? (
-                                <p className="text-[12px] text-fg-muted">Compiles with the built-in solc {config.compilerVersion} (optimizer on). This setting is not applied yet.</p>
-                            ) : (
-                                <p className="text-[12px] text-fg-muted">Built on txio-compiler with {config.compilerVersion}.</p>
-                            )}
-                        </div>
-                    </div>
+                    {propertiesFields}
                 </div>
             </aside>
         </div>
