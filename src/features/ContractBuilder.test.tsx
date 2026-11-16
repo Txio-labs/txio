@@ -32,7 +32,8 @@ vi.mock('@/services/compile/solidity', async (orig) => ({
     compileSolidity: mocks.compile
 }));
 
-import { ContractBuilder } from './ContractBuilder';
+import { CONTRACT_BUILDER_CHAINS, ContractBuilder } from './ContractBuilder';
+import { CONTRACT_TEMPLATES } from './contractTemplates';
 import { evmAdapter } from '@/services/adapters/evmAdapter';
 import { DEFAULT_EVM_TX } from '@/services/adapters/evmAdapter';
 import { DEFAULT_MOVE_CALL } from '@/lib/constants';
@@ -185,6 +186,32 @@ describe('ContractBuilder', () => {
         expect(within(list()).getAllByRole('button', { name: /\.sol$/ })).toHaveLength(1);
         expect(source().value).toBe('contract Second {}');
         vi.restoreAllMocks();
+    });
+
+    it('opens a template as a new module without touching the current draft', () => {
+        localStorage.clear();
+        render(<ContractBuilder />);
+        const source = () => screen.getByLabelText('Contract source') as HTMLTextAreaElement;
+        fireEvent.change(source(), { target: { value: 'contract Mine {}' } });
+
+        fireEvent.click(screen.getByRole('button', { name: /new escrow module from the defi primitives template/i }));
+        expect(source().value).toBe(CONTRACT_TEMPLATES.evm!.defi.code);
+        const list = screen.getByRole('list', { name: /your ethereum \/ evm modules/i });
+        expect(within(list).getAllByRole('button', { name: /\.sol$/ }).map((b) => b.textContent)).toEqual(['AssetBridge.sol', 'Escrow.sol']);
+
+        fireEvent.click(within(list).getByRole('button', { name: 'AssetBridge.sol' }));
+        expect(source().value).toBe('contract Mine {}');
+        localStorage.clear();
+    });
+
+    it('has all four templates for every chain it offers', () => {
+        for (const chain of CONTRACT_BUILDER_CHAINS) {
+            const templates = CONTRACT_TEMPLATES[chain.id];
+            expect(templates, chain.id).toBeDefined();
+            for (const category of ['core', 'defi', 'identity', 'social'] as const) {
+                expect(templates![category].code.trim().length, `${chain.id} ${category}`).toBeGreaterThan(200);
+            }
+        }
     });
 
     it('opens drafts saved in the earlier one-per-chain format', () => {

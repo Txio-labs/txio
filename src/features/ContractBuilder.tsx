@@ -26,6 +26,7 @@ import {
 } from '@/services/compile/remote';
 import { deployAptos, deploySolana, deployStarknet, deployStellar, deploySui, newSolanaProgramKeypair, type DeployResult } from '@/services/deploy';
 import { useWallet } from '@/wallet/hooks/useWallet';
+import { CONTRACT_TEMPLATES, type TemplateCategory } from './contractTemplates';
 import type { WalletChainFamily } from '@/wallet/types';
 
 interface ChainContractConfig {
@@ -296,7 +297,6 @@ type ToolchainState = { status: 'loading' } | { status: 'ready'; chains: Toolcha
 
 export const ContractBuilder: React.FC = () => {
     const [chain, setChain] = useState<ChainId>('evm');
-    const [activeModule, setActiveModule] = useState('core');
 
     // Drafts are kept per chain so switching chains doesn't clobber what you
     // wrote for another one; each chain can hold several (Your Modules).
@@ -417,12 +417,23 @@ export const ContractBuilder: React.FC = () => {
         setDeployError(null);
     };
 
-    const modules = [
+    const templateGroups: { id: TemplateCategory; name: string; icon: typeof Box }[] = [
         { id: 'core', name: 'Standard Assets', icon: Box },
         { id: 'defi', name: 'DeFi Primitives', icon: Zap },
         { id: 'identity', name: 'Identity & Auth', icon: Shield },
         { id: 'social', name: 'Social Graph', icon: Share2 }
     ];
+    const chainTemplates = CONTRACT_TEMPLATES[chain];
+    // A template opens as a new module, so it never overwrites a draft.
+    const newModuleFromTemplate = (category: string) => {
+        const template = chainTemplates?.[category as TemplateCategory];
+        if (!template) return;
+        const draft: ContractDraft = { id: newDraftId(), name: uniqueDraftName(template.name, chainDrafts), code: template.code };
+        changeModules({
+            modulesByChain: { ...modulesByChain, [chain]: [...chainDrafts, draft] },
+            activeIdByChain: { ...activeIdByChain, [chain]: draft.id }
+        });
+    };
 
     // Drafts are kept in this browser only; nothing is uploaded.
     const handleSave = () => {
@@ -656,20 +667,25 @@ export const ContractBuilder: React.FC = () => {
                     <div className="space-y-4">
                         <div className="text-[12px] font-semibold text-fg-muted px-2">Contract Templates</div>
                         <div className="space-y-1">
-                            {modules.map(mod => (
-                                <button
-                                    key={mod.id}
-                                    onClick={() => setActiveModule(mod.id)}
-                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-[10px] text-sm font-semibold transition-all ${
-                                        activeModule === mod.id
-                                        ? 'bg-inverse text-on-inverse shadow-pop'
-                                        : 'text-fg-subtle hover:bg-hover'
-                                    }`}
-                                >
-                                    <mod.icon size={16} />
-                                    <span>{mod.name}</span>
-                                </button>
-                            ))}
+                            {chainTemplates && templateGroups.map((group) => {
+                                const template = chainTemplates[group.id];
+                                return (
+                                    <button
+                                        key={group.id}
+                                        type="button"
+                                        onClick={() => newModuleFromTemplate(group.id)}
+                                        title={`${template.summary} Opens as a new module.`}
+                                        aria-label={`New ${template.name} module from the ${group.name} template`}
+                                        className="w-full flex items-start gap-3 px-3 py-2 rounded-[10px] text-left transition-all text-fg-subtle hover:bg-hover hover:text-fg"
+                                    >
+                                        <group.icon size={16} className="mt-0.5 shrink-0" />
+                                        <span className="min-w-0">
+                                            <span className="block text-sm font-semibold">{group.name}</span>
+                                            <span className="block text-[12px] text-fg-muted truncate">{template.name}.{config.fileExt}</span>
+                                        </span>
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 
@@ -800,9 +816,13 @@ export const ContractBuilder: React.FC = () => {
                                 <div className="space-y-1">
                                     <span className="text-[12px] font-semibold text-fg-muted uppercase">Template</span>
                                     <Select
-                                        value={activeModule}
-                                        onChange={setActiveModule}
-                                        options={modules.map((m) => ({ label: m.name, value: m.id }))}
+                                        value=""
+                                        onChange={newModuleFromTemplate}
+                                        options={templateGroups.map((g) => ({
+                                            label: `${g.name}: ${chainTemplates?.[g.id].name ?? ''}`,
+                                            value: g.id
+                                        }))}
+                                        placeholder="Start a module from a template"
                                         fullWidth
                                         ariaLabel="Contract template"
                                     />
