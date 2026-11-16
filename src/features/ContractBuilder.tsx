@@ -561,48 +561,51 @@ export const ContractBuilder: React.FC = () => {
             </aside>
 
             {/* Visual Canvas */}
-            <main className="flex-1 flex flex-col relative overflow-hidden">
+            <main className="@container flex-1 min-w-0 flex flex-col relative overflow-hidden">
                 {/* Header */}
-                <header className="h-14 border-b border-line flex items-center justify-between px-6 bg-surface backdrop-blur-md relative z-10">
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-inverse" />
-                            <span className="text-sm font-semibold text-fg">{contractName || 'Untitled_Contract'}.{config.fileExt}</span>
-                            <span className="text-[12px] font-semibold px-1.5 py-0.5 rounded border border-amber-500/40 text-amber-600 dark:text-amber-400">Experimental</span>
+                <header className="min-h-14 py-2 border-b border-line flex flex-wrap items-center gap-x-4 gap-y-2 px-4 @3xl:px-6 bg-surface backdrop-blur-md relative z-10">
+                    <div className="flex-1 min-w-0 flex items-center gap-4">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-2 h-2 rounded-full bg-inverse shrink-0" />
+                            <span className="text-sm font-semibold text-fg truncate">{contractName || 'Untitled_Contract'}.{config.fileExt}</span>
+                            <span className="shrink-0 text-[12px] font-semibold px-1.5 py-0.5 rounded border border-amber-500/40 text-amber-600 dark:text-amber-400">Experimental</span>
                         </div>
-                        {saveStatus === 'success' && <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><Check size={12}/> Saved in this browser</span>}
-                        {saveStatus === 'failed' && <span className="text-xs font-semibold text-rose-600 dark:text-rose-400">Could not save</span>}
+                        {saveStatus === 'success' && <span className="min-w-0 whitespace-nowrap text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 overflow-hidden"><Check size={12} className="shrink-0"/> <span className="truncate">Saved in this browser</span></span>}
+                        {saveStatus === 'failed' && <span className="min-w-0 truncate text-xs font-semibold text-rose-600 dark:text-rose-400">Could not save</span>}
                     </div>
 
-                    <div className="absolute left-1/2 -translate-x-1/2 w-56">
+                    <div className="w-56 min-w-[9rem] shrink">
                         <Select
                             value={chain}
                             onChange={(value) => handleChainChange(value as ChainId)}
                             options={CONTRACT_BUILDER_CHAINS.map((c) => ({ label: c.label, value: c.id }))}
                             fullWidth
                             variant="glass"
+                            ariaLabel="Target chain"
                         />
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <button onClick={handleSave} className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-hover hover:bg-active text-xs font-semibold transition-all">
-                            <Save size={14} /> Save draft
+                    <div className="ml-auto shrink-0 flex items-center gap-2 @3xl:gap-3">
+                        <button onClick={handleSave} aria-label="Save draft" className="shrink-0 whitespace-nowrap flex items-center gap-2 px-2.5 @3xl:px-4 py-1.5 rounded-lg bg-hover hover:bg-active text-xs font-semibold transition-all">
+                            <Save size={14} /> <span className="hidden @3xl:inline">Save draft</span>
                         </button>
                         <button
                             onClick={() => void handleCompile()}
                             disabled={!canCompile || isCompiling || !code.trim()}
-                            title={canCompile ? undefined : unavailableReason}
-                            className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-active hover:bg-active text-xs font-semibold transition-all disabled:opacity-40"
+                            title={canCompile ? 'Compile' : unavailableReason}
+                            aria-label="Compile"
+                            className="shrink-0 whitespace-nowrap flex items-center gap-2 px-2.5 @3xl:px-4 py-1.5 rounded-lg bg-active hover:bg-active text-xs font-semibold transition-all disabled:opacity-40"
                         >
-                            {isCompiling ? <Loader2 size={14} className="animate-spin" /> : <Hammer size={14} />} Compile
+                            {isCompiling ? <Loader2 size={14} className="animate-spin" /> : <Hammer size={14} />} <span className="hidden @3xl:inline">Compile</span>
                         </button>
                         <button
                             onClick={isRemote ? () => void handleRemoteDeploy() : handleDeploy}
                             disabled={!canDeploy}
-                            title={deployTitle}
-                            className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-inverse text-on-inverse text-xs font-semibold shadow-card shadow-card hover:bg-soft-purple transition-all disabled:opacity-40"
+                            title={deployTitle ?? (isRemote ? 'Deploy' : 'Review deployment')}
+                            aria-label={isRemote ? 'Deploy' : 'Review deployment'}
+                            className="shrink-0 whitespace-nowrap flex items-center gap-2 px-2.5 @3xl:px-4 py-1.5 rounded-lg bg-inverse text-on-inverse text-xs font-semibold shadow-card hover:bg-soft-purple transition-all disabled:opacity-40"
                         >
-                            {deploy.status === 'deploying' ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />} {isRemote ? 'Deploy' : 'Review deployment'}
+                            {deploy.status === 'deploying' ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />} <span className="hidden @3xl:inline">{isRemote ? 'Deploy' : 'Review deployment'}</span>
                         </button>
                     </div>
                 </header>
