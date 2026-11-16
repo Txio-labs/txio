@@ -121,17 +121,15 @@ export const LandingPage: React.FC = () => {
             <section className="relative overflow-hidden">
                 <div className="absolute inset-0 grid-lines mask-radial opacity-70 pointer-events-none" aria-hidden />
                 <div className="relative w-full px-5 md:px-10 2xl:px-16 pt-14 md:pt-24 text-center">
-                    <a
+                    <Link
                         data-hero="1"
                         href={DESKTOP_DOWNLOAD_URL}
-                        target="_blank"
-                        rel="noreferrer"
                         className="group inline-flex items-center gap-2 h-8 pl-1 pr-3 rounded-full border border-line bg-surface shadow-card text-xs text-fg-muted hover:border-line-strong transition-colors"
                     >
                         <span className="h-6 px-2 inline-flex items-center rounded-full bg-inverse text-on-inverse text-[12px] font-medium">New</span>
                         Txio Desktop for Linux, macOS and Windows
                         <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
-                    </a>
+                    </Link>
 
                     <h1 data-hero="2" className="mt-7 mx-auto max-w-4xl text-[44px] sm:text-[60px] md:text-[80px] font-semibold tracking-[-0.055em] leading-[0.95] text-fg text-balance">
                         {splitWords('One console for every chain.').map(({ word, key }, i) => (
@@ -333,7 +331,7 @@ export const LandingPage: React.FC = () => {
                         icon={Monitor}
                         title="Desktop"
                         body="A native Rust app for Linux, macOS and Windows that updates itself."
-                        cta={{ label: 'Download', href: DESKTOP_DOWNLOAD_URL, external: true }}
+                        cta={{ label: 'Download', href: DESKTOP_DOWNLOAD_URL }}
                     />
                     <Surface
                         icon={Terminal}

@@ -63,6 +63,9 @@ const workspacePathToTab: Partial<
     '/partners': 'partners'
 };
 
+/** Pages outside the view-mode model: never redirected away from. */
+const STANDALONE_PATHS = new Set(['/download']);
+
 export function RedirectManager() {
     const { viewMode, user } = useAppStore();
     const router = useRouter();
@@ -143,6 +146,8 @@ export function RedirectManager() {
     // to real URL navigation without racing the effect above.
     useEffect(() => {
         if (!initialized) return;
+        // The desktop download page is open to everyone, signed in or not.
+        if (STANDALONE_PATHS.has(pathname)) return;
 
         // If authenticated, always stay on workspace.
         if (user) {
@@ -184,7 +189,7 @@ export function RedirectManager() {
     // stale viewMode and shove the URL back to where it just came from.
     useEffect(() => {
         if (!initialized || user) return;
-        if (pathname === '/workspace') return;
+        if (pathname === '/workspace' || STANDALONE_PATHS.has(pathname)) return;
 
         const modeToPath: Record<string, string> = {
             landing: '/',

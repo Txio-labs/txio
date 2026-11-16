@@ -10,7 +10,8 @@ import { cx } from '@/components/ui/primitives';
 import { useMarketingMotion } from '@/lib/motion';
 import { TxioLogo } from '@/components/ui/TxioMark';
 
-export const DESKTOP_DOWNLOAD_URL = 'https://txio-labs.github.io/txio-desktop/';
+/** The in-site download page; it lists the latest txio-desktop release's installers. */
+export const DESKTOP_DOWNLOAD_URL = '/download';
 export const GITHUB_URL = 'https://github.com/Txio-labs';
 
 const NAV = [
@@ -154,7 +155,7 @@ export function MarketingShell({ embedded = false, children }: { embedded?: bool
                             { label: 'Features', href: '/features' },
                             { label: 'Integrations', href: '/integrations' },
                             { label: 'Infrastructure', href: '/infrastructure' },
-                            { label: 'Desktop app', href: DESKTOP_DOWNLOAD_URL, external: true },
+                            { label: 'Desktop app', href: DESKTOP_DOWNLOAD_URL },
                         ]}
                     />
                     <FooterCol
@@ -286,14 +287,12 @@ export function CtaBand({ embedded }: { embedded?: boolean }) {
                     </div>
                     <div className="flex flex-wrap gap-3">
                         {!embedded && (
-                            <a
+                            <Link
                                 href={DESKTOP_DOWNLOAD_URL}
-                                target="_blank"
-                                rel="noreferrer"
                                 className="h-11 px-5 inline-flex items-center gap-2 rounded-[10px] border border-line-strong text-sm font-medium text-fg hover:bg-hover transition-colors"
                             >
                                 Download desktop
-                            </a>
+                            </Link>
                         )}
                         <Link
                             href={embedded ? '/workspace' : '/signup'}
