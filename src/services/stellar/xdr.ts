@@ -31,6 +31,10 @@ export type StellarXdrType = (typeof STELLAR_XDR_TYPES)[number];
 
 const MAX_DEPTH = 64;
 
+/** Byte arrays, including Buffers from another realm (where `instanceof Uint8Array` is false). */
+const isBytes = (v: unknown): v is Uint8Array =>
+    ArrayBuffer.isView(v) && (v as Uint8Array).BYTES_PER_ELEMENT === 1 && typeof (v as Uint8Array).every === 'function';
+
 const isPrintable = (bytes: Uint8Array) => bytes.length > 0 && bytes.every((b) => b >= 0x20 && b <= 0x7e);
 
 const toHex = (bytes: Uint8Array) => Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
@@ -39,7 +43,7 @@ const toHex = (bytes: Uint8Array) => Array.from(bytes, (b) => b.toString(16).pad
 const normalizeNative = (value: unknown, depth = 0): unknown => {
     if (depth > MAX_DEPTH) return '…';
     if (typeof value === 'bigint') return value.toString();
-    if (value instanceof Uint8Array) return `0x${toHex(value)}`;
+    if (isBytes(value)) return `0x${toHex(value)}`;
     if (Array.isArray(value)) return value.map((v) => normalizeNative(v, depth + 1));
     if (value instanceof Map) {
         return Object.fromEntries(Array.from(value, ([k, v]) => [String(normalizeNative(k, depth + 1)), normalizeNative(v, depth + 1)]));
@@ -78,7 +82,7 @@ const structural = (sdk: StellarSdk, value: unknown, depth: number, scValAware =
     if (value === undefined || value === null) return null;
     if (typeof value === 'bigint') return value.toString();
     if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return value;
-    if (value instanceof Uint8Array) return isPrintable(value) ? new TextDecoder().decode(value) : toHex(value);
+    if (isBytes(value)) return isPrintable(value) ? new TextDecoder().decode(value) : toHex(value);
     if (Array.isArray(value)) return value.map((v) => structural(sdk, v, depth + 1));
 
     const obj = value as Record<string, unknown>;
@@ -95,10 +99,10 @@ const structural = (sdk: StellarSdk, value: unknown, depth: number, scValAware =
         if (scValAware && kind.startsWith('scv')) return scValToJson(sdk, value, depth);
 
         // Account and contract identities as strkeys.
-        if ((kind === 'publicKeyTypeEd25519' || kind === 'keyTypeEd25519') && inner instanceof Uint8Array && inner.length === 32) {
+        if ((kind === 'publicKeyTypeEd25519' || kind === 'keyTypeEd25519') && isBytes(inner) && inner.length === 32) {
             return sdk.StrKey.encodeEd25519PublicKey(Buffer.from(inner));
         }
-        if (kind === 'scAddressTypeContract' && inner instanceof Uint8Array && inner.length === 32) {
+        if (kind === 'scAddressTypeContract' && isBytes(inner) && inner.length === 32) {
             return sdk.StrKey.encodeContract(Buffer.from(inner));
         }
         if (kind === 'scAddressTypeAccount') return structural(sdk, inner, depth + 1);
@@ -283,7 +287,7 @@ export const summarizeStellarEnvelope = (sdk: StellarSdk, base64: string, networ
         memo:
             inner.memo.type === 'none'
                 ? undefined
-                : inner.memo.type === 'text' && inner.memo.value instanceof Uint8Array
+                : inner.memo.type === 'text' && isBytes(inner.memo.value)
                   ? new TextDecoder().decode(inner.memo.value)
                   : normalizeNative(inner.memo.value),
         signatures: parsed.signatures.length,

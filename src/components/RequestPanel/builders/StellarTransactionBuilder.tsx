@@ -7,6 +7,7 @@ import { getDiscoveryAdapter } from '@/services/discovery';
 import { setCachedPackage } from '@/services/discovery/cache';
 import { DiscoveryError, type DiscoveredFunction } from '@/services/discovery/types';
 import { isStellarContractId, stellarArgTypeFor } from '@/services/discovery/stellarDiscovery';
+import { StellarXdrInspector } from './StellarXdrInspector';
 
 interface StellarTransactionBuilderProps {
   request: RequestItem;
@@ -44,6 +45,7 @@ export const StellarTransactionBuilder: React.FC<StellarTransactionBuilderProps>
   const params = request.stellarTxParams ?? DEFAULT_STELLAR_TX;
   const [load, setLoad] = useState<LoadState>({ status: 'idle' });
   const [manual, setManual] = useState(false);
+  const [inspecting, setInspecting] = useState(false);
   const requestRef = useRef(0);
   const contractId = params.contractId.trim();
 
@@ -117,6 +119,14 @@ export const StellarTransactionBuilder: React.FC<StellarTransactionBuilderProps>
           )}
           <button
             type="button"
+            onClick={() => setInspecting((v) => !v)}
+            aria-expanded={inspecting}
+            className="text-[12px] text-fg hover:opacity-80"
+          >
+            {inspecting ? 'Hide XDR inspector' : 'Inspect XDR'}
+          </button>
+          <button
+            type="button"
             onClick={() => setManual((m) => !m)}
             disabled={isReadOnly}
             className="text-[12px] text-fg hover:opacity-80 disabled:opacity-50"
@@ -125,6 +135,8 @@ export const StellarTransactionBuilder: React.FC<StellarTransactionBuilderProps>
           </button>
         </div>
       </div>
+
+      {inspecting && <StellarXdrInspector network={network} />}
 
       <div>
         <label className={labelClass} htmlFor="stellar-contract">Contract ID</label>
