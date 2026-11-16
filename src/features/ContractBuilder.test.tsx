@@ -110,7 +110,7 @@ describe('ContractBuilder', () => {
 
     it('says so when the compiler host lacks a chain toolchain, instead of pretending to compile', async () => {
         render(<ContractBuilder />);
-        fireEvent.click(screen.getByRole('button', { name: /ethereum/i }));
+        fireEvent.click(screen.getByRole('button', { name: /target chain/i }));
         fireEvent.click(screen.getByRole('button', { name: 'Sui' }));
         await waitFor(() => expect(screen.getByRole('note').textContent).toMatch(/no Sui Move toolchain/i));
         expect((screen.getByRole('button', { name: /^compile$/i }) as HTMLButtonElement).disabled).toBe(true);
@@ -121,7 +121,7 @@ describe('ContractBuilder', () => {
         const { CompilerUnavailableError } = await import('@/services/compile/remote');
         mocks.getToolchains.mockRejectedValue(new CompilerUnavailableError('The compiler service at http://x is not reachable.'));
         render(<ContractBuilder />);
-        fireEvent.click(screen.getByRole('button', { name: /ethereum/i }));
+        fireEvent.click(screen.getByRole('button', { name: /target chain/i }));
         fireEvent.click(screen.getByRole('button', { name: 'Stellar' }));
         await waitFor(() => expect(screen.getByRole('note').textContent).toMatch(/not reachable/));
     });
@@ -131,7 +131,7 @@ describe('ContractBuilder', () => {
         mocks.compileRemote.mockResolvedValue({ ok: true, logs: 'Finished', artifact: { wasm: 'AGFzbQ==' } });
         mocks.deployStellar.mockResolvedValue({ address: 'CCONTRACT', explorerUrl: 'https://x', transactions: [] });
         render(<ContractBuilder />);
-        fireEvent.click(screen.getByRole('button', { name: /ethereum/i }));
+        fireEvent.click(screen.getByRole('button', { name: /target chain/i }));
         fireEvent.click(screen.getByRole('button', { name: 'Stellar' }));
         await waitFor(() => expect((screen.getByRole('button', { name: /^compile$/i }) as HTMLButtonElement).disabled).toBe(false));
         fireEvent.click(screen.getByRole('button', { name: /^compile$/i }));
@@ -146,7 +146,7 @@ describe('ContractBuilder', () => {
         mocks.linkedWallets = { stellar: { id: 'freighter', family: 'stellar', address: 'GABC' } };
         mocks.compileRemote.mockResolvedValue({ ok: false, logs: 'error[E0425]: cannot find value `x`' });
         render(<ContractBuilder />);
-        fireEvent.click(screen.getByRole('button', { name: /ethereum/i }));
+        fireEvent.click(screen.getByRole('button', { name: /target chain/i }));
         fireEvent.click(screen.getByRole('button', { name: 'Stellar' }));
         await waitFor(() => expect((screen.getByRole('button', { name: /^compile$/i }) as HTMLButtonElement).disabled).toBe(false));
         fireEvent.click(screen.getByRole('button', { name: /^compile$/i }));
