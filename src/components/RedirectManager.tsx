@@ -1,6 +1,8 @@
 'use client';
 
 import { captureInviteFromHash } from '@/lib/pendingInvite';
+import { isDesktopApp, MARKETING_PATHS } from '@/lib/desktop';
+import { parkedDesktopAuthRequest } from '@/lib/desktopAuth';
 import { hasSessionHint } from '@/lib/sessionHint';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -64,7 +66,7 @@ const workspacePathToTab: Partial<
 };
 
 /** Pages outside the view-mode model: never redirected away from. */
-const STANDALONE_PATHS = new Set(['/download']);
+const STANDALONE_PATHS = new Set(['/download', '/desktop-auth']);
 
 export function RedirectManager() {
     const { viewMode, user } = useAppStore();
@@ -146,8 +148,19 @@ export function RedirectManager() {
     // to real URL navigation without racing the effect above.
     useEffect(() => {
         if (!initialized) return;
+        // The desktop app has no landing or marketing pages: signed out, it starts at sign-in.
+        if (!user && isDesktopApp() && (MARKETING_PATHS.has(pathname) || pathname === '/workspace')) {
+            router.replace('/signin');
+            return;
+        }
         // The desktop download page is open to everyone, signed in or not.
         if (STANDALONE_PATHS.has(pathname)) return;
+
+        // Signed in on the website mid-way through a Txio Desktop sign-in: finish it.
+        if (user && !isDesktopApp() && parkedDesktopAuthRequest()) {
+            router.replace('/desktop-auth');
+            return;
+        }
 
         // If authenticated, always stay on workspace.
         if (user) {
@@ -220,7 +233,8 @@ export function RedirectManager() {
             if (modeToPath[viewMode] !== pathname) return;
         }
 
-        const targetPath = modeToPath[viewMode];
+        let targetPath = modeToPath[viewMode];
+        if (targetPath && isDesktopApp() && MARKETING_PATHS.has(targetPath)) targetPath = '/signin';
         if (targetPath && pathname !== targetPath) {
             router.replace(targetPath);
         }

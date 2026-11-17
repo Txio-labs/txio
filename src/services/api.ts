@@ -708,6 +708,23 @@ class ApiService {
         }
     }
 
+    /** Website, signed in: a one-time code that hands this sign-in to Txio Desktop. */
+    async createDesktopSignInCode(challenge: string): Promise<string> {
+        const data = await this.request<{ code: string }>('/auth/desktop/code', {
+            method: 'POST',
+            body: JSON.stringify({ challenge })
+        });
+        return data.code;
+    }
+
+    /** Txio Desktop: redeem a code with the PKCE verifier. Sets the session cookie in the shell's jar. */
+    async exchangeDesktopSignInCode(code: string, verifier: string): Promise<void> {
+        await this.request('/auth/desktop/exchange', {
+            method: 'POST',
+            body: JSON.stringify({ code, verifier })
+        });
+    }
+
     private async request<T>(
         path: string,
         options: RequestInit = {}
