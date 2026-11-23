@@ -96,7 +96,9 @@ const HistoryRow: React.FC<{ item: TxHistoryItem }> = ({ item }) => {
         <dl id={detailsId} className="mt-3 ml-11 space-y-2 rounded-[10px] border border-line bg-sunken p-3">
           <DetailRow term="Transaction">{item.hash}</DetailRow>
           <DetailRow term="Direction">{direction.label}</DetailRow>
-          <DetailRow term="Counterparty">{item.counterparty ?? 'None'}</DetailRow>
+          <DetailRow term={item.direction === 'in' ? 'From' : item.direction === 'out' ? 'To' : 'Counterparty'}>
+            {item.counterparty ?? 'None'}
+          </DetailRow>
           <DetailRow term="Amount">{item.amount ?? 'Not available'}</DetailRow>
           <DetailRow term="Status">{status.label}</DetailRow>
           <DetailRow term="Time">{formatFullTime(item.timestamp)}</DetailRow>

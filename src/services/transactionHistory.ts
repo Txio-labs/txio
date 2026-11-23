@@ -187,7 +187,7 @@ async function getStellarHistory(address: string, network: Network, limit: numbe
         hash: r.hash,
         timestamp: r.created_at ? Math.floor(new Date(r.created_at).getTime() / 1000) : null,
         direction: r.source_account === address ? 'out' : 'in',
-        counterparty: null,
+        counterparty: r.source_account !== address ? r.source_account ?? null : null,
         amount: null,
         status: r.successful === false ? 'failed' : 'success',
         explorerUrl: r.hash ? (stellarExpertUrl(network, 'tx', r.hash) ?? null) : null,

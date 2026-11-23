@@ -51,4 +51,12 @@ describe('HistoryList', () => {
     expect(screen.getByText(items[0].counterparty as string)).toBeInTheDocument();
     expect(screen.getByText('2026-11-23 10:42:11 UTC')).toBeInTheDocument();
   });
+
+  it('labels the counterparty of a received payment as From', () => {
+    const received: TxHistoryItem[] = [{ ...items[0], direction: 'in', counterparty: 'GD6ERGKBPEZJGS2DJ2N24RIPX3F3BPJ4UUBCJLS763L2JXBHJQWVU6KZ' }];
+    render(<HistoryList items={received} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Details' }));
+    expect(screen.getByText('From')).toBeInTheDocument();
+    expect(screen.queryByText('Counterparty')).toBeNull();
+  });
 });
