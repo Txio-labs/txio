@@ -13,8 +13,9 @@ import {
   CircleDot,
 } from 'lucide-react';
 import { RequestOutcome } from './types';
+import { summarizeResult } from './summary';
 
-type ResponseTab = 'json' | 'decoded' | 'headers' | 'logs' | 'raw' | 'timing';
+type ResponseTab = 'summary' | 'json' | 'decoded' | 'headers' | 'logs' | 'raw' | 'timing';
 
 interface ResponsePanelProps {
   outcome: RequestOutcome | null;
@@ -24,6 +25,9 @@ interface ResponsePanelProps {
    * present, the panel offers it as a "Decoded" view beside the raw body.
    */
   decoded?: unknown;
+  /** Frontend chain id and RPC method of the request, used to pick the summary. */
+  chain?: string;
+  method?: string;
 }
 
 const escapeHtml = (text: string) =>
@@ -120,8 +124,8 @@ const ToolButton: React.FC<{ title: string; onClick: () => void; active?: boolea
   </button>
 );
 
-export const ResponsePanel: React.FC<ResponsePanelProps> = ({ outcome, isLoading, decoded }) => {
-  const [selectedTab, setTab] = useState<ResponseTab>('json');
+export const ResponsePanel: React.FC<ResponsePanelProps> = ({ outcome, isLoading, decoded, chain, method }) => {
+  const [selectedTab, setTab] = useState<ResponseTab>('summary');
   const [expanded, setExpanded] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -146,10 +150,21 @@ export const ResponsePanel: React.FC<ResponsePanelProps> = ({ outcome, isLoading
     }
   }, [decoded, outcome, expanded]);
 
-  // A stale "Decoded" choice falls back to the body when the new result has nothing decoded.
-  const tab: ResponseTab = selectedTab === 'decoded' && !decodedText ? 'json' : selectedTab;
-  // What the body viewer, search, copy and download act on.
-  const viewText = tab === 'decoded' ? decodedText : bodyText;
+  // The short answer for this request (e.g. a formatted balance), when one applies.
+  const summaryLines = useMemo(
+    () => (outcome && !outcome.error ? summarizeResult(chain, method, outcome.result) : null),
+    [outcome, chain, method]
+  );
+  const summaryText = summaryLines ? summaryLines.join('\n') : '';
+
+  // A stale "Decoded" choice falls back to the body when the new result has nothing decoded;
+  // "Result" falls back to the body when the request has no summary.
+  const tab: ResponseTab =
+    (selectedTab === 'decoded' && !decodedText) || (selectedTab === 'summary' && !summaryLines)
+      ? 'json'
+      : selectedTab;
+  // What the viewer, search, copy and download act on.
+  const viewText = tab === 'decoded' ? decodedText : tab === 'summary' ? summaryText : bodyText;
 
   const sizeBytes = useMemo(() => new Blob([bodyText]).size, [bodyText]);
   const lines = useMemo(() => viewText.split('\n'), [viewText]);
@@ -177,6 +192,7 @@ export const ResponsePanel: React.FC<ResponsePanelProps> = ({ outcome, isLoading
   };
 
   const tabs: { id: ResponseTab; label: string }[] = [
+    ...(summaryLines ? [{ id: 'summary' as const, label: 'Result' }] : []),
     { id: 'json', label: 'Body' },
     ...(decodedText ? [{ id: 'decoded' as const, label: 'Decoded' }] : []),
     { id: 'raw', label: 'Raw' },
@@ -281,6 +297,16 @@ export const ResponsePanel: React.FC<ResponsePanelProps> = ({ outcome, isLoading
             <div className="mx-3 mt-3 rounded-[10px] border border-red-500/25 bg-red-500/[0.06] px-3 py-2.5 text-[13px] text-red-700 dark:text-red-300 shrink-0">
               <div className="font-medium">Request failed</div>
               <div className="mt-0.5 font-mono text-xs break-words">{outcome.error}</div>
+            </div>
+          )}
+
+          {tab === 'summary' && summaryLines && (
+            <div className="flex-1 overflow-auto custom-scrollbar p-4 space-y-2" aria-label="Result summary">
+              {summaryLines.map((line, i) => (
+                <p key={i} className="font-mono text-[18px] text-fg tabular break-all">
+                  {line}
+                </p>
+              ))}
             </div>
           )}
 
