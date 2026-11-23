@@ -133,17 +133,23 @@ export default function WorkspacePage() {
         <>
             <div>
                 {isBootstrappingWorkspace ? (
-                    <div className="min-h-screen bg-surface text-fg flex items-center justify-center px-6">
-                        <div className="w-full max-w-md rounded-panel border border-line bg-sunken p-8 text-center shadow-[0_30px_80px_-55px_rgba(163,163,163,0.65)]">
-                            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-card bg-slate-900/10 dark:bg-white/10 text-fg">
-                                <div className="h-6 w-6 rounded-full border-2 border-slate-900/30 dark:border-white/30 border-t-slate-900 dark:border-t-white animate-spin" />
+                    <div
+                        role="status"
+                        aria-live="polite"
+                        className="fixed inset-0 flex items-center justify-center bg-canvas px-6 text-fg"
+                    >
+                        <div className="flex w-full max-w-sm flex-col items-center text-center">
+                            <div className="text-lg font-semibold lowercase tracking-[0.4em] text-fg">
+                                txio
                             </div>
-                            <h2 className="mt-5 text-2xl font-semibold text-fg">
-                                Loading workspace state
+                            <div className="mt-8 h-px w-full overflow-hidden bg-line">
+                                <div className="h-full w-1/3 animate-pulse bg-fg-subtle" />
+                            </div>
+                            <h2 className="mt-6 text-base font-semibold text-fg">
+                                Restoring your workspace
                             </h2>
-                            <p className="mt-3 text-sm leading-7 text-fg-muted">
-                                Restoring your txio environment, workspace list,
-                                and saved operational context.
+                            <p className="mt-2 text-sm leading-6 text-fg-muted">
+                                Loading your environments and saved context.
                             </p>
                         </div>
                     </div>
