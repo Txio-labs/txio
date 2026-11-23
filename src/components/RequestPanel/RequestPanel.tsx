@@ -191,7 +191,13 @@ export const RequestPanel: React.FC<RequestPanelProps> = ({
             <span className={`absolute inset-x-0 -top-1.5 -bottom-1.5 xl:inset-y-0 xl:-left-1.5 xl:-right-1.5 transition-colors ${dragging ? 'bg-fg/10' : 'group-hover:bg-fg/5'}`} />
           </div>
           <div className="flex-1 min-h-[220px] min-w-0">
-            <ResponsePanel outcome={outcome} isLoading={isLoading} decoded={decoded} />
+            <ResponsePanel
+              outcome={outcome}
+              isLoading={isLoading}
+              decoded={decoded}
+              chain={request.rpcParams?.chain}
+              method={request.rpcParams?.method}
+            />
           </div>
         </div>
       ) : (
