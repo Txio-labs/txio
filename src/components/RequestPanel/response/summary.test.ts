@@ -39,7 +39,7 @@ describe('summarizeResult', () => {
   });
 
   it('shows a scalar result bare for any other method', () => {
-    expect(summarizeResult('evm', 'eth_blockNumber', '0x10')).toEqual(['0x10']);
+    expect(summarizeResult('evm', 'eth_getCode', '0x6080')).toEqual(['0x6080']);
   });
 
   it('returns null for structured results it cannot shorten', () => {

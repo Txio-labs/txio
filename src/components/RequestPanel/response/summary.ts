@@ -26,6 +26,14 @@ const BALANCE_METHODS: Record<string, string[]> = {
   stellar: ["getBalance"],
 };
 
+/** EVM methods whose hex result has a fixed meaning, formatted for reading. */
+const HEX_QUANTITY_METHODS: Record<string, (n: bigint) => string> = {
+  eth_blockNumber: (n) => `Block ${n}`,
+  eth_chainId: (n) => `Chain ID ${n}`,
+  eth_gasPrice: (n) => `${formatUnitsFixed(n, 9, 4)} Gwei`,
+  eth_getTransactionCount: (n) => `Nonce ${n}`,
+};
+
 const toBigInt = (v: unknown): bigint | null => {
   try {
     if (typeof v === 'string' && v.length > 0) return BigInt(v);
@@ -93,7 +101,7 @@ const historyLines = (value: unknown): string[] | null => {
   const isHistoryItem = (raw: unknown): raw is Record<string, unknown> =>
     !!raw && typeof raw === 'object' && 'direction' in raw && 'hash' in raw;
   if (!items.every(isHistoryItem)) return null;
-  if (items.length === 0) return ['No transactions'];
+  if (items.length === 0) return [typeof (value as { warning?: unknown }).warning === "string" ? String((value as { warning: string }).warning) : "No transactions"];
   return items.map((item) => {
     const ts = typeof item.timestamp === 'number' ? new Date(item.timestamp * 1000).toISOString().slice(0, 16).replace('T', ' ') : '—';
     const amount = typeof item.amount === 'string' && item.amount ? item.amount : '—';
@@ -110,6 +118,10 @@ export const summarizeResult = (chain: string | undefined, method: string | unde
   }
   const history = historyLines(result);
   if (history) return history;
+  // EVM JSON-RPC quantities come back as hex strings with a fixed meaning.
+  if (chain === 'evm' && method && HEX_QUANTITY_METHODS[method] && typeof result === 'string' && /^0x[0-9a-fA-F]+$/.test(result)) {
+    return [HEX_QUANTITY_METHODS[method](BigInt(result))];
+  }
   if (typeof result === 'string') return [result];
   if (typeof result === 'number' || typeof result === 'boolean') return [String(result)];
   return null;
