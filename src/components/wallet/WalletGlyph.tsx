@@ -59,12 +59,12 @@ const GLYPH_STYLES: Record<
         fill: 'from-orange-400 to-amber-300'
     },
     'coinbase-wallet': {
-        ring: 'from-blue-500/70 to-indigo-300/40',
-        fill: 'from-blue-500 to-indigo-300'
+        ring: 'from-blue-500/70 to-sky-300/40',
+        fill: 'from-blue-500 to-sky-300'
     },
     phantom: {
-        ring: 'from-fuchsia-500/70 to-violet-300/40',
-        fill: 'from-fuchsia-500 to-violet-300'
+        ring: 'from-zinc-500/70 to-zinc-300/40',
+        fill: 'from-zinc-500 to-zinc-300'
     },
     'trust-wallet': {
         ring: 'from-sky-500/70 to-blue-400/40',
@@ -87,8 +87,8 @@ const GLYPH_STYLES: Record<
         fill: 'from-blue-600 to-sky-400'
     },
     zerion: {
-        ring: 'from-blue-500/70 to-fuchsia-300/40',
-        fill: 'from-blue-600 to-fuchsia-500'
+        ring: 'from-blue-500/70 to-sky-300/40',
+        fill: 'from-blue-600 to-sky-500'
     },
     oneinch: {
         ring: 'from-red-500/70 to-rose-300/40',
@@ -115,8 +115,8 @@ const GLYPH_STYLES: Record<
         fill: 'from-emerald-400 to-cyan-300'
     },
     'nightly-sui': {
-        ring: 'from-indigo-600/70 to-slate-400/40',
-        fill: 'from-indigo-700 to-slate-500'
+        ring: 'from-zinc-600/70 to-slate-400/40',
+        fill: 'from-zinc-700 to-slate-500'
     },
     'okx-wallet-sui': {
         ring: 'from-zinc-500/70 to-slate-300/40',
@@ -135,8 +135,8 @@ const GLYPH_STYLES: Record<
         fill: 'from-lime-400 to-emerald-300'
     },
     albedo: {
-        ring: 'from-indigo-500/70 to-purple-300/40',
-        fill: 'from-indigo-500 to-purple-400'
+        ring: 'from-slate-500/70 to-zinc-300/40',
+        fill: 'from-slate-500 to-zinc-400'
     },
     xbull: {
         ring: 'from-yellow-400/70 to-orange-300/40',
@@ -151,8 +151,8 @@ const GLYPH_STYLES: Record<
         fill: 'from-pink-500 to-rose-400'
     },
     'phantom-solana': {
-        ring: 'from-purple-500/70 to-fuchsia-300/40',
-        fill: 'from-purple-500 to-fuchsia-400'
+        ring: 'from-zinc-500/70 to-zinc-300/40',
+        fill: 'from-zinc-500 to-zinc-400'
     },
     solflare: {
         ring: 'from-orange-500/70 to-yellow-300/40',
@@ -167,16 +167,16 @@ const GLYPH_STYLES: Record<
         fill: 'from-amber-500 to-yellow-400'
     },
     'nightly-solana': {
-        ring: 'from-indigo-600/70 to-slate-400/40',
-        fill: 'from-indigo-700 to-slate-500'
+        ring: 'from-zinc-600/70 to-slate-400/40',
+        fill: 'from-zinc-700 to-slate-500'
     },
     petra: {
-        ring: 'from-pink-500/70 to-purple-300/40',
-        fill: 'from-pink-500 to-purple-400'
+        ring: 'from-pink-500/70 to-rose-300/40',
+        fill: 'from-pink-500 to-rose-400'
     },
     martian: {
-        ring: 'from-blue-500/70 to-indigo-300/40',
-        fill: 'from-blue-500 to-indigo-400'
+        ring: 'from-blue-500/70 to-sky-300/40',
+        fill: 'from-blue-500 to-sky-400'
     },
     pontem: {
         ring: 'from-emerald-500/70 to-teal-300/40',
@@ -187,8 +187,8 @@ const GLYPH_STYLES: Record<
         fill: 'from-orange-600 to-amber-400'
     },
     'nightly-aptos': {
-        ring: 'from-indigo-600/70 to-slate-400/40',
-        fill: 'from-indigo-700 to-slate-500'
+        ring: 'from-zinc-600/70 to-slate-400/40',
+        fill: 'from-zinc-700 to-slate-500'
     },
     'ready-wallet': {
         ring: 'from-orange-500/70 to-rose-300/40',

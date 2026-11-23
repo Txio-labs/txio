@@ -98,9 +98,9 @@ const Td: React.FC<{ children: React.ReactNode; className?: string; title?: stri
     </td>
 );
 
-const Badge: React.FC<{ children: React.ReactNode; tone?: 'violet' | 'slate' | 'green' | 'red' }> = ({ children, tone = 'slate' }) => {
+const Badge: React.FC<{ children: React.ReactNode; tone?: 'neutral' | 'slate' | 'green' | 'red' }> = ({ children, tone = 'slate' }) => {
     const tones = {
-        violet: 'bg-hover text-fg',
+        neutral: 'bg-hover text-fg',
         slate: 'bg-hover text-fg-muted',
         green: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
         red: 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
@@ -386,7 +386,7 @@ Admin
                                             <Td>
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-medium text-fg">{u.name || u.email.split('@')[0]}</span>
-                                                    {u.is_admin && <Badge tone="violet">Admin</Badge>}
+                                                    {u.is_admin && <Badge tone="neutral">Admin</Badge>}
                                                     {u.tier && u.tier !== 'Free' && <Badge>{u.tier}</Badge>}
                                                 </div>
                                                 <div className="text-[12px] text-fg-subtle">{u.email}</div>

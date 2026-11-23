@@ -121,8 +121,8 @@ export const WorkspaceOnboarding: React.FC<
                     >
                         <div className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[12px] font-semibold ${
                             isDark
-                                ? 'border-violet-400/20 bg-violet-400/10 text-violet-600 dark:text-violet-300'
-                                : 'border-violet-200 bg-violet-100 text-violet-700'
+                                ? 'border-line-strong bg-hover text-fg '
+                                : 'border-line-strong bg-hover text-fg'
                         }`}>
                             <Sparkles size={13} />
                             Workspace Setup
@@ -143,14 +143,14 @@ export const WorkspaceOnboarding: React.FC<
                                     description:
                                         'Your requests and saved flows live inside the workspace — not floating around in one big pile.',
                                     icon: Layers3,
-                                    tone: isDark ? 'text-fg bg-hover' : 'text-violet-600 bg-violet-100'
+                                    tone: isDark ? 'text-fg bg-hover' : 'text-fg bg-hover'
                                 },
                                 {
                                     title: 'Team-ready',
                                     description:
                                         'Solo today, team later. Same workspace, just more people.',
                                     icon: Users,
-                                    tone: isDark ? 'text-fg bg-hover' : 'text-violet-600 bg-violet-100'
+                                    tone: isDark ? 'text-fg bg-hover' : 'text-fg bg-hover'
                                 },
                                 {
                                     title: 'Isolated state',
@@ -190,7 +190,7 @@ export const WorkspaceOnboarding: React.FC<
                         }`}>
                             <div className="flex items-start gap-4">
                                 <div className={`flex h-12 w-12 items-center justify-center rounded-card ${
-                                    isDark ? 'bg-hover text-fg' : 'bg-violet-100 text-violet-600'
+                                    isDark ? 'bg-hover text-fg' : 'bg-hover text-fg'
                                 }`}>
                                     <Workflow size={20} />
                                 </div>
@@ -252,8 +252,8 @@ export const WorkspaceOnboarding: React.FC<
 
                                 <div className={`rounded-card border p-3 ${
                                     isDark
-                                        ? 'border-violet-400/15 bg-violet-400/10 text-violet-600 dark:text-violet-300'
-                                        : 'border-violet-200 bg-violet-100 text-violet-600'
+                                        ? 'border-line-strong bg-hover text-fg '
+                                        : 'border-line-strong bg-hover text-fg'
                                 }`}>
                                     <Building2 size={20} />
                                 </div>
@@ -278,7 +278,7 @@ export const WorkspaceOnboarding: React.FC<
                                             )
                                         }}
                                         placeholder={`${user.name}'s workspace`}
-                                        className={`w-full rounded-card border px-4 py-4 text-sm outline-none transition-colors focus:border-violet-400/40 ${
+                                        className={`w-full rounded-card border px-4 py-4 text-sm outline-none transition-colors focus:border-line-strong ${
                                             isDark
                                                 ? 'border-line bg-black/35 text-white placeholder:text-fg-subtle'
                                                 : 'border-line bg-sunken text-fg placeholder:text-fg-subtle'
@@ -348,8 +348,8 @@ export const WorkspaceOnboarding: React.FC<
                                                     className={`rounded-card border p-4 text-left transition-all ${
                                                         isActive
                                                             ? isDark
-                                                                ? 'border-violet-400/30 bg-violet-400/10 shadow-card'
-                                                                : 'border-violet-300 bg-violet-50 shadow-sm'
+                                                                ? 'border-line-strong bg-hover shadow-card'
+                                                                : 'border-line-strong bg-hover shadow-sm'
                                                             : isDark
                                                                 ? 'border-line bg-hover hover:border-line-strong hover:bg-hover'
                                                                 : 'border-line bg-surface hover:border-line-strong hover:bg-hover'
@@ -360,8 +360,8 @@ export const WorkspaceOnboarding: React.FC<
                                                             className={`flex h-10 w-10 items-center justify-center rounded-card ${
                                                                 isActive
                                                                     ? isDark
-                                                                        ? 'bg-violet-400/15 text-violet-600 dark:text-violet-300'
-                                                                        : 'bg-violet-100 text-violet-600'
+                                                                        ? 'bg-hover text-fg '
+                                                                        : 'bg-hover text-fg'
                                                                     : isDark
                                                                         ? 'bg-hover text-fg-subtle'
                                                                         : 'bg-hover text-fg-subtle'

@@ -48,7 +48,7 @@ export default function GlobalError({
                         </p>
                         <button
                             onClick={reset}
-                            className="mt-6 inline-flex items-center gap-2 rounded-card bg-inverse px-5 py-3 text-sm font-semibold text-on-inverse transition-all hover:bg-soft-purple"
+                            className="mt-6 inline-flex items-center gap-2 rounded-card bg-inverse px-5 py-3 text-sm font-semibold text-on-inverse transition-all hover:opacity-90"
                         >
                             Reload application
                         </button>

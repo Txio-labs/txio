@@ -19,7 +19,7 @@ const networkColorClass = (network: Network) => {
     case 'mainnet': return 'bg-emerald-400';
     case 'testnet': return 'bg-amber-400';
     case 'devnet': return 'bg-blue-400';
-    case 'localnet': return 'bg-fuchsia-400';
+    case 'localnet': return 'bg-fg-subtle';
   }
 };
 

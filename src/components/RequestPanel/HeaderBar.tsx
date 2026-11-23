@@ -145,7 +145,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   }, [chain, network, endpoint]);
 
   const netDot = (net: Network) =>
-    net === 'mainnet' ? 'bg-emerald-400' : net === 'testnet' ? 'bg-amber-400' : net === 'devnet' ? 'bg-sky-500' : 'bg-fuchsia-400';
+    net === 'mainnet' ? 'bg-emerald-400' : net === 'testnet' ? 'bg-amber-400' : net === 'devnet' ? 'bg-sky-500' : 'bg-fg-subtle';
   const latency = rpcHealth ? Math.round(rpcHealth.latency[rpcHealth.latency.length - 1]) : null;
 
   return (
