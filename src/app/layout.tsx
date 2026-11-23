@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
+import { SITE_DESCRIPTION, SITE_URL, jsonLdScript, organizationJsonLd } from "@/lib/seo";
 
 const geistSans = Geist({
   subsets: ["latin"],
@@ -15,8 +16,23 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Txio — One console for every chain",
-  description: "Build, simulate, sign and run RPC calls and transactions on Sui, Ethereum and EVM chains, Solana, Aptos and Stellar from one interface.",
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: "Txio",
+    title: "Txio — One console for every chain",
+    description: SITE_DESCRIPTION,
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Txio — One console for every chain",
+    description: SITE_DESCRIPTION,
+  },
+  robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {
@@ -38,6 +54,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(organizationJsonLd()) }} />
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { NetworkAptos, NetworkEthereum, NetworkSolana, NetworkStellar, NetworkSui } from '@web3icons/react';
 import { MarketingShell, SectionHeading, CtaBand, DESKTOP_DOWNLOAD_URL } from '@/components/marketing/MarketingShell';
+import { FaqSection } from '@/components/marketing/FaqSection';
 import { cx } from '@/components/ui/primitives';
 import { splitWords } from '@/lib/motion';
 
@@ -346,6 +347,7 @@ export const LandingPage: React.FC = () => {
                 </div>
             </section>
 
+            <FaqSection />
             <CtaBand />
         </MarketingShell>
     );

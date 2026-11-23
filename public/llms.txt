@@ -1,0 +1,25 @@
+# Txio
+
+> Txio is one console for every chain: build, simulate, sign and run blockchain RPC calls and transactions on Sui, Ethereum and other EVM chains, Solana, Aptos and Stellar (Soroban). It ships as a web app, a desktop app and a CLI, with one account across all three. Txio is pre-1.0 and has not had a security audit.
+
+Txio understands chain-specific RPC methods, transaction formats and address shapes. It is not a generic HTTP client. Each chain has a native dry run before signing, and wallet signing (including Ledger) happens in the user's own wallet. Mainnet actions show an explicit warning first.
+
+## Product pages
+
+- [Home](https://txio.xyz/): overview, FAQ, and how the three surfaces fit together
+- [Features](https://txio.xyz/features): method autocomplete, parameter templates, per-chain transaction builders, cURL import, endpoint failover
+- [Supported chains](https://txio.xyz/ecosystem): Sui, Ethereum and EVM mainnets, Solana, Aptos, Stellar with Soroban
+- [Infrastructure](https://txio.xyz/infrastructure): RPC endpoint failover, latency checks, private RPC URLs, shared core across surfaces
+- [Integrations](https://txio.xyz/integrations): what works on each chain today, with known gaps listed
+- [Partners](https://txio.xyz/partners): swap, bridge, wallet, history and RPC providers
+- [Docs](https://txio.xyz/docs): the Txio CLI, the public execution API, running the stack locally with Docker
+- [Download](https://txio.xyz/download): the desktop app for Linux, macOS and Windows
+
+## Source code
+
+- [Txio organization](https://github.com/Txio-labs)
+- [txio-cli](https://github.com/Txio-labs/txio-cli): the `txio` command-line client
+
+## Optional
+
+- [Sitemap](https://txio.xyz/sitemap.xml)
