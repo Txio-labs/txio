@@ -31,7 +31,6 @@ import { SignTransactionModal } from '../components/SignTransactionModal';
 import { NetworkSwitcherModal } from '../components/NetworkSwitcherModal';
 import { MainnetExecutionWarningModal } from '../components/MainnetExecutionWarningModal';
 import {
-    ensureTerminalOpen,
     logCommandToTerminal
 } from '@/lib/terminalLog';
 import { runHooks } from '@/lib/hooksEngine';
@@ -243,9 +242,6 @@ export const RPCBuilder: React.FC = () => {
                               ? ` --params ${JSON.stringify(resolved.rpcParams.params)}`
                               : ''
                       }`;
-
-        ensureTerminalOpen();
-
         try {
             let res;
 
@@ -295,7 +291,6 @@ export const RPCBuilder: React.FC = () => {
             logCommandToTerminal({
                 command: commandLine,
                 network,
-                body: result,
                 status,
                 duration,
                 successLabel:
@@ -398,9 +393,6 @@ export const RPCBuilder: React.FC = () => {
         const resolved = resolveRequestVars(request, activeEnvVars);
 
         const commandLine = `txio ${getTxChain(resolved)} execute ${describeTransaction(resolved).target}`;
-
-        ensureTerminalOpen();
-
         try {
             let res;
 
@@ -423,7 +415,6 @@ export const RPCBuilder: React.FC = () => {
             logCommandToTerminal({
                 command: commandLine,
                 network,
-                body: result,
                 status,
                 duration,
                 successLabel: 'executed',

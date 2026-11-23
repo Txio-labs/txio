@@ -22,7 +22,8 @@ export const formatUnitsFixed = (value: bigint, decimals: number, places: number
 const BALANCE_METHODS: Record<string, string[]> = {
   sui: ['suix_getAllBalances', 'suix_getBalance'],
   evm: ['eth_getBalance'],
-  solana: ['getBalance'],
+  solana: ["getBalance"],
+  stellar: ["getBalance"],
 };
 
 const toBigInt = (v: unknown): bigint | null => {
@@ -62,6 +63,20 @@ const balanceLines = (chain: string, value: unknown): string[] | null => {
   if (chain === 'solana') {
     const lamports = value && typeof value === 'object' ? toBigInt((value as { value?: unknown }).value) : null;
     return lamports !== null ? [`${formatUnitsFixed(lamports, 9, 4)} SOL`] : null;
+  }
+  if (chain === 'stellar') {
+    // Horizon account: one entry per asset, amounts are 7-decimal strings ("0.9580461").
+    const balances = value && typeof value === 'object' ? (value as { balances?: unknown }).balances : null;
+    if (!Array.isArray(balances)) return null;
+    return balances.map((raw) => {
+      const item = (raw ?? {}) as Record<string, unknown>;
+      const amount = typeof item.balance === 'string' ? item.balance : '0';
+      const [whole, frac = ''] = amount.split('.');
+      const base = toBigInt(`${whole || '0'}${frac.padEnd(7, '0').slice(0, 7)}`);
+      const shown = base !== null ? `${formatUnitsFixed(base, 7, 4)}` : amount;
+      const code = item.asset_type === 'native' ? 'XLM' : typeof item.asset_code === 'string' ? item.asset_code : 'Unknown';
+      return `${shown} ${code}`;
+    });
   }
   return null;
 };

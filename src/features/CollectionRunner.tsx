@@ -11,7 +11,6 @@ import {
     type CellOutcome, type PlannedCell, type RunConfig, type RunMode, type RunReport, type RunCellResult
 } from '@/lib/collectionRun';
 import { evaluateAssertions } from '@/lib/assertionsEngine';
-import { ensureTerminalOpen } from '@/lib/terminalLog';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
@@ -183,9 +182,7 @@ export const CollectionRunner: React.FC<CollectionRunnerProps> = ({ collectionId
         }
     };
 
-    const handleRun = async () => {
-        ensureTerminalOpen();
-        abortRef.current = false;
+    const handleRun = async () => {        abortRef.current = false;
         setIsRunning(true);
         setResults({});
         setReport(null);

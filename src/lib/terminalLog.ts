@@ -3,25 +3,12 @@ import { appStore } from './store';
 export interface TerminalCommandPayload {
     command: string;
     network?: string;
-    body?: unknown;
     error?: string;
     status?: number;
     duration?: number;
     successLabel?: string;
     isExecution?: boolean;
 }
-
-const formatBody = (body: unknown) => {
-    if (typeof body === 'string') {
-        return body;
-    }
-
-    try {
-        return JSON.stringify(body, null, 2);
-    } catch {
-        return String(body);
-    }
-};
 
 export const logCommandToTerminal = (
     payload: TerminalCommandPayload
@@ -39,15 +26,6 @@ export const logCommandToTerminal = (
             `! ${payload.error}`,
             target,
             'error'
-        );
-    } else if (
-        payload.body !== undefined &&
-        payload.body !== null
-    ) {
-        appStore.pushLog(
-            formatBody(payload.body),
-            target,
-            'request'
         );
     }
 
@@ -74,10 +52,4 @@ export const logCommandToTerminal = (
         target,
         payload.error ? 'error' : 'system'
     );
-};
-
-export const ensureTerminalOpen = () => {
-    if (!appStore.getSnapshot().isTerminalOpen) {
-        appStore.toggleTerminal();
-    }
 };
