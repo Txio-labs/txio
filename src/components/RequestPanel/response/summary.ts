@@ -1,3 +1,5 @@
+import type { TxHistoryItem } from "@/services/transactionHistory";
+
 // Short, human-readable view of an RPC result: the figure the request is
 // asking for, rather than the whole JSON body. Mirrors the txio CLI's
 // `call`/`balance` output so both surfaces show the same thing. Exact integer
@@ -95,6 +97,17 @@ const balanceLines = (chain: string, value: unknown): string[] | null => {
  * with a scalar result (string, number, boolean) shows that value bare.
  */
 /** One line per transaction: "2025-11-23 10:45  in   17.7967525 XLM  payment  success". */
+/** The normalized history result, or null when the value is not one. */
+export const historyResult = (value: unknown): { items: TxHistoryItem[]; warning?: string } | null => {
+  const items = value && typeof value === "object" ? (value as { items?: unknown }).items : null;
+  if (!Array.isArray(items)) return null;
+  const isHistoryItem = (raw: unknown): raw is TxHistoryItem =>
+    !!raw && typeof raw === "object" && "direction" in raw && "hash" in raw;
+  if (!items.every(isHistoryItem)) return null;
+  const warning = (value as { warning?: unknown }).warning;
+  return { items, warning: typeof warning === "string" ? warning : undefined };
+};
+
 const historyLines = (value: unknown): string[] | null => {
   const items = value && typeof value === 'object' ? (value as { items?: unknown }).items : null;
   if (!Array.isArray(items)) return null;
