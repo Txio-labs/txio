@@ -28,6 +28,16 @@ describe('summarizeResult', () => {
     expect(summarizeResult('solana', 'getBalance', { context: {}, value: 1_500_000_000 })).toEqual(['1.5000 SOL']);
   });
 
+  it("summarizes a Stellar Horizon account balance per asset", () => {
+    const account = {
+      balances: [
+        { balance: "0.9580461", asset_type: "credit_alphanum4", asset_code: "USDC" },
+        { balance: "2.1455334", asset_type: "native" },
+      ],
+    };
+    expect(summarizeResult("stellar", "getBalance", account)).toEqual(["0.9580 USDC", "2.1455 XLM"]);
+  });
+
   it('shows a scalar result bare for any other method', () => {
     expect(summarizeResult('evm', 'eth_blockNumber', '0x10')).toEqual(['0x10']);
   });
