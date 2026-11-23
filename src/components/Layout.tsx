@@ -362,13 +362,17 @@ export const Layout: React.FC<LayoutProps> = ({
                     </div>
 
                     {isWsDropdownOpen && (
-                        <div className="absolute left-2.5 top-full mt-1 w-[248px] bg-elevated border border-line rounded-card shadow-pop overflow-hidden z-50 animate-in fade-in zoom-in-95">
-                            <div className="px-3 pt-2.5 pb-1.5 text-[12px] font-medium text-fg-subtle">
-                                Workspaces
+                        <div className="absolute left-2.5 top-full mt-1.5 w-[264px] bg-elevated border border-line rounded-[10px] shadow-pop overflow-hidden z-50 animate-in fade-in zoom-in-95">
+                            <div className="flex items-center justify-between px-3 pt-3 pb-2">
+                                <span className="text-[12px] font-semibold uppercase tracking-wide text-fg-subtle">Workspaces</span>
+                                <span className="font-mono text-[12px] tabular text-fg-subtle">{workspaces.length}</span>
                             </div>
-                            <div className="px-1 pb-1 max-h-64 overflow-y-auto custom-scrollbar">
+                            <div className="px-1.5 pb-1.5 max-h-72 overflow-y-auto custom-scrollbar space-y-0.5">
                                 {workspaces.map((ws, i) => {
                                     const isActive = ws.id === currentWorkspace?.id;
+                                    const subtitle = [ws.type, ws.role && ws.role !== 'owner' ? ws.role : null]
+                                        .filter(Boolean)
+                                        .join(' · ');
                                     return (
                                         <button
                                             key={ws.id}
@@ -376,27 +380,48 @@ export const Layout: React.FC<LayoutProps> = ({
                                                 appStore.setWorkspace(ws);
                                                 setIsWsDropdownOpen(false);
                                             }}
-                                            className="w-full flex items-center gap-2.5 rounded-[7px] px-2 h-8 text-left text-[14px] text-fg hover:bg-hover transition-colors"
+                                            className={cx(
+                                                'group w-full flex items-center gap-2.5 rounded-[8px] px-2 py-2 text-left transition-colors',
+                                                isActive ? 'bg-active' : 'hover:bg-hover'
+                                            )}
+                                            aria-current={isActive ? 'true' : undefined}
                                         >
-                                            <span className="h-5 w-5 rounded-[5px] bg-active text-[12px] font-semibold flex items-center justify-center text-fg-muted">
+                                            <span
+                                                className={cx(
+                                                    'h-7 w-7 shrink-0 rounded-[7px] border flex items-center justify-center text-[13px] font-semibold',
+                                                    isActive ? 'bg-inverse text-on-inverse border-transparent' : 'bg-surface border-line text-fg-muted'
+                                                )}
+                                                aria-hidden="true"
+                                            >
                                                 {ws.name.slice(0, 1).toUpperCase()}
                                             </span>
-                                            <span className="truncate flex-1">{ws.name}</span>
-                                            {isActive ? <Check size={13} className="text-fg shrink-0" /> : i < 9 && <Kbd>{i + 1}</Kbd>}
+                                            <span className="min-w-0 flex-1">
+                                                <span className="block truncate text-[14px] font-medium text-fg leading-tight">{ws.name}</span>
+                                                {subtitle && (
+                                                    <span className="block truncate text-[12px] text-fg-subtle leading-tight mt-0.5">{subtitle}</span>
+                                                )}
+                                            </span>
+                                            {isActive ? (
+                                                <Check size={14} className="text-fg shrink-0" aria-label="Current workspace" />
+                                            ) : (
+                                                i < 9 && <Kbd className="opacity-60 group-hover:opacity-100">{i + 1}</Kbd>
+                                            )}
                                         </button>
                                     );
                                 })}
                             </div>
                             {onCreateWorkspace && (
-                                <div className="p-1 border-t border-line">
+                                <div className="p-1.5 border-t border-line">
                                     <button
                                         onClick={() => {
                                             setIsWsDropdownOpen(false);
                                             setIsCreateWsModalOpen(true);
                                         }}
-                                        className="w-full flex items-center gap-2.5 rounded-[7px] px-2 h-8 text-left text-[14px] text-fg-muted hover:bg-hover hover:text-fg transition-colors"
+                                        className="w-full flex items-center gap-2.5 rounded-[8px] px-2 py-2 text-left text-[14px] font-medium text-fg-muted hover:bg-hover hover:text-fg transition-colors"
                                     >
-                                        <Plus size={14} className="shrink-0" />
+                                        <span className="h-7 w-7 shrink-0 rounded-[7px] border border-dashed border-line-strong flex items-center justify-center">
+                                            <Plus size={13} className="shrink-0" />
+                                        </span>
                                         <span>Create workspace</span>
                                     </button>
                                 </div>
