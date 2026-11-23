@@ -86,11 +86,30 @@ const balanceLines = (chain: string, value: unknown): string[] | null => {
  * be shown instead. Balance methods get a formatted balance; any other method
  * with a scalar result (string, number, boolean) shows that value bare.
  */
+/** One line per transaction: "2025-11-23 10:45  in   17.7967525 XLM  payment  success". */
+const historyLines = (value: unknown): string[] | null => {
+  const items = value && typeof value === 'object' ? (value as { items?: unknown }).items : null;
+  if (!Array.isArray(items)) return null;
+  const isHistoryItem = (raw: unknown): raw is Record<string, unknown> =>
+    !!raw && typeof raw === 'object' && 'direction' in raw && 'hash' in raw;
+  if (!items.every(isHistoryItem)) return null;
+  if (items.length === 0) return ['No transactions'];
+  return items.map((item) => {
+    const ts = typeof item.timestamp === 'number' ? new Date(item.timestamp * 1000).toISOString().slice(0, 16).replace('T', ' ') : '—';
+    const amount = typeof item.amount === 'string' && item.amount ? item.amount : '—';
+    const label = typeof item.label === 'string' && item.label ? item.label : 'transaction';
+    const status = typeof item.status === 'string' ? item.status : 'unknown';
+    return `${ts}  ${String(item.direction).padEnd(7)}  ${amount}  ${label}  ${status}`;
+  });
+};
+
 export const summarizeResult = (chain: string | undefined, method: string | undefined, result: unknown): string[] | null => {
   if (result === undefined) return null;
   if (chain && method && BALANCE_METHODS[chain]?.includes(method)) {
     return balanceLines(chain, result);
   }
+  const history = historyLines(result);
+  if (history) return history;
   if (typeof result === 'string') return [result];
   if (typeof result === 'number' || typeof result === 'boolean') return [String(result)];
   return null;
