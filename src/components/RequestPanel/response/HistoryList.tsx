@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowDownLeft, ArrowUpRight, ChevronDown, ExternalLink, HelpCircle, RefreshCw } from 'lucide-react';
 import type { TxHistoryItem } from '@/services/transactionHistory';
+import { formatTotal, historyTotals } from './historyTotals';
 
 const DIRECTIONS: Record<TxHistoryItem['direction'], { label: string; tone: string; Icon: React.FC<{ size?: number }> }> = {
   in: { label: 'Received', tone: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10', Icon: ArrowDownLeft },
@@ -38,6 +39,26 @@ const DetailRow: React.FC<{ term: string; children: React.ReactNode }> = ({ term
     <dd className="min-w-0 font-mono text-fg break-all tabular">{children}</dd>
   </div>
 );
+
+const TotalsBar: React.FC<{ items: TxHistoryItem[] }> = ({ items }) => {
+  const totals = historyTotals(items);
+  const rows = [
+    { label: 'Total in', list: totals.in, tone: 'text-emerald-600 dark:text-emerald-400' },
+    { label: 'Total out', list: totals.out, tone: 'text-amber-600 dark:text-amber-400' },
+  ];
+  return (
+    <dl className="mx-4 mb-2 grid grid-cols-1 sm:grid-cols-2 gap-2 rounded-[10px] border border-line bg-sunken p-3 text-[13px]">
+      {rows.map((row) => (
+        <div key={row.label}>
+          <dt className={`text-[12px] font-medium ${row.tone}`}>{row.label} (loaded)</dt>
+          <dd className="mt-0.5 font-mono tabular text-fg">
+            {row.list.length === 0 ? '—' : row.list.map((t) => <div key={t.asset}>{formatTotal(t)}</div>)}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+};
 
 const HistoryRow: React.FC<{ item: TxHistoryItem }> = ({ item }) => {
   const [open, setOpen] = useState(false);
@@ -124,6 +145,7 @@ export const HistoryList: React.FC<{ items: TxHistoryItem[]; warning?: string }>
       <p className="px-4 pt-3 pb-1 text-[12px] font-medium uppercase tracking-wide text-fg-subtle">
         {items.length} transaction{items.length === 1 ? '' : 's'}
       </p>
+      <TotalsBar items={items} />
       <ul className="divide-y divide-line">
         {items.map((item) => (
           <HistoryRow key={`${item.hash}-${item.direction}-${item.amount ?? ''}`} item={item} />
