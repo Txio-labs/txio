@@ -33,7 +33,7 @@ export const AuthPage: React.FC = () => {
             <div className="hidden lg:flex flex-1 relative overflow-hidden bg-canvas border-r border-line">
                 {/* Background Ambient Glows */}
                 <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-active blur-[120px] rounded-full"></div>
-                <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-soft-purple/10 blur-[100px] rounded-full"></div>
+                <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] blur-[100px] rounded-full"></div>
                 
                 <div className="relative z-10 w-full flex flex-col p-16 justify-between">
                     <div>
@@ -75,7 +75,7 @@ export const AuthPage: React.FC = () => {
                             <p className="text-xs text-fg-subtle">Sub-millisecond latency. Connections stay warm.</p>
                         </div>
                         <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-soft-purple">
+                            <div className="flex items-center gap-2">
                                 <ShieldCheck size={18} />
                                 <span className="font-semibold text-sm">Secure</span>
                             </div>
@@ -168,7 +168,7 @@ export const AuthPage: React.FC = () => {
                             <div className="flex justify-between items-center px-1">
                                 <label className="text-xs font-medium text-fg-muted">Password</label>
                                 {mode === 'login' && (
-                                    <button type="button" className="text-[12px] font-semibold text-fg hover:text-soft-purple">Forgot?</button>
+                                    <button type="button" className="text-[12px] font-semibold text-fg">Forgot?</button>
                                 )}
                             </div>
                             <div className="relative">
@@ -189,7 +189,7 @@ export const AuthPage: React.FC = () => {
                         <button 
                             type="submit"
                             disabled={isLoading}
-                            className="w-full h-11 bg-inverse text-on-inverse rounded-[10px] font-semibold text-sm hover:bg-soft-purple transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
+                            className="w-full h-11 bg-inverse text-on-inverse rounded-[10px] font-semibold text-sm hover:opacity-90 transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
                         >
                             {isLoading ? (
                                 <div className="w-6 h-6 border-2 border-current/30 border-t-current rounded-full animate-spin"></div>

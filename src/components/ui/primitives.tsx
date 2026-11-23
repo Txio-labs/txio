@@ -216,7 +216,7 @@ const TONE_BADGE: Record<Tone, string> = {
     warning: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
     danger: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
     info: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20',
-    local: 'bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-400 border-fuchsia-500/20',
+    local: 'bg-hover text-fg-muted border-line-strong',
 };
 
 const TONE_DOT: Record<Tone, string> = {
@@ -225,7 +225,7 @@ const TONE_DOT: Record<Tone, string> = {
     warning: 'bg-amber-400',
     danger: 'bg-red-500',
     info: 'bg-sky-500',
-    local: 'bg-fuchsia-400',
+    local: 'bg-fg-subtle',
 };
 
 export function Badge({

@@ -267,7 +267,7 @@ export const SignInPage: React.FC = () => {
         return (
             <div className="min-h-screen flex items-center justify-center bg-canvas">
                 <div className="flex flex-col items-center gap-4">
-                    <div className="w-10 h-10 border-2 border-line-strong border-t-electric-violet rounded-full animate-spin"></div>
+                    <div className="w-10 h-10 border-2 border-line-strong border-t-fg-subtle rounded-full animate-spin"></div>
 
                     <p className="text-sm text-fg-subtle">
                         Authenticating...

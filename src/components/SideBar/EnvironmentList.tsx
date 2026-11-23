@@ -69,7 +69,7 @@ export const EnvironmentList: React.FC<EnvironmentListProps> = ({
                       v.network === 'mainnet' ? 'text-emerald-600 dark:text-emerald-400' :
                       v.network === 'testnet' ? 'text-amber-600 dark:text-amber-400' :
                       v.network === 'devnet' ? 'text-blue-600 dark:text-blue-400' :
-                      v.network === 'localnet' ? 'text-fuchsia-600 dark:text-fuchsia-400' : 'text-fg-subtle'
+                      v.network === 'localnet' ? 'text-fg-muted' : 'text-fg-subtle'
                     }`}
                     value={v.network || 'all'}
                     onChange={(e) => updateEnvVar(i, { network: e.target.value as any })}

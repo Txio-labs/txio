@@ -790,7 +790,7 @@ export const ContractBuilder: React.FC = () => {
                             disabled={!canDeploy}
                             title={deployTitle ?? (isRemote ? 'Deploy' : 'Review deployment')}
                             aria-label={isRemote ? 'Deploy' : 'Review deployment'}
-                            className="shrink-0 whitespace-nowrap flex items-center gap-2 px-2.5 @min-[60rem]:px-4 py-1.5 rounded-lg bg-inverse text-on-inverse text-xs font-semibold shadow-card hover:bg-soft-purple transition-all disabled:opacity-40"
+                            className="shrink-0 whitespace-nowrap flex items-center gap-2 px-2.5 @min-[60rem]:px-4 py-1.5 rounded-lg bg-inverse text-on-inverse text-xs font-semibold shadow-card hover:opacity-90 transition-all disabled:opacity-40"
                         >
                             {deploy.status === 'deploying' ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />} <span className="hidden @min-[60rem]:inline">{isRemote ? 'Deploy' : 'Review deployment'}</span>
                         </button>

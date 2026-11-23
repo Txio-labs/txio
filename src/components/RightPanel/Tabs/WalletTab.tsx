@@ -120,21 +120,33 @@ export const WalletTab: React.FC<
     if (!currentWallet) {
         return (
             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-5">
-                <div className="rounded-card border border-line bg-surface p-5">
-                    <div className="mb-3 inline-flex rounded-[10px] border border-line bg-sunken p-2.5 text-fg-muted">
-                        <Wallet size={20} />
+                <div className="flex flex-col gap-5 px-1 pt-2">
+                    <div className="flex items-start gap-3">
+                        <div className="shrink-0 rounded-[10px] border border-line bg-sunken p-2 text-fg-muted">
+                            <Wallet size={16} />
+                        </div>
+                        <div className="min-w-0">
+                            <div className="text-sm font-semibold text-fg">No wallet connected</div>
+                            <p className="mt-1 text-xs leading-5 text-fg-subtle">
+                                Connect a wallet to sign transactions and see your balances.
+                            </p>
+                        </div>
                     </div>
-                    <div className="mb-1 text-sm font-semibold text-fg">No wallet connected</div>
-                    <p className="mb-4 text-xs leading-5 text-fg-subtle">
-                        Connect a wallet on any supported chain to sign transactions and see balances here.
-                    </p>
-                    <div className="mb-4 flex items-center gap-1.5">
-                        {RPC_CHAINS.map((chain) => (
-                            <span key={chain.id} title={chain.label}>
-                                <ChainIcon chain={chain.id} size={26} />
-                            </span>
-                        ))}
+
+                    <div>
+                        <div className="mb-2 text-[12px] font-semibold text-fg-subtle">
+                            Supported networks
+                        </div>
+                        <ul className="grid grid-cols-2 gap-x-3 gap-y-2">
+                            {RPC_CHAINS.map((chain) => (
+                                <li key={chain.id} className="flex min-w-0 items-center gap-2 text-xs text-fg-muted">
+                                    <ChainIcon chain={chain.id} size={16} />
+                                    <span className="truncate">{chain.label}</span>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
+
                     <ConnectWalletButton fullWidth />
                 </div>
 
@@ -157,7 +169,7 @@ export const WalletTab: React.FC<
 
     return (
         <div className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-5">
-            <div className="relative overflow-hidden rounded-[28px] border border-line bg-[radial-gradient(circle_at_top,rgba(124,58,237,0.07),transparent_42%),linear-gradient(180deg,#ffffff,#f8fafc)] dark:bg-[radial-gradient(circle_at_top,rgba(163,163,163,0.18),transparent_42%),linear-gradient(180deg,rgba(24,24,27,0.98),rgba(10,10,10,0.98))] p-5 shadow-sm dark:shadow-[0_28px_80px_rgba(0,0,0,0.4)]">
+            <div className="relative overflow-hidden rounded-[28px] border border-line bg-[radial-gradient(circle_at_top,rgba(163,163,163,0.10),transparent_42%),linear-gradient(180deg,#ffffff,#f8fafc)] dark:bg-[radial-gradient(circle_at_top,rgba(163,163,163,0.18),transparent_42%),linear-gradient(180deg,rgba(24,24,27,0.98),rgba(10,10,10,0.98))] p-5 shadow-sm dark:shadow-[0_28px_80px_rgba(0,0,0,0.4)]">
                 <div className="absolute -right-8 top-0 h-32 w-32 rounded-full bg-hover blur-[48px]" />
                 <div className="relative z-10">
                     <div className="flex items-start justify-between gap-3">

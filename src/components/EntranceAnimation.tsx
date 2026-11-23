@@ -88,7 +88,7 @@ export const EntranceAnimation: React.FC<EntranceAnimationProps> = ({ onComplete
                     txio
                 </h1>
                 <div className="w-24 h-[1px] bg-gradient-to-r from-transparent via-fg-subtle to-transparent"></div>
-                <p className="text-soft-purple/40 font-medium text-[12px]">
+                <p className="text-fg-subtle font-medium text-[12px]">
                     Advanced Infrastructure
                 </p>
             </div>
@@ -103,7 +103,7 @@ export const EntranceAnimation: React.FC<EntranceAnimationProps> = ({ onComplete
               0% {
                  opacity: 0;
                  transform: translateY(150px) scale(0.85);
-                 filter: blur(15px) brightness(1.8) hue-rotate(240deg); /* Violet underwater look */
+                 filter: blur(15px) brightness(1.8); /* Tint-free underwater rise */
               }
               100% {
                  opacity: 1;

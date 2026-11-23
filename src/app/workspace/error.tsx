@@ -32,7 +32,7 @@ export default function WorkspaceError({
             )}
             <button
                 onClick={reset}
-                className="mt-6 inline-flex items-center gap-2 rounded-card bg-inverse px-5 py-3 text-sm font-semibold text-on-inverse transition-all hover:bg-soft-purple"
+                className="mt-6 inline-flex items-center gap-2 rounded-card bg-inverse px-5 py-3 text-sm font-semibold text-on-inverse transition-all hover:opacity-90"
             >
                 <RefreshCw size={15} />
                 Reload workspace
