@@ -152,6 +152,20 @@ const postJsonRpcWithFailover = async (
  * just native XLM — so users can inspect trustlines the same way `eth_call`
  * or `suix_getAllBalances` return a full structured result.
  */
+const getContractTokenBalances = async (
+  network: Network,
+  address: string
+): Promise<{ result: any; duration: number; status: number }> => {
+  const startTime = performance.now();
+  const { apiService } = await import('./api');
+  const res = await apiService.getStellarTokenBalances(address, network);
+  return {
+    result: res,
+    duration: Math.round(performance.now() - startTime),
+    status: 200,
+  };
+};
+
 const getStellarBalanceViaHorizon = async (
   network: Network,
   address: unknown
@@ -275,6 +289,12 @@ export const executeChainRpc = async (
   // the same service the connected-wallet balance display already uses
   // (see fetchStellarBalance in wallet/stellar.ts).
   if (chain === 'stellar' && method === 'getBalance') {
+    const address = typeof params[0] === 'string' ? params[0].trim() : '';
+    // A C... contract address holds no native XLM; its balances are SEP-41
+    // tokens, read from the backend's indexed transfers.
+    if (/^C[A-Z2-7]{55}$/.test(address)) {
+      return getContractTokenBalances(network, address);
+    }
     return getStellarBalanceViaHorizon(network, params[0]);
   }
 

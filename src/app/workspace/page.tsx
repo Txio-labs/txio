@@ -30,6 +30,7 @@ import { WorkspaceOverviewPage } from "@/features/WorkspaceOverviewPage";
 import { SuiExplorerFeature } from "@/features/SuiExplorer";
 import { EvmExplorerFeature } from "@/features/EvmExplorer";
 import { SolanaExplorerFeature } from "@/features/SolanaExplorer";
+import { StellarWorkspace } from "@/features/StellarMarkets";
 import { AptosExplorerFeature } from "@/features/AptosExplorer";
 import { StarknetExplorerFeature } from "@/features/StarknetExplorer";
 import { HelpPage } from "@/features/HelpPage";
@@ -105,6 +106,8 @@ const WorkspaceContent: React.FC = () => {
             return <SuiExplorerFeature initialQuery={activeTab.data?.query} />;
         case 'starknet_explorer':
             return <StarknetExplorerFeature initialQuery={activeTab.data?.query} />;
+        case 'stellar_explorer':
+            return <StellarWorkspace initialQuery={activeTab.data?.query} />;
         case 'aptos_explorer':
             return <AptosExplorerFeature initialQuery={activeTab.data?.query} />;
         case 'solana_explorer':

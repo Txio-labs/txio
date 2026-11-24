@@ -105,7 +105,7 @@ export const TransactionHistoryList: React.FC<{ wallet: ConnectedWallet }> = ({ 
                     <span className="text-[13px] font-mono tabular text-fg">{item.amount}</span>
                   )}
                   <StatusBadge status={item.status} />
-                  {(wallet.family === 'sui' || wallet.family === 'evm' || wallet.family === 'solana' || wallet.family === 'aptos' || wallet.family === 'starknet') && (
+                  {(wallet.family === 'sui' || wallet.family === 'evm' || wallet.family === 'solana' || wallet.family === 'aptos' || wallet.family === 'starknet' || wallet.family === 'stellar') && (
                     <button
                       type="button"
                       onClick={() =>
@@ -117,7 +117,9 @@ export const TransactionHistoryList: React.FC<{ wallet: ConnectedWallet }> = ({ 
                               ? appStore.openTab('aptos_explorer', { query: item.hash })
                               : wallet.family === 'starknet'
                                 ? appStore.openTab('starknet_explorer', { query: item.hash })
-                                : appStore.openTab('evm_explorer', { query: item.hash, chainId: parseEvmChainId(wallet.chain.id) ?? undefined })
+                                : wallet.family === 'stellar'
+                                  ? appStore.openTab('stellar_explorer', { query: item.hash })
+                                  : appStore.openTab('evm_explorer', { query: item.hash, chainId: parseEvmChainId(wallet.chain.id) ?? undefined })
                       }
                       className="text-[12px] font-medium text-fg-subtle hover:text-fg transition-colors"
                       title="Open in Txio explorer"

@@ -1017,6 +1017,10 @@ export const appStore = {
                     title = 'Starknet Explorer';
                     break;
 
+                case 'stellar_explorer':
+                    title = 'Stellar Explorer';
+                    break;
+
                 case 'send':
                     title = 'Send';
                     break;
