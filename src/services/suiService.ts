@@ -249,7 +249,7 @@ export const executeChainRpc = async (
     const first = params[0];
     const address = typeof first === 'object' && first !== null ? String(first.address ?? '') : String(first ?? '');
     const options = (typeof first === 'object' && first !== null ? first : params[1]) ?? {};
-    const limit = Math.min(Math.max(Number(options.limit) || 20, 1), 100);
+    const limit = Math.max(Number(options.limit) || 20, 1);
     const history = await getAddressHistory({ chain, address, network, evmChainId, limit });
     const duration = performance.now() - startTime;
     if (history.items.length === 0 && /^(Failed|Invalid)/.test(history.warning ?? '')) {

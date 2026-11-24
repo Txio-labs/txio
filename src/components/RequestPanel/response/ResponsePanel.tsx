@@ -13,7 +13,8 @@ import {
   CircleDot,
 } from 'lucide-react';
 import { RequestOutcome } from './types';
-import { summarizeResult } from './summary';
+import { historyResult, summarizeResult } from './summary';
+import { HistoryList } from './HistoryList';
 
 type ResponseTab = 'summary' | 'json' | 'decoded' | 'headers' | 'logs' | 'raw' | 'timing';
 
@@ -156,6 +157,11 @@ export const ResponsePanel: React.FC<ResponsePanelProps> = ({ outcome, isLoading
     [outcome, chain, method]
   );
   const summaryText = summaryLines ? summaryLines.join('\n') : '';
+  // Transaction history gets its own list view instead of text lines.
+  const history = useMemo(
+    () => (outcome && !outcome.error ? historyResult(outcome.result) : null),
+    [outcome]
+  );
 
   // A stale "Decoded" choice falls back to the body when the new result has nothing decoded;
   // "Result" falls back to the body when the request has no summary.
@@ -300,10 +306,14 @@ export const ResponsePanel: React.FC<ResponsePanelProps> = ({ outcome, isLoading
             </div>
           )}
 
-          {tab === 'summary' && summaryLines && (
-            <div className="flex-1 overflow-auto custom-scrollbar p-4 space-y-2" aria-label="Result summary">
+          {tab === 'summary' && history && (
+            <HistoryList items={history.items} warning={history.warning} />
+          )}
+
+          {tab === 'summary' && summaryLines && !history && (
+            <div className="flex-1 overflow-auto custom-scrollbar p-4 space-y-3" aria-label="Result summary">
               {summaryLines.map((line, i) => (
-                <p key={i} className="font-mono text-[18px] text-fg tabular break-all">
+                <p key={i} className="text-[18px] font-medium text-fg tabular break-all">
                   {line}
                 </p>
               ))}

@@ -38,6 +38,20 @@ describe('summarizeResult', () => {
     expect(summarizeResult("stellar", "getBalance", account)).toEqual(["0.9580 USDC", "2.1455 XLM"]);
   });
 
+  it('lists transaction history one line per item', () => {
+    const history = {
+      items: [
+        { hash: '2e16', timestamp: 1795430531, direction: 'out', amount: '0.1500000 XLM', status: 'success', label: 'payment' },
+        { hash: 'de9e', timestamp: 1795340406, direction: 'in', amount: '17.7967525 XLM', status: 'success', label: 'payment' },
+      ],
+      source: 'horizon',
+    };
+    expect(summarizeResult('stellar', 'getAddressTransactions', history)).toEqual([
+      '2026-11-23 10:42  out      0.1500000 XLM  payment  success',
+      '2026-11-22 09:40  in       17.7967525 XLM  payment  success',
+    ]);
+  });
+
   it('shows a scalar result bare for any other method', () => {
     expect(summarizeResult('evm', 'eth_getCode', '0x6080')).toEqual(['0x6080']);
   });

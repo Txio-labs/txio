@@ -116,16 +116,27 @@ async function getStellarHistory(address: string, network: Network, limit: numbe
   }
   const horizon = STELLAR_HORIZON_URLS[network];
   try {
-    const payRes = await fetch(
-      `${horizon}/accounts/${encodeURIComponent(address)}/payments?order=desc&limit=${limit}&include_failed=true`,
-      { headers: { Accept: 'application/json' } }
-    );
-    if (payRes.status === 404) {
-      return { items: [], source: 'horizon', warning: 'This account does not exist on this Stellar network yet.' };
+    // Horizon returns at most 200 records per page, so follow the cursor until `limit` is reached.
+    const payments: any[] = [];
+    let cursor: string | undefined;
+    while (payments.length < limit) {
+      const pageSize = Math.min(200, limit - payments.length);
+      const payRes = await fetch(
+        `${horizon}/accounts/${encodeURIComponent(address)}/payments?order=desc&limit=${pageSize}&include_failed=true` +
+          (cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''),
+        { headers: { Accept: 'application/json' } }
+      );
+      if (payRes.status === 404) {
+        return { items: [], source: 'horizon', warning: 'This account does not exist on this Stellar network yet.' };
+      }
+      if (!payRes.ok) throw new Error(`Horizon request failed with status ${payRes.status}.`);
+      const payData = await payRes.json();
+      const page: any[] = Array.isArray(payData?._embedded?.records) ? payData._embedded.records : [];
+      if (page.length === 0) break;
+      payments.push(...page);
+      cursor = page[page.length - 1].paging_token;
+      if (page.length < pageSize) break;
     }
-    if (!payRes.ok) throw new Error(`Horizon request failed with status ${payRes.status}.`);
-    const payData = await payRes.json();
-    const payments: any[] = Array.isArray(payData?._embedded?.records) ? payData._embedded.records : [];
 
     if (payments.length > 0) {
       const items: TxHistoryItem[] = payments.map((p) => {
@@ -155,7 +166,7 @@ async function getStellarHistory(address: string, network: Network, limit: numbe
     }
 
     const txRes = await fetch(
-      `${horizon}/accounts/${encodeURIComponent(address)}/transactions?order=desc&limit=${limit}&include_failed=true`,
+      `${horizon}/accounts/${encodeURIComponent(address)}/transactions?order=desc&limit=${Math.min(limit, 200)}&include_failed=true`,
       { headers: { Accept: 'application/json' } }
     );
     if (!txRes.ok) throw new Error(`Horizon request failed with status ${txRes.status}.`);
@@ -167,7 +178,7 @@ async function getStellarHistory(address: string, network: Network, limit: numbe
         hash: r.hash,
         timestamp: r.created_at ? Math.floor(new Date(r.created_at).getTime() / 1000) : null,
         direction: r.source_account === address ? 'out' : 'in',
-        counterparty: null,
+        counterparty: r.source_account !== address ? r.source_account ?? null : null,
         amount: null,
         status: r.successful === false ? 'failed' : 'success',
         explorerUrl: r.hash ? (stellarExpertUrl(network, 'tx', r.hash) ?? null) : null,
