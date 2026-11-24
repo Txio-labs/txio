@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, ExternalLink, Loader2 } from 'lucide-react';
-import { useAppStore } from '@/lib/store';
+import { appStore, useAppStore } from '@/lib/store';
 import type { ConnectedWallet } from '@/wallet/types';
 import { shortenAddress } from '@/wallet/utils';
-import { getTransactionHistory, type TransactionHistoryResult } from '@/services/transactionHistory';
+import { getTransactionHistory, parseEvmChainId, type TransactionHistoryResult } from '@/services/transactionHistory';
 
 const DirectionIcon: React.FC<{ direction: 'in' | 'out' | 'self' | 'unknown' }> = ({ direction }) => {
   if (direction === 'out') {
@@ -105,6 +105,26 @@ export const TransactionHistoryList: React.FC<{ wallet: ConnectedWallet }> = ({ 
                     <span className="text-[13px] font-mono tabular text-fg">{item.amount}</span>
                   )}
                   <StatusBadge status={item.status} />
+                  {(wallet.family === 'sui' || wallet.family === 'evm' || wallet.family === 'solana' || wallet.family === 'aptos' || wallet.family === 'starknet') && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        wallet.family === 'sui'
+                          ? appStore.openTab('explorer', { query: item.hash })
+                          : wallet.family === 'solana'
+                            ? appStore.openTab('solana_explorer', { query: item.hash })
+                            : wallet.family === 'aptos'
+                              ? appStore.openTab('aptos_explorer', { query: item.hash })
+                              : wallet.family === 'starknet'
+                                ? appStore.openTab('starknet_explorer', { query: item.hash })
+                                : appStore.openTab('evm_explorer', { query: item.hash, chainId: parseEvmChainId(wallet.chain.id) ?? undefined })
+                      }
+                      className="text-[12px] font-medium text-fg-subtle hover:text-fg transition-colors"
+                      title="Open in Txio explorer"
+                    >
+                      Details
+                    </button>
+                  )}
                   {item.explorerUrl && (
                     <a
                       href={item.explorerUrl}

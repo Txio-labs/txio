@@ -8,6 +8,12 @@ import {
 import { useSuiClient } from '@mysten/dapp-kit';
 
 import { resolveChainRpcUrl } from '@/services/suiService';
+import {
+    getSuiAssets,
+    formatRawAmount,
+    SUI_GRAPHQL_URLS,
+    SUI_NATIVE_COIN_TYPE
+} from '@/services/suiGraphql';
 import { useAppStore } from '@/lib/store';
 import { APTOS_NETWORKS } from '@/lib/constants';
 import { getStrkBalance, STRK_DECIMALS } from '@/services/starknet';
@@ -55,12 +61,24 @@ export const useWalletBalance =
                         currentWallet?.address
                     ),
                 queryFn: async () => {
+                    if (SUI_GRAPHQL_URLS[network]) {
+                        const assets = await getSuiAssets(network, currentWallet!.address);
+                        const native = assets.balances.find((b) => b.coinType === SUI_NATIVE_COIN_TYPE);
+                        const raw = native?.totalBalance || '0';
+                        return {
+                            symbol: 'SUI',
+                            formatted: `${formatRawAmount(raw, 9)} SUI`,
+                            value: raw,
+                            decimals: 9
+                        } satisfies WalletBalanceInfo;
+                    }
+                    // Localnet/custom fullnodes still serve JSON-RPC.
                     const response =
                         await suiClient.getBalance({
                             owner:
                                 currentWallet!.address,
                             coinType:
-                                '0x2::sui::SUI'
+                                SUI_NATIVE_COIN_TYPE
                         });
                     const raw =
                         response.totalBalance || '0';

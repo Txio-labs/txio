@@ -1,6 +1,6 @@
 import type { ConnectedWallet } from '@/wallet/types';
 import type { ChainId, Network } from '@/types';
-import { APTOS_NETWORKS, STELLAR_HORIZON_URLS, STELLAR_NETWORKS, getEvmChain, stellarExpertUrl } from '@/lib/constants';
+import { APTOS_NETWORKS, STELLAR_HORIZON_URLS, getEvmChain, stellarExpertUrl } from '@/lib/constants';
 import { executeChainRpc, resolveChainRpcUrl } from './suiService';
 
 export interface TxHistoryItem {
@@ -80,51 +80,31 @@ const formatUnits = (raw: bigint | number | string, decimals: number, maxFractio
  * emitted an event from the contract is listed, newest first.
  */
 async function getSorobanContractHistory(contractId: string, network: Network, limit: number): Promise<TransactionHistoryResult> {
-  const rpc = STELLAR_NETWORKS[network];
-  const call = async (method: string, params?: unknown) => {
-    const response = await fetch(rpc, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
-    });
-    if (!response.ok) throw new Error(`Soroban RPC request failed with status ${response.status}.`);
-    const data = await response.json();
-    if (data?.error) throw new Error(data.error.message ?? 'Soroban RPC error.');
-    return data.result;
-  };
+  // Soroban RPC only keeps ~7 days of events, so the backend indexer stores
+  // them as contracts are looked up and keeps the history going.
+  if (network !== 'mainnet' && network !== 'testnet') {
+    return { items: [], source: 'soroban-rpc', warning: `Contract history is not indexed on ${network}.` };
+  }
   try {
-    const health = await call('getHealth');
-    const byTx = new Map<string, any>();
-    let cursor: string | undefined;
-    for (let page = 0; page < 5; page++) {
-      const result = await call('getEvents', {
-        ...(cursor ? {} : { startLedger: health.oldestLedger }),
-        filters: [{ type: 'contract', contractIds: [contractId] }],
-        pagination: { limit: 200, ...(cursor ? { cursor } : {}) },
-      });
-      const events: any[] = Array.isArray(result?.events) ? result.events : [];
-      for (const e of events) if (e?.txHash) byTx.set(e.txHash, e);
-      if (events.length < 200 || !result?.cursor) break;
-      cursor = result.cursor;
+    const { apiService } = await import('./api');
+    const data = await apiService.getStellarContractEvents(contractId, network, limit);
+    const items: TxHistoryItem[] = data.events.map((e) => ({
+      hash: e.txHash,
+      timestamp: e.ledgerClosedAt ? Math.floor(Date.parse(e.ledgerClosedAt) / 1000) : null,
+      direction: 'unknown',
+      counterparty: null,
+      amount: null,
+      status: e.inSuccessfulContractCall ? 'success' : 'failed',
+      explorerUrl: stellarExpertUrl(network, 'tx', e.txHash) ?? null,
+      label: e.eventType ? `${e.eventType} event` : null,
+    }));
+    let warning: string | undefined;
+    if (!data.backfilled) {
+      warning = 'Indexing this contract. History fills in over the next few minutes.';
+    } else if (items.length === 0) {
+      warning = 'No contract events found in the indexed history.';
     }
-    const items: TxHistoryItem[] = Array.from(byTx.values())
-      .reverse()
-      .slice(0, limit)
-      .map((e) => ({
-        hash: e.txHash,
-        timestamp: e.ledgerClosedAt ? Math.floor(Date.parse(e.ledgerClosedAt) / 1000) : null,
-        direction: 'unknown',
-        counterparty: null,
-        amount: null,
-        status: e.inSuccessfulContractCall === false ? 'failed' : 'success',
-        explorerUrl: stellarExpertUrl(network, 'tx', e.txHash) ?? null,
-        label: e.type ? `${e.type} event` : null,
-      }));
-    return {
-      items,
-      source: 'soroban-rpc',
-      warning: items.length === 0 ? 'No contract events in the RPC retention window (about the last 7 days).' : undefined,
-    };
+    return { items, source: 'soroban-rpc', warning };
   } catch (error) {
     return { items: [], source: 'soroban-rpc', warning: `Failed to load transaction history: ${errorMessage(error)}` };
   }
@@ -346,14 +326,14 @@ const EVM_TX_EXPLORERS: Record<number, string> = {
  * Keyless, Etherscan-compatible Blockscout APIs, used when no Etherscan key is set.
  * Only hosts verified to answer without a browser challenge are listed.
  */
-const BLOCKSCOUT_APIS: Record<number, string> = {
+export const BLOCKSCOUT_APIS: Record<number, string> = {
   1: 'https://eth.blockscout.com',
   324: 'https://zksync.blockscout.com',
   42220: 'https://celo.blockscout.com',
   11155111: 'https://eth-sepolia.blockscout.com',
 };
 
-const EVM_NATIVE_SYMBOL: Record<number, string> = {
+export const EVM_NATIVE_SYMBOL: Record<number, string> = {
   25: 'CRO',
   143: 'MON',
   10143: 'MON',
@@ -367,7 +347,7 @@ const EVM_NATIVE_SYMBOL: Record<number, string> = {
   43114: 'AVAX',
 };
 
-const parseEvmChainId = (caip2: string): number | null => {
+export const parseEvmChainId = (caip2: string): number | null => {
   const match = /^eip155:(\d+)$/.exec(caip2);
   return match ? Number(match[1]) : null;
 };

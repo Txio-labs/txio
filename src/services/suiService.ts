@@ -1,5 +1,6 @@
 
 import { getAddressHistory } from './transactionHistory';
+import { getSuiAssets, SUI_GRAPHQL_URLS } from './suiGraphql';
 import { resolveChainCustomRpcUrl, resolveChainRpcUrlList, resolveRpcUrl, resolveRpcUrlList } from '@/lib/appConfig';
 import { appStore } from '@/lib/store';
 import { APTOS_NETWORKS, getEvmChain, STELLAR_HORIZON_URLS } from '@/lib/constants';
@@ -800,6 +801,26 @@ export const simulateMoveCall = async (
 };
 
 export const getOwnedObjects = async (network: Network, address: string) => {
+    if (SUI_GRAPHQL_URLS[network]) {
+        // Public fullnodes no longer serve suix_getOwnedObjects; keep the
+        // JSON-RPC-shaped result so existing callers need no change.
+        const assets = await getSuiAssets(network, address);
+        return {
+            result: {
+                data: assets.objects.map((o) => ({
+                    data: {
+                        objectId: o.objectId,
+                        version: o.version,
+                        digest: o.digest,
+                        type: o.type,
+                        content: o.fields == null ? null : { dataType: 'moveObject', fields: o.fields }
+                    }
+                })),
+                hasNextPage: false,
+                nextCursor: null
+            }
+        };
+    }
     const resolved = await resolveSuiAddress(network, address);
     return executeSuiRpc(network, 'suix_getOwnedObjects', [
         resolved,

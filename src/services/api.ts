@@ -1850,6 +1850,42 @@ class ApiService {
         await this.request<{ message: string }>(`/history/${id}`, { method: 'DELETE' });
     }
 
+    /** Net SEP-41 token balances of a G... or C... address, from indexed transfers. */
+    async getStellarTokenBalances(
+        address: string,
+        network: string
+    ): Promise<{
+        address: string;
+        network: string;
+        tokens: { tokenContract: string; balance: string; transferCount: number }[];
+    }> {
+        const params = new URLSearchParams({ network });
+        return this.request(`/stellar/accounts/${encodeURIComponent(address)}/tokens?${params.toString()}`);
+    }
+
+    /** Indexed Soroban contract events for a C... address (backend-indexed, see stellar_indexer). */
+    async getStellarContractEvents(
+        contractId: string,
+        network: string,
+        limit = 20
+    ): Promise<{
+        contractId: string;
+        network: string;
+        backfilled: boolean;
+        events: {
+            txHash: string;
+            ledger: number;
+            ledgerClosedAt: string | null;
+            eventType: string;
+            topics: string[];
+            value: string | null;
+            inSuccessfulContractCall: boolean;
+        }[];
+    }> {
+        const params = new URLSearchParams({ network, limit: String(limit) });
+        return this.request(`/stellar/contracts/${encodeURIComponent(contractId)}/events?${params.toString()}`);
+    }
+
     // Bridge (swap/bridge aggregation + USDC -> fiat off-ramp)
     async getBridgeQuote(req: BridgeQuoteRequest): Promise<BridgeQuoteResponse> {
         return this.request<BridgeQuoteResponse>('/bridge/swap/quote', {

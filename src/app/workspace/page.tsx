@@ -16,7 +16,7 @@ import { WalletsPage } from "@/features/WalletsPage";
 import { ProfilePage } from "@/features/ProfilePage";
 import { SettingsPage } from "@/features/SettingsPage";
 import { CollectionRunner } from "@/features/CollectionRunner";
-import { ContractBuilder } from "@/features/ContractBuilder";
+import { ComingSoonPage } from "@/features/ComingSoonPage";
 import { WorkspaceOnboarding } from "@/features/WorkspaceOnboarding";
 import { DocsPage } from "@/features/DocsPage";
 import { EcosystemPage } from "@/features/EcosystemPage";
@@ -27,6 +27,11 @@ import { NewCollectionPage } from "@/features/NewCollectionPage";
 import { NetworksPage } from "@/features/NetworksPage";
 import { CollectionsPage } from "@/features/CollectionsPage";
 import { WorkspaceOverviewPage } from "@/features/WorkspaceOverviewPage";
+import { SuiExplorerFeature } from "@/features/SuiExplorer";
+import { EvmExplorerFeature } from "@/features/EvmExplorer";
+import { SolanaExplorerFeature } from "@/features/SolanaExplorer";
+import { AptosExplorerFeature } from "@/features/AptosExplorer";
+import { StarknetExplorerFeature } from "@/features/StarknetExplorer";
 import { HelpPage } from "@/features/HelpPage";
 import { AdminPage } from "@/features/AdminPage";
 import { ApprovalsPage } from "@/features/ApprovalsPage";
@@ -79,7 +84,7 @@ const WorkspaceContent: React.FC = () => {
         case 'runner':
             return <CollectionRunner collectionId={activeTab.data?.collectionId} />;
         case 'move':
-            return <ContractBuilder />;
+            return <ComingSoonPage title="Contracts" />;
         case 'workspace_overview':
             return <WorkspaceOverviewPage />;
         case 'docs':
@@ -96,6 +101,16 @@ const WorkspaceContent: React.FC = () => {
             return <NetworksPage />;
         case 'partners':
             return <PartnersPage embedded />;
+        case 'explorer':
+            return <SuiExplorerFeature initialQuery={activeTab.data?.query} />;
+        case 'starknet_explorer':
+            return <StarknetExplorerFeature initialQuery={activeTab.data?.query} />;
+        case 'aptos_explorer':
+            return <AptosExplorerFeature initialQuery={activeTab.data?.query} />;
+        case 'solana_explorer':
+            return <SolanaExplorerFeature initialQuery={activeTab.data?.query} />;
+        case 'evm_explorer':
+            return <EvmExplorerFeature initialQuery={activeTab.data?.query} chainId={activeTab.data?.chainId} />;
         case 'new_collection':
             return <NewCollectionPage tabId={activeTab.id} />;
         default:

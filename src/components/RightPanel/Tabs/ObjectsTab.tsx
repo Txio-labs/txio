@@ -3,6 +3,7 @@ import { Box, Search, RefreshCw, ChevronLeft, Coins } from 'lucide-react';
 import { Network } from '../../../types';
 import { getObject } from '../../../services/suiService';
 import type { WalletChainFamily } from '../../../wallet';
+import { appStore } from '../../../lib/store';
 
 interface ObjectsTabProps {
   connectedAddress: string | null;
@@ -84,6 +85,13 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
           <div className="p-4 border-b border-line">
             <label className="text-[12px] font-semibold text-fg-muted block mb-1">Object ID</label>
             <div className="text-xs font-mono text-fg break-all select-all">{selectedObject.objectId || selectedObject.data?.objectId}</div>
+            <button
+              type="button"
+              onClick={() => appStore.openTab('explorer', { query: selectedObject.objectId || selectedObject.data?.objectId })}
+              className="mt-2 text-[12px] font-medium text-fg-subtle hover:text-fg transition-colors"
+            >
+              Open in explorer
+            </button>
           </div>
           <div className="p-4 border-b border-line">
             <label className="text-[12px] font-semibold text-fg-muted block mb-1">Type</label>

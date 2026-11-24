@@ -997,6 +997,26 @@ export const appStore = {
                     title = 'Partners';
                     break;
 
+                case 'explorer':
+                    title = 'Explorer';
+                    break;
+
+                case 'evm_explorer':
+                    title = 'EVM Explorer';
+                    break;
+
+                case 'solana_explorer':
+                    title = 'Solana Explorer';
+                    break;
+
+                case 'aptos_explorer':
+                    title = 'Aptos Explorer';
+                    break;
+
+                case 'starknet_explorer':
+                    title = 'Starknet Explorer';
+                    break;
+
                 case 'send':
                     title = 'Send';
                     break;

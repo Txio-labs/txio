@@ -20,6 +20,56 @@ import {
 import { ConnectWalletButton } from '@/components/wallet/ConnectWalletButton';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAppStore, appStore } from '@/lib/store';
+import { useStellarAssets } from '@/wallet/hooks/useStellarAssets';
+
+const StellarAssetsList: React.FC<{ formatAddress: (address: string) => string }> = ({ formatAddress }) => {
+    const { data, isLoading, error } = useStellarAssets();
+
+    if (isLoading) {
+        return <div className="mt-5 text-xs text-fg-subtle">Loading assets…</div>;
+    }
+    if (error) {
+        return <div className="mt-5 text-xs text-red-500">Could not load assets: {(error as Error).message}</div>;
+    }
+    if (!data) return null;
+
+    const rows = [
+        ...data.classic.map((a) => ({
+            key: `classic:${a.kind}:${a.code}:${a.issuer ?? ''}`,
+            label: a.code,
+            value: a.balance,
+            sub: a.issuer ? formatAddress(a.issuer) : a.kind === 'native' ? 'Native' : 'Classic asset',
+        })),
+        ...data.tokens.map((t) => ({
+            key: `token:${t.tokenContract}`,
+            label: t.symbol ?? 'Token',
+            value: t.formatted,
+            sub: formatAddress(t.tokenContract),
+        })),
+    ];
+
+    return (
+        <div className="mt-5">
+            <div className="mb-2 text-[12px] font-semibold text-fg-subtle">Assets</div>
+            {data.warning && <div className="mb-2 text-xs text-amber-500">{data.warning}</div>}
+            {rows.length === 0 ? (
+                <div className="text-xs text-fg-subtle">No assets found.</div>
+            ) : (
+                <ul className="divide-y divide-line rounded-card border border-line">
+                    {rows.map((row) => (
+                        <li key={row.key} className="flex items-center justify-between gap-3 px-3 py-2">
+                            <div className="min-w-0">
+                                <div className="text-sm font-medium text-fg">{row.label}</div>
+                                <div className="truncate font-mono text-[11px] text-fg-subtle">{row.sub}</div>
+                            </div>
+                            <div className="shrink-0 font-mono text-sm text-fg">{row.value}</div>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
+};
 
 interface WalletTabProps {
     formatAddress: (address: string) => string;
@@ -237,6 +287,10 @@ export const WalletTab: React.FC<
                                 }
                             />
                         </div>
+
+                        {currentWallet.family === 'stellar' && (
+                            <StellarAssetsList formatAddress={formatAddress} />
+                        )}
 
                         <div className="mt-5 flex items-center gap-2 rounded-card border border-line bg-hover p-1">
                             <button
