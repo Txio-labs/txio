@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Loader2, Search } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { SUI_GRAPHQL_URLS, formatRawAmount, SUI_NATIVE_COIN_TYPE } from '@/services/suiGraphql';
+import { SuiAccountView } from './SuiAccount';
 import {
     getSuiCheckpoint,
     getSuiCheckpoints,
@@ -29,7 +30,8 @@ type Resolved =
     | { kind: 'object'; object: SuiObjectDetail | null }
     | { kind: 'package'; pkg: SuiPackageDetail }
     | { kind: 'checkpoint'; checkpoint: SuiCheckpointDetail | null }
-    | { kind: 'coin'; coin: SuiCoinDetail | null };
+    | { kind: 'coin'; coin: SuiCoinDetail | null }
+    | { kind: 'address'; address: string };
 
 type Network = 'mainnet' | 'testnet' | 'devnet';
 
@@ -56,6 +58,8 @@ const resolveTarget = async (network: Network, target: SuiExplorerTarget): Promi
             return { kind: 'checkpoint', checkpoint: await getSuiCheckpoint(network, target.id) };
         case 'coin':
             return { kind: 'coin', coin: await getSuiCoin(network, target.id) };
+        case 'address':
+            return { kind: 'address', address: target.id };
         case 'package': {
             const pkg = await getSuiPackage(network, target.id);
             if (pkg) return { kind: 'package', pkg };
@@ -386,6 +390,9 @@ export const SuiExplorerFeature: React.FC<{ initialQuery?: string }> = ({ initia
                 <CheckpointView checkpoint={query.data.checkpoint} onOpen={open} />
             )}
             {query.data && query.data.kind === 'coin' && <CoinView coin={query.data.coin} coinType={submitted?.id ?? ''} />}
+            {query.data && query.data.kind === 'address' && (
+                <SuiAccountView network={network as Network} address={query.data.address} onOpen={open} />
+            )}
         </div>
     );
 };

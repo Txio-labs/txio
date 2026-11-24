@@ -6,7 +6,8 @@ export type SuiExplorerTarget =
   | { kind: 'object'; id: string }
   | { kind: 'package'; id: string }
   | { kind: 'checkpoint'; id: string }
-  | { kind: 'coin'; id: string };
+  | { kind: 'coin'; id: string }
+  | { kind: 'address'; id: string };
 
 export interface SuiCheckpointSummary {
   sequenceNumber: string;
@@ -87,6 +88,9 @@ const COIN_TYPE = /^0x[0-9a-fA-F]{1,64}::[A-Za-z_][A-Za-z0-9_]*::[A-Za-z_][A-Za-
 export const parseSuiExplorerQuery = (input: string): SuiExplorerTarget | null => {
   const value = input.trim();
   if (!value) return null;
+  // A bare 0x… is ambiguous (object id or address), so accounts use an explicit prefix.
+  const account = /^account:\s*(0x[0-9a-fA-F]{1,64})$/i.exec(value);
+  if (account) return { kind: 'address', id: normalizeSuiAddress(account[1]) };
   if (COIN_TYPE.test(value)) {
     const [address, module, name] = value.split('::');
     return { kind: 'coin', id: `${normalizeSuiAddress(address)}::${module}::${name}` };
