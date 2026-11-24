@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2, Search } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
+import { txRole } from '@/lib/txRole';
 import type { Network } from '@/types';
 import {
     formatOctas,
@@ -44,14 +45,17 @@ const Loading = () => (
     </div>
 );
 
-const TxList: React.FC<{ txs: AptosTransactionSummary[]; onOpen: (id: string) => void }> = ({ txs, onOpen }) => {
+const TxList: React.FC<{ txs: AptosTransactionSummary[]; onOpen: (id: string) => void; account?: string }> = ({ txs, onOpen, account }) => {
     if (txs.length === 0) return <Muted>No transactions.</Muted>;
     return (
         <ul className="divide-y divide-line">
             {txs.map((t) => (
                 <li key={t.hash} className="flex items-center justify-between gap-3 py-2">
                     <Link id={t.hash} onOpen={onOpen}>{short(t.hash, 14, 8)}</Link>
-                    <span className="truncate text-xs text-fg-muted">{t.functionName ? t.functionName.split('::').slice(-2).join('::') : t.type ?? '—'}</span>
+                    <span className="truncate text-xs text-fg-muted">
+                        {t.functionName ? t.functionName.split('::').slice(-2).join('::') : t.type ?? '—'}
+                        {account && <> · {txRole(account, t.sender)}</>}
+                    </span>
                     <span className="text-xs text-fg-subtle">{formatTime(t.timestamp)}</span>
                 </li>
             ))}
@@ -97,7 +101,8 @@ const AccountView: React.FC<{ network: Network; address: string; onOpen: (id: st
                 <Field label="Authentication key" value={account.authenticationKey ?? '—'} />
             </Panel>
             <Panel title="Recent transactions">
-                <TxList txs={account.transactions} onOpen={onOpen} />
+                <TxList txs={account.transactions} onOpen={onOpen} account={account.address} />
+                <Muted>Aptos lists transactions this account signed. Transfers it received are not listed.</Muted>
             </Panel>
         </div>
     );

@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Loader2, Search } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { getEvmChain } from '@/lib/constants';
+import { txRole } from '@/lib/txRole';
 import {
     evmExplorerSupported,
     evmNativeSymbol,
@@ -132,20 +133,23 @@ const AddressView: React.FC<ViewProps & { address: string }> = ({ chainId, onOpe
                 )}
             </Panel>
             <Panel title="Recent transactions">
-                {transactionsError ? <ErrorText message={`Transactions unavailable: ${transactionsError}`} /> : <TxList txs={transactions} onOpen={onOpen} />}
+                {transactionsError ? <ErrorText message={`Transactions unavailable: ${transactionsError}`} /> : <TxList txs={transactions} onOpen={onOpen} account={address} />}
             </Panel>
         </div>
     );
 };
 
-const TxList: React.FC<{ txs: EvmListedTransaction[]; onOpen: (id: string) => void }> = ({ txs, onOpen }) => {
+const TxList: React.FC<{ txs: EvmListedTransaction[]; onOpen: (id: string) => void; account?: string }> = ({ txs, onOpen, account }) => {
     if (txs.length === 0) return <Muted>No transactions.</Muted>;
     return (
         <ul className="divide-y divide-line">
             {txs.map((t) => (
                 <li key={t.hash} className="flex items-center justify-between gap-3 py-2">
                     <Link id={t.hash} onOpen={onOpen}>{short(t.hash, 14, 8)}</Link>
-                    <span className="text-xs text-fg-muted">{t.method ?? (t.status === 'failed' ? 'failed' : 'transfer')}</span>
+                    <span className="text-xs text-fg-muted">
+                        {t.method ?? (t.status === 'failed' ? 'failed' : 'transfer')}
+                        {account && <> · {txRole(account, t.from, t.to)}</>}
+                    </span>
                     <span className="text-xs text-fg-subtle">{formatTime(t.timestamp)}</span>
                 </li>
             ))}

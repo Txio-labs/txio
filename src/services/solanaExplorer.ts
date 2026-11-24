@@ -150,6 +150,30 @@ export const getSolanaAccount = async (network: Network, address: string): Promi
   };
 };
 
+/** Fee payer (the sender) of a transaction: its first account key. Null if it can't be read. */
+export const feePayerOf = (tx: any): string | null => {
+  const key = tx?.transaction?.message?.accountKeys?.[0];
+  return typeof key === 'string' && key ? key : null;
+};
+
+/**
+ * Fee payer for each signature. Limited to `signatures.length` calls, so
+ * callers pass only the newest few. A failed lookup maps to null.
+ */
+export const getSolanaFeePayers = async (network: Network, signatures: string[]): Promise<Record<string, string | null>> => {
+  const entries = await Promise.all(
+    signatures.map(async (sig) => {
+      try {
+        const tx = await rpc(network, 'getTransaction', [sig, { encoding: 'json', maxSupportedTransactionVersion: 0 }]);
+        return [sig, feePayerOf(tx)] as const;
+      } catch {
+        return [sig, null] as const;
+      }
+    })
+  );
+  return Object.fromEntries(entries);
+};
+
 export const getSolanaNetworkInfo = async (network: Network): Promise<SolanaNetworkInfo> => {
   const [slot, epoch] = await Promise.all([rpc(network, 'getSlot', []), rpc(network, 'getEpochInfo', [])]);
   return {

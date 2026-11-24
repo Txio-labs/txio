@@ -5,8 +5,10 @@ import { useQuery } from '@tanstack/react-query';
 import { Loader2, Search } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import type { Network } from '@/types';
+import { txRole } from '@/lib/txRole';
 import {
     getSolanaAccount,
+    getSolanaFeePayers,
     getSolanaNetworkInfo,
     getSolanaTransaction,
     lamportsToSol,
@@ -93,6 +95,13 @@ const TxView: React.FC<{ network: Network; signature: string; onOpen: (id: strin
 
 const AccountView: React.FC<{ network: Network; address: string; onOpen: (id: string) => void }> = ({ network, address, onOpen }) => {
     const query = useQuery({ queryKey: ['solana-explorer-account', network, address], queryFn: () => getSolanaAccount(network, address) });
+    // Fee payer per recent signature (sender vs affected). Only the newest 10 are read, to bound RPC calls.
+    const recentSigs = (query.data?.signatures ?? []).slice(0, 10).map((s) => s.signature);
+    const feePayers = useQuery({
+        queryKey: ['solana-fee-payers', network, address, recentSigs.join(',')],
+        enabled: recentSigs.length > 0,
+        queryFn: () => getSolanaFeePayers(network, recentSigs),
+    });
     if (query.isLoading) return <Loading />;
     if (query.error) return <ErrorText message={(query.error as Error).message} />;
     const account = query.data;
@@ -129,7 +138,12 @@ const AccountView: React.FC<{ network: Network; address: string; onOpen: (id: st
                         {account.signatures.map((s) => (
                             <li key={s.signature} className="flex items-center justify-between gap-3 py-2">
                                 <Link id={s.signature} onOpen={onOpen}>{short(s.signature, 14, 8)}</Link>
-                                <span className="text-xs text-fg-muted">{s.failed ? 'failed' : 'success'}</span>
+                                <span className="text-xs text-fg-muted">
+                                    {s.failed ? 'failed' : 'success'}
+                                    {feePayers.data?.[s.signature] && (
+                                        <> · {txRole(address, feePayers.data[s.signature])}</>
+                                    )}
+                                </span>
                                 <span className="text-xs text-fg-subtle">{formatTime(s.blockTime)}</span>
                             </li>
                         ))}
