@@ -97,7 +97,11 @@ const AssetView: React.FC<{ network: Network }> = ({ network }) => {
     },
   });
 
-  const price = useMemo(() => (candles.data ? summarizePrice(candles.data, Date.now()) : null), [candles.data]);
+  // dataUpdatedAt is when these candles were fetched. Using it keeps render pure.
+  const price = useMemo(
+    () => (candles.data ? summarizePrice(candles.data, candles.dataUpdatedAt) : null),
+    [candles.data, candles.dataUpdatedAt]
+  );
   const meta = info.data?.[0];
 
   return (
