@@ -1021,6 +1021,10 @@ export const appStore = {
                     title = 'Stellar Explorer';
                     break;
 
+                case 'lookup':
+                    title = 'Lookup';
+                    break;
+
                 case 'send':
                     title = 'Send';
                     break;

@@ -85,6 +85,7 @@ const NAV_GROUPS: NavGroup[] = [
             { id: 'move', label: 'Contracts', icon: Hammer },
             { id: 'collections', label: 'Collections', icon: FolderKanban },
             { id: 'history', label: 'History', icon: Activity },
+            { id: 'lookup', label: 'Lookup', icon: Search },
         ],
     },
     {
