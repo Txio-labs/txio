@@ -31,35 +31,9 @@ const limit = (params: Params, i: number): number => {
 const page = (params: Params, i: number) => `order=desc&limit=${limit(params, i)}`;
 
 export const HORIZON_METHODS: Record<string, HorizonMethod> = {
-    horizon_getRoot: { path: () => '/', template: [] },
-    horizon_getAccount: { path: (p) => `/accounts/${seg(p, 0, 'account')}`, template: ['<G... account>'] },
-    horizon_getAccountPayments: {
-        path: (p) => `/accounts/${seg(p, 0, 'account')}/payments?${page(p, 1)}&include_failed=true`,
-        template: ['<G... account>', 10]
-    },
-    horizon_getAccountOperations: {
-        path: (p) => `/accounts/${seg(p, 0, 'account')}/operations?${page(p, 1)}&include_failed=true`,
-        template: ['<G... account>', 10]
-    },
-    horizon_getAccountTransactions: {
-        path: (p) => `/accounts/${seg(p, 0, 'account')}/transactions?${page(p, 1)}&include_failed=true`,
-        template: ['<G... account>', 10]
-    },
-    horizon_getTransaction: { path: (p) => `/transactions/${seg(p, 0, 'transaction hash')}`, template: ['<transaction hash>'] },
-    horizon_getTransactionOperations: {
-        path: (p) => `/transactions/${seg(p, 0, 'transaction hash')}/operations`,
-        template: ['<transaction hash>']
-    },
-    horizon_getLatestLedgers: { path: (p) => `/ledgers?${page(p, 0)}`, template: [5] },
-    horizon_getLedger: { path: (p) => `/ledgers/${seg(p, 0, 'ledger sequence')}`, template: ['<ledger sequence>'] },
-    horizon_getFeeStats: { path: () => '/fee_stats', template: [] },
     horizon_getAssets: {
         path: (p) => `/assets?asset_code=${seg(p, 0, 'asset code')}${p[1] ? `&asset_issuer=${seg(p, 1, 'issuer')}` : ''}&limit=${limit(p, 2)}`,
         template: ['USDC', '', 10]
-    },
-    horizon_getClaimableBalances: {
-        path: (p) => `/claimable_balances?claimant=${seg(p, 0, 'claimant')}&${page(p, 1)}`,
-        template: ['<G... account>', 10]
     }
 };
 

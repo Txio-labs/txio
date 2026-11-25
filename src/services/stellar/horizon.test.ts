@@ -1,42 +1,36 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { HORIZON_METHODS, callHorizon, horizonErrorMessage, isHorizonMethod } from './horizon';
 
-const G = 'GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H';
-
 describe('callHorizon', () => {
     afterEach(() => vi.unstubAllGlobals());
 
-    it('maps a named method onto its REST path', async () => {
-        const fetchMock = vi.fn().mockResolvedValue(new Response('{"id":"x"}', { status: 200 }));
-        vi.stubGlobal('fetch', fetchMock);
-        const res = await callHorizon('https://horizon-testnet.stellar.org/', 'horizon_getAccountPayments', [G, 500]);
-        expect(fetchMock.mock.calls[0][0]).toBe(
-            `https://horizon-testnet.stellar.org/accounts/${G}/payments?order=desc&limit=200&include_failed=true`
-        );
-        expect(res).toMatchObject({ ok: true, status: 200, data: { id: 'x' } });
-    });
-
-    it('hits the root for horizon_getRoot and omits an empty issuer', async () => {
+    it('maps horizon_getAssets onto the assets path and omits an empty issuer', async () => {
         const fetchMock = vi.fn().mockImplementation(async () => new Response('{}', { status: 200 }));
         vi.stubGlobal('fetch', fetchMock);
-        await callHorizon('https://h', 'horizon_getRoot', []);
         await callHorizon('https://h', 'horizon_getAssets', ['USDC', '', 10]);
-        expect(fetchMock.mock.calls[0][0]).toBe('https://h');
-        expect(fetchMock.mock.calls[1][0]).toBe('https://h/assets?asset_code=USDC&limit=10');
+        expect(fetchMock.mock.calls[0][0]).toBe('https://h/assets?asset_code=USDC&limit=10');
+    });
+
+    it('returns the parsed JSON body with status', async () => {
+        const fetchMock = vi.fn().mockResolvedValue(new Response('{"id":"x"}', { status: 200 }));
+        vi.stubGlobal('fetch', fetchMock);
+        const res = await callHorizon('https://h', 'horizon_getAssets', ['USDC', 'GABC', 5]);
+        expect(res).toMatchObject({ ok: true, status: 200, data: { id: 'x' } });
     });
 
     it('rejects unknown methods and missing params before any request', async () => {
         const fetchMock = vi.fn();
         vi.stubGlobal('fetch', fetchMock);
+        await expect(callHorizon('https://h', 'horizon_getAccount', [])).rejects.toThrow(/Unknown Horizon method/);
         await expect(callHorizon('https://h', 'getHealth', [])).rejects.toThrow(/Unknown Horizon method/);
-        await expect(callHorizon('https://h', 'horizon_getAccount', [])).rejects.toThrow(/Missing account/);
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
     it('knows its own methods only', () => {
-        expect(isHorizonMethod('horizon_getFeeStats')).toBe(true);
-        expect(isHorizonMethod('getFeeStats')).toBe(false);
+        expect(isHorizonMethod('horizon_getAssets')).toBe(true);
+        expect(isHorizonMethod('horizon_getAccount')).toBe(false);
         expect(isHorizonMethod('toString')).toBe(false);
+        expect(Object.keys(HORIZON_METHODS)).toEqual(['horizon_getAssets']);
         for (const spec of Object.values(HORIZON_METHODS)) expect(Array.isArray(spec.template)).toBe(true);
     });
 
