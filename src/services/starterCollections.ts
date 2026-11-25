@@ -141,39 +141,7 @@ const sorobanRpcStarter: StarterCollection = {
     }
 };
 
-const horizonStarter: StarterCollection = {
-    id: 'stellar-horizon',
-    chain: 'stellar',
-    chainLabel: 'Stellar',
-    title: 'Account data',
-    summary: 'Account balances, signers and history, ledgers, fee stats and assets.',
-    networks: STELLAR_PRESETS,
-    requestCount: 10,
-    networkName: (n) => STELLAR_NETWORK_NAMES[n],
-    build: async (ctx) => {
-        const { network } = ctx;
-        const account = await stellarAccount(ctx);
-        const a = account.address;
-        const r = (name: string, method: string, params: unknown[] = []) => rpc('stellar', network, name, method, params);
-        return {
-            notes: [account.note],
-            requests: [
-                r('Network status', 'stellar_getRoot'),
-                r('Account details', 'stellar_getAccount', [a]),
-                r('Account balance', 'getBalance', [a]),
-                r('Account payments', 'stellar_getAccountPayments', [a, 10]),
-                r('Account operations', 'stellar_getAccountOperations', [a, 10]),
-                r('Account transactions', 'stellar_getAccountTransactions', [a, 10]),
-                r('Claimable balances for the account', 'stellar_getClaimableBalances', [a, 10]),
-                r('Latest ledgers', 'stellar_getLatestLedgers', [5]),
-                r('Fee stats', 'stellar_getFeeStats'),
-                r('Assets with code USDC', 'stellar_getAssets', ['USDC', '', 10])
-            ]
-        };
-    }
-};
-
-export const STARTER_COLLECTIONS: StarterCollection[] = [sorobanRpcStarter, horizonStarter];
+export const STARTER_COLLECTIONS: StarterCollection[] = [sorobanRpcStarter];
 
 /** Name a starter gets once installed on a network, e.g. "Soroban RPC (Futurenet)". */
 export const starterCollectionName = (starter: StarterCollection, network: Network): string =>

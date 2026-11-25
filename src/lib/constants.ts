@@ -1,7 +1,6 @@
 
 import { Network, ChainId } from "../types";
 import { APTOS_REST_METHODS } from "../services/aptosRest";
-import { HORIZON_METHODS } from "../services/stellar/horizon";
 
 // Default Sui fullnode endpoint per network. Mirrors `Network::sui_url` on the
 // backend (backend/api/src/model/network.rs). `Record<Network, ...>` forces
@@ -242,7 +241,6 @@ export const COMMON_RPC_METHODS: Partial<Record<ChainId, string[]>> = {
     'getVersionInfo',
     'simulateTransaction',
     'sendTransaction',
-    ...Object.keys(HORIZON_METHODS),
   ],
   solana: [
     'getAddressTransactions',
@@ -371,8 +369,6 @@ export const RPC_METHOD_TEMPLATES: Readonly<Partial<Record<ChainId, Readonly<Rec
     getVersionInfo: [{}],
     simulateTransaction: [{ transaction: '<base64 tx envelope>' }],
     sendTransaction: [{ transaction: '<base64 tx envelope>' }],
-    // Horizon REST reads (see services/stellar/horizon.ts): positional params, not one object.
-    ...Object.fromEntries(Object.entries(HORIZON_METHODS).map(([name, m]) => [name, m.template])),
   },
   solana: {
     getAddressTransactions: ['<base58 wallet address>', { limit: 20 }],

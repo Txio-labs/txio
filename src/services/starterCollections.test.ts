@@ -34,24 +34,6 @@ describe('starter collections', () => {
         expect(events.rpcParams.params[0].startLedger).toBe('latest-1000');
     });
 
-    it('uses a connected wallet without calling Friendbot', async () => {
-        const fetchMock = vi.fn();
-        vi.stubGlobal('fetch', fetchMock);
-        const { requests } = await byId('stellar-horizon').build({ network: 'testnet', walletAddress: WALLET });
-        expect(requests.find((r) => r.rpcParams.method === 'stellar_getAccount')!.rpcParams.params).toEqual([WALLET]);
-        expect(fetchMock).not.toHaveBeenCalled();
-    });
-
-    it('funds a fresh account through the network Friendbot when no wallet is connected', async () => {
-        const fetchMock = vi.fn().mockImplementation(async () => new Response('{}', { status: 200 }));
-        vi.stubGlobal('fetch', fetchMock);
-        const { requests, notes } = await byId('stellar-horizon').build({ network: 'devnet' });
-        const account = requests.find((r) => r.rpcParams.method === 'stellar_getAccount')!.rpcParams.params[0];
-        expect(account).toMatch(/^G[A-Z2-7]{55}$/);
-        expect(fetchMock.mock.calls[0][0]).toBe(`https://friendbot-futurenet.stellar.org?addr=${account}`);
-        expect(notes.join(' ')).toMatch(/funded by Friendbot/);
-    });
-
     it('names an installed starter after its network', () => {
         expect(starterCollectionName(byId('stellar-soroban-rpc'), 'devnet')).toBe('Soroban RPC (Futurenet)');
     });
