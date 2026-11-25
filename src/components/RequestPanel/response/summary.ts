@@ -75,6 +75,18 @@ const balanceLines = (chain: string, value: unknown): string[] | null => {
     return lamports !== null ? [`${formatUnitsFixed(lamports, 9, 4)} SOL`] : null;
   }
   if (chain === 'stellar') {
+    // Contract (C...) address: indexed SEP-41 balances. Amounts are raw token units;
+    // the token's decimals are not in the response, so they are shown unformatted.
+    const tokens = value && typeof value === 'object' ? (value as { tokens?: unknown }).tokens : null;
+    if (Array.isArray(tokens)) {
+      if (tokens.length === 0) return ['No token balances'];
+      return tokens.map((raw) => {
+        const item = (raw ?? {}) as Record<string, unknown>;
+        const contract = typeof item.tokenContract === 'string' ? item.tokenContract : 'Unknown';
+        const amount = typeof item.balance === 'string' ? item.balance : '0';
+        return `${amount} units of ${contract.slice(0, 6)}…${contract.slice(-4)}`;
+      });
+    }
     // Horizon account: one entry per asset, amounts are 7-decimal strings ("0.9580461").
     const balances = value && typeof value === 'object' ? (value as { balances?: unknown }).balances : null;
     if (!Array.isArray(balances)) return null;

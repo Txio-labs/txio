@@ -38,6 +38,16 @@ describe('summarizeResult', () => {
     expect(summarizeResult("stellar", "getBalance", account)).toEqual(["0.9580 USDC", "2.1455 XLM"]);
   });
 
+  it('summarizes a contract address balance from its indexed token list', () => {
+    const contract = {
+      address: "CDGZ2RFCKEQUFZZPWJ5WRKPCD35QUWKEWDKAQW3SL2HYSS4YAK67WPL3",
+      network: "mainnet",
+      tokens: [{ tokenContract: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFOO", balance: "5000000", transferCount: 3 }],
+    };
+    expect(summarizeResult("stellar", "getBalance", contract)).toEqual(["5000000 units of CAAAAA…AFOO"]);
+    expect(summarizeResult("stellar", "getBalance", { ...contract, tokens: [] })).toEqual(["No token balances"]);
+  });
+
   it('lists transaction history one line per item', () => {
     const history = {
       items: [
