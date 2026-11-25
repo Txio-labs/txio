@@ -129,7 +129,7 @@ async function getStellarHistory(address: string, network: Network, limit: numbe
       if (payRes.status === 404) {
         return { items: [], source: 'horizon', warning: 'This account does not exist on this Stellar network yet.' };
       }
-      if (!payRes.ok) throw new Error(`Horizon request failed with status ${payRes.status}.`);
+      if (!payRes.ok) throw new Error(`Stellar data request failed with status ${payRes.status}.`);
       const payData = await payRes.json();
       const page: any[] = Array.isArray(payData?._embedded?.records) ? payData._embedded.records : [];
       if (page.length === 0) break;
@@ -169,7 +169,7 @@ async function getStellarHistory(address: string, network: Network, limit: numbe
       `${horizon}/accounts/${encodeURIComponent(address)}/transactions?order=desc&limit=${Math.min(limit, 200)}&include_failed=true`,
       { headers: { Accept: 'application/json' } }
     );
-    if (!txRes.ok) throw new Error(`Horizon request failed with status ${txRes.status}.`);
+    if (!txRes.ok) throw new Error(`Stellar data request failed with status ${txRes.status}.`);
     const txData = await txRes.json();
     const records: any[] = Array.isArray(txData?._embedded?.records) ? txData._embedded.records : [];
     return {

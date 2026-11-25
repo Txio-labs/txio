@@ -145,8 +145,8 @@ const horizonStarter: StarterCollection = {
     id: 'stellar-horizon',
     chain: 'stellar',
     chainLabel: 'Stellar',
-    title: 'Horizon',
-    summary: 'Account balances, signers and history, ledgers, fee stats and assets from the Horizon REST API.',
+    title: 'Account data',
+    summary: 'Account balances, signers and history, ledgers, fee stats and assets.',
     networks: STELLAR_PRESETS,
     requestCount: 10,
     networkName: (n) => STELLAR_NETWORK_NAMES[n],
@@ -158,16 +158,16 @@ const horizonStarter: StarterCollection = {
         return {
             notes: [account.note],
             requests: [
-                r('Horizon status', 'horizon_getRoot'),
-                r('Account details', 'horizon_getAccount', [a]),
+                r('Network status', 'stellar_getRoot'),
+                r('Account details', 'stellar_getAccount', [a]),
                 r('Account balance', 'getBalance', [a]),
-                r('Account payments', 'horizon_getAccountPayments', [a, 10]),
-                r('Account operations', 'horizon_getAccountOperations', [a, 10]),
-                r('Account transactions', 'horizon_getAccountTransactions', [a, 10]),
-                r('Claimable balances for the account', 'horizon_getClaimableBalances', [a, 10]),
-                r('Latest ledgers', 'horizon_getLatestLedgers', [5]),
-                r('Fee stats', 'horizon_getFeeStats'),
-                r('Assets with code USDC', 'horizon_getAssets', ['USDC', '', 10])
+                r('Account payments', 'stellar_getAccountPayments', [a, 10]),
+                r('Account operations', 'stellar_getAccountOperations', [a, 10]),
+                r('Account transactions', 'stellar_getAccountTransactions', [a, 10]),
+                r('Claimable balances for the account', 'stellar_getClaimableBalances', [a, 10]),
+                r('Latest ledgers', 'stellar_getLatestLedgers', [5]),
+                r('Fee stats', 'stellar_getFeeStats'),
+                r('Assets with code USDC', 'stellar_getAssets', ['USDC', '', 10])
             ]
         };
     }

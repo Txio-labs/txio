@@ -31,33 +31,33 @@ const limit = (params: Params, i: number): number => {
 const page = (params: Params, i: number) => `order=desc&limit=${limit(params, i)}`;
 
 export const HORIZON_METHODS: Record<string, HorizonMethod> = {
-    horizon_getRoot: { path: () => '/', template: [] },
-    horizon_getAccount: { path: (p) => `/accounts/${seg(p, 0, 'account')}`, template: ['<G... account>'] },
-    horizon_getAccountPayments: {
+    stellar_getRoot: { path: () => '/', template: [] },
+    stellar_getAccount: { path: (p) => `/accounts/${seg(p, 0, 'account')}`, template: ['<G... account>'] },
+    stellar_getAccountPayments: {
         path: (p) => `/accounts/${seg(p, 0, 'account')}/payments?${page(p, 1)}&include_failed=true`,
         template: ['<G... account>', 10]
     },
-    horizon_getAccountOperations: {
+    stellar_getAccountOperations: {
         path: (p) => `/accounts/${seg(p, 0, 'account')}/operations?${page(p, 1)}&include_failed=true`,
         template: ['<G... account>', 10]
     },
-    horizon_getAccountTransactions: {
+    stellar_getAccountTransactions: {
         path: (p) => `/accounts/${seg(p, 0, 'account')}/transactions?${page(p, 1)}&include_failed=true`,
         template: ['<G... account>', 10]
     },
-    horizon_getTransaction: { path: (p) => `/transactions/${seg(p, 0, 'transaction hash')}`, template: ['<transaction hash>'] },
-    horizon_getTransactionOperations: {
+    stellar_getTransaction: { path: (p) => `/transactions/${seg(p, 0, 'transaction hash')}`, template: ['<transaction hash>'] },
+    stellar_getTransactionOperations: {
         path: (p) => `/transactions/${seg(p, 0, 'transaction hash')}/operations`,
         template: ['<transaction hash>']
     },
-    horizon_getLatestLedgers: { path: (p) => `/ledgers?${page(p, 0)}`, template: [5] },
-    horizon_getLedger: { path: (p) => `/ledgers/${seg(p, 0, 'ledger sequence')}`, template: ['<ledger sequence>'] },
-    horizon_getFeeStats: { path: () => '/fee_stats', template: [] },
-    horizon_getAssets: {
+    stellar_getLatestLedgers: { path: (p) => `/ledgers?${page(p, 0)}`, template: [5] },
+    stellar_getLedger: { path: (p) => `/ledgers/${seg(p, 0, 'ledger sequence')}`, template: ['<ledger sequence>'] },
+    stellar_getFeeStats: { path: () => '/fee_stats', template: [] },
+    stellar_getAssets: {
         path: (p) => `/assets?asset_code=${seg(p, 0, 'asset code')}${p[1] ? `&asset_issuer=${seg(p, 1, 'issuer')}` : ''}&limit=${limit(p, 2)}`,
         template: ['USDC', '', 10]
     },
-    horizon_getClaimableBalances: {
+    stellar_getClaimableBalances: {
         path: (p) => `/claimable_balances?claimant=${seg(p, 0, 'claimant')}&${page(p, 1)}`,
         template: ['<G... account>', 10]
     }
@@ -76,7 +76,7 @@ export interface HorizonResponse {
 export const callHorizon = async (baseUrl: string, method: string, params: Params, signal?: AbortSignal): Promise<HorizonResponse> => {
     const spec = HORIZON_METHODS[method];
     if (!spec) {
-        throw new Error(`Unknown Horizon method "${method}". Available: ${Object.keys(HORIZON_METHODS).join(', ')}.`);
+        throw new Error(`Unknown Stellar data method "${method}". Available: ${Object.keys(HORIZON_METHODS).join(', ')}.`);
     }
     const path = spec.path(params);
     const url = `${baseUrl.replace(/\/$/, '')}${path === '/' ? '' : path}`;
@@ -99,5 +99,5 @@ export const horizonErrorMessage = (data: unknown, status: number): string => {
         if (typeof title === 'string' && title) return title;
     }
     if (typeof data === 'string' && data.trim()) return data.trim();
-    return `Horizon returned HTTP ${status}.`;
+    return `Stellar data service returned HTTP ${status}.`;
 };

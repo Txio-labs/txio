@@ -38,7 +38,7 @@ describe('starter collections', () => {
         const fetchMock = vi.fn();
         vi.stubGlobal('fetch', fetchMock);
         const { requests } = await byId('stellar-horizon').build({ network: 'testnet', walletAddress: WALLET });
-        expect(requests.find((r) => r.rpcParams.method === 'horizon_getAccount')!.rpcParams.params).toEqual([WALLET]);
+        expect(requests.find((r) => r.rpcParams.method === 'stellar_getAccount')!.rpcParams.params).toEqual([WALLET]);
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
@@ -46,7 +46,7 @@ describe('starter collections', () => {
         const fetchMock = vi.fn().mockImplementation(async () => new Response('{}', { status: 200 }));
         vi.stubGlobal('fetch', fetchMock);
         const { requests, notes } = await byId('stellar-horizon').build({ network: 'devnet' });
-        const account = requests.find((r) => r.rpcParams.method === 'horizon_getAccount')!.rpcParams.params[0];
+        const account = requests.find((r) => r.rpcParams.method === 'stellar_getAccount')!.rpcParams.params[0];
         expect(account).toMatch(/^G[A-Z2-7]{55}$/);
         expect(fetchMock.mock.calls[0][0]).toBe(`https://friendbot-futurenet.stellar.org?addr=${account}`);
         expect(notes.join(' ')).toMatch(/funded by Friendbot/);

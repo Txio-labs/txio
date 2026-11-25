@@ -9,18 +9,18 @@ describe('callHorizon', () => {
     it('maps a named method onto its REST path', async () => {
         const fetchMock = vi.fn().mockResolvedValue(new Response('{"id":"x"}', { status: 200 }));
         vi.stubGlobal('fetch', fetchMock);
-        const res = await callHorizon('https://horizon-testnet.stellar.org/', 'horizon_getAccountPayments', [G, 500]);
+        const res = await callHorizon('https://horizon-testnet.stellar.org/', 'stellar_getAccountPayments', [G, 500]);
         expect(fetchMock.mock.calls[0][0]).toBe(
             `https://horizon-testnet.stellar.org/accounts/${G}/payments?order=desc&limit=200&include_failed=true`
         );
         expect(res).toMatchObject({ ok: true, status: 200, data: { id: 'x' } });
     });
 
-    it('hits the root for horizon_getRoot and omits an empty issuer', async () => {
+    it('hits the root for stellar_getRoot and omits an empty issuer', async () => {
         const fetchMock = vi.fn().mockImplementation(async () => new Response('{}', { status: 200 }));
         vi.stubGlobal('fetch', fetchMock);
-        await callHorizon('https://h', 'horizon_getRoot', []);
-        await callHorizon('https://h', 'horizon_getAssets', ['USDC', '', 10]);
+        await callHorizon('https://h', 'stellar_getRoot', []);
+        await callHorizon('https://h', 'stellar_getAssets', ['USDC', '', 10]);
         expect(fetchMock.mock.calls[0][0]).toBe('https://h');
         expect(fetchMock.mock.calls[1][0]).toBe('https://h/assets?asset_code=USDC&limit=10');
     });
@@ -28,13 +28,13 @@ describe('callHorizon', () => {
     it('rejects unknown methods and missing params before any request', async () => {
         const fetchMock = vi.fn();
         vi.stubGlobal('fetch', fetchMock);
-        await expect(callHorizon('https://h', 'getHealth', [])).rejects.toThrow(/Unknown Horizon method/);
-        await expect(callHorizon('https://h', 'horizon_getAccount', [])).rejects.toThrow(/Missing account/);
+        await expect(callHorizon('https://h', 'getHealth', [])).rejects.toThrow(/Unknown Stellar data method/);
+        await expect(callHorizon('https://h', 'stellar_getAccount', [])).rejects.toThrow(/Missing account/);
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
     it('knows its own methods only', () => {
-        expect(isHorizonMethod('horizon_getFeeStats')).toBe(true);
+        expect(isHorizonMethod('stellar_getFeeStats')).toBe(true);
         expect(isHorizonMethod('getFeeStats')).toBe(false);
         expect(isHorizonMethod('toString')).toBe(false);
         for (const spec of Object.values(HORIZON_METHODS)) expect(Array.isArray(spec.template)).toBe(true);
@@ -45,6 +45,6 @@ describe('callHorizon', () => {
             'The resource does not exist.'
         );
         expect(horizonErrorMessage({ title: 'Bad Request' }, 400)).toBe('Bad Request');
-        expect(horizonErrorMessage(null, 503)).toBe('Horizon returned HTTP 503.');
+        expect(horizonErrorMessage(null, 503)).toBe('Stellar data service returned HTTP 503.');
     });
 });

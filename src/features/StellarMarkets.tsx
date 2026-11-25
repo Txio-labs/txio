@@ -339,7 +339,7 @@ const PoolsView: React.FC<{ network: Network }> = ({ network }) => {
               {holders.isLoading ? (
                 <Loading />
               ) : holders.error ? (
-                <Muted>Holder list unavailable from Horizon: {(holders.error as Error).message}</Muted>
+                <Muted>Holder list unavailable: {(holders.error as Error).message}</Muted>
               ) : !holders.data?.length ? (
                 <Muted>No holders.</Muted>
               ) : (

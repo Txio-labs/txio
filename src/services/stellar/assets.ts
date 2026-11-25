@@ -24,7 +24,7 @@ export const fetchStellarClassicAssets = async (address: string, network: Networ
   });
   // Not funded yet: no account on the ledger, so no trustlines either.
   if (response.status === 404) return [];
-  if (!response.ok) throw new Error(`Horizon request failed with status ${response.status}.`);
+  if (!response.ok) throw new Error(`Stellar data request failed with status ${response.status}.`);
   const data = await response.json();
   const balances: any[] = Array.isArray(data?.balances) ? data.balances : [];
   return balances.map((b): StellarClassicAsset => {

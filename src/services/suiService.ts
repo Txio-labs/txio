@@ -211,7 +211,7 @@ const getStellarBalanceViaHorizon = async (
       const message =
         typeof data?.detail === 'string' && data.detail
           ? data.detail
-          : `Horizon request failed with status ${response.status}.`;
+          : `Stellar data request failed with status ${response.status}.`;
       throw new SuiRpcError(message, { status: response.status, endpoint: url, duration });
     }
 
@@ -228,7 +228,7 @@ const getStellarBalanceViaHorizon = async (
     }
 
     if (error?.name === 'AbortError') {
-      throw new SuiRpcError(`Horizon request timed out after ${RPC_TIMEOUT_MS / 1000}s.`, {
+      throw new SuiRpcError(`Stellar data request timed out after ${RPC_TIMEOUT_MS / 1000}s.`, {
         status: 504,
         endpoint: url,
         duration,
@@ -238,7 +238,7 @@ const getStellarBalanceViaHorizon = async (
     throw new SuiRpcError(
       error instanceof Error && error.message.trim()
         ? error.message
-        : 'Unable to reach Horizon.',
+        : 'Unable to reach the Stellar data service.',
       { status: 0, endpoint: url, duration }
     );
   }
@@ -446,9 +446,9 @@ const executeHorizon = async (
     if (error instanceof SuiRpcError) throw error;
     const duration = Math.round(performance.now() - startTime);
     if ((error as Error)?.name === 'AbortError') {
-      throw new SuiRpcError(`Horizon request timed out after ${RPC_TIMEOUT_MS / 1000}s.`, { status: 504, endpoint, duration });
+      throw new SuiRpcError(`Stellar data request timed out after ${RPC_TIMEOUT_MS / 1000}s.`, { status: 504, endpoint, duration });
     }
-    throw new SuiRpcError(error instanceof Error && error.message ? error.message : 'Unable to reach Horizon.', {
+    throw new SuiRpcError(error instanceof Error && error.message ? error.message : 'Unable to reach the Stellar data service.', {
       status: 0,
       endpoint,
       duration
