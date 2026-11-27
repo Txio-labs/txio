@@ -17,6 +17,8 @@ import { ChainId } from '@/types';
 import { JsonEditor } from '../../ui/JsonEditor';
 import { Select } from '../../Select';
 import { SolanaTransactionBuilder } from './SolanaTransactionBuilder';
+import { StarknetMethodInfo } from './StarknetMethodInfo';
+import { isStarknetWriteMethod } from '@/services/starknetMethods';
 
 interface RPCBuilderProps {
   request: any;
@@ -501,7 +503,11 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
                       {isSelected && <Check size={11} className="shrink-0" />}
                       <span className="truncate">{m}</span>
                     </span>
-                    {m in templatesForChain && (
+                    {chain === 'starknet' && isStarknetWriteMethod(m) ? (
+                      <span className="shrink-0 text-[12px] font-sans font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
+                        submits
+                      </span>
+                    ) : m in templatesForChain && (
                       <span className="shrink-0 text-[12px] font-sans font-semibold uppercase tracking-wide text-fg-subtle">
                         template
                       </span>
@@ -513,6 +519,7 @@ export const RPCBuilder: React.FC<RPCBuilderProps> = ({ request, onChange }) => 
               document.body
             )}
         </div>
+        {chain === 'starknet' && <StarknetMethodInfo method={request.rpcParams.method} />}
       </section>
 
       {isSolanaTxMode ? (

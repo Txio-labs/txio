@@ -13,6 +13,7 @@ import {
   BuilderArg,
   RPCHealthMetric,
 } from '../types';
+import { endpointsFor } from './rpcRetrySafety';
 
 const RPC_TIMEOUT_MS = 10000;
 const DEGRADED_RPC_LATENCY_MS = 1500;
@@ -21,6 +22,10 @@ export class SuiRpcError extends Error {
   status: number;
   endpoint: string;
   duration: number;
+  /** The JSON-RPC error code the node returned, when the failure was an RPC error object. */
+  rpcCode?: number;
+  /** The JSON-RPC error's `data` field, when present. */
+  rpcData?: unknown;
 
   constructor(
     message: string,
@@ -28,10 +33,14 @@ export class SuiRpcError extends Error {
       status,
       endpoint,
       duration,
+      rpcCode,
+      rpcData,
     }: {
       status: number;
       endpoint: string;
       duration: number;
+      rpcCode?: number;
+      rpcData?: unknown;
     }
   ) {
     super(message);
@@ -39,6 +48,8 @@ export class SuiRpcError extends Error {
     this.status = status;
     this.endpoint = endpoint;
     this.duration = duration;
+    this.rpcCode = rpcCode;
+    this.rpcData = rpcData;
     Object.setPrototypeOf(this, SuiRpcError.prototype);
   }
 }
@@ -92,6 +103,26 @@ export const resolveChainRpcUrls = (
  * entry (the common case) or several (once a user configures backup
  * endpoints in Settings).
  */
+const NON_JSON = Symbol('nonJson');
+
+/**
+ * Parses a JSON-RPC response body. A body that is not JSON (an HTML page from
+ * a rate limiter or proxy) becomes a JSON-RPC-shaped error that says so,
+ * instead of a raw "Unexpected token '<'" parse error.
+ */
+export const parseRpcBody = (text: string, url: string, status: number): any => {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {
+      [NON_JSON]: true,
+      error: {
+        message: `${new URL(url).host} returned a non-JSON response (HTTP ${status}). The provider may be rate limiting or unavailable.`,
+      },
+    };
+  }
+};
+
 const postJsonRpcWithFailover = async (
   endpoints: string[],
   body: Record<string, unknown>
@@ -116,11 +147,12 @@ const postJsonRpcWithFailover = async (
       });
       clearTimeout(timeoutId);
 
-      const data = await response.json();
+      const data = parseRpcBody(await response.text(), url, response.status);
       const duration = Math.round(performance.now() - startTime);
       const result = { response, data, duration, url };
 
-      if (response.status === 429 || response.status >= 500) {
+      // A non-JSON body (an HTML rate-limit or error page) is a provider failure, like a 5xx.
+      if (response.status === 429 || response.status >= 500 || data[NON_JSON]) {
         lastResult = result;
         continue;
       }
@@ -302,7 +334,7 @@ export const executeChainRpc = async (
     return executeHorizon(network, method, params);
   }
 
-  const endpoints = resolveChainRpcUrls(chain, network, evmChainId);
+  const endpoints = endpointsFor(chain, method, resolveChainRpcUrls(chain, network, evmChainId));
   const primaryUrl = endpoints[0];
   const startTime = performance.now();
 
@@ -343,6 +375,8 @@ export const executeChainRpc = async (
         status: response.status || 500,
         endpoint: url,
         duration,
+        rpcCode: typeof data.error.code === 'number' ? data.error.code : undefined,
+        rpcData: data.error.data,
       });
     }
 
@@ -505,7 +539,7 @@ export const executeSuiRpc = async (
   method: string,
   params: any[]
 ): Promise<{ result: any; duration: number; status: number }> => {
-  const endpoints = resolveRpcUrlList(network, appStore.getSnapshot().settings);
+  const endpoints = endpointsFor('sui', method, resolveRpcUrlList(network, appStore.getSnapshot().settings));
   const primaryUrl = endpoints[0];
   const startTime = performance.now();
 

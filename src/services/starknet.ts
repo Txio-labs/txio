@@ -206,6 +206,9 @@ export const compileStarknetCall = async (
 // Simulation
 // ---------------------------------------------------------------------------
 
+/** Nonce and simulation read the same block, the one the next transaction will run on. */
+export const STARKNET_SIMULATION_BLOCK = 'pre_confirmed' as const;
+
 const ZERO_BOUNDS = {
     l1_gas: { max_amount: 0n, max_price_per_unit: 0n },
     l2_gas: { max_amount: 0n, max_price_per_unit: 0n },
@@ -213,10 +216,16 @@ const ZERO_BOUNDS = {
 };
 
 /**
- * Runs the calls from `sender` against the latest state without a signature.
- * SKIP_VALIDATE drops the account's signature check and SKIP_FEE_CHARGE drops
- * the balance check, so zero resource bounds are accepted. The trace still
- * carries the real fee estimate and any revert reason.
+ * Runs the calls from `sender` against the pre-confirmed state without a
+ * signature. SKIP_VALIDATE drops the account's signature check and
+ * SKIP_FEE_CHARGE drops the balance check, so zero resource bounds are
+ * accepted. The trace still carries the real fee estimate and any revert
+ * reason.
+ *
+ * The node checks the nonce against pre-confirmed state (it answers "Invalid
+ * transaction nonce ... Account nonce: N; got: N-k" otherwise), so an account
+ * with a transaction still in the pre-confirmed block needs the pre-confirmed
+ * nonce. That is also the state the real transaction will run on.
  */
 export const simulateStarknetCalls = async (
     network: Network,
@@ -225,9 +234,7 @@ export const simulateStarknetCalls = async (
 ) => {
     const { transaction, TransactionType } = await loadStarknet();
     const provider = await getStarknetProvider(network);
-    // Nonce and simulation read the same block, so a transaction landing in
-    // between cannot make the nonce stale.
-    const nonce = await provider.getNonceForAddress(sender, 'latest');
+    const nonce = await provider.getNonceForAddress(sender, STARKNET_SIMULATION_BLOCK);
     const { simulated_transactions: [simulated] } = await provider.getSimulateTransaction(
         [
             {
@@ -245,7 +252,7 @@ export const simulateStarknetCalls = async (
                 feeDataAvailabilityMode: 'L1'
             } as never
         ],
-        { blockIdentifier: 'latest', skipValidate: true, skipFeeCharge: true }
+        { blockIdentifier: STARKNET_SIMULATION_BLOCK, skipValidate: true, skipFeeCharge: true }
     );
     return simulated;
 };

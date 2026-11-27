@@ -1,4 +1,4 @@
-import { STARKNET_NETWORKS } from '@/lib/constants';
+import { executeChainRpc, SuiRpcError } from './suiService';
 import type { Network } from '@/types';
 import { getStrkBalance, STRK_DECIMALS } from './starknet';
 
@@ -27,25 +27,20 @@ export interface StarknetAddressDetail {
   deployed: boolean;
 }
 
-const rpc = async (network: Network, method: string, params: unknown): Promise<any> => {
-  const response = await fetch(STARKNET_NETWORKS[network], {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
-  });
-  if (!response.ok) throw new Error(`Starknet RPC ${method} failed with status ${response.status}.`);
-  const data = await response.json();
-  return data;
-};
+/** Starknet RPC errors that mean "no such thing on this network": 20 CONTRACT_NOT_FOUND, 24 BLOCK_NOT_FOUND, 28 CLASS_HASH_NOT_FOUND, 29 TXN_HASH_NOT_FOUND. */
+const NOT_FOUND_CODES = new Set([20, 24, 28, 29]);
 
-/** Returns the result, `null` for RPC error 20 (contract not found), and throws other RPC errors. */
-const call = async (network: Network, method: string, params: unknown): Promise<any | null> => {
-  const data = await rpc(network, method, params);
-  if (data?.error) {
-    if (data.error.code === 20) return null;
-    throw new Error(data.error.message ?? `Starknet RPC ${method} error.`);
+/**
+ * Returns the result, or `null` when the node says the entity does not exist.
+ * Goes through the shared RPC engine, so custom endpoints and failover apply.
+ */
+const call = async (network: Network, method: string, params: unknown[]): Promise<any | null> => {
+  try {
+    return (await executeChainRpc('starknet', network, method, params)).result;
+  } catch (err) {
+    if (err instanceof SuiRpcError && err.rpcCode !== undefined && NOT_FOUND_CODES.has(err.rpcCode)) return null;
+    throw err;
   }
-  return data.result;
 };
 
 const toDecimal = (hex: unknown): string | null => {
@@ -80,16 +75,16 @@ export const mapStarknetTransaction = (hash: string, tx: any, receipt: any): Sta
 
 export const getStarknetTransaction = async (network: Network, hash: string): Promise<StarknetTransactionDetail | null> => {
   const [tx, receipt] = await Promise.all([
-    call(network, 'starknet_getTransactionByHash', { transaction_hash: hash }),
-    call(network, 'starknet_getTransactionReceipt', { transaction_hash: hash }),
+    call(network, 'starknet_getTransactionByHash', [hash]),
+    call(network, 'starknet_getTransactionReceipt', [hash]),
   ]);
   return mapStarknetTransaction(hash, tx, receipt);
 };
 
 export const getStarknetAddress = async (network: Network, address: string): Promise<StarknetAddressDetail | null> => {
   const [nonce, classHash, balance] = await Promise.all([
-    call(network, 'starknet_getNonce', { block_id: 'latest', contract_address: address }),
-    call(network, 'starknet_getClassHashAt', { block_id: 'latest', contract_address: address }),
+    call(network, 'starknet_getNonce', ['latest', address]),
+    call(network, 'starknet_getClassHashAt', ['latest', address]),
     getStrkBalance(network, address).then((b) => b.toString()).catch(() => null),
   ]);
   if (nonce === null && classHash === null && balance === null) return null;
@@ -104,7 +99,7 @@ export const getStarknetAddress = async (network: Network, address: string): Pro
 
 /** Transaction hashes of the latest block, for the landing page. */
 export const getStarknetLatestBlock = async (network: Network): Promise<{ blockNumber: number; transactions: string[] } | null> => {
-  const block = await call(network, 'starknet_getBlockWithTxHashes', { block_id: 'latest' });
+  const block = await call(network, 'starknet_getBlockWithTxHashes', ['latest']);
   if (!block) return null;
   return {
     blockNumber: Number(block.block_number ?? 0),

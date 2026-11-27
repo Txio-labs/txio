@@ -1,5 +1,6 @@
 
 import { Network, ChainId } from "../types";
+import { STARKNET_METHODS } from "../services/starknetMethods";
 
 // Default Sui fullnode endpoint per network. Mirrors `Network::sui_url` on the
 // backend (backend/api/src/model/network.rs). `Record<Network, ...>` forces
@@ -209,6 +210,8 @@ export const COMMON_RPC_METHODS: Partial<Record<ChainId, string[]>> = {
     'simulateTransaction',
     'sendTransaction',
   ],
+  // Every method of Starknet RPC spec 0.10.3; see services/starknetMethods.ts.
+  starknet: ['getAddressTransactions', ...STARKNET_METHODS.map((m) => m.name)],
 };
 
 // Sui RPC methods where params[0] is an owner address (eligible for SuiNS auto-resolution).
@@ -259,7 +262,11 @@ export const RPC_METHOD_TEMPLATES: Readonly<Partial<Record<ChainId, Readonly<Rec
     simulateTransaction: [{ transaction: '<base64 tx envelope>' }],
     sendTransaction: [{ transaction: '<base64 tx envelope>' }],
   },
-  // Block ids are "latest", "pre_confirmed", or { block_number } / { block_hash }.
+  // Block ids are "latest", "pre_confirmed", "l1_accepted", or { block_number } / { block_hash }.
+  starknet: {
+    getAddressTransactions: ['<0x account address>', { limit: 20 }],
+    ...Object.fromEntries(STARKNET_METHODS.map((m) => [m.name, m.template])),
+  },
 };
 
 export const MOVE_TYPES = [

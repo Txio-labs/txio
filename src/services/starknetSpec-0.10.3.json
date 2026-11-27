@@ -1,0 +1,561 @@
+{
+ "source": "https://github.com/starkware-libs/starknet-specs/tree/v0.10.3/api",
+ "version": "0.10.3",
+ "methods": [
+  {
+   "name": "starknet_specVersion",
+   "api": "read",
+   "params": []
+  },
+  {
+   "name": "starknet_getBlockWithTxHashes",
+   "api": "read",
+   "params": [
+    {
+     "name": "block_id",
+     "required": true
+    }
+   ]
+  },
+  {
+   "name": "starknet_getBlockWithTxs",
+   "api": "read",
+   "params": [
+    {
+     "name": "block_id",
+     "required": true
+    },
+    {
+     "name": "response_flags",
+     "required": false
+    }
+   ]
+  },
+  {
+   "name": "starknet_getBlockWithReceipts",
+   "api": "read",
+   "params": [
+    {
+     "name": "block_id",
+     "required": true
+    },
+    {
+     "name": "response_flags",
+     "required": false
+    }
+   ]
+  },
+  {
+   "name": "starknet_getStateUpdate",
+   "api": "read",
+   "params": [
+    {
+     "name": "block_id",
+     "required": true
+    },
+    {
+     "name": "contract_addresses",
+     "required": false
+    }
+   ]
+  },
+  {
+   "name": "starknet_getStorageAt",
+   "api": "read",
+   "params": [
+    {
+     "name": "contract_address",
+     "required": true
+    },
+    {
+     "name": "key",
+     "required": true
+    },
+    {
+     "name": "block_id",
+     "required": true
+    },
+    {
+     "name": "response_flags",
+     "required": false
+    }
+   ]
+  },
+  {
+   "name": "starknet_getTransactionStatus",
+   "api": "read",
+   "params": [
+    {
+     "name": "transaction_hash",
+     "required": true
+    }
+   ]
+  },
+  {
+   "name": "starknet_getMessagesStatus",
+   "api": "read",
+   "params": [
+    {
+     "name": "transaction_hash",
+     "required": true
+    }
+   ]
+  },
+  {
+   "name": "starknet_getTransactionByHash",
+   "api": "read",
+   "params": [
+    {
+     "name": "transaction_hash",
+     "required": true
+    },
+    {
+     "name": "response_flags",
+     "required": false
+    }
+   ]
+  },
+  {
+   "name": "starknet_getTransactionByBlockIdAndIndex",
+   "api": "read",
+   "params": [
+    {
+     "name": "block_id",
+     "required": true
+    },
+    {
+     "name": "index",
+     "required": true
+    },
+    {
+     "name": "response_flags",
+     "required": false
+    }
+   ]
+  },
+  {
+   "name": "starknet_getTransactionReceipt",
+   "api": "read",
+   "params": [
+    {
+     "name": "transaction_hash",
+     "required": true
+    }
+   ]
+  },
+  {
+   "name": "starknet_getClass",
+   "api": "read",
+   "params": [
+    {
+     "name": "block_id",
+     "required": true
+    },
+    {
+     "name": "class_hash",
+     "required": true
+    }
+   ]
+  },
+  {
+   "name": "starknet_getClassHashAt",
+   "api": "read",
+   "params": [
+    {
+     "name": "block_id",
+     "required": true
+    },
+    {
+     "name": "contract_address",
+     "required": true
+    }
+   ]
+  },
+  {
+   "name": "starknet_getClassAt",
+   "api": "read",
+   "params": [
+    {
+     "name": "block_id",
+     "required": true
+    },
+    {
+     "name": "contract_address",
+     "required": true
+    }
+   ]
+  },
+  {
+   "name": "starknet_getBlockTransactionCount",
+   "api": "read",
+   "params": [
+    {
+     "name": "block_id",
+     "required": true
+    }
+   ]
+  },
+  {
+   "name": "starknet_call",
+   "api": "read",
+   "params": [
+    {
+     "name": "request",
+     "required": true
+    },
+    {
+     "name": "block_id",
+     "required": true
+    }
+   ]
+  },
+  {
+   "name": "starknet_estimateFee",
+   "api": "read",
+   "params": [
+    {
+     "name": "request",
+     "required": true
+    },
+    {
+     "name": "simulation_flags",
+     "required": true
+    },
+    {
+     "name": "block_id",
+     "required": true
+    }
+   ]
+  },
+  {
+   "name": "starknet_estimateMessageFee",
+   "api": "read",
+   "params": [
+    {
+     "name": "message",
+     "required": true
+    },
+    {
+     "name": "block_id",
+     "required": true
+    }
+   ]
+  },
+  {
+   "name": "starknet_blockNumber",
+   "api": "read",
+   "params": []
+  },
+  {
+   "name": "starknet_blockHashAndNumber",
+   "api": "read",
+   "params": []
+  },
+  {
+   "name": "starknet_chainId",
+   "api": "read",
+   "params": []
+  },
+  {
+   "name": "starknet_syncing",
+   "api": "read",
+   "params": []
+  },
+  {
+   "name": "starknet_getEvents",
+   "api": "read",
+   "params": [
+    {
+     "name": "filter",
+     "required": true
+    }
+   ]
+  },
+  {
+   "name": "starknet_getNonce",
+   "api": "read",
+   "params": [
+    {
+     "name": "block_id",
+     "required": true
+    },
+    {
+     "name": "contract_address",
+     "required": true
+    }
+   ]
+  },
+  {
+   "name": "starknet_getStorageProof",
+   "api": "read",
+   "params": [
+    {
+     "name": "block_id",
+     "required": true
+    },
+    {
+     "name": "class_hashes",
+     "required": false
+    },
+    {
+     "name": "contract_addresses",
+     "required": false
+    },
+    {
+     "name": "contracts_storage_keys",
+     "required": false
+    }
+   ]
+  },
+  {
+   "name": "starknet_traceTransaction",
+   "api": "trace",
+   "params": [
+    {
+     "name": "transaction_hash",
+     "required": true
+    }
+   ]
+  },
+  {
+   "name": "starknet_simulateTransactions",
+   "api": "trace",
+   "params": [
+    {
+     "name": "block_id",
+     "required": true
+    },
+    {
+     "name": "transactions",
+     "required": true
+    },
+    {
+     "name": "simulation_flags",
+     "required": true
+    }
+   ]
+  },
+  {
+   "name": "starknet_traceBlockTransactions",
+   "api": "trace",
+   "params": [
+    {
+     "name": "block_id",
+     "required": true
+    },
+    {
+     "name": "trace_flags",
+     "required": false
+    }
+   ]
+  },
+  {
+   "name": "starknet_addInvokeTransaction",
+   "api": "write",
+   "params": [
+    {
+     "name": "invoke_transaction",
+     "required": true
+    }
+   ]
+  },
+  {
+   "name": "starknet_addDeclareTransaction",
+   "api": "write",
+   "params": [
+    {
+     "name": "declare_transaction",
+     "required": true
+    }
+   ]
+  },
+  {
+   "name": "starknet_addDeployAccountTransaction",
+   "api": "write",
+   "params": [
+    {
+     "name": "deploy_account_transaction",
+     "required": true
+    }
+   ]
+  },
+  {
+   "name": "starknet_getCompiledCasm",
+   "api": "executables",
+   "params": [
+    {
+     "name": "class_hash",
+     "required": true
+    }
+   ]
+  },
+  {
+   "name": "starknet_subscribeNewHeads",
+   "api": "ws",
+   "params": [
+    {
+     "name": "block_id",
+     "required": false
+    }
+   ]
+  },
+  {
+   "name": "starknet_subscriptionNewHeads",
+   "api": "ws",
+   "params": [
+    {
+     "name": "subscription_id",
+     "required": false
+    },
+    {
+     "name": "result",
+     "required": false
+    }
+   ]
+  },
+  {
+   "name": "starknet_subscribeEvents",
+   "api": "ws",
+   "params": [
+    {
+     "name": "from_address",
+     "required": false
+    },
+    {
+     "name": "keys",
+     "required": false
+    },
+    {
+     "name": "block_id",
+     "required": false
+    },
+    {
+     "name": "finality_status",
+     "required": false
+    }
+   ]
+  },
+  {
+   "name": "starknet_subscriptionEvents",
+   "api": "ws",
+   "params": [
+    {
+     "name": "subscription_id",
+     "required": false
+    },
+    {
+     "name": "result",
+     "required": false
+    }
+   ]
+  },
+  {
+   "name": "starknet_subscribeTransactionStatus",
+   "api": "ws",
+   "params": [
+    {
+     "name": "transaction_hash",
+     "required": true
+    }
+   ]
+  },
+  {
+   "name": "starknet_subscriptionTransactionStatus",
+   "api": "ws",
+   "params": [
+    {
+     "name": "subscription_id",
+     "required": false
+    },
+    {
+     "name": "result",
+     "required": false
+    }
+   ]
+  },
+  {
+   "name": "starknet_subscribeNewTransactionReceipts",
+   "api": "ws",
+   "params": [
+    {
+     "name": "finality_status",
+     "required": false
+    },
+    {
+     "name": "sender_address",
+     "required": false
+    }
+   ]
+  },
+  {
+   "name": "starknet_subscriptionNewTransactionReceipts",
+   "api": "ws",
+   "params": [
+    {
+     "name": "subscription_id",
+     "required": false
+    },
+    {
+     "name": "result",
+     "required": false
+    }
+   ]
+  },
+  {
+   "name": "starknet_subscribeNewTransactions",
+   "api": "ws",
+   "params": [
+    {
+     "name": "finality_status",
+     "required": false
+    },
+    {
+     "name": "sender_address",
+     "required": false
+    },
+    {
+     "name": "tags",
+     "required": false
+    }
+   ]
+  },
+  {
+   "name": "starknet_subscriptionNewTransaction",
+   "api": "ws",
+   "params": [
+    {
+     "name": "subscription_id",
+     "required": false
+    },
+    {
+     "name": "result",
+     "required": false
+    }
+   ]
+  },
+  {
+   "name": "starknet_subscriptionReorg",
+   "api": "ws",
+   "params": [
+    {
+     "name": "subscription_id",
+     "required": false
+    },
+    {
+     "name": "result",
+     "required": false
+    }
+   ]
+  },
+  {
+   "name": "starknet_unsubscribe",
+   "api": "ws",
+   "params": [
+    {
+     "name": "subscription_id",
+     "required": true
+    }
+   ]
+  }
+ ]
+}

@@ -91,6 +91,7 @@ export const StarknetExplorerFeature: React.FC<{ initialQuery?: string }> = ({ i
     const [input, setInput] = useState(initialQuery);
     const [submitted, setSubmitted] = useState<StarknetExplorerTarget | null>(null);
     const [invalid, setInvalid] = useState(false);
+    const [lookupError, setLookupError] = useState<string | null>(null);
 
     const resolved = useQuery({
         queryKey: ['starknet-explorer-resolve', net, initialQuery],
@@ -106,9 +107,14 @@ export const StarknetExplorerFeature: React.FC<{ initialQuery?: string }> = ({ i
 
     const open = async (id: string) => {
         setInput(id);
-        const target = await resolveStarknetQuery(net, id);
-        setInvalid(!target);
-        setSubmitted(target);
+        setLookupError(null);
+        try {
+            const target = await resolveStarknetQuery(net, id);
+            setInvalid(!target);
+            setSubmitted(target);
+        } catch (err) {
+            setLookupError(err instanceof Error && err.message ? err.message : 'The lookup failed.');
+        }
     };
 
     const current = submitted ?? (initialQuery ? resolved.data ?? null : null);
@@ -138,6 +144,8 @@ export const StarknetExplorerFeature: React.FC<{ initialQuery?: string }> = ({ i
             </form>
 
             {invalid && <ErrorText message="Enter a 0x… hash or address (up to 64 hex characters)." />}
+            {lookupError && <ErrorText message={lookupError} />}
+            {!submitted && resolved.error && <ErrorText message={(resolved.error as Error).message} />}
 
             {!current && !invalid && !initialQuery && (
                 latest.isLoading ? <Loading /> : latest.error ? <ErrorText message={(latest.error as Error).message} /> : latest.data ? (
