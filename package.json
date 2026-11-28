@@ -59,7 +59,7 @@
     "autoprefixer": "^10.5.4",
     "babel-plugin-react-compiler": "^1.0.0",
     "eslint": "^9.39.5",
-    "eslint-config-next": "^16.4.3",
+    "eslint-config-next": "^16.4.6",
     "jsdom": "^29.1.1",
     "postcss": "^8.5.20",
     "serve": "^14.2.4",
