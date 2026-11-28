@@ -326,7 +326,7 @@ export const Dashboard: React.FC = () => {
 
 const th = 'px-3 h-9 font-medium text-[12px] text-fg-subtle text-left';
 
-const RequestsTable: React.FC<{ requests: HistoryItem[] }> = ({ requests }) =>
+export const RequestsTable: React.FC<{ requests: HistoryItem[] }> = ({ requests }) =>
     requests.length === 0 ? (
         <div className="p-5">
             <EmptyState
@@ -382,7 +382,7 @@ const RequestsTable: React.FC<{ requests: HistoryItem[] }> = ({ requests }) =>
         </div>
     );
 
-const TransactionsTable: React.FC<{ transactions: HistoryItem[] }> = ({ transactions }) =>
+export const TransactionsTable: React.FC<{ transactions: HistoryItem[] }> = ({ transactions }) =>
     transactions.length === 0 ? (
         <div className="p-5">
             <EmptyState

@@ -24,6 +24,7 @@ import {
 import { useAppStore, appStore } from '@/lib/store';
 import { CollectionNode, RequestType } from '@/types';
 import { confirmDialog } from '@/components/DialogHost';
+import { useChainScope } from '@/chains/useChainScope';
 
 type ChainFamily = 'sui' | 'evm' | 'solana' | 'aptos' | 'stellar';
 
@@ -64,7 +65,7 @@ const flattenRequests = (node: CollectionNode, path: string[] = []): { node: Col
 };
 
 export const CollectionsPage: React.FC = () => {
-    const { collections } = useAppStore();
+    const { collections } = useChainScope();
     const [search, setSearch] = useState('');
     const [requestSearch, setRequestSearch] = useState('');
     const [selectedId, setSelectedId] = useState<string | null>(collections[0]?.id ?? null);

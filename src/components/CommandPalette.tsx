@@ -4,6 +4,7 @@ import { Search, Command, ArrowRight, Layers, Terminal, Settings, User, Plus, Bo
 import { appStore, useAppStore } from '@/lib/store';
 import { CollectionNode, RequestType, FeatureId } from '../types';
 import { COMMON_RPC_METHODS } from '@/lib/constants';
+import { useChainScope } from '@/chains/useChainScope';
 
 interface CommandItem {
     id: string;
@@ -15,7 +16,8 @@ interface CommandItem {
 }
 
 export const CommandPalette: React.FC = () => {
-    const { isCommandPaletteOpen, collections, currentWorkspaceId, workspaces } = useAppStore();
+    const { isCommandPaletteOpen, currentWorkspaceId, workspaces } = useAppStore();
+    const { collections } = useChainScope();
     const [search, setSearch] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);

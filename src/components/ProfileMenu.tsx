@@ -17,7 +17,16 @@ import { shortenAddress } from '@/wallet/utils';
 import { Avatar } from './ui/Avatar';
 import { cx } from './ui/primitives';
 
-export const ProfileMenu: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
+/**
+ * `compact` hides the name from the md breakpoint up (a collapsed sidebar);
+ * `avatarOnly` always hides it (a header or a rail). `placement` says where
+ * the menu opens relative to the avatar.
+ */
+export const ProfileMenu: React.FC<{ compact?: boolean; avatarOnly?: boolean; placement?: 'up-left' | 'up-right' | 'down-right' | 'right' }> = ({
+    compact = false,
+    avatarOnly = false,
+    placement = 'up-left'
+}) => {
     const { user, settings, workspaces, currentWorkspaceId } = useAppStore();
     const { currentWallet, isConnected } = useWallet();
     const [isOpen, setIsOpen] = useState(false);
@@ -48,7 +57,7 @@ export const ProfileMenu: React.FC<{ compact?: boolean }> = ({ compact = false }
                 title="Sign in"
             >
                 <Avatar size="sm" />
-                <span className={cx('text-[14px] font-medium text-fg', compact && 'md:hidden')}>Sign in</span>
+                <span className={cx('text-[14px] font-medium text-fg', compact && 'md:hidden', avatarOnly && 'hidden')}>Sign in</span>
             </button>
         );
     }
@@ -57,17 +66,27 @@ export const ProfileMenu: React.FC<{ compact?: boolean }> = ({ compact = false }
         <div className="relative min-w-0" ref={containerRef}>
             <button
                 onClick={() => setIsOpen((o) => !o)}
-                className={cx('flex items-center gap-2 h-9 rounded-[8px] hover:bg-hover transition-colors min-w-0 px-1', !compact && 'pr-2', isOpen && 'bg-hover')}
+                className={cx('flex items-center gap-2 h-9 rounded-[8px] hover:bg-hover transition-colors min-w-0 px-1', !compact && !avatarOnly && 'pr-2', isOpen && 'bg-hover')}
                 title="Account"
+                aria-label="Account"
+                aria-expanded={isOpen}
             >
                 <Avatar size="sm" src={user.avatarUrl} />
-                <span className={cx('min-w-0 text-left', compact && 'md:hidden')}>
+                <span className={cx('min-w-0 text-left', compact && 'md:hidden', avatarOnly && 'hidden')}>
                     <span className="block text-[14px] font-medium text-fg truncate max-w-[120px] leading-tight">{user.name}</span>
                 </span>
             </button>
 
             {isOpen && (
-                <div className="absolute bottom-full left-0 mb-2 w-64 bg-elevated border border-line rounded-card shadow-pop overflow-hidden z-50 animate-in fade-in slide-in-from-bottom">
+                <div
+                    className={cx(
+                        'absolute w-64 bg-elevated border border-line rounded-card shadow-pop overflow-hidden z-50 animate-in fade-in',
+                        placement === 'up-left' && 'bottom-full left-0 mb-2 slide-in-from-bottom',
+                        placement === 'up-right' && 'bottom-full right-0 mb-2 slide-in-from-bottom',
+                        placement === 'down-right' && 'top-full right-0 mt-2 slide-in-from-top',
+                        placement === 'right' && 'bottom-0 left-full ml-2'
+                    )}
+                >
                     <div className="flex items-center gap-3 px-3 py-3 border-b border-line">
                         <Avatar size="sm" src={user.avatarUrl} />
                         <div className="min-w-0">

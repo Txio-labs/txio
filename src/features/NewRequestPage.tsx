@@ -8,6 +8,7 @@ import { ImportCurlModal } from '@/components/ImportCurlModal';
 import { apiService } from '@/services/api';
 import { withTxChain } from '@/services/transactionService';
 import { PromptModal } from '@/components/PromptModal';
+import { useChainScope } from '@/chains/useChainScope';
 
 // Each chain builds transactions in its own native shape; the label says
 // what the user will actually get. Partial (not `Record<ChainId, ...>`)
@@ -42,7 +43,7 @@ interface NewRequestPageProps {
 export const NewRequestPage: React.FC<NewRequestPageProps> = ({ tabId, initialData }) => {
   const [isCurlModalOpen, setIsCurlModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { collections } = useAppStore();
+  const { collections, chain: workspaceChain } = useChainScope();
 
   // If opened generically (e.g. the tab bar "+" or command palette), the
   // user hasn't chosen a destination yet — ask before the RPC/PTB type
@@ -57,9 +58,11 @@ export const NewRequestPage: React.FC<NewRequestPageProps> = ({ tabId, initialDa
 
   // No chain is preselected on first use — txio has no "default" chain.
   // After that, the last choice is remembered as a convenience.
-  const [chain, setChain] = useState<ChainId | null>(
+  // In a chain workspace the chain is fixed: requests are made for the chain the user picked.
+  const [pickedChain, setChain] = useState<ChainId | null>(
     () => initialData?.rpcParams?.chain ?? readLastChain()
   );
+  const chain = workspaceChain ?? pickedChain;
   const chooseChain = (id: ChainId) => {
     setChain(id);
     try {
@@ -178,6 +181,13 @@ export const NewRequestPage: React.FC<NewRequestPageProps> = ({ tabId, initialDa
     });
 
     appStore.setActiveTab(tabId);
+
+    // An import for another chain would be hidden in this workspace, so follow it to its own.
+    const importedChain = firstItem.rpcParams.chain;
+    if (workspaceChain && importedChain && importedChain !== workspaceChain) {
+      appStore.setActiveChain(importedChain);
+      appStore.showToast(`Imported a ${RPC_CHAINS.find((c) => c.id === importedChain)?.label ?? importedChain} request. Switched to that chain.`, 'info');
+    }
 
     // If opened from a collection, persist the first imported request to that collection.
     if (collectionId) {
@@ -314,6 +324,7 @@ export const NewRequestPage: React.FC<NewRequestPageProps> = ({ tabId, initialDa
         )}
         {!collectionName && <div className="mb-6" />}
 
+        {!workspaceChain && (
         <div className="mb-6">
           <div className="text-[12px] font-semibold text-fg-subtle mb-2 px-1">Chain</div>
           <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Chain">
@@ -335,6 +346,7 @@ export const NewRequestPage: React.FC<NewRequestPageProps> = ({ tabId, initialDa
           </div>
           {!chain && <p className="text-xs text-fg-subtle mt-2 px-1">Pick the chain this request targets.</p>}
         </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <button

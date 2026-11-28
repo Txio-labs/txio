@@ -7,6 +7,7 @@ import { resolveChainRpcUrl, getChainRpcHealth } from '../../services/suiService
 import { STELLAR_NETWORK_NAMES } from '@/lib/constants';
 import { RequestOutcome } from './response/types';
 import { promptDialog } from '@/components/DialogHost';
+import { useChainScope } from '@/chains/useChainScope';
 
 interface HeaderBarProps {
   requestType: RequestType;
@@ -37,7 +38,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   outcome,
   onChange
 }) => {
-  const { settings, collections } = useAppStore();
+  const { settings } = useAppStore();
+  const { collections } = useChainScope();
   const [rpcHealth, setRpcHealth] = useState<RPCHealthMetric | null>(null);
   const [isSaveMenuOpen, setIsSaveMenuOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);

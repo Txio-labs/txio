@@ -90,6 +90,8 @@ export interface EnvironmentVariable {
   value: string;
   enabled: boolean;
   network?: Network | 'all'; // Extended for network scope
+  /** The chain workspace this variable applies in. Absent or 'all' means every chain. */
+  chain?: ChainId | 'all';
   workspaceId?: string; // Added for workspace isolation
 }
 

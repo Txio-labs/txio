@@ -645,3 +645,97 @@ describe('appStore terminal panel default', () => {
         expect(appStore.getSnapshot().isTerminalOpen).toBe(false);
     });
 });
+
+describe('appStore chain workspaces', () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
+    const rpcTab = (chain: string) => ({
+        id: `rpc-${chain}`,
+        name: `${chain} request`,
+        type: RequestType.RPC,
+        rpcParams: { method: '', params: [], chain },
+        moveParams: { ...DEFAULT_MOVE_CALL }
+    });
+
+    it('starts at the chain picker, then remembers the picked chain across reloads', async () => {
+        let { appStore } = await loadStore();
+        expect(appStore.getSnapshot().activeChain).toBeNull();
+
+        appStore.setActiveChain('starknet');
+        expect(appStore.getSnapshot().activeChain).toBe('starknet');
+
+        ({ appStore } = await loadStore());
+        expect(appStore.getSnapshot().activeChain).toBe('starknet');
+    });
+
+    it('forgets the active chain on "All chains" but keeps it marked as last used', async () => {
+        const { appStore } = await loadStore();
+        const { readLastPickedChain } = await import('@/chains/activeChainStorage');
+        appStore.setActiveChain('evm');
+        appStore.setActiveChain(null);
+        expect(appStore.getSnapshot().activeChain).toBeNull();
+        expect(readLastPickedChain()).toBe('evm');
+    });
+
+    it('ignores an unknown stored chain', async () => {
+        localStorage.setItem('txio_activeChain', 'cosmos');
+        const { appStore } = await loadStore();
+        expect(appStore.getSnapshot().activeChain).toBeNull();
+    });
+
+    it('creates new RPC tabs on the active chain', async () => {
+        const { appStore } = await loadStore();
+        appStore.setActiveChain('aptos');
+        appStore.openTab('rpc');
+        const tab = appStore.getSnapshot().tabs.at(-1)!;
+        expect(tab.data.rpcParams.chain).toBe('aptos');
+    });
+
+    it('moves to another chain\'s workspace when a tab for that chain is opened', async () => {
+        const { appStore } = await loadStore();
+        appStore.setActiveChain('sui');
+        appStore.openTab('rpc', rpcTab('evm'));
+        expect(appStore.getSnapshot().activeChain).toBe('evm');
+        appStore.openTab('settings');
+        expect(appStore.getSnapshot().activeChain).toBe('evm');
+    });
+
+    it('activates a tab of the new chain when the active tab belongs to the old one', async () => {
+        const { appStore } = await loadStore();
+        appStore.setActiveChain('sui');
+        appStore.openTab('rpc', rpcTab('sui'));
+        appStore.setActiveChain('starknet');
+        expect(appStore.getSnapshot().activeTabId).toBeNull();
+        appStore.openTab('rpc', rpcTab('starknet'));
+        appStore.setActiveChain('sui');
+        expect(appStore.getSnapshot().activeTabId).toBe('rpc-sui');
+    });
+
+    it('closes only the current chain\'s tabs with "Close all"', async () => {
+        const { appStore } = await loadStore();
+        appStore.setActiveChain('sui');
+        appStore.openTab('rpc', rpcTab('sui'));
+        appStore.openTab('rpc', rpcTab('evm'));
+        appStore.openTab('settings');
+        appStore.closeAllTabs();
+        expect(appStore.getSnapshot().tabs.map((t) => t.id)).toEqual(['rpc-sui']);
+    });
+
+    it('activates a visible tab, not a hidden one, after closing the active tab', async () => {
+        const { appStore } = await loadStore();
+        appStore.setActiveChain('evm');
+        appStore.openTab('rpc', rpcTab('evm'));
+        appStore.setActiveChain('sui');
+        appStore.openTab('rpc', rpcTab('sui'));
+        appStore.openTab('history');
+        const historyTab = appStore.getSnapshot().tabs.find((t) => t.type === 'history')!;
+        appStore.closeTab(historyTab.id);
+        expect(appStore.getSnapshot().activeTabId).toBe('rpc-sui');
+        // The EVM tab is still open but hidden here, so closing the last Sui tab goes home, not to it.
+        appStore.closeTab('rpc-sui');
+        expect(appStore.getSnapshot().activeTabId).toBeNull();
+        expect(appStore.getSnapshot().tabs.map((t) => t.id)).toEqual(['rpc-evm']);
+    });
+});

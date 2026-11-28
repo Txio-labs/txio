@@ -7,6 +7,7 @@ import { ChainId, HistoryItem, RequestType } from '../types';
 import { RPC_CHAINS } from '@/lib/constants';
 import { exportHistory } from '@/lib/exportHistory';
 import { isSwapResumable, SwapResumeModal } from '@/components/SwapResumeModal';
+import { useChainScope } from '@/chains/useChainScope';
 
 type HistoryFilter = 'ALL' | 'RPC' | 'TRANSACTION' | 'ERROR';
 
@@ -17,7 +18,8 @@ type HistoryFilter = 'ALL' | 'RPC' | 'TRANSACTION' | 'ERROR';
 const HISTORY_CAP = 500;
 
 export const HistoryFeature: React.FC = () => {
-    const { history, currentWorkspaceId } = useAppStore();
+    const { currentWorkspaceId } = useAppStore();
+    const { history } = useChainScope();
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState<HistoryFilter>('ALL');
     const [chainFilter, setChainFilter] = useState<ChainId | 'all'>('all');

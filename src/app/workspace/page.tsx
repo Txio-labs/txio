@@ -1,7 +1,6 @@
 'use client';
 
 import React from "react";
-import { Layout } from "@/components/Layout";
 import { RightPanel } from "@/components/RightPanel/RightPanel";
 import { AuthModal } from "@/components/AuthModal/AuthModal";
 import { useAppStore, appStore } from "@/lib/store";
@@ -42,20 +41,26 @@ import { AutomationPage } from "@/features/AutomationPage";
 import { DevelopersPage } from "@/features/DevelopersPage";
 import { InviteBanner } from "@/components/InviteBanner";
 import { useSharedComments } from "@/lib/useSharedComments";
+import { ChainPicker } from "@/chains/ChainPicker";
+import { ChainHome } from "@/chains/ChainHome";
+import { ChainWorkspaceLayout } from "@/chains/ChainWorkspaceLayout";
+import { chainWorkspace } from "@/chains/registry";
+import { useWallet } from "@/wallet";
 
 const MOCK_TEAM: TeamMember[] = [];
 
 const WorkspaceContent: React.FC = () => {
-    const { tabs, activeTabId } = useAppStore();
+    const { tabs, activeTabId, activeChain } = useAppStore();
     const activeTab = tabs.find(t => t.id === activeTabId);
+    const home = activeChain ? <ChainHome chain={activeChain} /> : <Dashboard />;
 
     if (!activeTabId || !activeTab) {
-        return <Dashboard />;
+        return home;
     }
 
     switch (activeTab.type) {
         case 'dashboard':
-            return <Dashboard />;
+            return home;
         case 'rpc':
         // 'ptb' tabs are legacy (the Sui-only PTB canvas was removed); any
         // still open from a previous session open in the request editor.
@@ -120,7 +125,7 @@ const WorkspaceContent: React.FC = () => {
         case 'new_collection':
             return <NewCollectionPage tabId={activeTab.id} />;
         default:
-            return <Dashboard />;
+            return home;
     }
 };
 
@@ -136,7 +141,16 @@ export default function WorkspacePage() {
         activityLogs,
         comments,
         network,
+        activeChain,
     } = useAppStore();
+    const { linkedWallets, activeSignerFamily, setActiveSigner } = useWallet();
+
+    // In a chain workspace, sign with that chain's wallet when one is linked.
+    React.useEffect(() => {
+        if (activeChain && linkedWallets[activeChain] && activeSignerFamily !== activeChain) {
+            setActiveSigner(activeChain);
+        }
+    }, [activeChain, linkedWallets, activeSignerFamily, setActiveSigner]);
 
     const currentWorkspace =
         workspaces.find((w) => w.id === currentWorkspaceId) || workspaces[0];
@@ -183,8 +197,11 @@ export default function WorkspacePage() {
                             }
                         />
                     ) : null
-                ) : currentWorkspace ? (
-                <Layout
+                ) : currentWorkspace && !activeChain ? (
+                    <ChainPicker />
+                ) : currentWorkspace && activeChain ? (
+                <ChainWorkspaceLayout
+                    def={chainWorkspace(activeChain)}
                     onCreateWorkspace={appStore.createWorkspace}
                     workspace={<WorkspaceContent />}
                     inspector={

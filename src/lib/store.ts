@@ -19,6 +19,8 @@ import {
 } from '../types';
 
 import { DEFAULT_MOVE_CALL } from './constants';
+import { readStoredActiveChain, persistActiveChain } from '@/chains/activeChainStorage';
+import { tabBelongsTo, tabChain } from '@/chains/scope';
 import {
     DEFAULT_EVM_TX,
     DEFAULT_SOLANA_TX,
@@ -646,6 +648,9 @@ interface AppState {
 
     network: Network;
 
+    /** The chain workspace the user picked after sign-in. Null shows the chain picker. */
+    activeChain: ChainId | null;
+
     pendingNetworkSwitch: Network | null;
 
     isSyncing: boolean;
@@ -729,6 +734,8 @@ let state: AppState = {
 
     network: initialNetwork,
 
+    activeChain: readStoredActiveChain(),
+
     pendingNetworkSwitch: null,
 
     isSyncing: false,
@@ -801,6 +808,23 @@ const scheduleAutoSave = (tabId: string) => {
 };
 
 // Actions
+/** Whether the current chain workspace shows this tab. Every tab is visible before a chain is picked. */
+const isVisibleTab = (tab: TabItem): boolean =>
+    state.activeChain === null || tabBelongsTo(tab, state.activeChain);
+
+/**
+ * Opening a tab that belongs to another chain (a request from history, an
+ * explorer link) moves to that chain's workspace, so the tab is not opened
+ * hidden. Returns the chain workspace to show after opening `tab`.
+ */
+const chainToFollow = (tab: TabItem): ChainId | null => {
+    if (state.activeChain === null) return null;
+    const owner = tabChain(tab);
+    if (owner === null || owner === state.activeChain) return state.activeChain;
+    persistActiveChain(owner);
+    return owner;
+};
+
 export const appStore = {
     subscribe(listener: Listener) {
         listeners.add(listener);
@@ -1053,6 +1077,7 @@ export const appStore = {
         if (existingById) {
             state = {
                 ...state,
+                activeChain: chainToFollow(existingById),
                 activeTabId: existingById.id,
                 isCommandPaletteOpen: false
             };
@@ -1073,7 +1098,8 @@ export const appStore = {
                     network: state.network,
                     rpcParams: {
                         method: '',
-                        params: []
+                        params: [],
+                        ...(state.activeChain ? { chain: state.activeChain } : {})
                     },
                     moveParams: {
                         ...DEFAULT_MOVE_CALL
@@ -1096,20 +1122,24 @@ export const appStore = {
             }
         }
 
+        const newTab: TabItem = {
+            id,
+            type,
+            title,
+            data: tabData,
+            workspaceId:
+                state.currentWorkspaceId
+        };
+
         state = {
             ...state,
 
             tabs: [
                 ...state.tabs,
-                {
-                    id,
-                    type,
-                    title,
-                    data: tabData,
-                    workspaceId:
-                        state.currentWorkspaceId
-                }
+                newTab
             ],
+
+            activeChain: chainToFollow(newTab),
 
             activeTabId: id,
 
@@ -1142,6 +1172,7 @@ export const appStore = {
             const newTabs = state.tabs.filter(
                 (t) => t.id !== id
             );
+            const visibleTabs = newTabs.filter((t) => isVisibleTab(t));
 
             state = {
                 ...state,
@@ -1152,8 +1183,8 @@ export const appStore = {
 
                 activeTabId:
                     state.activeTabId === id
-                        ? newTabs.length > 0
-                            ? newTabs[newTabs.length - 1].id
+                        ? visibleTabs.length > 0
+                            ? visibleTabs[visibleTabs.length - 1].id
                             : null
                         : state.activeTabId
             };
@@ -1162,8 +1193,11 @@ export const appStore = {
         }
     },
 
+    // In a chain workspace, closes only the tabs that workspace shows; other
+    // chains' tabs stay open for when the user switches back.
     closeAllTabs() {
-        const reversedTabs = [...state.tabs].reverse();
+        const closing = state.tabs.filter((t) => isVisibleTab(t));
+        const reversedTabs = [...closing].reverse();
 
         const newRecent = [
             ...reversedTabs,
@@ -1172,7 +1206,7 @@ export const appStore = {
 
         state = {
             ...state,
-            tabs: [],
+            tabs: state.tabs.filter((t) => !isVisibleTab(t)),
             activeTabId: null,
             recentTabs: newRecent
         };
@@ -1183,8 +1217,8 @@ export const appStore = {
     // Closes every tab with no unsaved changes, leaving dirty (in-progress)
     // tabs open — the safer alternative to Close All.
     closeSavedTabs() {
-        const closingTabs = state.tabs.filter((t) => !t.isDirty);
-        const remainingTabs = state.tabs.filter((t) => t.isDirty);
+        const closingTabs = state.tabs.filter((t) => !t.isDirty && isVisibleTab(t));
+        const remainingTabs = state.tabs.filter((t) => t.isDirty || !isVisibleTab(t));
 
         if (closingTabs.length === 0) return;
 
@@ -1197,7 +1231,7 @@ export const appStore = {
             state.activeTabId &&
             remainingTabs.some((t) => t.id === state.activeTabId)
                 ? state.activeTabId
-                : remainingTabs[remainingTabs.length - 1]?.id ?? null;
+                : remainingTabs.filter((t) => isVisibleTab(t)).at(-1)?.id ?? null;
 
         state = {
             ...state,
@@ -1327,6 +1361,26 @@ export const appStore = {
 
         emit();
         scheduleAutoSave(tabId);
+    },
+
+    /**
+     * Enters a chain workspace, or returns to the chain picker with null. The
+     * choice is remembered on this device. Tabs that belong to another chain
+     * stay open but are hidden; if one of them was active, the last tab that
+     * belongs to the new chain becomes active instead.
+     */
+    setActiveChain(chain: ChainId | null) {
+        persistActiveChain(chain);
+        let activeTabId = state.activeTabId;
+        if (chain) {
+            const active = state.tabs.find((t) => t.id === activeTabId);
+            if (active && !tabBelongsTo(active, chain)) {
+                const visible = state.tabs.filter((t) => tabBelongsTo(t, chain));
+                activeTabId = visible.length > 0 ? visible[visible.length - 1].id : null;
+            }
+        }
+        state = { ...state, activeChain: chain, activeTabId, isCommandPaletteOpen: false };
+        emit();
     },
 
     setNetwork(network: Network) {
