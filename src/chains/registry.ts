@@ -13,6 +13,7 @@ import {
     Activity,
     BookOpen,
     Briefcase,
+    Braces,
     Code2,
     FolderKanban,
     Hammer,
@@ -72,6 +73,8 @@ const WORKSPACES: ChainNavItem = { id: 'workspace_overview', label: 'Workspaces'
 // Finds an address or hash on any chain and opens that chain's explorer (which moves to its workspace).
 const LOOKUP: ChainNavItem = { id: 'lookup', label: 'Lookup', icon: Search };
 
+const CAIRO_STUDIO: ChainNavItem = { id: 'cairo_studio', label: 'Cairo Studio', icon: Braces };
+
 const explorerItem = (id: FeatureId, label = 'Explorer'): ChainNavItem => ({ id, label, icon: Search });
 
 export const SHARED_FOOTER: ChainNavItem[] = [
@@ -110,7 +113,7 @@ export const CHAIN_WORKSPACES: Record<ChainId, ChainWorkspaceDef> = {
         layout: 'topbar',
         explorer: 'starknet_explorer',
         nav: [
-            { label: 'Studio', items: [OVERVIEW, REQUESTS, CONTRACTS, explorerItem('starknet_explorer'), COLLECTIONS, HISTORY, LOOKUP] },
+            { label: 'Studio', items: [OVERVIEW, REQUESTS, CAIRO_STUDIO, explorerItem('starknet_explorer'), COLLECTIONS, HISTORY, LOOKUP] },
             { label: 'Accounts', items: [WALLETS, SEND] },
             operate,
         ],

@@ -111,8 +111,8 @@ The labels are the ones from spec Part 32, plus **Exists**, meaning the feature 
 | 3.2 | All 0.10.3 methods, with a capability record each | Implemented and tested | `src/services/starknetMethods.ts`: the 32 HTTP methods (read, trace, write, executables), each with API, group, summary, params, template, read-only flag and docs link. `starknetMethods.test.ts` checks names, APIs and parameter order against the spec fixture. `starknetMethods.live.test.ts` ran every read, trace and executables method on Sepolia and mainnet (see section 8). Not recorded per method yet: provider support per endpoint (Stage 10). |
 | 3.3 | Batch, cancellation, retry for reads only, failover, diffing | Partially implemented | Done: reads fail over across endpoints; submissions go to the first endpoint only and are never retried (`rpcRetrySafety.ts`, all chains); RPC error codes are kept (`SuiRpcError.rpcCode`); non-JSON provider pages count as provider failures. Not started: batch, diffing. |
 | 4 | Provider workspace: compare, latency, capability checks | Not started | A Starknet providers page built on the registry. Measures with real calls only. |
-| 5.1–5.4 | Cairo Studio: ABI import and view, types, calldata tools, function calls | Partially implemented | Exists: chain ABI and encoding. New: ABI paste/upload, interface/struct/enum/event views, typed forms, read calls with decoded return values, selector, felt, u256 and ByteArray tools, all through starknet.js `CallData`, `hash`, `num` and `byteArray` |
-| 5.5 | Scarb, Foundry, Devnet, Sierra/CASM artifacts | Partially implemented | Exists: backend Scarb compile. New: import Sierra/CASM JSON, compute class hash and compiled class hash locally, compare with chain (`getClassHashAt`, `getCompiledCasm`) |
+| 5.1–5.4 | Cairo Studio: ABI import and view, types, calldata tools, function calls | Implemented and tested | `src/features/cairoStudio/`, `src/services/cairo/`. ABI from a contract address, a class hash, pasted JSON, or an uploaded class or Scarb artifact. Views: entry points by interface (with selectors), constructor, L1 handlers, events (with key selectors), structs and enums. Typed forms: text for scalars, JSON for structs, arrays, tuples and enums. Read calls at `latest`, `pre_confirmed` or `l1_accepted`, with decoded and raw results. Calldata encoding. Write functions open a transaction request (simulate, then wallet). View calls open as `starknet_call` requests that can be saved to collections. Tools: selector, felt, u256, ByteArray, address. Limitation: ByteArray input is ASCII only, because starknet.js 10.8 encodes only ASCII. |
+| 5.5 | Scarb, Foundry, Devnet, Sierra/CASM artifacts | Partially implemented | Done: Scarb artifacts (`*.contract_class.json`) load into Cairo Studio. Build and deploy (backend Scarb compile, declare and deploy through the wallet) is back as a Cairo Studio tab, fixed to Starknet. It needs the txio-compiler service running. Not started: local class-hash computation and comparison with chain (Stage 4). |
 | 6.1–6.2 | Contract explorer: class, ABI, entry points, storage | Partially implemented | Extend the explorer with a contract view: class hash, `getClass`, entry points, ABI and storage reads |
 | 6.3 | Verification | Not started | Only a local class-hash match of uploaded artifacts against the chain, labelled as a hash match and not source verification. External verifiers only if they have a documented API. |
 | 6.4 | Storage explorer | Not started | `getStorageAt` with `sn_keccak` variable-name key derivation, and block-to-block comparison |
@@ -121,7 +121,7 @@ The labels are the ones from spec Part 32, plus **Exists**, meaning the feature 
 | 7.5–7.6 | Inspector and debugger: trace tree, events, fee breakdown | Not started | Transaction view using `traceTransaction`, with call hierarchy, events decoded by the ABI, and execution resources |
 | 8.1 | Wallets: Ready (Argent), Braavos | Exists | Add message signing (`wallet_signTypedData`) only if the wallet API supports it |
 | 8.2–8.3 | Account inspection, deployment, AA workflows | Partially implemented | Exists: nonce, class and balance. Add account class detection and deploy-account preparation. |
-| 8.3 | Multicall | Exists | Calldata preview missing |
+| 8.3 | Multicall | Exists | The transaction builder now encodes through Cairo Studio's value layer: enums, `Option`, `Result`, field-level errors. Calldata preview: in Cairo Studio per call. Not started: combined multicall calldata view. |
 | 8.4 | Paymaster | Not started | Only through SNIP-29 paymaster RPC if configured. Otherwise marked unavailable. |
 | 9 | Event explorer | Not started | `getEvents` with filters and continuation tokens, ABI decoding, export |
 | 10 | Network explorer: block, class, state update | Partially implemented | Fixed: the explorer now uses custom endpoints and failover (G1), and address lookups no longer fail on RPC error 29. Next: extend the explorer. |
@@ -241,3 +241,32 @@ PY
 ```
 
 To move to a new spec version, regenerate the fixture at the new tag and bump `STARKNET_SPEC_VERSION`. `starknetMethods.test.ts` then lists every method that was added, removed or changed.
+
+## 9. Stage 3 results (2026-11-28)
+
+Cairo Studio replaces the Starknet workspace's "Contracts" slot. It has three tabs: Contract, Tools, and Build and deploy.
+
+**Value layer** (`src/services/cairo/values.ts`): converts user JSON into starknet.js `CallData` values and back.
+- Every type in spec Part 5.2 round-trips through `CallData.compile` and `CallData.parse` (`values.test.ts`, 29 cases): felt252, u8–u128, u256 (as a number or as `{low, high}`), i8 and i128, bool, ContractAddress, ClassHash, EthAddress, bytes31, ByteArray, Array, Span, tuples, structs, nested structs, custom enums, Option and Result.
+- Errors name the field and the expected type, for example `arg.points[0].x: "nope" is not a decimal or 0x hex number (expected u32)`.
+
+**Live** (`LIVE=1 npx vitest run src/services/cairo/contract.live.test.ts`, mainnet and Sepolia): passed.
+- Loads the STRK class from chain.
+- Reads and decodes `name` = "Starknet Token", `symbol` = "STRK", `decimals` = 18, and a `balanceOf` u256 (the decoded value equals low + high × 2^128).
+
+**UI:** `CairoStudio.test.tsx` covers:
+- Paste the real STRK ABI.
+- Call a view function.
+- Encode calldata, and report a bad argument by name.
+- Hand a write function to the transaction builder.
+- Open a view call as a `starknet_call` request.
+- A bad paste.
+
+Checked in a browser against mainnet; no page errors.
+
+**Fixed along the way:** rendering the raw ABI viewer on every keystroke made the page slow. It now renders only when opened.
+
+**Not covered here:**
+- Local Sierra/CASM class-hash verification (Stage 4).
+- A combined multicall calldata view.
+- Non-ASCII ByteArray input (blocked by starknet.js 10.8).

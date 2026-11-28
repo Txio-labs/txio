@@ -10,7 +10,7 @@ import type { ChainId, CollectionNode, EnvironmentVariable, FeatureId, RequestIt
 export const requestChain = (request: Pick<RequestItem, 'rpcParams'> | null | undefined): ChainId =>
     request?.rpcParams?.chain ?? 'sui';
 
-/** Explorer tabs belong to the chain they explore. */
+/** Explorer and studio tabs belong to the chain they work on. */
 const EXPLORER_CHAIN: Partial<Record<FeatureId, ChainId>> = {
     explorer: 'sui',
     evm_explorer: 'evm',
@@ -18,6 +18,7 @@ const EXPLORER_CHAIN: Partial<Record<FeatureId, ChainId>> = {
     aptos_explorer: 'aptos',
     starknet_explorer: 'starknet',
     stellar_explorer: 'stellar',
+    cairo_studio: 'starknet',
 };
 
 /** Tab types that hold one request in `data`. */

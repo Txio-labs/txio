@@ -304,8 +304,9 @@ const TEMPLATE_GROUPS: { id: TemplateCategory; name: string; icon: typeof Box }[
     { id: 'social', name: 'Social Graph', icon: Share2 }
 ];
 
-export const ContractBuilder: React.FC = () => {
-    const [chain, setChain] = useState<ChainId>('evm');
+/** `lockedChain` fixes the target chain and hides the chain picker, for a chain workspace's own studio. */
+export const ContractBuilder: React.FC<{ lockedChain?: ChainId }> = ({ lockedChain }) => {
+    const [chain, setChain] = useState<ChainId>(lockedChain ?? 'evm');
 
     // Drafts are kept per chain so switching chains doesn't clobber what you
     // wrote for another one; each chain can hold several (Your Modules).
@@ -761,6 +762,7 @@ export const ContractBuilder: React.FC = () => {
                         {saveStatus === 'failed' && <span className="min-w-0 truncate text-xs font-semibold text-rose-600 dark:text-rose-400">Could not save</span>}
                     </div>
 
+                    {!lockedChain && (
                     <div className="w-56 min-w-[9rem] shrink">
                         <Select
                             value={chain}
@@ -771,6 +773,7 @@ export const ContractBuilder: React.FC = () => {
                             ariaLabel="Target chain"
                         />
                     </div>
+                    )}
 
                     <div className="ml-auto shrink-0 flex items-center gap-2 @3xl:gap-3">
                         <button onClick={handleSave} aria-label="Save draft" className="shrink-0 whitespace-nowrap flex items-center gap-2 px-2.5 @min-[60rem]:px-4 py-1.5 rounded-lg bg-hover hover:bg-active text-xs font-semibold transition-all">

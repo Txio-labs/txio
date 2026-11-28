@@ -33,6 +33,7 @@ import { StellarWorkspace } from "@/features/StellarMarkets";
 import { LookupPage } from "@/features/LookupPage";
 import { AptosExplorerFeature } from "@/features/AptosExplorer";
 import { StarknetExplorerFeature } from "@/features/StarknetExplorer";
+import { CairoStudio } from "@/features/cairoStudio/CairoStudio";
 import { HelpPage } from "@/features/HelpPage";
 import { AdminPage } from "@/features/AdminPage";
 import { ApprovalsPage } from "@/features/ApprovalsPage";
@@ -110,6 +111,8 @@ const WorkspaceContent: React.FC = () => {
             return <PartnersPage embedded />;
         case 'explorer':
             return <SuiExplorerFeature initialQuery={activeTab.data?.query} />;
+        case 'cairo_studio':
+            return <CairoStudio />;
         case 'starknet_explorer':
             return <StarknetExplorerFeature initialQuery={activeTab.data?.query} />;
         case 'stellar_explorer':

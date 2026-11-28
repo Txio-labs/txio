@@ -179,8 +179,9 @@ export const checkStarknetCall = (call: StarknetCall, index: number, total: numb
 
 /**
  * Compiles a call's arguments to felts. Raw calls pass through as felts; ABI
- * calls are encoded against the contract's on-chain ABI, which also checks
- * argument count and types.
+ * calls are encoded against the contract's on-chain ABI through Cairo
+ * Studio's value layer (services/cairo), which checks argument count, types
+ * and ranges and names the failing argument.
  */
 export const compileStarknetCall = async (
     network: Network,
@@ -191,15 +192,19 @@ export const compileStarknetCall = async (
     if (call.rawCalldata) {
         return { contractAddress, entrypoint, calldata: call.args.map((a) => toFelt(a) as string) };
     }
-    const [{ CallData }, abi] = await Promise.all([loadStarknet(), getStarknetAbi(network, contractAddress)]);
-    const fn = listAbiFunctions(abi).find((f) => f.name === entrypoint);
+    // Imported here: services/cairo/contract imports this module.
+    const [{ parseAbiInput, encodeCall }, { callableFunctions }, rawAbi] = await Promise.all([
+        import('./cairo/contract'),
+        import('./cairo/abi'),
+        getStarknetAbi(network, contractAddress),
+    ]);
+    const abi = await parseAbiInput(rawAbi as unknown[]);
+    const fn = callableFunctions(abi).find((f) => f.name === entrypoint);
     if (!fn) throw new Error(`The contract at ${contractAddress} has no function "${entrypoint}".`);
     if (call.args.length !== fn.inputs.length) {
         throw new Error(`"${entrypoint}" takes ${fn.inputs.length} argument${fn.inputs.length === 1 ? '' : 's'}, got ${call.args.length}.`);
     }
-    const args = fn.inputs.map((input, i) => parseStarknetArg(call.args[i] ?? '', input.type));
-    const compiled = new CallData(abi as never).compile(entrypoint, args as never);
-    return { contractAddress, entrypoint, calldata: compiled.map((v) => `0x${BigInt(v).toString(16)}`) };
+    return { contractAddress, entrypoint, calldata: await encodeCall(abi, fn, call.args) };
 };
 
 // ---------------------------------------------------------------------------

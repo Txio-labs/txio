@@ -910,7 +910,8 @@ export const appStore = {
             'send',
             'approvals',
             'automation',
-            'developers'
+            'developers',
+            'cairo_studio'
         ];
 
         if (singletonFeatures.includes(type)) {
@@ -1063,6 +1064,10 @@ export const appStore = {
 
                 case 'developers':
                     title = 'Developers';
+                    break;
+
+                case 'cairo_studio':
+                    title = 'Cairo Studio';
                     break;
 
                 default:

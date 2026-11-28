@@ -26,7 +26,7 @@ export const isNetwork = (
 // `WalletChainFamily` (wallet/types.ts), which the wallet layer already uses.
 export type ChainId = 'sui' | 'evm' | 'stellar' | 'solana' | 'aptos' | 'starknet';
 
-export type FeatureId = 'dashboard' | 'rpc' | 'ptb' | 'move' | 'playground' | 'workspace_overview' | 'history' | 'settings' | 'new_request' | 'new_collection' | 'profile' | 'account' | 'runner' | 'collections' | 'docs' | 'ecosystem' | 'features' | 'help' | 'integrations' | 'infrastructure' | 'partners' | 'admin' | 'approvals' | 'send' | 'automation' | 'developers' | 'explorer' | 'evm_explorer' | 'solana_explorer' | 'aptos_explorer' | 'starknet_explorer' | 'stellar_explorer' | 'lookup';
+export type FeatureId = 'dashboard' | 'rpc' | 'ptb' | 'move' | 'playground' | 'workspace_overview' | 'history' | 'settings' | 'new_request' | 'new_collection' | 'profile' | 'account' | 'runner' | 'collections' | 'docs' | 'ecosystem' | 'features' | 'help' | 'integrations' | 'infrastructure' | 'partners' | 'admin' | 'approvals' | 'send' | 'automation' | 'developers' | 'explorer' | 'evm_explorer' | 'solana_explorer' | 'aptos_explorer' | 'starknet_explorer' | 'stellar_explorer' | 'lookup' | 'cairo_studio';
 
 
 export interface TabItem {
